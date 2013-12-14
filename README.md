@@ -2,7 +2,8 @@ Apache Labor
 ============
 
 ## Vorbedingungen
-Für dieses Labor
+Für diese Labors benötigt man eine Linux Installation (vorzugsweise Debian bzw. Ubuntu) und minimale Linux Shell Kenntnisse.
+
 
 ## Clonen des Labors
 
