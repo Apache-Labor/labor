@@ -24,4 +24,4 @@ cd labor
 ##Beitragen
 
 Vielen Dank allen, die zu diesem Labor beigetragen haben oder dies noch tun werden.
-Wir sind Dankbar für Kommentare, Korrekturen und Anregungen.
+Wir sind dankbar für Kommentare, Korrekturen und Anregungen.
