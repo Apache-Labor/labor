@@ -234,26 +234,26 @@ SecAction "id:'90115',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=+%{PERF_P
 
 DocumentRoot		/apache/htdocs
 
-&lt;Directory /&gt;
+<Directory />
 	Order Deny,Allow
 	Deny from all
 
 	Options SymLinksIfOwnerMatch
 	AllowOverride None
-&lt;/Directory&gt;
+</Directory>
 
 
-&lt;VirtualHost 127.0.0.1:80&gt;
+<VirtualHost 127.0.0.1:80>
 	
-	&lt;Directory /apache/htdocs&gt;
+	<Directory /apache/htdocs>
 		Order Deny,Allow
 		Allow from all
 
 		Options None
 		AllowOverride None
-	&lt;/Directory&gt;
+	</Directory>
 
-&lt;/VirtualHost&gt;
+</VirtualHost>
 
 ```
 
