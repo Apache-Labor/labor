@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 #
-# A ruby script to analyse modsecurity anomaly scores in STDIN.
+# A ruby script to analyse modsecurity core rules anomaly scores in 
+# STDIN.
 # The data is then extracted and summarized in a statistical table
 # that gives an overview over the anomaly scores in the data.
 #
@@ -9,7 +10,7 @@
 #
 # The STDIN is supposed to have CSV format:
 #
-# <AnomalyScoreIn>;<AnomalyScoreOut>
+# <incoming_anomaly_score>;<outgoing_anomaly_score>
 #
 # I.e:
 # 0;0
@@ -27,7 +28,7 @@
 # %X \"%{cookie}n\" %{UNIQUE_ID}e %I %O %{ratio}n%% %D %{TX.perf_modsecinbound}M %{TX.perf_application}M \
 # %{TX.perf_modsecoutbound}M %{TX.INBOUND_ANOMALY_SCORE}M %{TX.OUTBOUND_ANOMALY_SCORE}M" extended
 #
-# $> cat access.log  | egrep -o "[0-9]+ [0-9]+$" | tr " " ";"  | ./modsec-positive-stats.rb
+# $> cat access.log  | egrep -o "[0-9]+ [0-9]+$" | tr " " ";"  | modsec-positive-stats.rb
 #
 # INCOMING                     Num of req. | % of req. |  Sum of % | Missing %
 # Number of incoming req. (total) |  10000 | 100.0000% | 100.0000% |   0.0000%
@@ -62,14 +63,9 @@
 # -----------------------------------------------------------
 
 require "optparse"
-require 'test/unit/assertions' # FIXME
-include Test::Unit::Assertions
 require "date"
 require "pp"
 require "rubygems"
-
-require "nokogiri"
-require 'open-uri'
 
 
 $params = Hash.new
@@ -82,6 +78,7 @@ $params[:headers] = true;
 $params[:totals] = true;
 $params[:empty] = true;
 $params[:summary] = true;
+$params[:baseline] = 0;		# Number of requests with scores 0/0 to be added to stats
 
 # -----------------------------------------------------------
 # SUB-FUNCTIONS (those that are specific to this script)
@@ -110,19 +107,33 @@ def read_stdin()
   nils_out = 0 
   
   n = 0
+  formatcheck_ok = false
 
   STDIN.each do |line| # we checked for STDIN in check parameter phase
      n = n + 1
      dprint "Processing line ##{n}: #{line.chomp}"
-
      begin
        in_data, out_data = line.chomp.split(";")
+       unless formatcheck_ok
+         if in_data  != in_data.to_i.to_s
+       	   puts_error("Input's first line indicates, input is not in CSV format as")
+	   puts_error("explained by help text. This is fatal. Aborting.")
+	   exit 1
+         else
+           formatcheck_ok = true
+         end
+       end
        nils_in, stats_in = map_data(in_data, nils_in, stats_in)
        nils_out, stats_out = map_data(out_data, nils_out, stats_out)
      rescue => detail
        puts_error("Could not read line ##{n}: \"#{line.chomp}\". Ignoring.")
      end
 
+  end
+
+  1.upto($params[:baseline]) do
+	  stats_in << 0
+	  stats_out << 0
   end
 
   vprint "Done reading STDIN (imported #{n} lines of data)"
@@ -160,6 +171,11 @@ def print_stats_wrapper(nils_in, stats_in, nils_out, stats_out)
   end
 
   def print_stats(verb, nils, stats)
+     def round(f, n)
+	     # The ruby "round" function before ruby 1.9 works differently, so we implement it ourselves
+	     return (f * 10 ** n).to_i.to_f / 10 ** n
+     end
+
      total = stats.length + nils
      max = stats.max {|a,b| a <=> b }
      
@@ -178,10 +194,10 @@ def print_stats_wrapper(nils_in, stats_in, nils_out, stats_out)
         printf("Empty or miss. #{verb} score   | %6d | %8.4f%% | %8.4f%% | %8.4f%%\n", nils, perc, sum_perc, 100 - sum_perc)
      end
 
-     freq.each { |key, value|
+     freq.sort_by{ |key, value| key }.each { |key, value|
         perc = value / total.to_f * 100
         sum_perc = sum_perc + perc
-        printf("Reqs with #{verb} score of %3d | %6d | %8.4f%% | %8.4f%% | %8.4f%%\n", key, value, perc.round(4), sum_perc.round(4), 100 - sum_perc.round(4))
+        printf("Reqs with #{verb} score of %3d | %6d | %8.4f%% | %8.4f%% | %8.4f%%\n", key, value, round(perc, 4), round(sum_perc, 4), 100 - round(sum_perc, 4))
      }
 
      printf("\nAverage: %8.4f        Median %8.4f         Standard deviation %8.4f\n", avg(stats), median(stats), standard_deviation(stats)) if $params[:summary]
@@ -262,6 +278,11 @@ def check_parameters()
      exit 1
   end
 
+  unless $params[:baseline].to_s.to_i == $params[:baseline]
+     puts_error("Baseline parameter is not integer. This is fatal. Aborting.", nil)
+     exit 1
+  end
+
   return err_status
 
 end
@@ -293,7 +314,13 @@ begin
 
 parser = OptionParser.new do|opts|
         opts.banner = <<EOF
-Display statistics of modsecurity anomaly scores.
+
+A ruby script to analyse modsecurity anomaly scores in STDIN.
+The data is extracted and summarized in a statistical table
+that gives an overview over the anomaly scores in the data.
+
+This script was written by Christian Folini and put into the
+public domain. Feel free to use it and to adopt it to your needs.	
 
 Usage: #{__FILE__} [options]
 EOF
@@ -305,6 +332,9 @@ EOF
 
         opts.on('-d', '--debug', 'Display debugging infos') do |none|
                 $params[:debug] = true;
+        end
+        opts.on('-b', '--baseline MAN', 'Indicate baseline of additional requests with score 0/0') do |baseline|
+                $params[:baseline] = baseline;
         end
         opts.on('-v', '--verbose', 'Be verbose') do |none|
                 $params[:verbose] = true;
@@ -344,14 +374,64 @@ one request with the two scores per line:
 
 I.e.:
 0;0
+1;0
+0;0
+0;2
+12;3
+0;0
 2;0
 0;1
 2;5
 ...
 
 
-Attention: Missing anomaly scores are excluded from the calculation
+ATTENTION: Missing anomaly scores are excluded from the calculation
 of the average, the median and the standard deviation.
+
+You get this stream of scores by defining the webserver's access log
+accordingly and then extract the data out of that format.
+
+Note that you can add an additional baseline of STR requests to the
+statistics. This makes sense if your STDIN comes without the requests
+which did not trigger any rules, but you want to include them in
+the calculation.
+
+
+Example:
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" \\
+%v %A %p %R %{BALANCER_WORKER_ROUTE}e \ %X \"%{cookie}n\" \\
+%{UNIQUE_ID}e %I %O %{ratio}n%% %D \\
+%{TX.perf_modsecinbound}M %{TX.perf_application}M %{TX.perf_modsecoutbound}M \\
+%{TX.INBOUND_ANOMALY_SCORE}M %{TX.OUTBOUND_ANOMALY_SCORE}M" extended
+
+$> cat access.log  | egrep -o "[0-9]+ [0-9]+$" | tr " " ";"  | modsec-positive-stats.rb
+
+INCOMING                     Num of req. | % of req. |  Sum of % | Missing %
+Number of incoming req. (total) |  10000 | 100.0000% | 100.0000% |   0.0000%
+
+Empty or miss. incoming score   |      0 |   0.0000% |   0.0000% | 100.0000%
+Reqs with incoming score of   0 |   9970 |  99.7000% |  99.7000% |   0.3000%
+Reqs with incoming score of   1 |      4 |   0.0400% |  99.7400% |   0.2600%
+Reqs with incoming score of   2 |     21 |   0.2100% |  99.9500% |   0.0500%
+Reqs with incoming score of   3 |      0 |   0.0000% |  99.9500% |   0.0500%
+Reqs with incoming score of   4 |      4 |   0.0400% |  99.9900% |   0.0100%
+Reqs with incoming score of   5 |      1 |   0.0100% | 100.0000% |   0.0000%
+
+Average:   0.0067        Median   0.0000         Standard deviation   0.1329
+
+
+OUTGOING                     Num of req. | % of req. |  Sum of % | Missing %
+Number of outgoing req. (total) |  10000 | 100.0000% | 100.0000% |   0.0000%
+
+Empty or miss. outgoing score   |      0 |   0.0000% |   0.0000% | 100.0000%
+Reqs with outgoing score of   0 |   9997 |  99.9700% |  99.9700% |   0.0300%
+Reqs with outgoing score of   1 |      0 |   0.0000% |  99.9700% |   0.0300%
+Reqs with outgoing score of   2 |      0 |   0.0000% |  99.9700% |   0.0300%
+Reqs with outgoing score of   3 |      0 |   0.0000% |  99.9700% |   0.0300%
+Reqs with outgoing score of   4 |      2 |   0.0200% |  99.9900% |   0.0100%
+Reqs with outgoing score of   5 |      1 |   0.0100% | 100.0000% |   0.0000%
+
+Average:   0.0013        Median   0.0000         Standard deviation   0.0755
 
 EOF
 
@@ -360,11 +440,12 @@ end
 
 parser.parse!
 
-# Mandatory Argument Check
-# if options[:man].nil?
-#       $stderr.puts "FIXME argument missing in call. This is fatal. Aborting."
-#       exit 1
-# end
+if $params[:baseline].to_i.to_s != $params[:baseline]
+       $stderr.puts "Baseline parameter is not integer. This is fatal. Aborting."
+       exit 1
+else
+	$params[:baseline] = $params[:baseline].to_i
+end
 
 rescue OptionParser::InvalidOption => detail
   puts_error("Invalid Option in command line parameter extraction. This is fatal. Aborting.", detail)
