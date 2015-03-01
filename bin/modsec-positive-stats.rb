@@ -340,11 +340,15 @@ You get this stream of scores by defining the webserver's access log
 accordingly and then extract the data out of that format.
 
 Example:
-LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" \\
-%v %A %p %R %{BALANCER_WORKER_ROUTE}e \ %X \"%{cookie}n\" \\
-%{UNIQUE_ID}e %I %O %{ratio}n%% %D \\
-%{TX.perf_modsecinbound}M %{TX.perf_application}M %{TX.perf_modsecoutbound}M \\
-%{TX.INBOUND_ANOMALY_SCORE}M %{TX.OUTBOUND_ANOMALY_SCORE}M" extended
+LogFormat  "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \\
+\"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R \\
+%{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" %{UNIQUE_ID}e %{SSL_PROTOCOL}x \\
+%{SSL_CIPHER}x %I %O %{ratio}n%% %D %{ModSecPerfInbound}e %{PerfApplication}e \\
+%{ModSecPerfOutbound}e %{TX.INBOUND_ANOMALY_SCORE}M \\
+%{TX.OUTBOUND_ANOMALY_SCORE}M" postit-extended2015
+
+ErrorLogFormat "[%{cu}t] [%-m:%-l] %-a %-L %M"
+
 
 $> cat access.log  | egrep -o "[0-9]+ [0-9]+$" | tr " " ";"  | modsec-positive-stats.rb
 
