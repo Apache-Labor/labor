@@ -8,3 +8,4 @@ Namentlich:
 
    * modsec-positive-stats.rb
    * modsec-rulereport.rb
+     parse-apache-log.rb
