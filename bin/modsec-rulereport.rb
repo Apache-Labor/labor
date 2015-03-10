@@ -289,7 +289,7 @@ def display_ignore_rule_mode_path_and_parameter(id, event, events)
 				if $params[:verbose]
 					prefix = couple[:num].to_s + " x"
 				end
-				printf "      %s SecRule REQUEST_FILENAME \"@beginsWith %s\" \"phase:2,nolog,pass,id:%d,ctl:ruleRemoveTargetById=%d;%s\"\n", prefix, couple[:uri], $params[:ruleid], id, couple[:parameter]
+				printf "     %s SecRule REQUEST_FILENAME \"@beginsWith %s\" \"phase:2,nolog,pass,id:%d,ctl:ruleRemoveTargetById=%d;%s\"\n", prefix, couple[:uri], $params[:ruleid], id, couple[:parameter]
 				$params[:ruleid] = $params[:ruleid] + 1
 
 		end
@@ -310,7 +310,7 @@ def display_report(events)
   dprint "Building list of relevant ids:"
   events.each do |event|
 		if ids.grep(event.id).length == 0 && 
-			( event.id != "981203" && event.id != "981204" && event.id != "981205" ) # 981203/4/5 are the rules checking anomaly score in the end. Ignoring those
+			( event.id != "981176" && event.id != "981202" && event.id != "981203" && event.id != "981204" && event.id != "981205" ) # 981203/4/5 are the rules checking anomaly score in the end. Ignoring those
 			dprint "  Adding event id #{event.id}"
 			ids << event.id
 		else
