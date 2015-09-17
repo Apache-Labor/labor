@@ -1,4 +1,4 @@
-##Kompilieren eines Apache Webservers
+##Kompilieren eines Apache Webservers.
 
 ###Was machen wir?
 
