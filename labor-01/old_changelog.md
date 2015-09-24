@@ -1,4 +1,5 @@
 ##### Changelog
+* 24\. September 2015: Update auf Apache 2.4, Erweiterung um --trace-ascii, httpd -L
 * 21\. September 2015: html -> markdown
 * 24\. Juli 2013: Rechtschreibfehler
 * 9\. Juli 2013: Schritt 3: "cd /apache" vorangestellt; Ausgabe der ab-Aufrufs angepasst
