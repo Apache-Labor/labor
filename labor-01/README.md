@@ -15,47 +15,49 @@ Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (K
 
 ###Schritt 1: Minimale Konfiguration erstellen
 
-Unser Webserver ist via /apache erreichbar. Unter /apache/conf/httpd.conf liegt seine Standard-Konfiguration. Diese ist sehr umfangreich und nur schwer zu verstehen. Ein Problem, das auch die Standard-Konfigurationen in den gängigen Linux-Distrubutionen mit sich bringen.
-Wir ersetzen dieses Konfigurationsfile mit der folgenden einfachen Konfiguration.
+Unser Webserver ist auf dem Dateisystem unter `/apache` abgelegt. Unter `/apache/conf/httpd.conf` liegt seine Standart-Konfiguration. Diese ist sehr umfangreich und nur schwer zu verstehen. Ein Problem, das auch die Standart-Konfigurationen in den gängigen Linux-Distrubutionen im nochmals verstärkten Mass mit sich bringen.
+Wir ersetzen diese Konfigurationsdatei mit der folgenden stark vereinfachten Konfiguration.
 
 ```bash
-ServerName            localhost
-ServerAdmin           root@localhost
-ServerRoot            /apache
-User                  www-data
-Group                 www-data
-PidFile               /apache/logs/httpd.pid
+ServerName              localhost
+ServerAdmin             root@localhost
+ServerRoot              /apache
+User                    www-data
+Group                   www-data
+PidFile			logs/httpd.pid
 
-ServerTokens          Prod
-UseCanonicalName      On
-TraceEnable           Off
+ServerTokens            Prod
+UseCanonicalName        On
+TraceEnable             Off
 
-Timeout               30
-MaxClients            100
+Timeout                 10
+MaxRequestWorkers       100
 
-Listen                127.0.0.1:80
+Listen                  127.0.0.1:80
 
-LoadModule            authz_host_module      modules/mod_authz_host.so
-LoadModule            mime_module            modules/mod_mime.so
-LoadModule            log_config_module      modules/mod_log_config.so
+LoadModule              mpm_event_module        modules/mod_mpm_event.so
+LoadModule              unixd_module            modules/mod_unixd.so
 
-LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LoadModule              log_config_module       modules/mod_log_config.so
 
-LogLevel              debug
-ErrorLog              logs/error.log
-CustomLog             logs/access.log combined
+LoadModule              authn_core_module       modules/mod_authn_core.so
+LoadModule              authz_core_module       modules/mod_authz_core.so
 
-DefaultType           text/html
+ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
+LogFormat 		"%h %l %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
 
-DocumentRoot          /apache/htdocs
+LogLevel                debug
+ErrorLog                logs/error.log
+CustomLog               logs/access.log combined
+
+DocumentRoot            /apache/htdocs
 
 <Directory />
+      
+	Require all denied
 
-      Order Deny,Allow
-      Deny from all
-
-      Options SymLinksIfOwnerMatch
-      AllowOverride None
+	Options SymLinksIfOwnerMatch
+	AllowOverride None
 
 </Directory>
 
@@ -63,11 +65,10 @@ DocumentRoot          /apache/htdocs
       
       <Directory /apache/htdocs>
 
-            Order Deny,Allow
-            Allow from all
+      	Require all granted
 
-            Options None
-            AllowOverride None
+      	Options None
+        AllowOverride None
 
       </Directory>
 
@@ -78,57 +79,65 @@ DocumentRoot          /apache/htdocs
 
 Gehen wir diese Konfiguration Schritt für Schritt durch.
 
-Wir setzen den `ServerName` auf `Localhost`, weil wir immer noch an einem Laborsetup arbeiten. Für die Produktion ist hier der voll qualifizierte Hostname des Services einzutragen. Kurz: Umgangssprachlich die URL.
+Wir setzen den _ServerName_ auf _Localhost_, weil wir immer noch an einem Laborsetup arbeiten. Für die Produktion ist hier der voll qualifizierte Hostname des Services einzutragen. Kurz: Umgangssprachlich die URL.
 
-Der Server braucht vor allem für die Fehlerseiten eine Emailadresse des Administrators. Sie wird mit dem `ServerAdmin` gesetzt.
+Der Server benötigt vor allem für die Darstellung der Fehlerseiten eine Emailadresse des Administrators. Sie wird mit dem _ServerAdmin_ gesetzt.
 
-Das `ServerRoot` Verzeichnis bezeichnet das Haupt- oder Wurzelverzeichnis des Servers. Es ist der in Anleitung 1 als Kniff gesetzte Symlink. Dies kommt uns nun zu gute, denn durch Umlegen dieses Symlinks können wir nebeneinander verschieden kompilierte Apache Versionen ausprobieren, ohne an der Konfigurationsdatei etwas verändern zu müssen.
+Das _ServerRoot_ Verzeichnis bezeichnet das Haupt- oder Wurzelverzeichnis des Servers. Es ist der in Anleitung 1 als Kniff gesetzte Symlink. Dies kommt uns nun zu gute, denn durch Umlegen dieses Symlinks können wir nebeneinander verschieden kompilierte Apache Versionen ausprobieren, ohne an der Konfigurationsdatei etwas verändern zu müssen.
 
-Dann weisen wir dem Server mit `User` und `Group` den Benutzer und dessen Gruppe zu. Dies ist sinnvoll, denn wir möchten vermeiden, dass der Server als Root-Prozess läuft. Vielmehr wird der Masterprozess als Root laufen, aber die eigentlichen Serverprozesse und deren Threads laufen unter dem hier gesetzten Namen. Der User `www-data` ist der unter einem Debian-/Ubuntu-System übliche Name. Andere Distributionen verwenden andere Namen. Bitte stellen Sie sicher, dass der von Ihnen gewählte Username und die zugehörige Gruppe auf dem System auch tatsächlich vorhanden ist.
+Dann weisen wir dem Server mit _User_ und _Group_ den Benutzer und dessen Gruppe zu. Dies ist sinnvoll, denn wir möchten vermeiden, dass der Server als Root-Prozess läuft. Vielmehr wird der Masterprozess als Root laufen, aber die eigentlichen Serverprozesse und deren Threads laufen unter dem hier gesetzten Namen. Der User _www-data_ ist der unter einem Debian-/Ubuntu-System übliche Name. Andere Distributionen verwenden andere Namen. Bitte stellen Sie sicher, dass der von Ihnen gewählte Username und die zugehörige Gruppe auf dem System auch tatsächlich vorhanden ist.
 
-Das `PidFile` gibt an, in welches File Apache seine Prozess-ID Nummer schreiben soll. Diese Zahl zu kennen, wird uns zukünftig zu pass kommen.
+Das _PidFile_ gibt an, in welches File Apache seine Prozess-ID Nummer schreiben soll. Der gewählte Pfad entspricht dem Defaultwert. Er wird hier angeführt, damit man später nicht in der Dokumentation nach diesem Pfad zu suchen braucht.
 
-`ServerTokens` definiert die Selbstbezeichnung des Servers. Produktive Tokens werden mit `Prod` festgelegt. Dies bedeutet, dass sich der Server nur als `Apache` und nicht auch noch mit Versionsnummer und geladenen Modulen ausweist. Machen wir uns keine Illusionen: Die Serverversion lässt sich über das Internet mit wenig Aufwand feststellen, aber wir brauchen es ja trotzdem nicht gerade in die Welt hinauszuschreien.
+_ServerTokens_ definiert die Selbstbezeichnung des Servers. Produktive Tokens werden mit _Prod_ festgelegt. Dies bedeutet, dass sich der Server nur als _Apache_ und nicht auch noch mit Versionsnummer und geladenen Modulen ausweist und sich damit etwas diskreter gibt. Machen wir uns keine Illusionen: Die Serverversion lässt sich über das Internet mit wenig Aufwand feststellen, aber wir brauchen es ja trotzdem nicht gerade bei jeder Kommunikation als Teil des Absenders mitzuschicken.
 
-`UseCanonicalName` teilt dem Server mit, welchen `Hostnamen` und welchen `Port` er verwenden soll, wenn er einen Link auf sich selbst zu schreiben hat. Mit dem Wert `On` bestimmen wir, dass der `ServerName` zu verwenden ist. Eine Alternative wäre es, den vom Client gesendeten Host-Header zu verwenden, was wir aber in unserem Setup nicht möchten.
+_UseCanonicalName_ teilt dem Server mit, welchen _Hostnamen_ und welchen _Port_ er verwenden soll, wenn er einen Link auf sich selbst zu schreiben hat. Mit dem Wert _On_ bestimmen wir, dass der _ServerName_ zu verwenden ist. Eine Alternative wäre es, den vom Client gesendeten Host-Header zu verwenden, was wir aber in unserem Setup nicht möchten.
 
-Die `TraceEnable`-Direktive verhindert gewisse Spionageattacken auf unseren Setup. Die HTTP Methode `TRACE` instruiert den Webserver, die von ihm erhaltene Anfrage 1:1 zu retournieren. Dies erlaubt es festzustellen, ob ein Proxy-Server zwischengeschaltet ist und ob dieser den Request verändert hat. In unserem simplen Setup ist damit noch nichts verloren, aber in einem Unternehmensnetz möchte man diese Informationen lieber geheim halten. Schalten wir `TraceEnable` also sicherheitshalber per Default aus.
+Die _TraceEnable_-Direktive verhindert gewisse Spionageattacken auf unseren Setup. Die HTTP Methode _TRACE_ instruiert den Webserver, die von ihm erhaltene Anfrage 1:1 zu retournieren. Dies erlaubt es festzustellen, ob ein Proxy-Server zwischengeschaltet ist und ob dieser den Request verändert hat. In unserem simplen Setup ist damit noch nichts verloren, aber in einem Unternehmensnetz möchte man diese Informationen lieber geheim halten. Schalten wir _TraceEnable_ also sicherheitshalber per Default aus.
 
-`Timeout` bezeichnet grob gesagt die Zeit in Sekunden, welche für die Verarbeitung eines Requests maximal verwendet werden darf. Tatsächlich verhält es sich damit etwas komplizierter, aber die Details brauchen uns für den Moment nicht zu interessieren. Der Standard-Wert ist mit 300 Sekunden sehr hoch. Wir reduzieren ihn auf 10 Sekunden.
+_Timeout_ bezeichnet grob gesagt die Zeit in Sekunden, welche für die Verarbeitung eines Requests maximal verwendet werden darf. Tatsächlich verhält es sich damit etwas komplizierter, aber die Details brauchen uns für den Moment nicht zu interessieren. Der Standard-Wert ist mit 60 Sekunden sehr hoch. Wir reduzieren ihn auf 10 Sekunden.
 
-`MaxClients` ist die maximale Anzahl Clients, welche parallel bedient werden. Korrekter ist die Erklärung, es sei die maximale Anzahl von Anfragen, die parallel verarbeitet werden. Der Standard-Wert ist wieder etwas hoch. Setzen wir ihn auf 100. Sollten wir diesen Wert in der Produktion erreichen, haben wir schon recht viel Verkehr.
+_MaxRequestWorkers_ ist die maximale Anzahl Threads, welche parallel an der Beantwortung von Anfragen arbeiten. Der Standard-Wert ist wieder etwas hoch. Setzen wir ihn auf 100. Sollten wir diesen Wert in der Produktion erreichen, haben wir schon recht viel Verkehr.
 
-Standardmässig hört der Apache Server auf jeder verfügbaren Adresse ins Netz. Für unsere Tests lassen wir ihn aber erst mal nur auf der `IPv4 Localhost` Adresse und auf dem Standard-HTTP-Port 80 lauschen. Mehrere `Listen`-Direktiven nacheinander sind problemlos möglich.
+Standardmässig hört der Apache Server auf jeder verfügbaren Adresse ins Netz. Für unsere Tests lassen wir ihn aber erst mal nur auf der _IPv4 Localhost_ Adresse und auf dem Standard-HTTP-Port 80 lauschen. Mehrere _Listen_-Direktiven nacheinander sind problemlos möglich; für uns reicht im Moment eine einzige.
 
-Nun laden wir drei Module:
+Nun laden wir fünf Module:
 
-* `authz_host_module` : Einfacher Zugriffsschutz
-* `mime_module` : MIME Dateiformate
-* `log_config_module` : Detaillierte Definition des Zugriffs-Logfiles
+* mpm_event_module : Prozessmodell _event_
+* unixd_module : Zugriff auf Unix Usernamen und Gruppen
+* log_config_module : Freie Definition des Zugriffs- / Access-Logs
+* authn_core_module : Basismodul für die Authentifizierung
+* authz_core_module : Basismodul für die Authorisierung
 
-Wir hatten in der Lektion 1 ja alle mitgelieferten Module vorkompiliert. Hier nehmen wir nur zwei der wichtigsten in unsere Konfiguration auf. Das zweite Modul benützen wir auch gleich in der nächsten Anweisung:
 
-Mit `LogFormat` definieren wir ein Format für das Zugriffs-Logfile. Wir nennen es `combined`. Dieses gängige Format schliesst Client-IP-Adresse, Zeitstempel, Methode, Pfad, HTTP-Version, HTTP-Status-Code, Antwort-Grösse, Referer und die Bezeichnung des Browsers (User-Agent) mit ein.
 
-Den `LogLevel` für das Fehler-Logfile stellen wir mit `Debug` auf die höchste Stufe. Das ist für die Produktion zu gesprächig, im Labor macht das aber durchaus Sinn. Apache ist gemeinhin nicht sehr gesprächig, so dass man mit der Datenmenge meist gut zurecht kommt.
+Wir hatten in der Lektion 1 ja alle mitgelieferten Module vorkompiliert. Hier nehmen wir nur der wichtigsten in unsere Konfiguration auf. _mpm_event_module_ und _unixd_module_ sind nötig für den Betrieb des Servers. Bei der Kompilierung im ersten Tutorial hatten wir uns für das Prozessmodell _Event_ entschieden, das wir hier nun durch das Laden des Moduls aktivieren. Interessant: Bei Apache 2.4 lässt sich auch eine so grundlegende Einstellung wie das Prozessmodell des Servers mittels der Konfiguration auswählen. Das Modul _unixd_ benötigen wir, um den Server, wie oben beschrieben, unter dem von uns definierten Usernamen laufen zu lassen.
 
-Dem Fehler-Logfile weisen wir mit `ErrorLog` den Pfad `logs/error.log` zu. Dieser Pfad ist relativ zum `ServerRoot`-Verzeichnis.
+Das Log-Modul _log_config_module_ erlaubt uns eine freie Definition des Access-Logs, wovon wir im Folgenden gleich Gebrauch machen werden. Schliesslich die beiden Module _authn_core_module_ und _authz_core_module_. Der erste Teil des Namens verweist auf Authentisierung (_Authn_) und Authorisierung (_Authz_). Core bedeutet dann, dass in diesen Modulen um die Basis für diese Funktionen handelt.
 
-Das definierte `LogFormat combined` benützen wir nun für unser Zugriffs-Logfile namens `logs/access.log`.
+Beim Zugriffsschutz spricht man oft von _AAA_, also _Authentisierung_, _Authorisierung_ und _Access Control_. Authentisieren bedeutet dabei das Überprüfen der Identität eines Benutzers. Unter Authorisierung versteht man das Feststellen der Zugriffsrechte eines vorher authentisierten Benutzers. Access Control schliesslich bedeutet die Entscheidung ob ein authentisierter Benutzer mit den eben festgestellten Zugriffsrechten zugelassen wird. Die Basis für diesen Mechanismus legen wir durch das Laden dieser beiden Module. Alle weiteren Module mit den beiden Kürzeln _authn_ und _authz_, von denen es eine grosse Menge gibt, setzen diese Module voraus. Für den Moment benötigen wir eigentlich nur das Authorisierungsmodul, aber mit dem Laden des Authentisierungsmoduls bereiten wir uns auf spätere Erweiterungen vor.
 
-Auf der nächsten Zeile halten wir fest, dass wir prinzipiell vor allem html-Dokumente, nämlich Dokumente mit dem `MIME-Type text/html`, ausliefern werden.
+Mit _ErrorLogFormat_ greifen wir in das Format des Fehler-Logfiles ein. Wir erweitern das gängige Logformat etwas, indem wir namentlich den Zeitstempel sehr genau definieren. `[%{cu}t]` entspricht damit einem Eintrag wie `[2015-09-24 06:34:29.199635]`. Das heisst das Datum rückwärts notiert, dann die Uhrzeit mit einer Genauigkeit von Mikrosekunden. Die Umkehrung des Datums hat den Vorteil, dass sich die Zeiten im Logfile sauber ordnen lassen; die Mikrosekunden geben uns genaue Auskunft über den Zeitpunkt eines Eintrages und lassen gewisse Rückschlüsse über die Zeitdauer der Verarbeitung in verschiedenen Modulen zu. Dem dient auch der nächste Konfigurationsteil `[%-m:%-l]` , der das loggende Module und den _Loglevel_, also die Schwere des Fehlers nennt. Danach folgen die IP-Adresse des clients (` %-a`; eine eindeutige Identifikation des Requests (`%-L`; eine sogenannte Unique-ID, welche in späteren Anleitungen zur Korrelation von Requests dienen kann) und schliesslich die eigentliche Meldung, die wir mittels `%M` referenzieren.
 
-Der Webserver liefert Dateien aus. Diese sucht er auf einer Diskpartition, oder er generiert sie mit Hilfe einer installierten Applikation. Wir sind noch beim einfachen Fall und geben dem Server mittels `DocumentRoot bekannt`, wo er die Dateien findet. `/apache/htdocs` ist ein absoluter Pfad unter dem `ServerRoot`. Hier könnte auch wieder ein relativer Pfad stehen, aber arbeiten wir besser mit klaren Verhältnissen! Konkret bedeutet `DocumentRoot`, dass der URL-Pfad `/` auf `/apache/htdocs` gemappt wird.
+Mit _LogFormat_ definieren wir ein Format für das Zugriffs-Logfile. Wir nennen es _combined_. Dieses gängige Format schliesst Client-IP-Adresse, Zeitstempel, Methode, Pfad, HTTP-Version, HTTP-Status-Code, Antwort-Grösse, Referer und die Bezeichnung des Browsers (User-Agent) mit ein. Beim Zeitstempel wählen wir eine recht komplizierte Konstruktion. Der Grund ist der Wille, beim Error-Log und im Access-Log, die Timestamp in demselben Format anzeigen zu können. Während wir dazu im Error-Log aber eine einfache Identifikation haben, müssen wir den Zeitstempel im Falle des Access-Log-Formats mühsam konstruieren.
 
-Nun folgt ein `Directory-Block`. Mit diesem Block verhindern wir, dass Dateien ausserhalb des von uns bezeichneten `DocumentRoot` ausgeliefert werden. Für den Pfad / verbieten wir jeglichen Zugriff mittels der Direktive `Deny from all`. Auf der Zeile davor wird mittels Order angegeben, dass wir beim Definieren von Zugriffen zunächst Verbieten (Deny) und danach Erlauben (Allow) wollen. Dies entspricht dem Standard-Wert und wird hier nur der Klarheit wegen nochmals definiert.
+Den _LogLevel_ für das Fehler-Logfile stellen wir mit _Debug_ auf die höchste Stufe. Das ist für die Produktion zu gesprächig, im Labor macht das aber durchaus Sinn. Apache ist gemeinhin nicht sehr gesprächig, so dass man mit der Datenmenge meist gut zurecht kommt.
 
-Die Direktive `Options` setzen wir auf `SymLinksIfOwnerMatch`. Mit `Options` können wir festlegen welche Spezialfeatures beim Ausliefern des Verzeichnisses / beachtet werden sollen. Eigentlich gar keine und in der Produktion würden wir deshalb Options `None` schreiben. In unserem Fall haben wir aber das `DocumentRoot` auf einen symbolischen Link gelegt und der wird nur dann gesucht und auch gefunden, wenn wir den Server mit `SymLinksIfOwnerMatch` anweisen, unterhalb von / auch Symlinks zuzulassen. Zumindest wenn die Besitzverhältnisse sauber sind. Auf produktiven Systemen ist aus Sicherheitsgründen beim Servieren von Files besser auf Symlinks zu verzichten. Aber bei unserem Testsystem geht der Komfort noch vor.
+Dem Fehler-Logfile weisen wir mit _ErrorLog_ den Pfad _logs/error.log_ zu. Dieser Pfad ist relativ zum _ServerRoot_-Verzeichnis.
 
-`AllowOverride` teilt dem Server mit, dass er nicht auf sogenannte `.htaccess`-Dateien zu achten braucht, denn wir planen nicht, damit zu arbeiten. Diese Dateien sind vor allem für Webhoster und Shared-Hosting von Interesse. Dies trifft auf uns eher nicht zu.
+Das definierte _LogFormat combined_ benützen wir nun für unser Zugriffs-Logfile namens _logs/access.log_.
 
-Nun eröffnen wir einen `VirtualHost`. Er korrespondiert mit der oben definierten `Listen`-Direktive. Zusammen mit dem eben definierten `Directory`-Block legt er fest, dass unser Webserver per Default gar keinen Zugriff zulässt. Auf der IP-Adresse `127.0.0.1, Port 80` wollen wir aber Zugriffe zulassen und die werden innerhalb dieses Blocks definiert.
+Der Webserver liefert Dateien aus. Diese sucht er auf einer Diskpartition, oder er generiert sie mit Hilfe einer installierten Applikation. Wir sind noch beim einfachen Fall und geben dem Server mittels _DocumentRoot bekannt_, wo er die Dateien findet. _/apache/htdocs_ ist ein absoluter Pfad unter dem _ServerRoot_. Hier könnte auch wieder ein relativer Pfad stehen, aber arbeiten wir besser mit klaren Verhältnissen! Konkret bedeutet _DocumentRoot_, dass der URL-Pfad _/_ auf _/apache/htdocs_ gemappt wird.
 
-Konkret lassen wir Zugriffe auf unser `DocumentRoot` zu. Schlüsselanweisung ist hier das `Allow from all`. Anders als oben sind ab diesem Pfad nun keine Symlinks mehr vorgesehen und auch sonst keine Spezialfähigkeiten: `Options None`.
+Nun folgt ein _Directory-Block_. Mit diesem Block verhindern wir, dass Dateien ausserhalb des von uns bezeichneten _DocumentRoot_ ausgeliefert werden. Für den Pfad / verbieten wir jeglichen Zugriff mittels der Direktive _Require all denied_. Dieser Eintrag referenziert die Authentisierung (_all_), macht eine Aussage zur Authorisierung (_Require_) und definiert den Zugriff: _denied_, also gar keinen Zugriff und zwar für niemanden; jedenfalls nicht für das Verzeichnis _/_.
+
+Die Direktive _Options_ setzen wir auf _SymLinksIfOwnerMatch_. Mit _Options_ können wir festlegen welche Spezialfeatures beim Ausliefern des Verzeichnisses / beachtet werden sollen. Eigentlich gar keine und in der Produktion würden wir deshalb Options _None_ schreiben. In unserem Fall haben wir aber das _DocumentRoot_ auf einen symbolischen Link gelegt und der wird nur dann gesucht und auch gefunden, wenn wir den Server mit _SymLinksIfOwnerMatch_ anweisen, unterhalb von / auch Symlinks zuzulassen. Zumindest wenn die Besitzverhältnisse sauber sind. Auf produktiven Systemen ist aus Sicherheitsgründen beim Servieren von Files besser auf Symlinks zu verzichten. Aber bei unserem Testsystem geht der Komfort noch vor.
+
+_AllowOverride_ teilt dem Server mit, dass er nicht auf sogenannte _.htaccess_-Dateien zu achten braucht, denn wir planen nicht, damit zu arbeiten. Diese Dateien sind vor allem für Webhoster und Shared-Hosting von Interesse. Dies trifft auf uns eher nicht zu.
+
+Nun eröffnen wir einen _VirtualHost_. Er korrespondiert mit der oben definierten _Listen_-Direktive. Zusammen mit dem eben definierten _Directory_-Block legt er fest, dass unser Webserver per Default gar keinen Zugriff zulässt. Auf der IP-Adresse _127.0.0.1, Port 80_ wollen wir aber Zugriffe zulassen und die werden innerhalb dieses Blocks definiert.
+
+Konkret lassen wir Zugriffe auf unser _DocumentRoot_ zu. Schlüsselanweisung ist hier das _Require all granted_, womit wir im Gegensatz zum Verzeichnis _/_ kompletten Zugriff zulassen. Anders als oben sind ab diesem Pfad nun keine Symlinks mehr vorgesehen und auch sonst keine Spezialfähigkeiten: _Options None_.
 
 ###Schritt 3: Server starten
 
@@ -152,42 +161,39 @@ $> curl http://localhost/index.html
 Dies liefert folgendes Resultat.
 
 ```bash
-<html><body><h1>It works!</h1></body></html>$>
+<html><body><h1>It works!</h1></body></html>
 ```
 
-Etwas verwirrend ist es für mich, dass der Antwort der Zeilenumbruch fehlt. Das Cursor-Prompt schliesst sich also an die Antwort an.
+Die haben also einen HTTP-Aufruf abgesetzt und von unserem minial konfigurierten Server eine Antwort erhalten, die unseren Erwartungen entspricht.
 
 ###Schritt 5: Anfrage und Antwort untersuchen
 
-Das passiert also bei einer HTTP-Anfrage. Aber was antwortet der Server uns eigentlich genau? Dazu rufen wir `curl` nochmals auf. Dieses Mal mit der Option verbose.
+Das passiert also bei einer HTTP-Anfrage. Aber was antwortet der Server uns eigentlich genau? Dazu rufen wir _curl_ nochmals auf. Dieses Mal mit der Option _verbose_.
 
 ```bash
 $> curl --verbose http://localhost/index.html
-* About to connect() to localhost port 80 (#0)
-*   Trying ::1... Connection refused
-*   Trying 127.0.0.1... connected
+* Hostname was NOT found in DNS cache
+*   Trying 127.0.0.1...
 * Connected to localhost (127.0.0.1) port 80 (#0)
 > GET /index.html HTTP/1.1
-> User-Agent: curl/7.22.0 (x86_64-pc-linux-gnu) libcurl/7.22.0 OpenSSL/1.0.1 zlib/1.2.3.4 libidn/1.23 librtmp/2.3
+> User-Agent: curl/7.35.0
 > Host: localhost
 > Accept: */*
 > 
 < HTTP/1.1 200 OK
-< Date: Tue, 02 Jul 2013 08:32:00 GMT
+< Date: Thu, 24 Sep 2015 09:27:02 GMT
+* Server Apache is not blacklisted
 < Server: Apache
-< Last-Modified: Tue, 02 Jul 2013 07:11:36 GMT
-< ETag: "282f66-2c-4e0820e3b9a00"
+< Last-Modified: Mon, 11 Jun 2007 18:53:14 GMT
+< ETag: "2d-432a5e4a73a80"
 < Accept-Ranges: bytes
-< Content-Length: 44
-< Content-Type: text/html
+< Content-Length: 45
 < 
+<html><body><h1>It works!</h1></body></html>
 * Connection #0 to host localhost left intact
-* Closing connection #0
-
-<html><body><h1>It works!</h1></body></html>$>
 ```
 
-Die mit einem * bezeichneten Zeilen beschreiben den Aufbau und den Abbau der Verbindung: Zunächst erfolglos über `IPv6`, dann erfolgreich über `IPv4`. Dann folgt mit > die Anfrage und mit < die Antwort.
+Die mit einem * bezeichneten Zeilen beschreiben den Aufbau und den Abbau der Verbindung. Dann folgt mit _>_ die Anfrage und mit _<_ die Antwort.
 
 Konrekt besteht eine HTTP-Anfrage aus 4 Teilen:
 
@@ -196,19 +202,62 @@ Konrekt besteht eine HTTP-Anfrage aus 4 Teilen:
 * Response-Header
 * Response-Body
 
-Die ersten Teile brauchen hier noch nicht zu interessieren. Interessant sind die `Response-Header`. Das ist der Teil, mit dem der Webserver die Antwort beschreibt. Die eigentliche Antwort, der `Response-Body`, folgt dann nach einer Leerzeile und nachdem curl mitgeteilt hat, dass die Verbindung nun beendet sei.
+Die ersten Teile brauchen hier noch nicht zu interessieren. Interessant sind die _Response-Header_. Das ist der Teil, mit dem der Webserver die Antwort beschreibt. Die eigentliche Antwort, der _Response-Body_, folgt dann nach einer Leerzeile.
 
 Was sagen die Header nacheinander?
 
-Zunächst folgt die `Status`-Zeile mit dem `Protokoll` und dem `Status-Code`. `200 OK` ist die normale Antwort eines Webservers. Danach das Datum und die Uhrzeit des Servers. Dann folgt die `Server`-Zeile, auf der sich unser Webserver als Apache identifiziert. Dies ist die knappste mögliche Identifikation. Wir haben sie mit ServerTokens Prod definiert.
+Zunächst folgt die _Status_-Zeile mit dem _Protokoll_ inklusive der Version, dann folgt der _Status-Code_. _200 OK_ ist die normale Antwort eines Webservers. Auf der nächsten Zeile sehen wir das Datum und die Uhrzeit des Servers. Die anschliessende Zeile beginnt mit einem Stern, _*_, und bezeichnet damit eine zu _curl_ gehörige Zeile. Die Nachricht hat mit _curls_ Behandlung von HTTP Pipelining zu tun, was uns nicht weiter zu interessieren braucht. Dann folgt die _Server_-Zeile, auf der sich unser Webserver als Apache identifiziert. Dies ist die knappste mögliche Identifikation. Wir haben sie mit _ServerTokens_ Prod definiert. 
 
-Dann teilt der Server mit, wann das der Antwort zu Grunde liegende File zum letzten Mal verändert wurde; also die `Unix Modified-Timestamp`. `ETag` und `Accept`-Ranges brauchen für den Moment nicht zu interessieren. Interessanter ist die `Content-Length`. Diese gibt an, wieviele Bytes im `Response-Body` erwartet werden dürfen. In unserem Fall sind das 44 Bytes. Es folgt zum Schluss der `Content-Type` mit dem einem Browser mitgeteilt wird, was für eine Art von Inhalt er erwarten darf. Hier wird eine Antwort im `Mime-Format text/plain` in Aussicht gestellt. Das ist tatsächlich aber nicht ganz korrekt, denn unser `index.html` ist vielmehr vom Typ `text/html`. Wir könnten dem mit einer `Direktive DefaultType text/html` abhelfen, oder indem wir das Mime-Modul konfigurieren. Aber wir wollten ja einen möglichst einfachen Server und deshalb können wir mit so einer kleinen Ungenauigkeit leben. Zumal die Browser an diesen Fehler gewöhnt sind und tolerant reagieren.
+Dann teilt der Server mit, wann das der Antwort zu Grunde liegende File zum letzten Mal verändert wurde; also die _Unix Modified-Timestamp_. _ETag_ und _Accept_-Ranges brauchen für den Moment nicht zu interessieren. Interessanter ist die _Content-Length_. Diese gibt an, wieviele Bytes im _Response-Body_ erwartet werden dürfen. In unserem Fall sind das 45 Bytes.
 
-Übrigens ist die Reihenfolge dieser Header charakteristisch für einen Webserver. Der Microsoft IIS verwendet eine andere Reihenfolge. Apache lässt sich deshalb auch identifizieren, wenn die Server-Zeile uns in die Irre führen sollte.
+Übrigens ist die Reihenfolge dieser Header charakteristisch für einen Webserver. Der NginX verwendet eine andere Reihenfolge und bringt den _Server-Header_ beispielsweise vor dem Datum. Apache lässt sich deshalb auch identifizieren, wenn die Server-Zeile uns in die Irre führen sollte.
 
-###Schritt 6: Mit Trace Methode arbeiten
+###Schritt 7: Die Antwort noch etwas genauer untersuchen
 
-Oben habe ich die Direktive `TraceEnable` beschrieben. Wir haben sie sicherheitshalber auf `off` geschaltet. Bei der Fehlersuche kann sie aber ganz nützlich sein. Also probieren wir das doch mal aus. Setzen wir die Option auf on:
+Es ist möglich, bei der Kommunikation noch etwas tiefer in _curl_ hineinzublicken. Das geschieht über den Kommandozeilen-Parameter _--trace-ascii_:
+
+```bash
+$> curl   http://localhost/index.html --trace-ascii -
+== Info: Hostname was NOT found in DNS cache
+== Info:   Trying 127.0.0.1...
+== Info: Connected to localhost (127.0.0.1) port 80 (#0)
+=> Send header, 83 bytes (0x53)
+0000: GET /index.html HTTP/1.1
+001a: User-Agent: curl/7.35.0
+0033: Host: localhost
+0044: Accept: */*
+0051: 
+<= Recv header, 17 bytes (0x11)
+0000: HTTP/1.1 200 OK
+<= Recv header, 37 bytes (0x25)
+0000: Date: Thu, 24 Sep 2015 11:46:17 GMT
+== Info: Server Apache is not blacklisted
+<= Recv header, 16 bytes (0x10)
+0000: Server: Apache
+<= Recv header, 46 bytes (0x2e)
+0000: Last-Modified: Mon, 11 Jun 2007 18:53:14 GMT
+<= Recv header, 26 bytes (0x1a)
+0000: ETag: "2d-432a5e4a73a80"
+<= Recv header, 22 bytes (0x16)
+0000: Accept-Ranges: bytes
+<= Recv header, 20 bytes (0x14)
+0000: Content-Length: 45
+<= Recv header, 2 bytes (0x2)
+0000: 
+<= Recv data, 45 bytes (0x2d)
+0000: <html><body><h1>It works!</h1></body></html>.
+<html><body><h1>It works!</h1></body></html>
+== Info: Connection #0 to host localhost left intact
+```
+
+Der Parameter _--trace-ascii_ benötigt ein File als Parameter, um darin einen _Ascii Dump_ der Kommunikation abzulegen. _-_ funktioniert als Shortcut zu _STDOUT_, so dass wir uns die Mitschrift einfach anzeigen lassen können.
+
+Gegenüber _verbose_ bringt _trace-ascii_ mehr Details zur Länge der übertragenen Bytes in der _Request-_ und _Response-_Phase. Die Request-Header umfassten in obigem Beispiel also 83 Bytes. Bei der Antwort werden die Bytes dann pro Header-Zeile gelistet und pauschal für den Body der Antwort: 45 Bytes. Das mag jetzt alles nach Haarspalterei klingen. Tatsächlich ist es aber bisweilen spielentscheidend, wenn man ein Stückchen vermisst und sich nicht ganz sicher ist, was wo in welcher Reihenfolge angeliefert wurde. So ist es etwa auffällig, dass bei den Headerzeilen jeweils 2 Bytes hinzukommen. Das sind der CR (Carriage Return) und NL (New Line), den das HTTP-Protokoll in den Header-Zeilen vorsieht. Anders im Response-Body, wo nur das retourniert wird, was tatsächlich in der Datei steht. Das ist hier offensichtlich nur ein CR ohne LF. Auf der Drittuntersten Zeile (_000: <html ..._) folgt auf das grösser-als-Zeichen ein Punkt. Dies ist eine Umschreibung des NL-Charakters der Antwort, der wie andere Escape-Sequenzen auch in der Form eines Punktes wiedergegeben wird.
+
+
+###Schritt 8: Mit Trace Methode arbeiten
+
+Oben habe ich die Direktive _TraceEnable_ beschrieben. Wir haben sie sicherheitshalber auf _off_ geschaltet. Bei der Fehlersuche kann sie aber ganz nützlich sein. Also probieren wir das doch mal aus. Setzen wir die Option auf on:
 
 ```bash
 TraceEnable On
@@ -220,49 +269,49 @@ Wir starten den Server neu und setzen folgenden curl-request ab.
 $> curl -v --request TRACE http://localhost/index.html
 ```
 
-Wir rufen also die bekannte `URL` mit der `HTTP Methode TRACE` (anstatt `GET`) auf. Als Resultat erwarten wir folgendes:
+Wir rufen also die bekannte _URL_ mit der _HTTP Methode TRACE_ (anstatt _GET_) auf. Als Resultat erwarten wir folgendes:
 
 ```bash
-* About to connect() to localhost port 80 (#0)
-*   Trying ::1... Connection refused
-*   Trying 127.0.0.1... connected
+* Hostname was NOT found in DNS cache
+*   Trying 127.0.0.1...
 * Connected to localhost (127.0.0.1) port 80 (#0)
 > TRACE /index.html HTTP/1.1
-> User-Agent: curl/7.22.0 (x86_64-pc-linux-gnu) libcurl/7.22.0 OpenSSL/1.0.1 zlib/1.2.3.4 libidn/1.23 librtmp/2.3
+> User-Agent: curl/7.35.0
 > Host: localhost
 > Accept: */*
 > 
 < HTTP/1.1 200 OK
-< Date: Tue, 02 Jul 2013 08:34:20 GMT
+< Date: Thu, 24 Sep 2015 09:38:01 GMT
+* Server Apache is not blacklisted
 < Server: Apache
 < Transfer-Encoding: chunked
 < Content-Type: message/http
-
+< 
 TRACE /index.html HTTP/1.1
-User-Agent: curl/7.22.0 (x86_64-pc-linux-gnu) libcurl/7.22.0 OpenSSL/1.0.1 zlib/1.2.3.4 libidn/1.23 librtmp/2.3
+User-Agent: curl/7.35.0
 Host: localhost
 Accept: */*
 
 * Connection #0 to host localhost left intact
-* Closing connection #0
 ```
 
-Im `Body` wiederholt der Server wie vorgesehen die Informationen zum gesendeten Request. Tatsächlich sind die Zeilen hier identisch. Wir können also bestätigen, dass unterwegs nichts mit der Anfrage passiert ist. Wenn wir aber über einen oder mehrere Proxy-Server gegangen wären, dann gäbe es hier auf jeden Fall weitere `Header`-Zeilen, die wir so auch als `Client` zu Gesicht bekommen können. Zu einem späteren Zeitpunkt werden wir mächtigere Hilfsmittel für die Fehlersuche kennen lernen. Aber ganz ausser Acht lassen sollten wir die `TRACE`-Methode dennoch nicht.
+Im _Body_ wiederholt der Server wie vorgesehen die Informationen zum gesendeten Request. Tatsächlich sind die Zeilen hier identisch. Wir können also bestätigen, dass unterwegs nichts mit der Anfrage passiert ist. Wenn wir aber über einen oder mehrere Proxy-Server gegangen wären, dann gäbe es hier auf jeden Fall weitere _Header_-Zeilen, die wir so auch als _Client_ zu Gesicht bekommen können. Zu einem späteren Zeitpunkt werden wir mächtigere Hilfsmittel für die Fehlersuche kennen lernen. Aber ganz ausser Acht lassen sollten wir die _TRACE_-Methode dennoch nicht.
 
-Vergessen Sie nicht, `TraceEnable` wieder auszuschalten.
+Vergessen Sie nicht, _TraceEnable_ wieder auszuschalten.
 
-###Schritt 7: Server mit "ab" auf den Zahn fühlen
+###Schritt 8: Server mit "ab" auf den Zahn fühlen
 
-Das wär's erst Mal mit dem simplen Server. Spasseshalber können wir ihm aber noch etwas auf den Zahn fühlen. Wir inszenieren einen kleinen Lasttest mit `ab`; kurz für `Apache Bench`. Dies ist ein sehr einfaches Lasttest-Programm, das immer zur Hand ist und rasche erste Resultate zur Performance liefern kann. So lasse ich ab gerne vor und nach einer Konfigurationsänderung laufen, um eine Idee zu erhalten, ob sich an der Performance etwas verändert hat. `Ab` ist nicht sehr mächtig und der lokale Aufruf bringt auch keine sauberen Resultate. Aber so ein erster Augenscheint lässt sich mit diesem Hilfsmittel gewinnen.
+Das wär's erst Mal mit dem simplen Server. Spasseshalber können wir ihm aber noch etwas auf den Zahn fühlen. Wir inszenieren einen kleinen Lasttest mit _ab_; kurz für _Apache Bench_. Dies ist ein sehr einfaches Lasttest-Programm, das immer zur Hand ist und rasche erste Resultate zur Performance liefern kann. So lasse ich ab gerne vor und nach einer Konfigurationsänderung laufen, um eine Idee zu erhalten, ob sich an der Performance etwas verändert hat. _Ab_ ist nicht sehr mächtig und der lokale Aufruf bringt auch keine sauberen Resultate. Aber so ein erster Augenscheint lässt sich mit diesem Hilfsmittel gewinnen.
 
 ```bash
 $> ./bin/ab -c 1 -n 1000 http://localhost/index.html
 ```
 
-Wir starten ab mit `concurrency 1`. Das heisst, dass wir parallel nur eine einzige Anfrage stellen. Total stellen wir 1000 Anfragen auf die bekannte `URL`. Hier ist die Ausgabe von `ab`:
+Wir starten ab mit _concurrency 1_. Das heisst, dass wir parallel nur eine einzige Anfrage stellen. Total stellen wir 1000 Anfragen auf die bekannte _URL_. Hier ist die Ausgabe von _ab_:
 
 ```bash
-This is ApacheBench, Version 2.3 <$Revision: 655654 $>
+$> ./bin/ab -c 1 -n 1000 http://localhost/index.html
+This is ApacheBench, Version 2.3 <$Revision: 1663405 $>
 Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
 Licensed to The Apache Software Foundation, http://www.apache.org/
 
@@ -285,26 +334,25 @@ Server Hostname:        localhost
 Server Port:            80
 
 Document Path:          /index.html
-Document Length:        44 bytes
+Document Length:        45 bytes
 
 Concurrency Level:      1
-Time taken for tests:   0.957 seconds
+Time taken for tests:   0.676 seconds
 Complete requests:      1000
 Failed requests:        0
-Write errors:           0
-Total transferred:      327000 bytes
-HTML transferred:       44000 bytes
-Requests per second:    1045.34 [#/sec] (mean)
-Time per request:       0.957 [ms] (mean)
-Time per request:       0.957 [ms] (mean, across all concurrent requests)
-Transfer rate:          286.86 [Kbytes/sec] received
+Total transferred:      250000 bytes
+HTML transferred:       45000 bytes
+Requests per second:    1480.14 [#/sec] (mean)
+Time per request:       0.676 [ms] (mean)
+Time per request:       0.676 [ms] (mean, across all concurrent requests)
+Transfer rate:          361.36 [Kbytes/sec] received
 
 Connection Times (ms)
               min  mean[+/-sd] median   max
 Connect:        0    0   0.0      0       0
-Processing:     0    1   0.3      1       4
-Waiting:        0    0   0.2      0       2
-Total:          1    1   0.3      1       4
+Processing:     0    1   0.2      1       3
+Waiting:        0    0   0.1      0       2
+Total:          0    1   0.2      1       3
 
 Percentage of the requests served within a certain time (ms)
   50%      1
@@ -313,14 +361,64 @@ Percentage of the requests served within a certain time (ms)
   80%      1
   90%      1
   95%      1
-  98%      2
-  99%      2
- 100%      4 (longest request)
+  98%      1
+  99%      1
+ 100%      3 (longest request)
+
 ```
 
-Interessant ist für uns vor allem die Zahl der Fehler (`Failed Requests`) und die Zahl der Anfragen pro Sekunde (`Request per second`). Ein Wert von über tausend ist ein guter Start. Zumal wir ja immer noch mit einem einzigen Prozess und nicht mit einem parallelisierten Daemon arbeiten (und deshalb auch der `concurrency-level` auf 1 gesetzt ist).
+Interessant ist für uns vor allem die Zahl der Fehler (_Failed Requests_) und die Zahl der Anfragen pro Sekunde (_Request per second_). Ein Wert von über tausend ist ein guter Start. Zumal wir ja immer noch mit einem einzigen Prozess und nicht mit einem parallelisierten Daemon arbeiten (und deshalb auch der _concurrency-level_ auf 1 gesetzt ist).
 
-Soweit zu diesem Tutorial. Damit ist bereits ein tauglicher Webserver vorhanden mit dem man gut arbeiten kann. In den nächsten Lektionen arbeiten wir weiter daran.
+###Schritt 9: Direktiven und Module ansehen
+
+Zum Schluss dieses Tutorials schauen wir uns die verschiedenen Direktiven an, welche ein mit unserem Konfigurationsfile zu startender Apache kennt. Die verschiedenen geladenen Module erweitern den Befehlssatz des Servers. Die damit zur Verfügung stehenden Konfigurationsparameter sind auf der Webseite des Projektes gut dokumentiert. Tatsächlich kann es aber in besonderen Fällen hilfreich sein, den durch die geladenen Module zur Verfügung stehenden Direktiven zu überblicken. Die Direktiven erhält man mit dem Kommando-Zeilen-Flah _-L_.
+
+```bash
+$> ./bin/httpd -L
+<Directory (core.c)
+	Container for directives affecting resources located in the specified directories
+	Allowed in *.conf only outside <Directory>, <Files>, <Location>, or <If>
+<Location (core.c)
+	Container for directives affecting resources accessed through the specified URL paths
+	Allowed in *.conf only outside <Directory>, <Files>, <Location>, or <If>
+<VirtualHost (core.c)
+	Container to map directives to a particular virtual host, takes one or more host addresses
+	Allowed in *.conf only outside <Directory>, <Files>, <Location>, or <If>
+<Files (core.c)
+...
+```
+Die Direktiven folgen hierbei der Reihenfolge wie sie geladen werden. Zu jeder Direktive folgt darauf eine kurze Beschreibung der Funktionalität.
+
+Mit dieser Liste ist es nun möglich herauszufinden, ob man sämtliche geladenen Module in der Konfiguration auch
+wirklich benötigt, respektive referenziert. In komplizierteren Konfigurationen mit zahlreichen geladenen Modulen
+kann es schliesslich schon mal vorkommen, dass man unsicher ist, ob man alle Module wirklich verwendet.
+
+Man kann die Module also aus dem Konfigurationsfile herauslesen, den Output von _httpd -L_ pro Modul zusammenfassen und dann wiederum im Konfigurationsfile nachsehen, ob eine der gelisteten Direktiven benützt werden. Diese verschachtelte Abfrage ist eine schöne Fingerübung, die ich nur empfehlen kann. Für mich habe ich sie wie folgt gelöst:
+
+```bash
+$> grep LoadModule conf/httpd.conf | awk '{print $2}' | sed -e "s/_module//" | while read M; do echo "Module $M"; R=$(./bin/httpd -L | grep $M | cut -d\  -f1 | tr -d "<" | xargs | tr " " "|");  egrep -q "$R" ./conf/httpd.conf; if [ $? -eq 0 ]; then echo "OK"; else echo "Not used"; fi; echo; done
+Module mpm_event
+OK
+
+Module unixd
+OK
+
+Module log_config
+OK
+
+Module authn_core
+Not used
+
+Module authz_core
+OK
+
+```
+
+Das Modul _authn_core_ wird also nicht verwendet. Das ist korrekt; das hatten wir oben auch so beschrieben, denn es ist für eine zukünftige Verwendung geladen. Die übrigen Module scheinen nötig.
+
+
+Soweit zu diesem Tutorial. Damit ist bereits ein tauglicher Webserver vorhanden mit dem man gut arbeiten kann. In den nächsten Lektionen bauen wir ihn weiter aus.
+
 
 ###Verweise
 
@@ -328,6 +426,4 @@ Soweit zu diesem Tutorial. Damit ist bereits ein tauglicher Webserver vorhanden 
 * Apache Direktiven: http://httpd.apache.org/docs/current/mod/directives.html
 * HTTP Header: http://en.wikipedia.org/wiki/List_of_HTTP_header_fields (Englisch)
 * RFC 2616 (HTTP Protokoll): http://www.ietf.org/rfc/rfc2616.txt (Englisch)
-
-
 
