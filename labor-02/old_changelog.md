@@ -1,0 +1,10 @@
+##### Changelog
+
+* 9\. Juli 2013: Bemerkung zum Erstellen des PHP-Starter-Skripts durch den Root-Benutzer; "chown" des fgcidsock-Verzeichnisses
+* 2\. Juli 2013: Rechtschreibfehler in Konfiguration korrigiert (DefaultType vs. ContentType)<br/>Apache Version von 2.2.21 auf 2.2.25 erh&ouml;ht.</br/>Fcgid Version von 2.3.6 auf 2.3.7 erh&ouml;ht und download URL angepasst.</br/>PHP Screenshot erneuert.
+* 12\. Oktober 2011: Version von 2.2.17 auf 2.2.21 erh&ouml;ht
+* 27\. Februar 2011: Kommandos korrigiert
+* 25\. Februar 2011: Kommandos und Rechtschreibfehler korrigiert
+* 9\. Januar 2011: &Uuml;berarbeitet
+* 11\. November 2010: &Uuml;berarbeitet
+* 8\. November 2010: Erstellt
