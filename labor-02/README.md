@@ -1,5 +1,5 @@
 ###Was machen wir?>
-Wir setzen einen Apache / PHP Applikationsserver mit den minimal nötigen Modulen auf</p>
+Wir setzen einen Apache / PHP Applikationsserver mit den minimal nötigen Modulen auf
 
 ###Warum tun wir das?>
 
@@ -9,18 +9,18 @@ Servers.
 Ein sehr schneller und sicherer Applikationsserver lässt sich mit _Suexec_, einem externen _Fast-CGI-Daemon_
 und _PHP_ realisieren. Dies ist bei weitem nicht die einzige Variante und im
 Unternehmensumfeld vermutlich auch nicht die verbreitetste. Aber es ist eine
-sehr einfache Architektur, die sich hervorragend für ein Testsystem eignet.</p>
+sehr einfache Architektur, die sich hervorragend für ein Testsystem eignet.
 
 ###Voraussetzungen>
-<ul>
-<li>Ein Apache Webserver, idealerweise mit einem File-Layout wie bei <a href="?q=apache_tutorial_1_apache_compilieren">Lektion 1 (Kompilieren eines Apache Servers)</a>, erstellt.</li>
-<li>Verständnis der minimalen Konfiguration in <a href="?q=apache_tutorial_2_apache_minimal_konfigurieren">Lektion 2 (Apache minimal Konfigurieren)</a>.</li>
-</ul>
+
+* Ein Apache Webserver, idealerweise mit einem File-Layout wie bei <a href="?q=apache_tutorial_1_apache_compilieren">Lektion 1 (Kompilieren eines Apache Servers)</a>, erstellt.
+* Verständnis der minimalen Konfiguration in <a href="?q=apache_tutorial_2_apache_minimal_konfigurieren">Lektion 2 (Apache minimal Konfigurieren)</a>.
+
 
 ###Schritt 1: Apache konfigurieren> 
 
 Wir konfigurieren den Webserver vorneweg; wohlwissend, dass er in dieser Konfiguration noch nicht lauffähig ist. Basierend
-auf dem in Lektion 2 beschriebenen minimalen Webserver konfigurieren wir einen sehr einfachen Applikationsserver in der Datei _conf/httpd.conf_.</p>
+auf dem in Lektion 2 beschriebenen minimalen Webserver konfigurieren wir einen sehr einfachen Applikationsserver in der Datei _conf/httpd.conf_.
 
 
 ```bash
@@ -86,19 +86,19 @@ SuexecUserGroup		fcgi-php fcgi-php
 Ich gehe nicht mehr auf die gesamte Konfiguration ein, sondern nur noch auf die Abweichungen zur Anleitung 2. Hinzugekommen sind drei Module:
 Neben dem _Suexec-_ und dem _Fcgi-Modul_ ist es das _Mime-Modul_,
 welches uns erlaubt, die Dateiendung _.php_ dem _Fcgi-Daemon_ zuzuweisen. Diese Zuweisung
-erfolgt mittels der _AddHandler-Direktive_.</p> 
+erfolgt mittels der _AddHandler-Direktive_. 
 
 Das Verzeichnis _/apache/htdocs_ benötigt neu
 die zusätzliche Option _ExecCGI_. Schliesslich der _FCGIWrapper_. Das ist das Verbindungsstück zwischen
 dem Webserver und dem noch zu konfigurierenden _FCGI-Daemon_. Sobald die erste Anfrage mit der
-Endung _.php_ an den Webserver gestellt wird, ruft der Server ein _Wrapper-Script_ auf und startet damit den _FCGI-Daemon_, der sich ab diesem Moment um die _PHP-Anfragen_ kümmert.</p>
+Endung _.php_ an den Webserver gestellt wird, ruft der Server ein _Wrapper-Script_ auf und startet damit den _FCGI-Daemon_, der sich ab diesem Moment um die _PHP-Anfragen_ kümmert.
 
 Fast-CGI_ ist eine Technik um dynamischen Programmcode aus einem Webserver
 heraus aufzurufen. Es ist eine sehr schnelle Technik, welche den Server weitgehend
 unberührt lässt und die Applikation auf einem separaten Daemon ausführt. Um die
 Geschwindigkeit zu steigern stellt _Fast-CGI_ mehrere Instanzen dieses Daemons
 bereit, so dass eine Anfrage ohne Wartepause verarbeitet werden kann. In der Praxis
-ist dies ein ansprechender Performance-Gewinn und vor allem eine Architektur, welche Speicher spart, wie unten genauer erklärt wird.</p>
+ist dies ein ansprechender Performance-Gewinn und vor allem eine Architektur, welche Speicher spart, wie unten genauer erklärt wird.
 
 ###Schritt 2: Apache mir Suexec-Unterstützung kompilieren>
 
@@ -109,17 +109,17 @@ In Lektion 1 wurde ein Apache Webserver selbst kompiliert. Aber obschon dort die
 Option _--enable-mods-shared=all_ verwendet wurde, ist _suexec_ noch
 nicht kompiliert. Das Modul ist demnach so speziell, dass es nicht als
 Standard-Modul mitkompiliert werden kann, obschon es im Quelltext vorhanden
-ist.</p>
+ist.
 
 Der in Lektion 2 konfigurierte Webserver läuft als Benutzer _www-data_
 oder je nach Konfiguration als beliebiger anderer dedizierter Benutzer. Unsere dynamische Applikation
 möchten wir noch weiter eingrenzen und den separaten Daemon unter einem weiteren separaten User
 drehen lassen. Dies wird uns durch das Modul _suexec_ ermöglicht.
 Diese Massnahme ist nicht zwingend. Aber sie bringt ein Mehr an Sicherheit mit
-wenig zusätzlichem Aufwand.</p>
+wenig zusätzlichem Aufwand.
 
 Begeben wir uns ins Verzeichnis mit dem Apache Quelltext und kompilieren den Server
-neu.</p> 
+neu. 
 
 ```bash
 $> cd /usr/src/apache/httpd-2.2.25
@@ -129,7 +129,7 @@ make && sudo make install
 ```
 
 Zum bekannten _configure_ sind nun drei Optionen hinzugekommen, die sich
-um das _Suexec_ kümmern. _Enable-suexec_ spricht für sich, _with-suexec-caller_ teilen wir dem gewissenhaften Modul mit, dass ausschliesslich der User _www-data_ die Erlaubnis erhalten soll, das Modul mit dem dahinter liegenden Programm aufzurufen. Schliesslich geben wir dem Modul auch noch bekannt, wo die aufzurufenden Skripte liegen sollen. Der Einfachheit halber nehmen wir das existierende _bin-Verzeichnis_. Allerdings ist _suexec_ pingelig und wir können nicht mit dem Symlink arbeiten. Es muss also der voll qualifizierte Pfad sein.</p>
+um das _Suexec_ kümmern. _Enable-suexec_ spricht für sich, _with-suexec-caller_ teilen wir dem gewissenhaften Modul mit, dass ausschliesslich der User _www-data_ die Erlaubnis erhalten soll, das Modul mit dem dahinter liegenden Programm aufzurufen. Schliesslich geben wir dem Modul auch noch bekannt, wo die aufzurufenden Skripte liegen sollen. Der Einfachheit halber nehmen wir das existierende _bin-Verzeichnis_. Allerdings ist _suexec_ pingelig und wir können nicht mit dem Symlink arbeiten. Es muss also der voll qualifizierte Pfad sein.
 
 Nach der erfolgreichen Konfiguration wird obenstehende Befehlszeile den Compiler
 aufrufen und nach dessen erfolgreichem Abschluss den neu-kompilierten Server
@@ -141,12 +141,12 @@ Compiler-Umgebung reinigen. Ansonsten werden die neuen Optionen ignoriert. Dies
 können wir über den Befehl _make clean_ vor dem _configure_ erreichen,
 oder durch manuelles Löschen der Dateien _support/suexec_, _support/suexec.lo_
 und _support/suexec.o_, was schneller geht, weil danach nicht mehr der gesamte
-Webserver neu gebaut werden muss.</p>
+Webserver neu gebaut werden muss.
 
 ###Schritt 3: Fast-CGI Modul herunterladen und kompilieren>
 
 Das _Fast-CGI-Modul_ wird von Apache verwaltet. Es ist aber nicht Teil des normalen Quellcodes des Webservers. Laden wir den Quelltext für das zusätzliche Modul also herunter und prüfen wir 
-die über eine verschlüsselte Verbindung geladene Checksumme.</p>
+die über eine verschlüsselte Verbindung geladene Checksumme.
 
 ```bash
 $> cd /usr/src/apache
@@ -156,7 +156,7 @@ $> sha1sum --check mod_fcgid-2.3.7.tar.gz.sha1
 ```
 
 Wir erwarten wieder ein _OK_. Wenn dies korrekt retourniert wurde, ist es
-Zeit für das Entpacken, Compilieren und Installieren.</p>
+Zeit für das Entpacken, Compilieren und Installieren.
 
 ```bash
 $> tar xvzf mod_fcgid-2.3.7.tar.gz
@@ -169,13 +169,13 @@ $> sudo make install
 Der _Configure-Befehl_ hat hier ein etwas anderes Format, da es sich beim _Fcgi-Modul_
 um ein von Apache abhängiges Modul handelt. Wir verwenden deshalb _APXS_, das _Apache Expansion
 Tool_. Leider zerstört das _make install_ die von uns gesetzten Besitzverhältnisse.
-Dies muss also nachjustiert werden.</p>
+Dies muss also nachjustiert werden.
 
 ```bash
 $> sudo chown `whoami` /apache/conf/httpd.conf
 ```
 
-Weiter benötigt der Apache-Benutzer Zugriff auf ein Verzeichnis, in das er Sockets anlegt, um mit dem FCGI-Daemon kommunizieren zu können. Dieses Übergeben wir ihm auch.</p>
+Weiter benötigt der Apache-Benutzer Zugriff auf ein Verzeichnis, in das er Sockets anlegt, um mit dem FCGI-Daemon kommunizieren zu können. Dieses Übergeben wir ihm auch.
 
 ```bash
 $> sudo chown www-data:www-data /apache/logs/fgcidsock
@@ -187,19 +187,19 @@ Bislang haben wir die ganze Software Stück für Stück selbst kompiliert. Beim 
 ist aber eine Grenze erreicht. Es soll niemandem verwehrt werden, PHP selbst zu kompilieren,
 hier konzentrieren wir uns aber auf den Webserver und übernehmen
 dieses Stück Software deshalb aus der Linux-Distribution. In Debian/Ubuntu heisst das entsprechende
-Paket _php5-cgi_ und es zieht _php5-common_ nach sich.</p>
+Paket _php5-cgi_ und es zieht _php5-common_ nach sich.
 
 _PHP_ richtig zu konfigurieren ist ein weites Feld und ich empfehle die einschlägigen Seiten
 zu konsultieren, denn ein falsch konfiguriertes _PHP_ kann ein erhebliches Sicherheitsproblem
 darstellen. Hier möchte ich nicht mehr Informationen dazu geben, da es von
 unserem eigentlichen Thema, dem einfachen Applikationsserver, wegführen
-würde.</p>
+würde.
 
 ###Schritt 5: CGI User erstellen>
 
 Oben wurde bereits beschrieben, dass wir planen, einen separaten Daemon zur Bearbeitung
 der _PHP-Anfragen_ zu starten. Dieser Daemon soll mittels _suexec_ gestartet werden und als eigenständiger Benutzer laufen.
-Wir erstellen diesen Benutzer folgendermassen:</p>
+Wir erstellen diesen Benutzer folgendermassen:
 
 ```bash
 $> sudo groupadd fcgi-php
@@ -207,7 +207,7 @@ $> sudo useradd -s /bin/false -d /apache/htdocs -m -g fcgi-php fcgi-php
 ```
 
 Es ist zu erwarten, dass eine Warnung betreffend des vorhandenen Verzeichnisses _/apache/htdocs_
-erscheint. Diese können wir aber ignorieren.</p>
+erscheint. Diese können wir aber ignorieren.
 
 ###Schritt 6: PHP Wrapper Skript erstellen>
 
@@ -223,7 +223,7 @@ $> sudo mkdir php-fcgi-starter
 $> sudo chown fcgi-php:fcgi-php php-fcgi-starter
 ```
 
-Wir müssen nun in diesem Verzeichnis ein Starter-Skript platzieren. Da wir das Verzeichnis bereits dem Benutzer _fcgi-php_ übergeben haben, muss das Skript durch den _Root-Benutzer_ erstellt werden. Oder durch in an diesen Ort kopiert werden. Das in diesem Verzeichnis zu platzierende Skript _php-fcgi-starter_ sieht folgendermassen aus:</p>
+Wir müssen nun in diesem Verzeichnis ein Starter-Skript platzieren. Da wir das Verzeichnis bereits dem Benutzer _fcgi-php_ übergeben haben, muss das Skript durch den _Root-Benutzer_ erstellt werden. Oder durch in an diesen Ort kopiert werden. Das in diesem Verzeichnis zu platzierende Skript _php-fcgi-starter_ sieht folgendermassen aus:
 
 ```bash
 #!/bin/sh
@@ -235,9 +235,9 @@ exec /usr/lib/cgi-bin/php
 
 Wir geben _PHP_ bekannt, wo sich seine Konfiguration befindet, legen die maximale Zahl der
 Requests eines _Fcgi-Daemons_ auf 5'000 fest (danach wird er durch einen frischen Prozess ersetzt), wir bestimmen die Zahl der Prozess-Kinder auf 5 und
-rufen zu guter Letzt PHP selbst auf.</p>
+rufen zu guter Letzt PHP selbst auf.
 
-Nun nicht vergessen, das Skript auch dem _FCGI-Benutzer_ zu übergeben und ausführbar machen:</p>
+Nun nicht vergessen, das Skript auch dem _FCGI-Benutzer_ zu übergeben und ausführbar machen:
 
 ```bash
 $> sudo chown fcgi-php:fcgi-php php-fcgi-starter/php-fcgi-starter
@@ -258,20 +258,20 @@ phpinfo();
 ###Schritt 8: Ausprobieren>
 
 Das war alles. Nun können wir den Webserver starten und
-ausprobieren.</p>
+ausprobieren.
 
 ```bash
 $> sudo ./httpd -X
 ```
 
-Erreichbar ist unser Testskript unter der URL <a href="http://localhost/info.php">http://localhost/info.php</a>.</p>
+Erreichbar ist unser Testskript unter der URL <a href="http://localhost/info.php">http://localhost/info.php</a>.
 
 <img src="files/3_screenshot_1.png"><br/>
-<span class="caption">Im Browser zeigt phpinfo einen umfassenden Statusbericht.</span></p>
+<span class="caption">Im Browser zeigt phpinfo einen umfassenden Statusbericht.</span>
 
-Ergibt der Start des Servers oder der Aufruf der URL eine Fehlermeldung, dann weiss das _Fehler-Log_ des Servers oder das separate _Suexec-Log_ unter _logs/suexec_log_ Abhilfe. Typische Fehler betreffen Besitz und Zugriffsrechte auf Verzeichnisse und Files.</p>
+Ergibt der Start des Servers oder der Aufruf der URL eine Fehlermeldung, dann weiss das _Fehler-Log_ des Servers oder das separate _Suexec-Log_ unter _logs/suexec_log_ Abhilfe. Typische Fehler betreffen Besitz und Zugriffsrechte auf Verzeichnisse und Files.
 
-Hier zur Zusammenfassung nochmals die relevanten Files und ihre Besitzer:</p>
+Hier zur Zusammenfassung nochmals die relevanten Files und ihre Besitzer:
 
 ```bash
 2107985    4 drwxr-xr-x   2 fcgi-php fcgi-php     4096 Jul  2 11:15 bin/php-fcgi-starter/
@@ -282,13 +282,13 @@ Hier zur Zusammenfassung nochmals die relevanten Files und ihre Besitzer:</p>
 2762281    4 drwx------   2 www-data www-data     4096 Jul  2 10:46 /apache/logs/fcgidsock/
 ```
 
-Auffällig ist das _Suid-Bit_ auf dem _Suexec-Binary_.</p>
+Auffällig ist das _Suid-Bit_ auf dem _Suexec-Binary_.
 
 ###Schritt 9 (Bonus): Ein kleiner Lasttest>
 
 Der hier gebaute Applikations-Server ist im Vergleich zu einem Apache mit eingebautem _PHP_ sehr leistungsfähig. Ein kleiner
 Lasttest kann dies illustrieren. Wir starten unseren Webserver im _Daemon-Mode_ und benutzen Apache-Bench um ihm mit 5 Usern auf
-den Zahn zu fühlen. Danach beenden stoppen wir den Server wieder.</p>
+den Zahn zu fühlen. Danach beenden stoppen wir den Server wieder.
 
 ```bash
 $> sudo ./bin/httpd -k start
@@ -297,7 +297,7 @@ $> ab -c 5 -n 1000 http://localhost/info.php
 $> sudo ./bin/httpd -k stop
 ```
 
-In meinem Fall lieferte _ab_ folgenden Output:</p>
+In meinem Fall lieferte _ab_ folgenden Output:
 
 ```bash
 This is ApacheBench, Version 2.3 <$Revision: 655654 $>
@@ -357,7 +357,7 @@ Percentage of the requests served within a certain time (ms)
 ```
 
 Das sind 261 dynamische Requests pro Sekunde. Das ist recht viel. Besonders weil das Resultat von einem kleinen Testrechner stammt.
-Auf einem modernen Server in Produktionsgrösse lässt sich ein Vielfaches davon realisieren.</p>
+Auf einem modernen Server in Produktionsgrösse lässt sich ein Vielfaches davon realisieren.
 
 Bemerkenswert ist aber weniger die Geschwingigkeit des Systems als der
 Speicherverbrauch. Im Gegensatz zu einem Applikationsserver mit integriertem
@@ -370,12 +370,12 @@ wie Bilder, _CSS_, _Javascripts_ etc. entfallen.
 Auf meinem Testsystem schlägt jeder _Prefork-Apache-Prozess_ inklusive
 _PHP_ mit 5 MB _Resident Size_ zu Buche. Ein Worker-Prozess
 mit lediglich _3 MB_ und die Zahl der externen _FCGI-Prozesse_
-bleibt deutlich kleiner.</p>
+bleibt deutlich kleiner.
 
 ###Verweise>
-<ul>
-<li>Apache: <a href="http://httpd.apache.org">http://httpd.apache.org</a></li>
-<li>Apache FCGI: <a href="http://httpd.apache.org/mod_fcgid/">http://httpd.apache.org/mod_fcgid/</a></li>
-<li>How2Forge PHP/FCGI: <a href="http://www.howtoforge.com/how-to-set-up-apache2-with-mod_fcgid-and-php5-on-ubuntu-10.04">http://www.howtoforge.com/how-to-set-up-apache2-with-mod_fcgid-and-php5-on-ubuntu-10.04</a></li>
-</ul>
+
+* Apache: <a href="http://httpd.apache.org">http://httpd.apache.org</a>
+* Apache FCGI: <a href="http://httpd.apache.org/mod_fcgid/">http://httpd.apache.org/mod_fcgid/</a>
+* How2Forge PHP/FCGI: <a href="http://www.howtoforge.com/how-to-set-up-apache2-with-mod_fcgid-and-php5-on-ubuntu-10.04">http://www.howtoforge.com/how-to-set-up-apache2-with-mod_fcgid-and-php5-on-ubuntu-10.04</a>
+
 
