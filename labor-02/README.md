@@ -1,7 +1,7 @@
-###Was machen wir?>
+###Was machen wir?
 Wir setzen einen Apache / PHP Applikationsserver mit den minimal nötigen Modulen auf
 
-###Warum tun wir das?>
+###Warum tun wir das?
 
 Ein nackter Apache eignet sich, um statische Files auszuliefern. Komplexere
 Applikationen bauen auf dynamischem Content auf. Dies bedingt eine Erweiterung des 
@@ -11,7 +11,7 @@ und _PHP_ realisieren. Dies ist bei weitem nicht die einzige Variante und im
 Unternehmensumfeld vermutlich auch nicht die verbreitetste. Aber es ist eine
 sehr einfache Architektur, die sich hervorragend für ein Testsystem eignet.
 
-###Voraussetzungen>
+###Voraussetzungen
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei <a href="?q=apache_tutorial_1_apache_compilieren">Lektion 1 (Kompilieren eines Apache Servers)</a>, erstellt.
 * Verständnis der minimalen Konfiguration in <a href="?q=apache_tutorial_2_apache_minimal_konfigurieren">Lektion 2 (Apache minimal Konfigurieren)</a>.
@@ -100,7 +100,7 @@ Geschwindigkeit zu steigern stellt _Fast-CGI_ mehrere Instanzen dieses Daemons
 bereit, so dass eine Anfrage ohne Wartepause verarbeitet werden kann. In der Praxis
 ist dies ein ansprechender Performance-Gewinn und vor allem eine Architektur, welche Speicher spart, wie unten genauer erklärt wird.
 
-###Schritt 2: Apache mir Suexec-Unterstützung kompilieren>
+###Schritt 2: Apache mir Suexec-Unterstützung kompilieren
 
 Wir müssen nun zwei fehlende Module kompilieren und weitere Komponenten
 für den _FCGI-Daemon_ bereitstellen. Beginnen wir mit dem _Suexec-Modul_.
@@ -143,7 +143,7 @@ oder durch manuelles Löschen der Dateien _support/suexec_, _support/suexec.lo_
 und _support/suexec.o_, was schneller geht, weil danach nicht mehr der gesamte
 Webserver neu gebaut werden muss.
 
-###Schritt 3: Fast-CGI Modul herunterladen und kompilieren>
+###Schritt 3: Fast-CGI Modul herunterladen und kompilieren
 
 Das _Fast-CGI-Modul_ wird von Apache verwaltet. Es ist aber nicht Teil des normalen Quellcodes des Webservers. Laden wir den Quelltext für das zusätzliche Modul also herunter und prüfen wir 
 die über eine verschlüsselte Verbindung geladene Checksumme.
@@ -181,7 +181,7 @@ Weiter benötigt der Apache-Benutzer Zugriff auf ein Verzeichnis, in das er Sock
 $> sudo chown www-data:www-data /apache/logs/fgcidsock
 ```
 
-###Schritt 4: PHP installieren und vorkonfigurieren>
+###Schritt 4: PHP installieren und vorkonfigurieren
 
 Bislang haben wir die ganze Software Stück für Stück selbst kompiliert. Beim ganzen PHP-Stack
 ist aber eine Grenze erreicht. Es soll niemandem verwehrt werden, PHP selbst zu kompilieren,
@@ -195,7 +195,7 @@ darstellen. Hier möchte ich nicht mehr Informationen dazu geben, da es von
 unserem eigentlichen Thema, dem einfachen Applikationsserver, wegführen
 würde.
 
-###Schritt 5: CGI User erstellen>
+###Schritt 5: CGI User erstellen
 
 Oben wurde bereits beschrieben, dass wir planen, einen separaten Daemon zur Bearbeitung
 der _PHP-Anfragen_ zu starten. Dieser Daemon soll mittels _suexec_ gestartet werden und als eigenständiger Benutzer laufen.
@@ -209,7 +209,7 @@ $> sudo useradd -s /bin/false -d /apache/htdocs -m -g fcgi-php fcgi-php
 Es ist zu erwarten, dass eine Warnung betreffend des vorhandenen Verzeichnisses _/apache/htdocs_
 erscheint. Diese können wir aber ignorieren.
 
-###Schritt 6: PHP Wrapper Skript erstellen>
+###Schritt 6: PHP Wrapper Skript erstellen
 
 Es ist üblich, _PHP_ und _FCGI_ mittels eines _Wrapper-Skripts_ zusammenarbeiten
 zu lassen. Wir haben das oben auch schon in der Apache Konfiguration so vorgesehen. Der Webserver wird ausschliesslich dieses Skript aufrufen, während sich das Skript
@@ -244,7 +244,7 @@ $> sudo chown fcgi-php:fcgi-php php-fcgi-starter/php-fcgi-starter
 $> sudo chmod +x php-fcgi-starter/php-fcgi-starter
 ```
 
-###Schritt 7: PHP-Testseite erstellen>
+###Schritt 7: PHP-Testseite erstellen
 
 Zum Schluss sollten wir noch eine einfache _php-basierte_
 Testseite erstellen: _/apache/htdocs/info.php_.
@@ -255,7 +255,7 @@ phpinfo();
 ?>
 ```
 
-###Schritt 8: Ausprobieren>
+###Schritt 8: Ausprobieren
 
 Das war alles. Nun können wir den Webserver starten und
 ausprobieren.
@@ -266,8 +266,8 @@ $> sudo ./httpd -X
 
 Erreichbar ist unser Testskript unter der URL <a href="http://localhost/info.php">http://localhost/info.php</a>.
 
-<img src="files/3_screenshot_1.png"><br/>
-<span class="caption">Im Browser zeigt phpinfo einen umfassenden Statusbericht.</span>
+<img src="files/3_screenshot_1.png">
+Im Browser zeigt phpinfo einen umfassenden Statusbericht.
 
 Ergibt der Start des Servers oder der Aufruf der URL eine Fehlermeldung, dann weiss das _Fehler-Log_ des Servers oder das separate _Suexec-Log_ unter _logs/suexec_log_ Abhilfe. Typische Fehler betreffen Besitz und Zugriffsrechte auf Verzeichnisse und Files.
 
@@ -284,7 +284,7 @@ Hier zur Zusammenfassung nochmals die relevanten Files und ihre Besitzer:
 
 Auffällig ist das _Suid-Bit_ auf dem _Suexec-Binary_.
 
-###Schritt 9 (Bonus): Ein kleiner Lasttest>
+###Schritt 9 (Bonus): Ein kleiner Lasttest
 
 Der hier gebaute Applikations-Server ist im Vergleich zu einem Apache mit eingebautem _PHP_ sehr leistungsfähig. Ein kleiner
 Lasttest kann dies illustrieren. Wir starten unseren Webserver im _Daemon-Mode_ und benutzen Apache-Bench um ihm mit 5 Usern auf
@@ -372,7 +372,7 @@ _PHP_ mit 5 MB _Resident Size_ zu Buche. Ein Worker-Prozess
 mit lediglich _3 MB_ und die Zahl der externen _FCGI-Prozesse_
 bleibt deutlich kleiner.
 
-###Verweise>
+###Verweise
 
 * Apache: <a href="http://httpd.apache.org">http://httpd.apache.org</a>
 * Apache FCGI: <a href="http://httpd.apache.org/mod_fcgid/">http://httpd.apache.org/mod_fcgid/</a>
