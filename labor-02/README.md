@@ -269,7 +269,8 @@ ausprobieren.
 ```bash
 $> sudo ./httpd -k start
 ```
-Erreichbar ist unser Testskript unter der URL <a href="http://localhost/info.php">http://localhost/info.php</a>.
+
+Erreichbar ist unser Testskript unter der URL [http://localhost/info.php](http://localhost/info.php).
 
 ![Screenshot: phpinfo()!](./apache-tutorial-3-screenshot-phpinfo.png)
 Im Browser zeigt phpinfo einen umfassenden Statusbericht.
