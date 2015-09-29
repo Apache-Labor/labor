@@ -384,8 +384,8 @@ bleibt deutlich kleiner.
 
 ###Verweise
 
-* Apache: <a href="http://httpd.apache.org">http://httpd.apache.org</a>
-* Apache FCGI: <a href="http://httpd.apache.org/mod_fcgid/">http://httpd.apache.org/mod_fcgid/</a>
-* How2Forge PHP/FCGI: <a href="http://www.howtoforge.com/how-to-set-up-apache2-with-mod_fcgid-and-php5-on-ubuntu-10.04">http://www.howtoforge.com/how-to-set-up-apache2-with-mod_fcgid-and-php5-on-ubuntu-10.04</a>
+* Apache: http://httpd.apache.org
+* Apache FCGI: http://httpd.apache.org/mod_fcgid
+* How2Forge PHP/FCGI: http://www.howtoforge.com/how-to-set-up-apache2-with-mod_fcgid-and-php5-on-ubuntu-10.04
 
 
