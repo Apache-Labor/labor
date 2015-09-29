@@ -1,4 +1,4 @@
-##Konfigurieren eines SSL Servers
+##Aufsetzen eines Apache/PHP Applikationsservers
 
 ###Was machen wir?
 
