@@ -1,9 +1,12 @@
 Apache Labor
 ============
 
-## Vorbedingungen
-Für diese Labors benötigt man eine Linux Installation (vorzugsweise Debian bzw. Ubuntu) und minimale Linux Shell Kenntnisse.
+Dies ist eine Sammlung von Apache Anleitungen, welche von der Compilierung in mehreren
+Kapiteln zu einer vollen Apache-Konfiguration mit einem Schwergewicht auf der
+Sicherheit führt.
 
+## Vorbedingungen
+Für diese Labors benötigt man eine Linux Installation (vorzugsweise aus der Debian-Familie, wie bzw. Ubuntu) und minimale Linux Shell Kenntnisse.
 
 ## Clonen des Labors
 
@@ -15,11 +18,13 @@ cd labor
 ##Inhalt
 
 - [labor-00](labor-00) Kompilieren eines Apache 2.2 Webservers
-- labor-01 Konfigurieren eines minimalen Apache Servers
-- labor-02 Aufsetzen eines Apache/PHP Applikationsservers
-- labor-03 Konfigurieren eines SSL Servers
-- labor-04 Das Zugriffslog ausbauen
-- labor-05 ModSecurity einbinden
+- [labor-01](labor-01) Konfigurieren eines minimalen Apache Servers
+- [labor-02](labor-02) Aufsetzen eines Apache/PHP Applikationsservers
+- [labor-03](labor-03) Konfigurieren eines SSL Servers
+- [labor-04](labor-04) Das Zugriffslog ausbauen
+- [labor-05](labor-05) ModSecurity einbinden
+- [labor-06](labor-06) ModSecurity Core Rules einbinden
+- [labor-07](labor-07) ModSecurity Tunen
 
 ##Beitragen
 
