@@ -1,5 +1,6 @@
 ##### Changelog
 
+* 29\. September 2015: html -> markdown, Update auf Apache 2.4, Option "-l" für ab
 * 9\. Juli 2013: Bemerkung zum Erstellen des PHP-Starter-Skripts durch den Root-Benutzer; "chown" des fgcidsock-Verzeichnisses
 * 2\. Juli 2013: Rechtschreibfehler in Konfiguration korrigiert (DefaultType vs. ContentType)<br/>Apache Version von 2.2.21 auf 2.2.25 erh&ouml;ht.</br/>Fcgid Version von 2.3.6 auf 2.3.7 erh&ouml;ht und download URL angepasst.</br/>PHP Screenshot erneuert.
 * 12\. Oktober 2011: Version von 2.2.17 auf 2.2.21 erh&ouml;ht

@@ -16,6 +16,8 @@ sehr einfache Architektur, die sich hervorragend für ein Testsystem eignet.
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei <a href="?q=apache_tutorial_1_apache_compilieren">Lektion 1 (Kompilieren eines Apache Servers)</a>, erstellt.
 * Verständnis der minimalen Konfiguration in <a href="?q=apache_tutorial_2_apache_minimal_konfigurieren">Lektion 2 (Apache minimal Konfigurieren)</a>.
 
+FIXME Links
+
 
 ###Schritt 1: Apache konfigurieren> 
 
@@ -24,60 +26,65 @@ auf dem in Lektion 2 beschriebenen minimalen Webserver konfigurieren wir einen s
 
 
 ```bash
-ServerName		localhost
-ServerAdmin		root@localhost
-ServerRoot		/apache
-User			www-data
-Group			www-data
-PidFile			/apache/logs/httpd.pid
+ServerName              localhost
+ServerAdmin             root@localhost
+ServerRoot              /apache
+User                    www-data
+Group                   www-data
 
-ServerTokens		Prod
-UseCanonicalName	On
-TraceEnable		Off
+ServerTokens            Prod
+UseCanonicalName        On
+TraceEnable             Off
 
-Timeout			30
-MaxClients		100
+Timeout                 5
+MaxRequestWorkers       250
 
-Listen			127.0.0.1:80
+Listen                  127.0.0.1:80
 
-LoadModule		authz_host_module	modules/mod_authz_host.so
-LoadModule		mime_module		modules/mod_mime.so
-LoadModule		log_config_module	modules/mod_log_config.so
-LoadModule		suexec_module		modules/mod_suexec.so
-LoadModule		fcgid_module		modules/mod_fcgid.so
+LoadModule              mpm_event_module        modules/mod_mpm_event.so
+LoadModule              unixd_module            modules/mod_unixd.so
 
-LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LoadModule              log_config_module       modules/mod_log_config.so
+LoadModule              mime_module             modules/mod_mime.so
 
-LogLevel		debug
-ErrorLog		logs/error.log
-CustomLog		logs/access.log combined
+LoadModule              authn_core_module       modules/mod_authn_core.so
+LoadModule              authz_core_module       modules/mod_authz_core.so
 
-DefaultType		text/html
-AddHandler		fcgid-script .php
+LoadModule              suexec_module           modules/mod_suexec.so
+LoadModule              fcgid_module            modules/mod_fcgid.so
 
-DocumentRoot		/apache/htdocs
+ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
+LogFormat               "%h %l %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
 
-SuexecUserGroup		fcgi-php fcgi-php
+LogLevel                debug
+ErrorLog                logs/error.log
+CustomLog               logs/access.log combined
+
+AddHandler              fcgid-script .php
+
+DocumentRoot            /apache/htdocs
 
 <Directory />
-	Order Deny,Allow
-	Deny from all
 
-	Options SymLinksIfOwnerMatch
-	AllowOverride None
+        Require all denied
+
+        Options         SymLinksIfOwnerMatch
+        AllowOverride   None
+
 </Directory>
 
 <VirtualHost 127.0.0.1:80>
 
-	<Directory /apache/htdocs>
-		Order Deny,Allow
-		Allow from all
+      <Directory /apache/htdocs>
 
-	        Options		ExecCGI
-		AllowOverride 	None
+        Require all granted
 
-      		FCGIWrapper 	/apache/bin/php-fcgi-starter/php-fcgi-starter .php
-	</Directory>
+        Options          ExecCGI
+        AllowOverride    None
+
+        FCGIWrapper      /apache/bin/php-fcgi-starter/php-fcgi-starter .php
+
+      </Directory>
 
 </VirtualHost>
 ```
@@ -123,13 +130,11 @@ neu.
 
 ```bash
 $> cd /usr/src/apache/httpd-2.2.25
-$> ./configure --prefix=/opt/apache-2.2.25 --with-mpm=worker --enable-mods-shared=all --with-included-apr
---enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.2.25/bin && 
-make && sudo make install
+$> ./configure --prefix=/opt/apache-2.4.16 --enable-mods-shared=all --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared="event worker" --enable-nonportable-atomics=yes --enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.4.16/bin && make && sudo make install
 ```
 
 Zum bekannten _configure_ sind nun drei Optionen hinzugekommen, die sich
-um das _Suexec_ kümmern. _Enable-suexec_ spricht für sich, _with-suexec-caller_ teilen wir dem gewissenhaften Modul mit, dass ausschliesslich der User _www-data_ die Erlaubnis erhalten soll, das Modul mit dem dahinter liegenden Programm aufzurufen. Schliesslich geben wir dem Modul auch noch bekannt, wo die aufzurufenden Skripte liegen sollen. Der Einfachheit halber nehmen wir das existierende _bin-Verzeichnis_. Allerdings ist _suexec_ pingelig und wir können nicht mit dem Symlink arbeiten. Es muss also der voll qualifizierte Pfad sein.
+um das _Suexec_ kümmern. _Enable-suexec_ spricht für sich, _with-suexec-caller_ teilen wir dem gewissenhaften Modul mit, dass ausschliesslich der User _www-data_ die Erlaubnis erhalten soll, das Modul mit dem dahinter liegenden Programm aufzurufen. Schliesslich geben wir dem Modul noch bekannt, wo die aufzurufenden Skripte liegen sollen. Der Einfachheit halber nehmen wir das existierende _bin-Verzeichnis_. Allerdings ist _suexec_ pingelig und wir können nicht mit dem Symlink arbeiten. Es muss also der voll qualifizierte Pfad sein.
 
 Nach der erfolgreichen Konfiguration wird obenstehende Befehlszeile den Compiler
 aufrufen und nach dessen erfolgreichem Abschluss den neu-kompilierten Server
@@ -150,17 +155,17 @@ die über eine verschlüsselte Verbindung geladene Checksumme.
 
 ```bash
 $> cd /usr/src/apache
-$> wget http://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.7.tar.gz
-$> wget https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.7.tar.gz.sha1
-$> sha1sum --check mod_fcgid-2.3.7.tar.gz.sha1
+$> wget http://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz
+$> wget https://www.apache.org/dist/httpd/mod_fcgid/mod_fcgid-2.3.9.tar.gz.sha1
+$> sha1sum --check mod_fcgid-2.3.9.tar.gz.sha1
 ```
 
 Wir erwarten wieder ein _OK_. Wenn dies korrekt retourniert wurde, ist es
-Zeit für das Entpacken, Compilieren und Installieren.
+Zeit für das Entpacken, Kompilieren und Installieren.
 
 ```bash
-$> tar xvzf mod_fcgid-2.3.7.tar.gz
-$> cd mod_fcgid-2.3.7
+$> tar xvzf mod_fcgid-2.3.9.tar.gz
+$> cd mod_fcgid-2.3.9
 $> APXS=/apache/bin/apxs ./configure.apxs
 $> make
 $> sudo make install
@@ -168,17 +173,18 @@ $> sudo make install
 
 Der _Configure-Befehl_ hat hier ein etwas anderes Format, da es sich beim _Fcgi-Modul_
 um ein von Apache abhängiges Modul handelt. Wir verwenden deshalb _APXS_, das _Apache Expansion
-Tool_. Leider zerstört das _make install_ die von uns gesetzten Besitzverhältnisse.
-Dies muss also nachjustiert werden.
+Tool_, das Teil des in Lektion 1 kompilierten Servers ist. Leider zerstört das _make install_ teilweise 
+die von uns gesetzten Besitzverhältnisse. Dies muss also nachjustiert werden.
 
 ```bash
 $> sudo chown `whoami` /apache/conf/httpd.conf
 ```
 
-Weiter benötigt der Apache-Benutzer Zugriff auf ein Verzeichnis, in das er Sockets anlegt, um mit dem FCGI-Daemon kommunizieren zu können. Dieses Übergeben wir ihm auch.
+Weiter benötigt der Apache-Benutzer Zugriff auf ein Verzeichnis, in das er Sockets anlegt, um mit dem FCGI-Daemon kommunizieren zu können. Dieses erstellen wir und übergeben es ihm direkt.
 
 ```bash
-$> sudo chown www-data:www-data /apache/logs/fgcidsock
+$> sudo mkdir /apache/logs/fcgidsock
+$> sudo chown www-data:www-data /apache/logs/fcgidsock
 ```
 
 ###Schritt 4: PHP installieren und vorkonfigurieren
@@ -190,10 +196,11 @@ dieses Stück Software deshalb aus der Linux-Distribution. In Debian/Ubuntu heis
 Paket _php5-cgi_ und es zieht _php5-common_ nach sich.
 
 _PHP_ richtig zu konfigurieren ist ein weites Feld und ich empfehle die einschlägigen Seiten
-zu konsultieren, denn ein falsch konfiguriertes _PHP_ kann ein erhebliches Sicherheitsproblem
+zu konsultieren, denn ein falsch konfiguriertes _PHP_ kann ein grosses Sicherheitsproblem
 darstellen. Hier möchte ich nicht mehr Informationen dazu geben, da es von
 unserem eigentlichen Thema, dem einfachen Applikationsserver, wegführen
-würde.
+würde. Für den Betrieb im Internet, also nicht mehr im heimischen Laborbereich, ist es aber
+deutlich angezeigt, sich mit den relevanten PHP-Sicherheitseinstellungen vertraut zu machen.
 
 ###Schritt 5: CGI User erstellen
 
@@ -223,9 +230,10 @@ $> sudo mkdir php-fcgi-starter
 $> sudo chown fcgi-php:fcgi-php php-fcgi-starter
 ```
 
-Wir müssen nun in diesem Verzeichnis ein Starter-Skript platzieren. Da wir das Verzeichnis bereits dem Benutzer _fcgi-php_ übergeben haben, muss das Skript durch den _Root-Benutzer_ erstellt werden. Oder durch in an diesen Ort kopiert werden. Das in diesem Verzeichnis zu platzierende Skript _php-fcgi-starter_ sieht folgendermassen aus:
+Wir müssen nun in diesem Verzeichnis ein Starter-Skript platzieren. Da wir das Verzeichnis bereits dem Benutzer _fcgi-php_ übergeben haben, muss das Skript durch den _Root-Benutzer_ erstellt werden. Oder durch in an diesen Ort kopiert werden. Das Erstellen eines Skripts in einem Verzeichnis, das uns nicht mehr gehört, ist bisweilen schwierig. Wir lösen das mit einem Trick mittels _cat_ und einer _Sub-Shell_. Hier der Trick und daran anschliessend das Skript (Die Eingabe in _cat_ wird mittels STRG-D abgeschlossen.).
 
 ```bash
+$> sudo sh -c "cat > php-fcgi-starter/php-fcgi-starter"
 #!/bin/sh
 export PHPRC=/etc/php5/cgi/
 export PHP_FCGI_MAX_REQUESTS=5000
@@ -233,7 +241,7 @@ export PHP_FCGI_CHILDREN=5
 exec /usr/lib/cgi-bin/php
 ```
 
-Wir geben _PHP_ bekannt, wo sich seine Konfiguration befindet, legen die maximale Zahl der
+Was legen wir hier fest? Wir geben _PHP_ bekannt, wo sich seine Konfiguration befindet, legen die maximale Zahl der
 Requests eines _Fcgi-Daemons_ auf 5'000 fest (danach wird er durch einen frischen Prozess ersetzt), wir bestimmen die Zahl der Prozess-Kinder auf 5 und
 rufen zu guter Letzt PHP selbst auf.
 
@@ -263,6 +271,7 @@ ausprobieren.
 ```bash
 $> sudo ./httpd -X
 ```
+FIXME: cgi-bin spawn bei jedem Start 5 neue PHP-Daemons und räumt sie nicht mehr ab.
 
 Erreichbar ist unser Testskript unter der URL <a href="http://localhost/info.php">http://localhost/info.php</a>.
 
@@ -288,11 +297,13 @@ Auffällig ist das _Suid-Bit_ auf dem _Suexec-Binary_.
 
 Der hier gebaute Applikations-Server ist im Vergleich zu einem Apache mit eingebautem _PHP_ sehr leistungsfähig. Ein kleiner
 Lasttest kann dies illustrieren. Wir starten unseren Webserver im _Daemon-Mode_ und benutzen Apache-Bench um ihm mit 5 Usern auf
-den Zahn zu fühlen. Danach beenden stoppen wir den Server wieder.
+den Zahn zu fühlen. Neu ist die Option _-l_, welche das Werkzeug instruiert, auf Abweichungen in der Länge der Antworten nicht
+weiter einzugehen. Denn die Seite ist ja dynamisch generiert und der Inhalt, sowie dessen Länge, weichen natürlicherweise immer
+wieder ein wenig ab. Nach dem Lasttest beenden wir den Server wieder.
 
 ```bash
 $> sudo ./bin/httpd -k start
-$> ab -c 5 -n 1000 http://localhost/info.php
+$> ./bin/ab -c 5 -n 1000 -l http://localhost/info.php
 ...
 $> sudo ./bin/httpd -k stop
 ```
@@ -300,7 +311,7 @@ $> sudo ./bin/httpd -k stop
 In meinem Fall lieferte _ab_ folgenden Output:
 
 ```bash
-This is ApacheBench, Version 2.3 <$Revision: 655654 $>
+This is ApacheBench, Version 2.3 <$Revision: 1663405 $>
 Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
 Licensed to The Apache Software Foundation, http://www.apache.org/
 
@@ -323,53 +334,55 @@ Server Hostname:        localhost
 Server Port:            80
 
 Document Path:          /info.php
-Document Length:        42620 bytes
+Document Length:        Variable
 
 Concurrency Level:      5
-Time taken for tests:   3.817 seconds
+Time taken for tests:   2.567 seconds
 Complete requests:      1000
 Failed requests:        0
-Write errors:           0
-Total transferred:      42772000 bytes
-HTML transferred:       42620000 bytes
-Requests per second:    261.98 [#/sec] (mean)
-Time per request:       19.085 [ms] (mean)
-Time per request:       3.817 [ms] (mean, across all concurrent requests)
-Transfer rate:          10942.89 [Kbytes/sec] received
+Total transferred:      66892443 bytes
+HTML transferred:       66739443 bytes
+Requests per second:    389.63 [#/sec] (mean)
+Time per request:       12.833 [ms] (mean)
+Time per request:       2.567 [ms] (mean, across all concurrent requests)
+Transfer rate:          25452.57 [Kbytes/sec] received
 
 Connection Times (ms)
               min  mean[+/-sd] median   max
-Connect:        0    2   3.0      1      15
-Processing:     6   16  44.8     14    1013
-Waiting:        0   11  45.1      8    1011
-Total:          6   19  45.0     16    1014
+Connect:        0    0   0.1      0       1
+Processing:     4   13  70.9      7    1147
+Waiting:        2   12  70.8      6    1143
+Total:          4   13  70.9      7    1147
 
 Percentage of the requests served within a certain time (ms)
-  50%     16
-  66%     18
-  75%     21
-  80%     22
-  90%     25
-  95%     29
-  98%     32
-  99%     35
- 100%   1014 (longest request)
+  50%      7
+  66%      9
+  75%     10
+  80%     11
+  90%     14
+  95%     17
+  98%     24
+  99%     28
+ 100%   1147 (longest request)
+
 ```
 
-Das sind 261 dynamische Requests pro Sekunde. Das ist recht viel. Besonders weil das Resultat von einem kleinen Testrechner stammt.
+Das sind 389 dynamische Requests pro Sekunde. Das sind viele. Besonders weil das Resultat von einem kleinen Testrechner stammt.
 Auf einem modernen Server in Produktionsgrösse lässt sich ein Vielfaches davon realisieren.
+
+
 
 Bemerkenswert ist aber weniger die Geschwingigkeit des Systems als der
 Speicherverbrauch. Im Gegensatz zu einem Applikationsserver mit integriertem
 _PHP-Modul_ haben wir den _PHP-Stack_ hier ausgelagert. Das
-erlaubt es uns einen Apache Webserver mit _Worker-MPM_ zu benutzen. In einem integrierten Setup müssten wir den _Prefork-MPM_ verwenden, der nicht mit
+erlaubt es uns einen Apache Webserver mit _Event-MPM_ zu benutzen. In einem integrierten Setup müssten wir den _Prefork-MPM_ verwenden, der nicht mit
 Serverthreads, sondern mit speicherhungrigen Serverprozessen arbeitet. Und
 jeder dieser Prozesse würde dann auch noch das _PHP-Modul_ laden,
 unbesehen davon, dass die meisten Requests in der Regel auf statische Applikationsteile
 wie Bilder, _CSS_, _Javascripts_ etc. entfallen.
 Auf meinem Testsystem schlägt jeder _Prefork-Apache-Prozess_ inklusive
-_PHP_ mit 5 MB _Resident Size_ zu Buche. Ein Worker-Prozess
-mit lediglich _3 MB_ und die Zahl der externen _FCGI-Prozesse_
+_PHP_ mit 6 MB _Resident Size_ zu Buche. Ein Event-Prozess
+mit lediglich _4 MB_ und die Zahl der externen _FCGI-Prozesse_
 bleibt deutlich kleiner.
 
 ###Verweise
