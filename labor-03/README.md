@@ -1,14 +1,7 @@
-<div>
-<div class="floatbox">
-Titel: SSL Server Konfigurieren<br/>
-Author: FIXME: <a href="mailto:christian.folini@netnea.com">Christian Folini</a><br/>
-Tutorial Nr: 4<br/>
-Erscheinungsdatum: 21.1.2011<br/>
-Schwierigkeit: Mittel<br/>
-Dauer: 1h<br/>
-</div>
+##Konfigurieren eines SSL Servers
+
 ###Was machen wir?
-Wir setzen einen mit Serverzertifikat gesicherten Apache Webserver auf
+Wir setzen einen mit Serverzertifikat gesicherten Apache Webserver auf.
 
 ###Warum tun wir das?
 
@@ -350,19 +343,4 @@ FIXME: <img src="files/ssllabs-com.png"><br/>
 * FIXME: <a href="http://oreilly.com/catalog/9780596002701">O'Reilly Buch: OpenSSL</a>
 * FIXME: <a href="http://www.keylength.com">Keylength.com - Hintergrundinformationen zu Ciphers und Keys</a>
 
-
-###Changelog
-
-
-* 9. Juli 2013: Rechtschreibfehler
-* 2. Juli 2013: Rechtschreibfehler in Konfiguration korrigiert (u.a. DefaultType vs. ContentType)<br/>Apache Version von 2.2.21 auf 2.2.25 erhöht.<br/>_aptitude_ Aufruf durch _apt-get_ ersetzt.
-* 9. April 2013: Hinweis auf Installation von libssl-dev, mod_mime angefügt, sudo für Manipulation des _gen_passphrase.sh_ Skripts
-* 25. November 2011: Rechtschreibfehler korrigiert
-* 12. Oktober 2011: Version von 2.2.17 auf 2.2.21 erhöht
-* 26. Januar 2011: Cipher-Suite weiter reduziert, Score bei SSLLabs von 93 auf 97 gehoben
-* 21. Januar 2011: Überarbeitet
-* 9. Januar 2011: Erstellt
-
-
-</div>
 
