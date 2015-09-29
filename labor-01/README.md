@@ -11,7 +11,7 @@ Ferner ist es bei der Fehlersuche hilfreich, von einem minimalen System auszugeh
 
 ###Voraussetzungen
 
-Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](http://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
+* Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](http://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
 
 ###Schritt 1: Minimale Konfiguration erstellen
 

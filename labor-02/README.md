@@ -13,10 +13,8 @@ sehr einfache Architektur, die sich hervorragend für ein Testsystem eignet.
 
 ###Voraussetzungen
 
-* Ein Apache Webserver, idealerweise mit einem File-Layout wie bei <a href="?q=apache_tutorial_1_apache_compilieren">Lektion 1 (Kompilieren eines Apache Servers)</a>, erstellt.
-* Verständnis der minimalen Konfiguration in <a href="?q=apache_tutorial_2_apache_minimal_konfigurieren">Lektion 2 (Apache minimal Konfigurieren)</a>.
-
-FIXME Links
+* Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](http://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
+* Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](http://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
 
 
 ###Schritt 1: Apache konfigurieren> 
@@ -129,7 +127,7 @@ Begeben wir uns ins Verzeichnis mit dem Apache Quelltext und kompilieren den Ser
 neu. 
 
 ```bash
-$> cd /usr/src/apache/httpd-2.2.25
+$> cd /usr/src/apache/httpd-2.4.16
 $> ./configure --prefix=/opt/apache-2.4.16 --enable-mods-shared=all --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared="event worker" --enable-nonportable-atomics=yes --enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.4.16/bin && make && sudo make install
 ```
 
@@ -269,13 +267,11 @@ Das war alles. Nun können wir den Webserver starten und
 ausprobieren.
 
 ```bash
-$> sudo ./httpd -X
+$> sudo ./httpd -k start
 ```
-FIXME: cgi-bin spawn bei jedem Start 5 neue PHP-Daemons und räumt sie nicht mehr ab.
-
 Erreichbar ist unser Testskript unter der URL <a href="http://localhost/info.php">http://localhost/info.php</a>.
 
-<img src="files/3_screenshot_1.png">
+![Screenshot: phpinfo()!](./apache-tutorial-3-screenshot-phpinfo.png)
 Im Browser zeigt phpinfo einen umfassenden Statusbericht.
 
 Ergibt der Start des Servers oder der Aufruf der URL eine Fehlermeldung, dann weiss das _Fehler-Log_ des Servers oder das separate _Suexec-Log_ unter _logs/suexec_log_ Abhilfe. Typische Fehler betreffen Besitz und Zugriffsrechte auf Verzeichnisse und Files.
