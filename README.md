@@ -21,12 +21,19 @@ cd labor
 - [labor-01](labor-01) Konfigurieren eines minimalen Apache Servers
 - [labor-02](labor-02) Aufsetzen eines Apache/PHP Applikationsservers
 - [labor-03](labor-03) Konfigurieren eines SSL Servers
-- [labor-04](labor-04) Das Zugriffslog ausbauen
-- [labor-05](labor-05) ModSecurity einbinden
+- labor-04: Das Zugriffslog ausbauen TODO
+- labor-05: ModSecurity einbinden TODO
 - [labor-06](labor-06) ModSecurity Core Rules einbinden
-- [labor-07](labor-07) ModSecurity Tunen
+- labor-07: ModSecurity Tunen TODO
 
 ##Beitragen
 
 Vielen Dank allen, die zu diesem Labor beigetragen haben oder dies noch tun werden.
 Wir sind dankbar für Kommentare, Korrekturen und Anregungen.
+
+##Alternativer Standort
+
+Die Anleitungen wurden mehrheitlich von netnea geschrieben und werden deshalb auch
+unter http://www.netnea.com publiziert. Die Masterkopie findet sich allerdings 
+unter https://github.com/Apache-Labor/labor.
+
