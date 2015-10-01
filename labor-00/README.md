@@ -108,6 +108,7 @@ Sachen, die typischerweise fehlen, sind Folgende:
 
 - binutils
 - gcc
+- libssl-dev
 - zlibc
 - zlib1g-dev
 
