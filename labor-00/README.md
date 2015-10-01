@@ -108,6 +108,7 @@ Sachen, die typischerweise fehlen, sind Folgende:
 
 - binutils
 - gcc
+- libpcre3-dev
 - libssl-dev
 - zlibc
 - zlib1g-dev
@@ -354,6 +355,6 @@ total 8.8M
 Das sind nun alle Module, welche von Apache zusammen mit dem Server verteilt werden. Weitere Module gibt es von Drittanbietern. Alle brauchen wir kaum, aber einige will man fast immer dabei haben: Sie stehen für eine Einbindung bereit..
 
 #####Verweise
-- Apache [http://httpd.apache.org] (http://httpd.apache.org)
+- Apache: [http://httpd.apache.org](http://httpd.apache.org)
 - File Hierarchy Standard: [http://www.pathname.com/fhs/](http://www.pathname.com/fhs/)
 - Apache ./configure documenation: [http://httpd.apache.org/docs/trunk/programs/configure.html](http://httpd.apache.org/docs/trunk/programs/configure.html)

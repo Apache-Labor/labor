@@ -388,13 +388,27 @@ SSLSessionTickets	Off
 ...
 ```
 
-Sinnvoll ist es, den _ServerName_ auch im _VirtualHost_ bekanntzugeben. Wenn wir das nicht tun, wird Apache eine Warnung ausgeben (und dann dennoch den einzigen VortualHost wählen).
+Sinnvoll ist es, den mit dem Zertifikat übereinstimmenden _ServerName_ auch im _VirtualHost_ bekanntzugeben. Wenn wir das nicht tun, wird Apache eine Warnung ausgeben (und dann dennoch den einzigen konfigurierten VirtualHost wählen und korrekt weiterfunktionieren).
 
-FIXME: Session Cache Options
+Neu hinzugekommen sind auch die beiden Optionen _SSLSessionCache_ sowie _SSLSessionTickets_. Die beiden Direktiven kontrollieren das Verhalten des SSL Session Caches. Das funktioniert folgendermassen: Während des SSL Handshakes werden Parameter der Verbindung wie etwa der Schlüssel und ein Verschlüsselungsalgorithmus ausgehandelt. Dies geschieht im Public-Key Modus, der sehr rechenintensiv ist. Ist der Handshake erfolgreich beendet, verkehrt der Server mit dem Client über die performantere symmetrische Verschlüsselung mit Hilfe der eben ausgehandelten Parameter. Ist der Request beendet und die _Keep-Alive_ Periode ohne neue Anfrage verstrichen, dann geht die Verbindung verloren. Wird sie kurze Zeit später neu aufgebaut, müssen die Parameter im Prinzip neu ausgehandelt werden. Das ist aufwändig, wie wir eben gesehen haben. Besser wäre es, man könnte die vormals ausgehandelten Parameter re-aktivieren. Diese Möglichkeit besteht in der Form eines SSL Session Caches. Traditionell wird dieser Cache serverseitig verwaltet und der Client kann sich mittels der SSL Session ID (FIXME?) darauf beziehen. In der Vergangenheit kam es bei diesem Cache mehrmals zu Sicherheitsproblemen, weshalb man zum Schluss kommen kann, dass man darauf verzichten möchte.
+
+Beim Session Cache via Tickets werden die Parameter in einem Session Ticket zusammengefasst und dem Client übergeben, wo sie clientseitig gespeichert werden. Beim Aufbau einer neuen Verbindung sendet der Client die Parameter während des Handshakes an den Server und dieser konfiguriert die Verbindung entsprechend. Um eine Manipulation der Parameter im Ticket zu verhindern, signiert der Server das Ticket vorgängig und überprüft es beim Aufbei einer Verbindung wieder
+
+SSL Session Tickets sind jünger und bis dato weniger fehlerbehaftet. Das ändert aber nichts an der Tatsache, dass zumindest eine theoretische Verwundbarkeit besteht, indem die Session Parameter clientseitig gestohlen werden können. 
+
+Beide Varianten des Session Caches lassen sich ausschalten. Dies geschieht wie folgt: 
+
+```bash
+SSLSessionCache         nonenotnull
+SSLSessionTickets	Off
+```
+
+Natürlich bleibt diese nicht ohne Folgen für die Performance.
+
 
 ###Schritt 8: Ausprobieren
 
-Zu Übungszwecken haben wir unseren Testserver erneut auf der lokalen IP-Adresse _127.0.0.1_ konfiguriert. Um das Funktionieren der Zertifikatskette zu testen dürfen wir den Server nicht einfach mittels der IP-Adresse ansprechen, sondern wir müssen ihn mit dem korrekten Hostnamen kontaktieren. Und dieser Hostname muss natürlich mit demjenigen auf dem Zertifikat übereinstimmen. Im Fall von _127.0.0.1_ erreichen wir dies, idem wir das _Host-File_ unter _/etc/hosts_ anpassen:
+Zu Übungszwecken haben wir unseren Testserver erneut auf der lokalen IP-Adresse _127.0.0.1_ konfiguriert. Um das Funktionieren der Zertifikatskette zu testen, dürfen wir den Server nicht einfach mittels der IP-Adresse ansprechen, sondern wir müssen ihn mit dem korrekten Hostnamen kontaktieren. Und dieser Hostname muss natürlich mit demjenigen auf dem Zertifikat übereinstimmen. Im Fall von _127.0.0.1_ erreichen wir dies, idem wir das _Host-File_ unter _/etc/hosts_ anpassen:
 
 ```bash
 127.0.0.1	localhost myhost www.example.com

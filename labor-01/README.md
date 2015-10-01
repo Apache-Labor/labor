@@ -24,7 +24,7 @@ ServerAdmin             root@localhost
 ServerRoot              /apache
 User                    www-data
 Group                   www-data
-PidFile			logs/httpd.pid
+PidFile                 logs/httpd.pid
 
 ServerTokens            Prod
 UseCanonicalName        On
@@ -44,7 +44,7 @@ LoadModule              authn_core_module       modules/mod_authn_core.so
 LoadModule              authz_core_module       modules/mod_authz_core.so
 
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
-LogFormat 		"%h %l %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat               "%h %l %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
 
 LogLevel                debug
 ErrorLog                logs/error.log
@@ -65,9 +65,9 @@ DocumentRoot            /apache/htdocs
       
       <Directory /apache/htdocs>
 
-      	Require all granted
+        Require all granted
 
-      	Options None
+        Options None
         AllowOverride None
 
       </Directory>
@@ -103,7 +103,7 @@ Standardmässig hört der Apache Server auf jeder verfügbaren Adresse ins Netz.
 
 Nun laden wir fünf Module:
 
-* mpm_event_module : Prozessmodell _event_
+* mpm_event_module : Prozessmodell "event"
 * unixd_module : Zugriff auf Unix Usernamen und Gruppen
 * log_config_module : Freie Definition des Zugriffs- / Access-Logs
 * authn_core_module : Basismodul für die Authentifizierung
@@ -117,7 +117,7 @@ Das Log-Modul _log_config_module_ erlaubt uns eine freie Definition des Access-L
 
 Beim Zugriffsschutz spricht man oft von _AAA_, also _Authentisierung_, _Authorisierung_ und _Access Control_. Authentisieren bedeutet dabei das Überprüfen der Identität eines Benutzers. Unter Authorisierung versteht man das Feststellen der Zugriffsrechte eines vorher authentisierten Benutzers. Access Control schliesslich bedeutet die Entscheidung ob ein authentisierter Benutzer mit den eben festgestellten Zugriffsrechten zugelassen wird. Die Basis für diesen Mechanismus legen wir durch das Laden dieser beiden Module. Alle weiteren Module mit den beiden Kürzeln _authn_ und _authz_, von denen es eine grosse Menge gibt, setzen diese Module voraus. Für den Moment benötigen wir eigentlich nur das Authorisierungsmodul, aber mit dem Laden des Authentisierungsmoduls bereiten wir uns auf spätere Erweiterungen vor.
 
-Mit _ErrorLogFormat_ greifen wir in das Format des Fehler-Logfiles ein. Wir erweitern das gängige Logformat etwas, indem wir namentlich den Zeitstempel sehr genau definieren. `[%{cu}t]` entspricht damit einem Eintrag wie `[2015-09-24 06:34:29.199635]`. Das heisst das Datum rückwärts notiert, dann die Uhrzeit mit einer Genauigkeit von Mikrosekunden. Die Umkehrung des Datums hat den Vorteil, dass sich die Zeiten im Logfile sauber ordnen lassen; die Mikrosekunden geben uns genaue Auskunft über den Zeitpunkt eines Eintrages und lassen gewisse Rückschlüsse über die Zeitdauer der Verarbeitung in verschiedenen Modulen zu. Dem dient auch der nächste Konfigurationsteil `[%-m:%-l]` , der das loggende Module und den _Loglevel_, also die Schwere des Fehlers nennt. Danach folgen die IP-Adresse des clients (` %-a`; eine eindeutige Identifikation des Requests (`%-L`; eine sogenannte Unique-ID, welche in späteren Anleitungen zur Korrelation von Requests dienen kann) und schliesslich die eigentliche Meldung, die wir mittels `%M` referenzieren.
+Mit _ErrorLogFormat_ greifen wir in das Format des Fehler-Logfiles ein. Wir erweitern das gängige Logformat etwas, indem wir namentlich den Zeitstempel sehr genau definieren. `[%{cu}t]` entspricht damit einem Eintrag wie `[2015-09-24 06:34:29.199635]`. Das heisst das Datum rückwärts notiert, dann die Uhrzeit mit einer Genauigkeit von Mikrosekunden. Die Umkehrung des Datums hat den Vorteil, dass sich die Zeiten im Logfile sauber ordnen lassen; die Mikrosekunden geben uns genaue Auskunft über den Zeitpunkt eines Eintrages und lassen gewisse Rückschlüsse über die Zeitdauer der Verarbeitung in verschiedenen Modulen zu. Dem dient auch der nächste Konfigurationsteil `[%-m:%-l]` , der das loggende Module und den _Loglevel_, also die Schwere des Fehlers nennt. Danach folgen die IP-Adresse des clients (` %-a`); eine eindeutige Identifikation des Requests (`%-L`); eine sogenannte Unique-ID, welche in späteren Anleitungen zur Korrelation von Requests dienen kann) und schliesslich die eigentliche Meldung, die wir mittels `%M` referenzieren.
 
 Mit _LogFormat_ definieren wir ein Format für das Zugriffs-Logfile. Wir nennen es _combined_. Dieses gängige Format schliesst Client-IP-Adresse, Zeitstempel, Methode, Pfad, HTTP-Version, HTTP-Status-Code, Antwort-Grösse, Referer und die Bezeichnung des Browsers (User-Agent) mit ein. Beim Zeitstempel wählen wir eine recht komplizierte Konstruktion. Der Grund ist der Wille, beim Error-Log und im Access-Log, die Timestamp in demselben Format anzeigen zu können. Während wir dazu im Error-Log aber eine einfache Identifikation haben, müssen wir den Zeitstempel im Falle des Access-Log-Formats mühsam konstruieren.
 
@@ -193,7 +193,7 @@ $> curl --verbose http://localhost/index.html
 * Connection #0 to host localhost left intact
 ```
 
-Die mit einem * bezeichneten Zeilen beschreiben den Aufbau und den Abbau der Verbindung. Dann folgt mit _>_ die Anfrage und mit _<_ die Antwort.
+Die mit einem * bezeichneten Zeilen beschreiben Meldungen zum Aufbau und Abbau der Verbindung. Sie geben keinen Netzwerkverkehr wieder. Dann folgt mit > die Anfrage und mit < die Antwort.
 
 Konrekt besteht eine HTTP-Anfrage aus 4 Teilen:
 
@@ -210,7 +210,7 @@ Zunächst folgt die _Status_-Zeile mit dem _Protokoll_ inklusive der Version, da
 
 Dann teilt der Server mit, wann das der Antwort zu Grunde liegende File zum letzten Mal verändert wurde; also die _Unix Modified-Timestamp_. _ETag_ und _Accept_-Ranges brauchen für den Moment nicht zu interessieren. Interessanter ist die _Content-Length_. Diese gibt an, wieviele Bytes im _Response-Body_ erwartet werden dürfen. In unserem Fall sind das 45 Bytes.
 
-Übrigens ist die Reihenfolge dieser Header charakteristisch für einen Webserver. Der NginX verwendet eine andere Reihenfolge und bringt den _Server-Header_ beispielsweise vor dem Datum. Apache lässt sich deshalb auch identifizieren, wenn die Server-Zeile uns in die Irre führen sollte.
+Übrigens ist die Reihenfolge dieser Header charakteristisch für einen Webserver. _NginX_ verwendet eine andere Reihenfolge und bringt den _Server-Header_ beispielsweise vor dem Datum. Apache lässt sich deshalb auch identifizieren, wenn die Server-Zeile uns in die Irre führen sollte.
 
 ###Schritt 7: Die Antwort noch etwas genauer untersuchen
 
@@ -250,9 +250,9 @@ $> curl   http://localhost/index.html --trace-ascii -
 == Info: Connection #0 to host localhost left intact
 ```
 
-Der Parameter _--trace-ascii_ benötigt ein File als Parameter, um darin einen _Ascii Dump_ der Kommunikation abzulegen. _-_ funktioniert als Shortcut zu _STDOUT_, so dass wir uns die Mitschrift einfach anzeigen lassen können.
+Der Parameter _--trace-ascii_ benötigt ein File als Parameter, um darin einen _Ascii Dump_ der Kommunikation abzulegen. "-" funktioniert als Shortcut zu _STDOUT_, so dass wir uns die Mitschrift einfach anzeigen lassen können.
 
-Gegenüber _verbose_ bringt _trace-ascii_ mehr Details zur Länge der übertragenen Bytes in der _Request-_ und _Response-_Phase. Die Request-Header umfassten in obigem Beispiel also 83 Bytes. Bei der Antwort werden die Bytes dann pro Header-Zeile gelistet und pauschal für den Body der Antwort: 45 Bytes. Das mag jetzt alles nach Haarspalterei klingen. Tatsächlich ist es aber bisweilen spielentscheidend, wenn man ein Stückchen vermisst und sich nicht ganz sicher ist, was wo in welcher Reihenfolge angeliefert wurde. So ist es etwa auffällig, dass bei den Headerzeilen jeweils 2 Bytes hinzukommen. Das sind der CR (Carriage Return) und NL (New Line), den das HTTP-Protokoll in den Header-Zeilen vorsieht. Anders im Response-Body, wo nur das retourniert wird, was tatsächlich in der Datei steht. Das ist hier offensichtlich nur ein CR ohne LF. Auf der Drittuntersten Zeile (_000: <html ..._) folgt auf das grösser-als-Zeichen ein Punkt. Dies ist eine Umschreibung des NL-Charakters der Antwort, der wie andere Escape-Sequenzen auch in der Form eines Punktes wiedergegeben wird.
+Gegenüber _verbose_ bringt _trace-ascii_ mehr Details zur Länge der übertragenen Bytes in der _Request_- und _Response_-Phase. Die Request-Header umfassten in obigem Beispiel also 83 Bytes. Bei der Antwort werden die Bytes dann pro Header-Zeile gelistet und pauschal für den Body der Antwort: 45 Bytes. Das mag jetzt alles nach Haarspalterei klingen. Tatsächlich ist es aber bisweilen spielentscheidend, wenn man ein Stückchen vermisst und sich nicht ganz sicher ist, was wo in welcher Reihenfolge angeliefert wurde. So ist es etwa auffällig, dass bei den Headerzeilen jeweils 2 Bytes hinzukommen. Das sind der CR (Carriage Return) und NL (New Line), den das HTTP-Protokoll in den Header-Zeilen vorsieht. Anders im Response-Body, wo nur das retourniert wird, was tatsächlich in der Datei steht. Das ist hier offensichtlich nur ein NL ohne CR. Auf der Drittuntersten Zeile (_000: <html ..._) folgt auf das grösser-als-Zeichen ein Punkt. Dies ist eine Umschreibung des NL-Charakters der Antwort, der wie andere Escape-Sequenzen auch in der Form eines Punktes wiedergegeben wird.
 
 
 ###Schritt 8: Mit Trace Methode arbeiten
