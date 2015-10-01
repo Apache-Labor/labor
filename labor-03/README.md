@@ -127,18 +127,19 @@ DocumentRoot            /apache/htdocs
 
 ```
 
-Ich beschreibe nicht die gesamte Konfiguration, nur die gegenüber Lektion 2 neu hinzugekommenen Direktiven. Neu lauschen wir neben dem Port 80 auch noch auf Port 443, dem _HTTPS-Port_. Wie erwartet ist das _SSL-_Modul neu hinzugeladen. Dann konfigurieren wird den Schlüssel und das Zertifikat mittels der Direktiven _SSLCertificateKeyFile_ und _SSLCertificateFile_. In der Protokollzeile (_SSLProtocol_) ist es sehr wichtig, das wir das ältere und unsichere Protokoll _SSLv2_ ausschalten, aber auch _SSLv3_ ist seit der _POODLE_ Attacke nicht mehr länger sicher. Am Besten wäre es, nurmehr _TLSv1.2_ zuzulassen, aber das beherrschen noch nicht alle Browser. Wir schliessen also einfach _SSLv2_ sowie _SSLv3_ vom Gebrauch aus. Die Verschlüsselung geschieht durch einen Satz von mehreren Algorithmen. Diese kryptographischen Algorithmen definieren wir mit der sogenannten _Cipher-Suite_. Es ist wichtig, eine saubere _Cipher-Suite_ zu verwenden, den hier setzen Abhörangriffe typischerweise an: Sie nützen die Schwächen und die zu geringe Schlüssellänge älterer Algorithmen aus. Eine sehr eingeschränkte Suite verhindert allerdings, dass ältere Browser auf unseren Server zugreifen können. Die vorgeschlagene _Cipher-Suite_ weist eine hohe Sicherheit auf und berücksichtigt auch einige ältere Browser ab Windows Vista.
+Ich beschreibe nicht die gesamte Konfiguration; nur die gegenüber Lektion 2 hinzugekommenen Direktiven. Neu lauschen wir neben dem Port 80 auch noch auf Port 443; dem _HTTPS-Port_. Wie erwartet ist das _SSL-_Modul neu hinzugeladen. Dann konfigurieren wird den Schlüssel und das Zertifikat mittels der Direktiven _SSLCertificateKeyFile_ und _SSLCertificateFile_. In der Protokollzeile (_SSLProtocol_) ist es sehr wichtig, das wir das ältere und unsichere Protokoll _SSLv2_ ausschalten, aber auch _SSLv3_ ist seit der _POODLE_ Attacke nicht mehr länger sicher. Am Besten wäre es, nurmehr _TLSv1.2_ zuzulassen, aber das beherrschen noch nicht alle Browser. Wir schliessen also einfach _SSLv2_ sowie _SSLv3_ vom Gebrauch aus und lassen damit zur Zeit faktisch TLSv1, das sehr seltene TLSv1.1 sowie das quantitativ dominierende TLSv1.2 zu. Der Handshake und die Verschlüsselung geschieht durch einen Satz von mehreren Algorithmen. Diese kryptographischen Algorithmen definieren wir mit der sogenannten _Cipher-Suite_. Es ist wichtig, eine saubere _Cipher-Suite_ zu verwenden, denn an dieser Stelle setzen Abhörangriffe typischerweise an: Sie nützen die Schwächen und die zu geringe Schlüssellänge älterer Algorithmen aus. Eine sehr eingeschränkte Suite verhindert allerdings, dass ältere Browser auf unseren Server zugreifen können. Die vorgeschlagene _Cipher-Suite_ weist eine hohe Sicherheit auf und berücksichtigt auch einige ältere Browser ab Windows Vista. Windows XP und sehr alte Android-Versionen schliessen wir damit von der Kommunikation aus.
 
-Darauf folgt die Direktive _SSLHonorCipherOrder_. Sie ist von hoher Wichtigkeit. Man spricht bei SSL oft von _Downgrade Attacks_. Dabei versucht ein Angreifer, ein sogenannter Mittelsmannangreifer, in den Verkehr einzugreifen und beim Handshake die Parameter so zu beeinflussen, dass zum Schluss ein schlechteres Protokoll verwendet wird. Diese Direktive verhindert diese Angriffsart indem auf der Protokoll-Präferenz unseres Servers bestanden wird.
+Im Kern der _Cipher-Suite_ stehen die Algorithmen der Gruppe _HIGH_. Das ist die Gruppe der hochwertigen Ciphers, welche _OpenSSL_ uns via das _SSL-Modul_ zur Verfügung stellt. Die vor diesem Schlüsselwort angeführten Algorithmen, welche an sich auch Teil der _HIGH-Gruppe_ sind, erhalten durch das Voranstellen die Priorität. Danach fügem dir den Hashing-Algorithmus _SHA_ hinzu und schliessen dann eine Reihe von Algorithmen aus, die aus dem einen oder anderen Grund in unserer _Cipher-Suite_ nicht erwünscht sind.
 
-Verschlüsselung arbeitet mit Zufallszahlen. Der Zufallszahlengenerator will korrekt gestartet und benützt werden, wozu die Direktive _SSLRandomSeed_ dient. Dies ist wieder ein Punkt wo Performance und Sicherheit bedacht werden wollen. Beim Starten des Servers greifen wir auf die Zufallszahlen des Betriebssystems in _/dev/urandom_ zu. Während des Betriebs des Servers, beim _SSL-Handshake_ verwenden wir dann die apache-eigene Quelle für Zufallszahlen. Zwar ist _/dev/urandom_ nicht die allerbeste Quelle für Zufallszahlen, aber es ist eine schnelle Quelle und zudem eine, die eine bestimmte Menge Entropie garantiert. Die qualitativ bessere Quelle _/dev/random_ könnte unseren Server unter widrigen Umständen beim Start blockieren, da nicht genügend Daten vorhanden sind.
+Darauf folgt die Direktive _SSLHonorCipherOrder_. Sie ist von hoher Wichtigkeit. Man spricht bei SSL oft von _Downgrade Attacks_. Dabei versucht ein Angreifer, ein sogenannter Mittelsmann oder Man-in-the-Middle, in den Verkehr einzugreifen und beim Handshake die Parameter so zu beeinflussen, dass zum Schluss ein schlechteres Protokoll verwendet wird als eigentlich möglich wäre. Namentlich die in der _Cipher-Suite_ festgelegte Priorisierung wird damit ausgehebelt. Die Direktive _SSLHonorCipherOrder_ verhindert diese Angriffsart, indem auf der Algorithmen-Präferenz unseres Servers bestanden wird.
 
-Wir haben auch noch einen zweiten _Virtual-Host_ eingeführt. Er gleicht dem _Virtual-Host_ für Port 80 sehr stark. Die Portnummer ist allerdings anders und wir aktivieren die _SSL-Engine_, die uns die Verschlüsselung des Verkehrs liefert.
+Verschlüsselung arbeitet mit Zufallszahlen. Der Zufallszahlengenerator will korrekt gestartet und benützt werden, wozu die Direktive _SSLRandomSeed_ dient. Dies ist wieder ein Punkt wo Performance und Sicherheit bedacht werden wollen. Beim Starten des Servers greifen wir auf die Zufallszahlen des Betriebssystems in _/dev/urandom_ zu. Während des Betriebs des Servers, beim _SSL-Handshake_ verwenden wir dann die apache-eigene Quelle für Zufallszahlen (_builtin_), die sich aus dem Verkehr des Servers speist. Zwar ist _/dev/urandom_ nicht die allerbeste Quelle für Zufallszahlen, aber es ist eine schnelle Quelle und zudem eine, die eine bestimmte Menge Entropie garantiert. Die qualitativ bessere Quelle _/dev/random_ könnte unseren Server unter widrigen Umständen beim Start blockieren, da nicht genügend Daten vorhanden sind, weshalb in aller Regel _/dev/urandom_ bevorzugt wird.
 
+Wir haben auch noch einen zweiten _Virtual-Host_ eingeführt. Er gleicht dem _Virtual-Host_ für Port 80 sehr stark. Die Portnummer ist aber _443_ und wir aktivieren die _SSL-Engine_, die uns die Verschlüsselung des Verkehrs liefert und die oben gesetzen Konfigurationen erst aktiviert.
 
 ###Schritt 2: Ausprobieren
 
-Zu Übungszwecken haben wir unseren Testserver erneut auf der lokalen IP-Adresse _127.0.0.1_ konfiguriert. Probieren wir es also aus:
+Zu Übungszwecken haben wir unseren Testserver wie in den vorangegangenen Lektionen auf der lokalen IP-Adresse _127.0.0.1_ konfiguriert. Probieren wir es also aus:
 
 ```bash
 $> curl -v https://127.0.0.1/index.html
@@ -169,8 +170,8 @@ $> curl -v https://127.0.0.1/index.html
 curl: (51) SSL: certificate subject name 'myhost.home' does not match target host name '127.0.0.1'
 ```
 
-Leider waren wir also noch nicht erfolgreich. Kein Wunder, denn wir haben einen Server unter der IP Adresse
-_127.0.0.1_ angesprochen, er hat sich bei uns aber mit einem Zerifikat für _myhost.home_ gemeldet.
+Leider waren wir noch nicht erfolgreich. Kein Wunder, denn wir haben einen Server unter der IP Adresse
+_127.0.0.1_ angesprochen, er hat sich bei uns aber mit einem Zerifikat für _myhost.home_ gemeldet. Ein typischer Fall eines Handshake-Fehlers.
 
 Wir können _curl_ instruieren, den Fehler zu ignorieren dennoch eine Verbindung herzustellen. Dies geschieht mit dem Flag _--insecure_, respektive _-k_.:
 
@@ -218,7 +219,7 @@ curl -v -k https://127.0.0.1/index.html
 
 ```
 
-Nun klappt es also und unser SSL-Server läuft.
+Nun klappt es also und unser SSL-Server läuft. Freilich mit einem faulen Zertifikat und wir sind damit weit von einem produktiven Einsatz entfernt.
 
 Im Folgenden geht es nun darum, ein offizielles Zertifikat zu beziehen, dieses dann korrekt zu installieren und unsere
 Konfiguration noch etwas zu verfeinern.
@@ -227,9 +228,9 @@ Konfiguration noch etwas zu verfeinern.
 
 ###Schritt 3a: SSL Schlüssel und Zertifikat beziehen
 
-HTTPS ist das bekannte HTTP Protokoll um eine SSL-Schicht erweitert. Technisch wurde SSL (_Secure Socket Layer_) zwar heute von TLS (_Transport Security Layer_) ersetzt, aber man spricht dennoch immer noch von SSL. Das Protokoll garantiert verschlüsselten und damit abhörsicheren Datenverkehr. Der Verkehr wird symmetrisch verschlüsselt, was einen hohen Durchsatz garantiert, setzt aber im Fall von HTTPS einen Public-/Private-Key Setup voraus, der den sicheren Austausch der symmetrischen Schlüssel durch sich zuvor unbekannte Kommunikationspartner voraus. Dieser Public-/Private-Key Setup geschieht durch ein Serverzertifikat, das durch eine offizielle Stelle signiert werden muss.
+HTTPS erweitert das bekannte HTTP Protokoll um eine SSL-Schicht. Technisch wurde SSL (_Secure Socket Layer_) zwar heute von TLS (_Transport Security Layer_) ersetzt, aber man spricht dennoch immer noch von SSL. Das Protokoll garantiert verschlüsselten und damit abhörsicheren Datenverkehr. Der Verkehr wird symmetrisch verschlüsselt, was einen hohen Durchsatz garantiert, setzt aber im Fall von HTTPS einen Public-/Private-Key Setup voraus, der den sicheren Austausch der symmetrischen Schlüssel durch sich zuvor unbekannte Kommunikationspartner voraus. Dieser Public-/Private-Key Handshake geschieht mit Hilfe eines Serverzertifikats, das durch eine offizielle Stelle signiert werden muss.
 
-Serverzertifikate existieren in verschiedenen Formen, Validierungen und Gültigkeitsbereichen. Nicht jedes Merkmal ist wirklich technischer Natur, das Marketing spielt auch eine Rolle. Die Preisunterschiede sind sehr gross, weshalb sich ein Vergleich lohnt. Für unseren Test-Setup verwenden wir ein freies Zertifikat, das wir aber dennoch offiziell beglaubigen lassen. Bei <a href="https://www.startssl.com">_StartSSL_</a> lässt sich beides einfach und ohne Bezahlung mit einer Laufzeit von 12 Monaten beziehen. _StartSSL_ steht immer wieder in der Kritik, weshalb dieser Gratis-Service keinen guten Ruf besitzt. Es ist allerdings ein einfacher Weg, um zu einem offiziellen Zertifikat zu kommen und vergleichbare Gratis-Angebote haben Laufzeiten von 90 Tagen und weniger. 
+Serverzertifikate existieren in verschiedenen Formen, Validierungen und Gültigkeitsbereichen. Nicht jedes Merkmal ist wirklich technischer Natur, das Marketing spielt auch eine Rolle. Die Preisunterschiede sind sehr gross, weshalb sich ein Vergleich lohnt. Für unseren Test-Setup verwenden wir ein freies Zertifikat, das wir aber dennoch offiziell beglaubigen lassen. Bei <a href="https://www.startssl.com">_StartSSL_</a> lässt sich beides einfach und ohne Bezahlung mit einer Laufzeit von 12 Monaten beziehen. _StartSSL_ steht immer wieder in der Kritik, weshalb dieser Gratis-Service keinen guten Ruf besitzt. Es ist allerdings ein einfacher Weg, um zu einem offiziellen Zertifikat für einen Test-Server zu kommen und vergleichbare Gratis-Angebote haben Laufzeiten von 90 Tagen und weniger. 
 
 Dieses Zertifikat ist an sich auch für einen sicheren Einsatz auf einem produktiven Server geeignet, allerdings tut man bis heute meist gut daran, ein qualifiziertere _Certificate Authority_ zu benützen als die vorgeschlagene. Für den 16. November 2015 ist die Eröffnung von _Let's Encrypt_ angekündigt. Dies ist eine _CA_, welche ausschliesslich gratis-Zertifikate anbieten will. Sobald _Let's Encrypt_ erfolgreich aktiv ist, wird diese Anleitung hier angepasst werden.
 
@@ -239,21 +240,23 @@ Zur Zeit kommt man über die folgenden Schritte zu einem Server-Zertifikat:
 
 * Registrieren
 * Persönliche Email-Adresse überprüfen
-* Zertifikats-Erstellung starten
+* Zertifikats- und Schlüssel-Erstellung starten
 * Berechtigung für Domäne überprüfen
-* Zertifikats-Erstellung abschliessen
+* Zertifikats- und Schlüssel-Erstellung abschliessen
 * Zertifikat signieren
+* Signiertes Zertifikat und Schlüssel herunterladen und installieren
 
-
-Es ist durchaus üblich, ein Zertifikat selbst zu erstellen und es dann online nur noch signieren zu lassen. _StartSSL_ lässt diese flexible Option als Alternative auch zu. Allerdings ist die Möglichkeit auch das Zertifikat selbst online erstellen zu lassen sehr hilfreich. Wichtig ist in beiden Varianten, dass man den Schlüssel durch ein starkes Passwort schützt. Dieses Passwort benötigen wir später bei der Konfiguration des Servers.
+Neben diesem Ablauf ist durchaus üblich, ein Zertifikat selbst zu erstellen und es dann online nur noch signieren zu lassen. _StartSSL_ lässt diese flexible Option als Alternative auch zu. Wichtig ist in beiden Varianten, dass man den Schlüssel durch ein starkes Passwort schützt. Dieses Passwort benötigen wir später bei der Konfiguration des Servers.
 
 ###Schritt 3b: Zertifikat selbst erstellen und offiziell signieren lassen
 
-Bei _StartSSL_ lassen sich auch Zertifikate zu selbst erstellen Schlüsseln signieren. Dies bietet einem zusätzliche Möglichkeiten beim Design des Zertifikats. Wenn man also ein Super Zertifikat möchte, eines das in der Sonne einen solchen speziellen Glanz versprüht, dann ist dies ein guter Weg. Einen sehr guten Schlüssel generieren wir wie folgt:
+Bei _StartSSL_ lassen sich auch Zertifikate von selbst erstellen Schlüsseln signieren. Dies bietet einem zusätzliche Möglichkeiten bei der Konstruktion des Zertifikats. Wenn man also ein Super-Zertifikat möchte, eines das in der Sonne glänzt und neidige Blicke erntet, dann ist dies ein passemder Weg. Einen sehr guten Schlüssel generieren wir wie folgt:
 
 ```bash
 $> openssl genrsa -des3 -out server.key 2048
 ```
+
+FIXME des3???
 
 Die Generierung des Schlüssels dürfte einen Moment in Anspruch nehmen, denn eine Länge von 2048 wie angegeben ist ziemlich gross und die notwendige Entropie muss erst gefunden werden. Es wäre auch möglich, mit einer Länge von 4096 zu arbeiten, aber der geringe cryptographische Mehrwert wird durch eine mehrfach schlechtere Performance erkauft. Wir erwarten folgenden Ablauf des Aufrufs:
  
@@ -310,7 +313,7 @@ Die Funktionsweise des _SSL/TLS_-Protokolls ist anspruchsvoll. Eine gute Einfüh
 $> wget https://www.startssl.com/certs/sub.class1.server.ca.pem -O startssl-class1-chain-ca.pem
 ```
 
-Ich wähle hier einen etwas andere Datei-Namen als vorgegeben. Wir gewinnen dadurch an Klarheit. Die signierten Dateien werden dann aneinandergereiht. Gemeinsam bilden die Signaturen auf den Zertifikaten dann die Vertrauenskette oder eine sogenannte Signierungskette. 
+Ich wähle beim Herunterladen einen etwas anderen Datei-Namen als vorgegeben. Wir gewinnen dadurch an Klarheit für die Konfiguration. Die signierten Dateien werden bei der Überprüfung durch den Client aneinandergereiht. Gemeinsam bilden die Signaturen auf den Zertifikaten dann die Vertrauenskette von unserem Zertifikat zur _Certificate Authority_.
 
 
 ###Schritt 5: SSL Schlüssel und Zertifikate installieren
@@ -333,17 +336,18 @@ $> chmod 700 /apache/conf/ssl.crt
 $> mv server.crt /apache/conf/ssl.crt
 $> chmod 400 /apache/conf/ssl.crt/server.crt
 $> mv startssl-class1-chain-ca.pem /apache/conf/ssl.crt/
+$> chown -R root:root /apache/conf/ssl.*/
 ```
 
 ###Schritt 6: Passphrase Dialog automatisch beantworten
 
 Beim Beziehen des Schlüssels mussten wir eine Passphrase definieren, um den Schlüssel zu entsperren. Damit unser Webserver den Schlüssel benutzen kann müssen wir 
-ihm dieses Passwort bekannt geben. Er wird uns beim Starten des Servers danach fragen. Möchten wir das nicht, dann müssen wir es in der Konfiguration mit angeben. 
+ihm diesen Code bekannt geben. Er wird uns beim Starten des Servers danach fragen. Möchten wir das nicht, dann müssen wir es in der Konfiguration mit angeben. 
 Wir tun dies mittels einer separaten Datei, die auf Anfrage die Passphrase liefert. Nennen wir diese Datei _/apache/bin/gen_passphrase.sh_ und tragen wir die oben gewählte  Passphrase ein:
 
 ```bash
 #!/bin/sh
-echo "S7rh29Hj3def-07h"
+echo "S7rh29Hj3def-07hdkBgj4jDfg_skDg$48JuPhd"
 ```
 
 Diese Datei muss speziell gesichert und vor fremden Augen geschützt werden.
@@ -376,7 +380,9 @@ SSLRandomSeed           startup file:/dev/urandom 2048
 SSLRandomSeed           connect builtin
 
 SSLSessionCache         nonenotnull
-SSLSessionTickets	Off
+SSLSessionTickets	On
+
+FIXME: Good default values
 
 ...
 
@@ -390,9 +396,9 @@ SSLSessionTickets	Off
 
 Sinnvoll ist es, den mit dem Zertifikat übereinstimmenden _ServerName_ auch im _VirtualHost_ bekanntzugeben. Wenn wir das nicht tun, wird Apache eine Warnung ausgeben (und dann dennoch den einzigen konfigurierten VirtualHost wählen und korrekt weiterfunktionieren).
 
-Neu hinzugekommen sind auch die beiden Optionen _SSLSessionCache_ sowie _SSLSessionTickets_. Die beiden Direktiven kontrollieren das Verhalten des SSL Session Caches. Das funktioniert folgendermassen: Während des SSL Handshakes werden Parameter der Verbindung wie etwa der Schlüssel und ein Verschlüsselungsalgorithmus ausgehandelt. Dies geschieht im Public-Key Modus, der sehr rechenintensiv ist. Ist der Handshake erfolgreich beendet, verkehrt der Server mit dem Client über die performantere symmetrische Verschlüsselung mit Hilfe der eben ausgehandelten Parameter. Ist der Request beendet und die _Keep-Alive_ Periode ohne neue Anfrage verstrichen, dann geht die Verbindung verloren. Wird sie kurze Zeit später neu aufgebaut, müssen die Parameter im Prinzip neu ausgehandelt werden. Das ist aufwändig, wie wir eben gesehen haben. Besser wäre es, man könnte die vormals ausgehandelten Parameter re-aktivieren. Diese Möglichkeit besteht in der Form eines SSL Session Caches. Traditionell wird dieser Cache serverseitig verwaltet und der Client kann sich mittels der SSL Session ID (FIXME?) darauf beziehen. In der Vergangenheit kam es bei diesem Cache mehrmals zu Sicherheitsproblemen, weshalb man zum Schluss kommen kann, dass man darauf verzichten möchte.
+Neu hinzugekommen sind auch die beiden Optionen _SSLSessionCache_ sowie _SSLSessionTickets_. Die beiden Direktiven kontrollieren das Verhalten des _SSL Session Caches_. Das funktioniert folgendermassen: Während des SSL Handshakes werden Parameter der Verbindung wie etwa der Schlüssel und ein Verschlüsselungsalgorithmus ausgehandelt. Dies geschieht im Public-Key Modus, der sehr rechenintensiv ist. Ist der Handshake erfolgreich beendet, verkehrt der Server mit dem Client über die performantere symmetrische Verschlüsselung mit Hilfe der eben ausgehandelten Parameter. Ist der Request beendet und die _Keep-Alive_ Periode ohne neue Anfrage verstrichen, dann gehen die TCP-Verbindung und die mit der Verbindung verhängten Parameter verloren. Wird die Verbindung kurze Zeit später neu aufgebaut, müssen die Parameter neu ausgehandelt werden. Das ist aufwändig, wie wir eben gesehen haben. Besser wäre es, man könnte die vormals ausgehandelten Parameter re-aktivieren. Diese Möglichkeit besteht in der Form des _SSL Session Caches_. Traditionell wird dieser Cache serverseitig verwaltet und der Client kann sich mittels der SSL Session ID (FIXME?) darauf beziehen. In der Vergangenheit kam es bei diesem Cache mehrmals zu Sicherheitsproblemen, weshalb man zum Schluss kommen kann, dass man darauf verzichten möchte.
 
-Beim Session Cache via Tickets werden die Parameter in einem Session Ticket zusammengefasst und dem Client übergeben, wo sie clientseitig gespeichert werden. Beim Aufbau einer neuen Verbindung sendet der Client die Parameter während des Handshakes an den Server und dieser konfiguriert die Verbindung entsprechend. Um eine Manipulation der Parameter im Ticket zu verhindern, signiert der Server das Ticket vorgängig und überprüft es beim Aufbei einer Verbindung wieder
+Beim Session Cache via Tickets werden die Parameter in einem Session Ticket zusammengefasst und dem Client übergeben, wo sie clientseitig gespeichert werden. Beim Aufbau einer neuen Verbindung sendet der Client die Parameter an den Server und dieser konfiguriert die Verbindung entsprechend. Um eine Manipulation der Parameter im Ticket zu verhindern, signiert der Server das Ticket vorgängig und überprüft es beim Aufbei einer Verbindung wieder
 
 SSL Session Tickets sind jünger und bis dato weniger fehlerbehaftet. Das ändert aber nichts an der Tatsache, dass zumindest eine theoretische Verwundbarkeit besteht, indem die Session Parameter clientseitig gestohlen werden können. 
 
@@ -403,7 +409,7 @@ SSLSessionCache         nonenotnull
 SSLSessionTickets	Off
 ```
 
-Natürlich bleibt diese nicht ohne Folgen für die Performance.
+Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance.
 
 
 ###Schritt 8: Ausprobieren
