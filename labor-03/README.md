@@ -367,6 +367,10 @@ ServerName		www.example.com
 
 ...
 
+LoadModule              socache_shmcb_module    modules/mod_socache_shmcb.so
+
+...
+
 SSLCertificateKeyFile   conf/ssl.key/server.key
 SSLCertificateFile      conf/ssl.crt/server.crt
 SSLCertificateChainFile conf/ssl.crt/startssl-class1-chain-ca.pem
@@ -379,10 +383,9 @@ SSLHonorCipherOrder	On
 SSLRandomSeed           startup file:/dev/urandom 2048
 SSLRandomSeed           connect builtin
 
-SSLSessionCache         nonenotnull
+SSLSessionCache 	"shmcb:/apache/logs/ssl_gcache_data(1024000)"
 SSLSessionTickets	On
 
-FIXME: Good default values
 
 ...
 
@@ -396,11 +399,11 @@ FIXME: Good default values
 
 Sinnvoll ist es, den mit dem Zertifikat übereinstimmenden _ServerName_ auch im _VirtualHost_ bekanntzugeben. Wenn wir das nicht tun, wird Apache eine Warnung ausgeben (und dann dennoch den einzigen konfigurierten VirtualHost wählen und korrekt weiterfunktionieren).
 
-Neu hinzugekommen sind auch die beiden Optionen _SSLSessionCache_ sowie _SSLSessionTickets_. Die beiden Direktiven kontrollieren das Verhalten des _SSL Session Caches_. Das funktioniert folgendermassen: Während des SSL Handshakes werden Parameter der Verbindung wie etwa der Schlüssel und ein Verschlüsselungsalgorithmus ausgehandelt. Dies geschieht im Public-Key Modus, der sehr rechenintensiv ist. Ist der Handshake erfolgreich beendet, verkehrt der Server mit dem Client über die performantere symmetrische Verschlüsselung mit Hilfe der eben ausgehandelten Parameter. Ist der Request beendet und die _Keep-Alive_ Periode ohne neue Anfrage verstrichen, dann gehen die TCP-Verbindung und die mit der Verbindung verhängten Parameter verloren. Wird die Verbindung kurze Zeit später neu aufgebaut, müssen die Parameter neu ausgehandelt werden. Das ist aufwändig, wie wir eben gesehen haben. Besser wäre es, man könnte die vormals ausgehandelten Parameter re-aktivieren. Diese Möglichkeit besteht in der Form des _SSL Session Caches_. Traditionell wird dieser Cache serverseitig verwaltet und der Client kann sich mittels der SSL Session ID (FIXME?) darauf beziehen. In der Vergangenheit kam es bei diesem Cache mehrmals zu Sicherheitsproblemen, weshalb man zum Schluss kommen kann, dass man darauf verzichten möchte.
+Neu hinzugekommen sind auch die beiden Optionen _SSLSessionCache_ sowie _SSLSessionTickets_. Die beiden Direktiven kontrollieren das Verhalten des _SSL Session Caches_. Voraussetzung für den Cache ist das Modul *socache_shmcb*, welches die Caching-Funktionalität zur Verfügung stellt und von *mod_ssl* angesprochen wird. Das funktioniert folgendermassen: Während des SSL Handshakes werden Parameter der Verbindung wie etwa der Schlüssel und ein Verschlüsselungsalgorithmus ausgehandelt. Dies geschieht im Public-Key Modus, der sehr rechenintensiv ist. Ist der Handshake erfolgreich beendet, verkehrt der Server mit dem Client über die performantere symmetrische Verschlüsselung mit Hilfe der eben ausgehandelten Parameter. Ist der Request beendet und die _Keep-Alive_ Periode ohne neue Anfrage verstrichen, dann gehen die TCP-Verbindung und die mit der Verbindung verhängten Parameter verloren. Wird die Verbindung kurze Zeit später neu aufgebaut, müssen die Parameter neu ausgehandelt werden. Das ist aufwändig, wie wir eben gesehen haben. Besser wäre es, man könnte die vormals ausgehandelten Parameter re-aktivieren. Diese Möglichkeit besteht in der Form des _SSL Session Caches_. Traditionell wird dieser Cache serverseitig verwaltet.
 
-Beim Session Cache via Tickets werden die Parameter in einem Session Ticket zusammengefasst und dem Client übergeben, wo sie clientseitig gespeichert werden. Beim Aufbau einer neuen Verbindung sendet der Client die Parameter an den Server und dieser konfiguriert die Verbindung entsprechend. Um eine Manipulation der Parameter im Ticket zu verhindern, signiert der Server das Ticket vorgängig und überprüft es beim Aufbei einer Verbindung wieder
+Beim Session Cache via Tickets werden die Parameter in einem Session Ticket zusammengefasst und dem Client übergeben, wo sie clientseitig gespeichert werden, was auf dem Webserver Speicherplatz spart. Beim Aufbau einer neuen Verbindung sendet der Client die Parameter an den Server und dieser konfiguriert die Verbindung entsprechend. Um eine Manipulation der Parameter im Ticket zu verhindern, signiert der Server das Ticket vorgängig und überprüft es beim Aufbei einer Verbindung wieder. Bei diesem Mechanismus ist daran zu denken, dass die Signatur von einem Signierschlüssel anhängt und es sinnvoll ist, diesen meist dynamisch erzeugten Schlüssel regelmässig zu erneuern. Ein neues Laden des Server gewährleistet dies.
 
-SSL Session Tickets sind jünger und bis dato weniger fehlerbehaftet. Das ändert aber nichts an der Tatsache, dass zumindest eine theoretische Verwundbarkeit besteht, indem die Session Parameter clientseitig gestohlen werden können. 
+SSL Session Tickets sind jünger und nunmehr von allen relevanten Browsern unterstützt. Sie gelten auch als sicher. Das ändert aber nichts an der Tatsache, dass zumindest eine theoretische Verwundbarkeit besteht, indem die Session Parameter clientseitig gestohlen werden können. 
 
 Beide Varianten des Session Caches lassen sich ausschalten. Dies geschieht wie folgt: 
 
@@ -409,7 +412,7 @@ SSLSessionCache         nonenotnull
 SSLSessionTickets	Off
 ```
 
-Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance.
+Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance. Allerdings nimmt sich der Performance-Verlust durchaus klein aus. Es wäre überraschend, wenn ein Last-Test auf das Ausschalten mit einem Leistungsrückgang von mehr als 10% reagieren würde.
 
 
 ###Schritt 8: Ausprobieren
@@ -428,7 +431,7 @@ $> wget https://www.startssl.com/certs/ca.pem
 ...
 $> openssl s_client -showcerts -CAfile ca.pem -connect www.example.com:443
 ```
-Wir instruieren _OpenSSL_, den eingebauten client zu verwenden, uns die vollen Zertifikatsinformationen zu zeigen, das eben heruntergeladene CA-Zertifikat zu verwenden und mit diesen Parametern auf unseren Server zuzugreifen. Im optimalen Fall sieht der Output (leicht gekürzt) wie folgt aus:
+Hier instruieren _OpenSSL_, den eingebauten client zu verwenden, uns die vollen Zertifikatsinformationen zu zeigen, das eben heruntergeladene CA-Zertifikat zu verwenden und mit diesen Parametern auf unseren Server zuzugreifen. Im optimalen Fall sieht der Output (leicht gekürzt) wie folgt aus:
 
 ```bash
 CONNECTED(00000003)
@@ -490,8 +493,8 @@ Interessanterweise gibt es im Internet so etwas wie eine Hitparade, was sichere 
 
 Ivan Ristić, der oben erwähnte Autor von mehreren Büchern über Apache und SSL betreibt im Netz einen Analyse-Service zur Konfiguration von _SSL-Webservern_. Er befindet sich bei [www.ssllabs.com](https://www.ssllabs.com/ssldb/index.html). Ein Webserver wie oben konfiguriert und mit einem Gratis-Zertifikat von StartSSL brachte mir im Test die Höchstnote von _A+_ ein.
 
-FIXME: IMAGE
-<span class="caption">So weit kann man mit einem sorgfältig konfigurierten Apache gelangen.</span>
+![Screenshot: It works!](./apache-tutorial-03-screenshot-ssllabs.png)
+So weit kann man mit einem sorgfältig konfigurierten Apache gelangen.
 
 ###Verweise
 
