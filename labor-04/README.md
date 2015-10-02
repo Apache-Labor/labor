@@ -1,12 +1,7 @@
-<div class="floatbox">
-Titel: Das Zugriffslog ausbauen<br/>
-Author: FIXME: <a href="mailto:christian.folini@netnea.com">Christian Folini</a><br/>
-Tutorial Nr: 5<br/>
-Erscheinungsdatum: 2. Februar 2012<br/>
-Schwierigkeit: Einfach<br/>
-Dauer: 1/2h<br/>
-</div>
+##Das Zugriffslog Ausbauen
+
 ###Was machen wir?
+
 Wir definieren ein stark erweitertes Logformat, um den Verkehr besser überwachen zu können.
 
 ###Warum tun wir das?
@@ -20,9 +15,10 @@ oft zusätzliche Informationen benötigt, die sich leicht im Zugriffslog
 
 ###Voraussetzungen
 
-* Ein Apache Webserver, idealerweise mit einem File-Layout wie bei FIXME: <a href="?q=apache_tutorial_1_apache_compilieren">Lektion 1 (Compilieren eines Apache Servers)</a>, erstellt.
-* Verständnis der minimalen Konfiguration in FIXME: <a href="?q=apache_tutorial_2_apache_minimal_konfigurieren">Lektion 2 (Apache minimal Konfigurieren)</a>.
 
+* Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](http://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
+* Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](http://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
+* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)[http://www.netnea.com/cms/apache_tutorial_4_konfigurieren_eines_ssl_servers]
 
 ###Schritt 1: Logformat Common verstehen
 
@@ -59,7 +55,7 @@ die Identifizierung eines
 Clients durch einen _ident_-Zugriff auf den Client. Dies wird von
 den Clients kaum unterstützt und führt zu grossen Performance-Engpässen,
 weshalb es sich beim _%l_ um ein Artefakt aus den frühen 1990er
-Jahren handelt.
+Jahren handelt. 
 
 _%u_ ist gebräuchlicher und bezeichnet den Usernamen eines
 authentifizierten Users. Der Name wird durch ein
@@ -119,7 +115,7 @@ Konkret folgt die Zeile diesem Muster:
 Methode URI Protokoll
 ```
 
-In der Praxis lautet ein einfaches Beispiel wie folgt:
+In der Praxis lautet ein einfaches Beispiel also wie folgt:
 
 ```bash
 GET /index.html HTTP/1.1
@@ -131,8 +127,8 @@ die Index-Datei. Optional kann der Client bekanntlich noch einen
 _Query-String_ an dem Pfad anhängen. Dieser _Query-String_
 wird im Logformat auch wiedergegeben. Schliesslich das Protokoll, das
 in aller Regel HTTP in der Version 1.1 lautet. Zum Teil wird aber
-gerade von Agents, also automatisierten Skripten, die Version 1.0
-verwendet.
+gerade von Agents, also automatisierten Skripten, nach wie vor
+die Version 1.0 verwendet.
 
 Das folgende Format-Element folgt einem etwas anderen Muster: _%>s_.
 Dies meint den Status der Antwort, also etwa _200_ für
@@ -157,16 +153,16 @@ loggen, also folgender - in der Praxis ebenfalls unüblicher - Eintrag:
 ```
 
 _%b_ ist das letzte Element des Logformats _common_. Es
-gibt die Zahl der im Content-Length Response Headers angekündigten Bytes.  Bei einer Anfrage
+gibt die Zahl der im Content-Length Response Headers angekündigten Bytes wieder.  Bei einer Anfrage
 an _http://www.example.com/index.html_ entspricht dieser Wert der Grösse
 der Datei _index.html_. Die ebenfalls übertragenen _Response-Header_ werden
-nicht angegeben. Dazu kommt, dass diese Zahl nur eine Ankündigung wiedergibt und keine
+nicht mitgezählt. Dazu kommt, dass diese Zahl nur eine Ankündigung wiedergibt und keine
 Garantie darstellt, dass diese Daten auch wirklich übertragen wurden.
 
 
 ###Schritt 2: Logformat Combined verstehen
 
-Das Logformat _combined_ baut auf dem Logformat _common_ auf und
+Das am weitesten verbreitete Logformat _combined_ baut auf dem Logformat _common_ auf und
 erweitert es um zwei Elemente.
 
 ```bash
@@ -176,7 +172,7 @@ CustomLog logs/access.log combined
 ```
  
 Das Element _\"%{Referer}i\"_ bezeichnet den Referrer. Er wird in
-Anführungszeichen wiedergegeben. Der Referrer bezeichnet diejenige
+Anführungszeichen wiedergegeben. Der Referrer meint diejenige
 Resource, von der aus ursprünglich der jetzt erfolgte Request ausgelöst
 wurde. Diese komplizierte Umschreibung lässt sich an einem Beispiel
 besser Umschreiben. Wenn man in einer Suchmaschine einen Link anklickt,
@@ -189,14 +185,16 @@ geladen wird, dann geht der Referrer normalerweise auf
 _shop.example.com_. Bei alledem ist aber zu beachten, dass der
 Referrer ein Teil der Anfrage des Clients ist. Der Client ist
 angehalten, sich an das Protokoll und die Konventionen zu halten,
-tatsächlich kann er aber beliebige Informationen senden.
+tatsächlich kann er aber beliebige Informationen senden, weshalb man
+sich in Sicherheitsfragen nicht auf Header wie diesen verlassen darf.
 
 _\"%{User-agent}i\"_ schliesslich meint den sogenannten User-Agent des Clients,
 der wiederum in Anführungszeichen gesetzt wird.
 Auch dies ist wieder ein Wert, der durch den Client kontrolliert wird,
 und auf den wir uns nicht zu sehr verlassen sollten. Mit dem User-Agent
 ist die Browser-Software des Clients gemeint; normalerweise angereichert
-um die Version und diverse installierte Plugins. Das führt zu sehr
+um die Version, die Rendering Engine, verschiedene Kompatibilitätsangaben
+mit anderen Browsern und diverse installierte Plugins. Das führt zu sehr
 langen User-Agent-Einträgen und kann im Einzelfall so viele
 Informationen enhalten, dass ein individueller Client sich darüber
 eindeutig identifizieren lässt, weil er eine besondere Kombination
@@ -204,7 +202,7 @@ von verschiedenen Zusatzmodulen in bestimmten Versionen besitzt.
 
 ###Schritt 3: Modul Logio aktivieren
 
-Mit dem _combined_ Format haben wir das wichtigste Apache
+Mit dem _combined_ Format haben wir das am weitesten verbreitete Apache
 Logformat kennengelernt. Um die alltägliche Arbeit zu erleichtern
 reichen die dargestellten Werte aber nicht. Weitere Informationen werden
 deshalb mit Vorteil im Logfile mitgeschrieben.
@@ -217,8 +215,8 @@ sich in der Praxis in verschiedenen Szenarien bewährt hat.
 Um das in der Folge beschriebene Logformat konfigurieren zu können,
 muss aber zunächst das Modul _Logio_ aktiviert werden.
 
-Wenn der Server wie in FIXME: <a href="?q=apache_tutorial_1_apache_compilieren">Tutorial 1</a> beschrieben
-compiliert wurde, dann ist das Modul bereits vorhanden und muss nur noch in der Liste
+Wenn der Server wie in der Anleitung 1 beschrieben
+kompiliert wurde, dann ist das Modul bereits vorhanden und muss nur noch in der Liste
 der zu ladenden Module in der Konfigurationsdatei des Servers ergänzt werden.
 
 ```bash
@@ -246,7 +244,8 @@ verwenden, greifen wir hier mit der nun folgenden Konfiguration bereits etwas vo
 Wir gehen vom _Combined_-Format aus und erweitern es nach rechts. Dies hat
 den Vorteil, dass die erweiterten Logfiles in vielen Standard-Tools weiterhin
 lesbar sind, denn die zusätzlichen Werte werden einfach ignoriert. Ferner ist
-es sehr leicht, die erweiterten Logfiles in die Basis zurückzuübersetzen.
+es sehr leicht, die erweiterten Logfiles in die Basis zurückzuübersetzen um
+dann eben wieder ein Logformat _combined_ vor sich zu haben.
 
 Wir definieren das Logformat wie folgt:
 
@@ -293,7 +292,11 @@ oder aber die Verbindung wurde abgebrochen bevor der Request abgeschlossen werde
 
 Mit _\"%{cookie}n\"_ folgt ein Wert, der dem User-Tracking dient. Damit können wir einen Client mittels
 eines Cookies identifizieren und ihn zu einem späteren Zeitpunkt wiedererkennen - sofern er das Cookie
-immer noch trägt.
+immer noch trägt. Wenn wir das Cookie domänenweit setzen, also auf example.com und nicht beschränkt auf www.example.com,
+dann können wir einem Client sogar über mehrere Hosts hinweg folgen.
+Im Idealfall wäre dies aufgrund der IP Adresse des Clients ebenfalls möglich, aber sie kann im Laufe einer Session
+gewechselt werden und es kann auch sein, dass sich mehrere Clients eine IP Adresse teilen.
+
 
 Der Wert _%{UNIQUE_ID}e_ ist ein sehr hilfreicher Wert. Für jeden Request wird damit auf dem Server
 eine eindeutige Identifizierung kreiert. Wenn wir den Wert etwa auf einer Fehlerseite ausgeben, dann lässt
