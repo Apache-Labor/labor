@@ -253,10 +253,8 @@ Neben diesem Ablauf ist durchaus üblich, ein Zertifikat selbst zu erstellen und
 Bei _StartSSL_ lassen sich auch Zertifikate von selbst erstellen Schlüsseln signieren. Dies bietet einem zusätzliche Möglichkeiten bei der Konstruktion des Zertifikats. Wenn man also ein Super-Zertifikat möchte, eines das in der Sonne glänzt und neidige Blicke erntet, dann ist dies ein passemder Weg. Einen sehr guten Schlüssel generieren wir wie folgt:
 
 ```bash
-$> openssl genrsa -des3 -out server.key 2048
+$> openssl genrsa -out server.key 2048
 ```
-
-FIXME des3???
 
 Die Generierung des Schlüssels dürfte einen Moment in Anspruch nehmen, denn eine Länge von 2048 wie angegeben ist ziemlich gross und die notwendige Entropie muss erst gefunden werden. Es wäre auch möglich, mit einer Länge von 4096 zu arbeiten, aber der geringe cryptographische Mehrwert wird durch eine mehrfach schlechtere Performance erkauft. Wir erwarten folgenden Ablauf des Aufrufs:
  
@@ -491,10 +489,10 @@ Interessanterweise gibt es im Internet so etwas wie eine Hitparade, was sichere 
 
 ###Schritt 9 (Bonus): Qualität der SSL Sicherung extern überprüfen lassen
 
-Ivan Ristić, der oben erwähnte Autor von mehreren Büchern über Apache und SSL betreibt im Netz einen Analyse-Service zur Konfiguration von _SSL-Webservern_. Er befindet sich bei [www.ssllabs.com](https://www.ssllabs.com/ssldb/index.html). Ein Webserver wie oben konfiguriert und mit einem Gratis-Zertifikat von StartSSL brachte mir im Test die Höchstnote von _A+_ ein.
+Ivan Ristić, der oben erwähnte Autor von mehreren Büchern über Apache und SSL betreibt im Dienst von Qualys einen Analyse-Service zur Überprüfung von _SSL-Webservern_. Er befindet sich bei [www.ssllabs.com](https://www.ssllabs.com/ssldb/index.html). Ein Webserver wie oben konfiguriert brachte mir im Test die Höchstnote von _A+_ ein.
 
-![Screenshot: It works!](./apache-tutorial-03-screenshot-ssllabs.png)
-So weit kann man mit einem sorgfältig konfigurierten Apache gelangen.
+![Screenshot: SSLLabs](./apache-tutorial-03-screenshot-ssllabs.png)
+Die Höchstnote ist mit dieser Anleitung in Reichweite.
 
 ###Verweise
 
