@@ -253,10 +253,10 @@ Neben diesem Ablauf ist durchaus üblich, ein Zertifikat selbst zu erstellen und
 Bei _StartSSL_ lassen sich auch Zertifikate von selbst erstellen Schlüsseln signieren. Dies bietet einem zusätzliche Möglichkeiten bei der Konstruktion des Zertifikats. Wenn man also ein Super-Zertifikat möchte, eines das in der Sonne glänzt und neidige Blicke erntet, dann ist dies ein passemder Weg. Einen sehr guten Schlüssel generieren wir wie folgt:
 
 ```bash
-$> openssl genrsa -out server.key 2048
+$> openssl genrsa -des3 -out server.key 2048
 ```
 
-Die Generierung des Schlüssels dürfte einen Moment in Anspruch nehmen, denn eine Länge von 2048 wie angegeben ist ziemlich gross und die notwendige Entropie muss erst gefunden werden. Es wäre auch möglich, mit einer Länge von 4096 zu arbeiten, aber der geringe cryptographische Mehrwert wird durch eine mehrfach schlechtere Performance erkauft. Wir erwarten folgenden Ablauf des Aufrufs:
+Die Generierung des Schlüssels dürfte einen Moment in Anspruch nehmen, denn eine Länge von 2048 wie angegeben ist ziemlich gross und die notwendige Entropie muss erst gefunden werden. Es wäre auch möglich, mit einer Länge von 4096 zu arbeiten, aber der geringe kryptographische Mehrwert wird durch eine mehrfach schlechtere Performance auf dem Server erkauft. Wir erwarten folgenden Ablauf des Aufrufs:
  
 ```bash
 Generating RSA private key, 2048 bit long modulus
