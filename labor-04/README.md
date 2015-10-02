@@ -18,7 +18,7 @@ oft zusätzliche Informationen benötigt, die sich leicht im Zugriffslog
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](http://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](http://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
-* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)[http://www.netnea.com/cms/apache_tutorial_4_konfigurieren_eines_ssl_servers]
+* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](http://www.netnea.com/cms/apache_tutorial_4_konfigurieren_eines_ssl_servers)
 
 ###Schritt 1: Logformat Common verstehen
 
@@ -75,20 +75,21 @@ Es wird normalerweise in der lokalen Zeit inklusive der Abweichung von
 der Standardzeit geschrieben. Zum Beispiel:
 
 ```bash
-[25/Nov/2011:08:51:22 +0100]
+[25/Nov/2014:08:51:22 +0100]
 ```
 
-Hier meint es also den 25. November 2011, 8 Uhr 51, 1 Stunde vor der
+Hier meint es also den 25. November 2014, 8 Uhr 51, 1 Stunde vor der
 Standardzeit. Das Format der Uhrzeit selbst lässt sich gegebenenfalls
 anpassen. Dies geschieht nach dem Muster _%{format}t_, wobei
-_format_ der Spezifikation von _strftime(3)_ folgt. Sehen
-wir uns auch dazu ein Beispiel an:
+_format_ der Spezifikation von _strftime(3)_ folgt. Wir haben von
+dieser Möglichkeit in der 2. Anleitung bereis Gebrauch gemacht.
+Sehen wir es uns aber in einem Beispiel genauer an:
 
 ```bash
-%{[%Y%m%d-%H:%M:%S %z (%s)]}t
+%{[%Y-%m-%d %H:%M:%S %z (%s)]}t
 ```
 
-In diesem Beispiel drehen bringen wir das Datum in die Reihenfolge
+In diesem Beispiel bringen wir das Datum in die Reihenfolge
 _Jahr-Monat-Tag_, um eine bessere Sortierbarkeit zu erreichen. Und
 nach der Abweichung von der Standardzeit fügen wir die Zeit in Sekunden
 seit dem Start der Unixepoche im Januar 1970 ein. Dies ist ein durch 
@@ -97,16 +98,15 @@ ein Skript leichter les- und interpretierbares Format.
 Dieses Beispiel bringt uns Einträgen nach folgendem Muster:
 
 ```bash
-[20111125-09:34:33 +0100 (1322210073)]
+[2014-11-25 09:34:33 +0100 (1322210073)]
 ```
 
-Soweit zu _%t_. In der Praxis ist es nicht unüblich, mit dem
-Zeitformat herumzuspielen. Im Einzelfall kann es aber sehr hilfreich
-sein.
-
+Soweit zu _%t_.
 Damit kommen wir zu _%r_ und damit zur Request-Zeile. Hierbei
 handelt es sich um die erste Zeile des HTTP-Requests, wie er vom Client 
-an den Server gesendet wurde. Auf der Request-Zeile übermittelt der
+an den Server gesendet wurde. Stren genommen gehört die Requestzeile
+nicht in die Gruppe der Request-Header; in aller Regel subsummiert
+man sie aber zusammen mit letzteren. Wie dem auch sei, auf der Request-Zeile übermittelt der
 Client dem Server die Identifikation der Resource, die er verlangt.
 
 Konkret folgt die Zeile diesem Muster:
@@ -124,11 +124,16 @@ GET /index.html HTTP/1.1
 Es wird also die _GET_-Methode angewendet. Dann folgt ein
 Leerschlag, dann der absolute Pfad auf die Resource auf dem Server. Hier
 die Index-Datei. Optional kann der Client bekanntlich noch einen
-_Query-String_ an dem Pfad anhängen. Dieser _Query-String_
+_Query-String_ an dem Pfad anhängen. Dieser _Query-String_ in
+der Regel mit einem Fragezeichen eingeleitet und bringt verschiedene
+Parameter-Wert-Paare. Der _Query-String_
 wird im Logformat auch wiedergegeben. Schliesslich das Protokoll, das
 in aller Regel HTTP in der Version 1.1 lautet. Zum Teil wird aber
 gerade von Agents, also automatisierten Skripten, nach wie vor
-die Version 1.0 verwendet.
+die Version 1.0 verwendet. Das neue Protokoll HTTP/2 wird in der
+Request-Zeile des ersten Requests noch nicht vorkommen. Vielmehr
+findet in HTTP/2 während des Requests ein Update von HTTP/1.1 auf HTTP/2
+statt. Der Start folgt also obenstehendem Muster.
 
 Das folgende Format-Element folgt einem etwas anderen Muster: _%>s_.
 Dies meint den Status der Antwort, also etwa _200_ für
@@ -171,7 +176,7 @@ LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combine
 CustomLog logs/access.log combined
 ```
  
-Das Element _\"%{Referer}i\"_ bezeichnet den Referrer. Er wird in
+Das Element _"%{Referer}i"_ bezeichnet den Referrer. Er wird in
 Anführungszeichen wiedergegeben. Der Referrer meint diejenige
 Resource, von der aus ursprünglich der jetzt erfolgte Request ausgelöst
 wurde. Diese komplizierte Umschreibung lässt sich an einem Beispiel
@@ -188,7 +193,7 @@ angehalten, sich an das Protokoll und die Konventionen zu halten,
 tatsächlich kann er aber beliebige Informationen senden, weshalb man
 sich in Sicherheitsfragen nicht auf Header wie diesen verlassen darf.
 
-_\"%{User-agent}i\"_ schliesslich meint den sogenannten User-Agent des Clients,
+_"%{User-agent}i"_ schliesslich meint den sogenannten User-Agent des Clients,
 der wiederum in Anführungszeichen gesetzt wird.
 Auch dies ist wieder ein Wert, der durch den Client kontrolliert wird,
 und auf den wir uns nicht zu sehr verlassen sollten. Mit dem User-Agent
@@ -233,7 +238,7 @@ Bytes in der Antwort, wiederum inklusive Header-Zeilen.
 Damit sind wir bereit für ein neues, sehr umfassendes Logformat. Das Format
 umfasst auch Werte, die der Server mit den bis hierhin definierten Modulen
 noch nicht kennt. Er wird sie leer lassen, respektive durch einen Strich _"-"_
-darstellen. Mit dem eben aktivierten Modul _Logio_ klappt das nicht.
+darstellen. Nur mit dem eben aktivierten Modul _Logio_ klappt das nicht.
 Wenn wir dessen Werte ansprechen, ohne dass sie vorhanden wären, stürzt
 der Server ab.
 
@@ -250,7 +255,8 @@ dann eben wieder ein Logformat _combined_ vor sich zu haben.
 Wir definieren das Logformat wie folgt:
 
 ```bash
-LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" %{UNIQUE_ID}e %I %O %{ratio}n%% %D" extended
+
+LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e \"%{cookie}n\" %{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% %D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e %{ModSecAnomalyScoreIn}e %{ModSecAnomalyScore}e" extended
 
 ...
 
@@ -260,8 +266,23 @@ CustomLog		logs/access.log extended
 
 ###Schritt 5: Neues Logformat Extended verstehen
 
-Das neue Logformat erweitert die Zugriffsprotokolle um zwölf Werte. Schauen wir sie uns
-nacheinander an.
+Das neue Logformat erweitert die Zugriffsprotokolle um 19 Werte. Das sieht auf den ersten
+Blick übertrieben aus, tatsächlich hat das aber alles seine Berechtigung und im
+täglichen Einsatz ist man um jeden dieser Werte froh, gerade wenn man einem Fehler
+auf der Spur ist.
+
+Schauen wir uns die Werte nacheinander an.
+
+In der Erklärung zum Log-Format _common_ haben wir gesehen, dass der zweite Wert, der Eintrag _logname_
+gleich nach der IP Adresse des Clients ein unbenutztes Artefakt darstellt. Wir ersetzen diese Position
+im Logfile mit dem Country-Code der IP Adresse des Clients. Das macht Sinn, weil dieser Country-Code 
+eine IP Adresse stark charakterisiert (In vielen Fällen macht es einen grossen Unterschied,
+ob die Anfrage aus dem Inland oder aus der Südsee stammt). Praktisch ist es nun, sie gleich neben
+die IP-Adresse zu stellen und der nichtssagenden Nummer ein Mehr an Information zuzugesellen.
+
+Danach das bereits in der Anleitung 2 definierte Zeitformat, das sich am Zeitformat des Error-Logs
+orientiert und nun mit diesem Kongruent ist. Wir bilden die Microsekunden auch ab und erhalten
+so sehr präzise Timing-Informationen. Die nächsten Werte sind bekannt.
 
 _%v_ bezeichnet den kanonischen Servernamen, der den Request bearbeitet hat. Falls wir
 den Server mittels eines Alias ansprechend, wird hier nicht dieses Alias geschrieben, sondern
@@ -275,14 +296,14 @@ oder mehrere Server in dasselbe Logfile schreiben.
 
 Dann beschreibt _%p_ die Portnummer auf welcher der Request empfangen wurde. Auch dies
 ist wichtig, um verschiedene Einträge auseinanderhalten zu können, wenn wir verschiedene Logfiles 
-(etwa diejenigen für Port 80 und diejenigen für Port 443) zusammenfügen.
+(etwa diejenigen für Port 80 und diejenigen für Port 443) zusammenfügen. 
 
 _%R_ gibt den Handler wieder, der die Antwort auf einen Request generiert hat.
 Dieser Wert kann leer sein (also _"-"_) wenn eine statische Datei ausgeliefert
 wurde. Oder aber er bezeichnet mit _proxy_, dass der Request an einen anderen
 Server weitergeleitet worden ist.
 
-_%{BALANCER_WORKER_ROUTE}e_ hat auch mit dem Weitergeben von Anfragen zu tun.
+*%{BALANCER_WORKER_ROUTE}e* hat auch mit dem Weitergeben von Anfragen zu tun.
 Wenn wir zwischen mehreren Zielserver abwechseln belegt dieser Wert, wohin die
 Anfrage geschickt wurde.
 
@@ -290,15 +311,14 @@ _%X_ gibt den Status der TCP-Verbindung nach Abschluss der Anfrage wieder. Es si
 Die Verbindung ist geschlossen (_-_), die Verbindung wird mittels _Keep-Alive_ offen gehalten (_+_)
 oder aber die Verbindung wurde abgebrochen bevor der Request abgeschlossen werden konnte (_X_).
 
-Mit _\"%{cookie}n\"_ folgt ein Wert, der dem User-Tracking dient. Damit können wir einen Client mittels
+Mit _"%{cookie}n"_ folgt ein Wert, der dem User-Tracking dient. Damit können wir einen Client mittels
 eines Cookies identifizieren und ihn zu einem späteren Zeitpunkt wiedererkennen - sofern er das Cookie
 immer noch trägt. Wenn wir das Cookie domänenweit setzen, also auf example.com und nicht beschränkt auf www.example.com,
 dann können wir einem Client sogar über mehrere Hosts hinweg folgen.
 Im Idealfall wäre dies aufgrund der IP Adresse des Clients ebenfalls möglich, aber sie kann im Laufe einer Session
 gewechselt werden und es kann auch sein, dass sich mehrere Clients eine IP Adresse teilen.
 
-
-Der Wert _%{UNIQUE_ID}e_ ist ein sehr hilfreicher Wert. Für jeden Request wird damit auf dem Server
+Der Wert *%{UNIQUE_ID}e* ist ein sehr hilfreicher Wert. Für jeden Request wird damit auf dem Server
 eine eindeutige Identifizierung kreiert. Wenn wir den Wert etwa auf einer Fehlerseite ausgeben, dann lässt
 sich ein Request im Logfile aufgrund eines Screenshots bequem identifizieren - und im Idealfall die gesamte Session 
 aufgrund des User-Tracking-Cookies nachvollziehen.
@@ -309,23 +329,44 @@ Wir kennen bereits _%b_ für die Summer der Bytes im Response-Body. _%O_ ist hie
 und hilft zu erkennen, wenn die Anfrage oder ihre Antwort entsprechende Grössen-Limiten verletzte.
 
 _%{ratio}n%%_ bedeutet die Prozentzahl der Kompression der übermittelten Daten, welche durch die Anwendung des
-Modules _Deflate_ erreicht werden konnte. Dies ist für den Moment noch ohne Belang.
+Modules _Deflate_ erreicht werden konnte. Dies ist für den Moment noch ohne Belang, bringt uns
+in Zukunft aber interessante Performance-Daten.
 
 _%D_ gibt die komplette Dauer des Requests in Microsekunden wieder. Gemessen wird vom Erhalt
 der Request-Zeile bis zum Moment, wenn der letzte Teil der Antwort den Server verlässt.
+
+Wir fahren weiter mit Performance-Daten. Wir werden in Zukunft die Stoppuhr ansetzen und 
+die Anfrage auf dem Weg in den Server hiein, bei der Applikation und während der Verarbeitung
+der Antwort separat messen. Die entsprechenden Werte werden wir in den Environment
+Variablen _ModSecTimeIn_, _ApplicationTime_ sowie _ModSecTimeOut_ ablegen.
+
+Und zu guter Letzt noch zwei weitere Werte, die uns _ModSecurity_ in einer späteren Anleitung
+zur Verfügung stellen wird, nämlich die Anomalie-Punktezahl der Anfrage und der Antwort.
+Was es damit auf sich hat, ist für den Moment noch unwichtig. Wichtig ist, dass wir mit
+diesem startk erweiterten Logformat eine Basis gelegt haben auf die wir zukünftig aufbauen
+können, ohne das Logformat nochmals anpassen zu müssen.
 
 ###Schritt 6: Ausprobieren und Logdatei füllen
 
 Konfigurieren wir das Zugriffslog wie oben beschrieben und beschäftigen wir den Server etwas!
 
-Wir könnten dazu _Apache Bench_ wie in FIXME: <a href="?q=apache_tutorial_2_apache_minimal_konfigurieren">Tutorial 2</a> beschrieben
-verwenden, aber das würde ein sehr einförmiges Logfile ergeben. Mit den folgenden Einzeilern bringen
+Wir könnten dazu _Apache Bench_ wie in der zweiten Anleitung zwei beschrieben
+verwenden, aber das würde ein sehr einförmiges Logfile ergeben. Mit den folgenden beiden Einzeilern bringen
 wir etwas Abwechslung hinein.
 
 ```bash
 $> for N in {1..100}; do curl --silent http://localhost/index.html?n=${N}a >/dev/null; done
-$> for N in {1..100}; do PAYLOAD=$(for K in $(seq $N); do uuidgen; done | xargs); curl --silent --data "payload=$PAYLOAD" http://localhost/index.html?n=${N}b >/dev/null; done
+$> for N in {1..100}; do PAYLOAD=$(uuidgen -n $N | xargs); curl --silent --data "payload=$PAYLOAD" http://localhost/index.html?n=${N}b >/dev/null; done
 ```
+
+Auf der ersten Zeile setzen wir einfach hundert Requests ab, wobei wir sie im _Query-String_ nummerieren.
+Auf der zweiten Zeile dann die interessantere Idee: Wieder setzen wir hundert Anfragen ab. Dieses Mal
+möchten wir aber Daten mit Hilfe eines POST-Requests im Body-Teil der Anfrage mitschicken. Diesen
+sogenannen Payload generieren wir dynamisch und zwar so, dass er mit jedem Aufruf grösser wird. Die benötigten
+Daten generieren wir mittels _uuidgen_. Dabei handelt es sich um einen Befehl, der eine _ascii-ID_ generiert.
+Aneinandergehängt erhalten wir eine Menge Daten. (Falls es zu einer Fehlermeldung kommt, könnte es sein, dass
+der Befehl _uuidgen_ nicht vorhanden ist. In diesem Fall wäre das Paket _uuid_ zu installieren.
+
 
 Die Bearbeitung dieser Zeile dürfte ein, zwei Minuten dauern. Als Resultat sehen wir folgendes im Logfile:
 
