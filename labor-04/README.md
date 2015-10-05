@@ -1,4 +1,4 @@
-##Das Zugriffslog Ausbauen
+##Das Zugriffslog Ausbauen und Auswerten
 
 ###Was machen wir?
 
@@ -339,7 +339,7 @@ bekannt werden, dann können den Effekt unseres Massnahmen anhand des Logfiles a
 So war etwa die folgende Aussage im Frühjahr 2015 Gold wert: "Das sofortige Abschalten des SSLv3 
 Protokolls als Reaktion auf die POODLE Schwachstelle wird bei ca. 0.8% der Zugriffe zu 
 einem Fehler führen. Hochgerechnet auf unsere Kundenbasis werden soundsoviele Kunden 
-betroffen sein."
+betroffen sein." Mit diesen Zahlen wurde das Risiko und der Effekt der Massnahme voraussagbar.
 
 Mit _%I_ und _%O_ folgen die beiden Werte, welche durch das Modul _Logio_ definiert werden.
 Es ist die gesamte Zahl der Bytes im Request und die gesamte Zahl der Bytes in der Response.
@@ -644,9 +644,250 @@ Hier filtern wir die GET und die POST Requests anhand der Methode, die auf ein A
     100 POST 
 ```
 
-Soweit zu diesen ersten Fingerübungen. In einem späteren Tutorial werden wir komplexere und interessantere Auswertungen vornehmen. Dabei werden wir auch auf ein Skript zurückgreifen, welches das Filtern nach einzelnen Feldern erheblich erleichtert. Dafür müssen wir das Logfile aber erst einmal mit interessanteren Werten füllen.
+Soweit zu diesen ersten Fingerübungen. Auf der Basis dieses selbst abgefüllten Logfiles ist das leider noch nicht sehr spanned. Nehmen wir uns also ein richtiges Logfile von einem Produktionsserver vor.
 
-###Schritt 8 (Bonus): Weitere Request- und Response-Header in zusätzlichem Logfile mitschreiben
+### Schritt 8: Auswertungen auf einem Beispiel-Logfile
+
+Spannender werden die Auswertungen mit einem richtigen Logfile von einem produktiven Server. Hier ist eines, mit 10'000 Anfragen:
+
+[labor-04-example-access.log](./labor-04-example-access.log)
+
+```bash
+$> head labor-04-example-access.log
+75.249.65.145 US - [2015-09-02 10:42:51.003372] "GET /cms/tina-access-editor-for-download/ HTTP/1.1" 200 7113 "-" "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" www.example.com 124.165.3.7 443 redirect-handler - + "-" Vea2i8CoAwcAADevXAgAAAAB TLSv1.2 ECDHE-RSA-AES128-GCM-SHA256 701 12118 -% 88871 803 0 0 0 0
+71.180.228.107 US - [2015-09-02 11:14:02.800605] "GET /cms/application_3_applikationsserver_aufsetzen/?q=application_2_tina_minimal_konfigurieren HTTP/1.1" 200 12962 "-" "Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)" www.example.com 124.165.3.7 443 redirect-handler - + "-" Vea92sCoAwcAADRophUAAAAX TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 700 17946 -% 77038 1669 0 0 0 0
+5.45.105.71 DE - [2015-09-02 11:32:39.371240] "GET /cms/feed/ HTTP/1.1" 200 35422 "-" "Tiny Tiny RSS/1.15.3 (http://tt-rss.org/)" www.example.com 124.165.3.7 443 redirect-handler - + "-" VebCN8CoAwcAADRcb14AAAAE TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 671 40343 -% 144443 791 0 0 0 0
+155.80.44.115 IT - [2015-09-02 11:58:35.654011] "GET /robots.txt HTTP/1.0" 404 21023 "-" "Mozilla/5.0 (compatible; MJ12bot/v1.4.5; http://www.majestic12.co.uk/bot.php?+)" www.example.com 124.165.3.7 443 redirect-handler - - "-" VebIS8CoAwcAABx@Xo4AAAAJ TLSv1 AES256-SHA 894 25257 -% 68856 836 0 0 0 0
+155.80.44.115 IT - [2015-09-02 11:58:37.486603] "GET /cms/2013/09/23/ HTTP/1.1" 200 22822 "-" "Mozilla/5.0 (compatible; MJ12bot/v1.4.5; http://www.majestic12.co.uk/bot.php?+)" www.example.com 124.165.3.7 443 redirect-handler - + "-" VebITcCoAwcAADRophsAAAAX TLSv1 AES256-SHA 627 23702 -% 75007 805 0 0 0 0
+155.80.44.115 IT - [2015-09-02 11:58:39.253209] "GET /cms/2013/09/23/convert-from-splashid-safe-to-keepass-password-safe/ HTTP/1.1" 200 6450 "-" "Mozilla/5.0 (compatible; MJ12bot/v1.4.5; http://www.majestic12.co.uk/bot.php?+)" www.example.com 124.165.3.7 443 redirect-handler - + "-" VebIT8CoAwcAADRophwAAAAX TLSv1 AES256-SHA 485 6900 -% 79458 808 0 0 0 0
+155.80.44.115 IT - [2015-09-02 11:58:40.893992] "GET /cms/2013/09/23/convert-from-splashid-safe-to-keepass-password-safe/feed/ HTTP/1.1" 200 463 "-" "Mozilla/5.0 (compatible; MJ12bot/v1.4.5; http://www.majestic12.co.uk/bot.php?+)" www.example.com 124.165.3.7 443 redirect-handler - + "-" VebIUMCoAwcAADRoph0AAAAX TLSv1 AES256-SHA 485 991 -% 25378 798 0 0 0 0
+155.80.44.115 IT - [2015-09-02 11:58:43.558478] "GET /cms/2013/10/21/ HTTP/1.1" 200 6171 "-" "Mozilla/5.0 (compatible; MJ12bot/v1.4.5; http://www.majestic12.co.uk/bot.php?+)" www.example.com 124.165.3.7 443 redirect-handler - + "-" VebIU8CoAwcAADRbdGkAAAAD TLSv1 AES256-SHA 611 6702 -% 78686 816 0 0 0 0
+155.80.44.115 IT - [2015-09-02 11:58:45.287565] "GET /cms/2013/10/21/nftables-to-replace-iptables-firewall-facility-in-upcoming-linux-kernel/ HTTP/1.1" 200 6492 "-" "Mozilla/5.0 (compatible; MJ12bot/v1.4.5; http://www.majestic12.co.uk/bot.php?+)" www.example.com 124.165.3.7 443 redirect-handler - + "-" VebIVcCoAwcAADRbdGoAAAAD TLSv1 AES256-SHA 501 6932 -% 82579 769 0 0 0 0
+155.80.44.115 IT - [2015-09-02 11:58:49.801640] "GET /cms/2013/10/21/nftables-to-replace-iptables-firewall-facility-in-upcoming-linux-kernel/feed/ HTTP/1.1" 200 475 "-" "Mozilla/5.0 (compatible; MJ12bot/v1.4.5; http://www.majestic12.co.uk/bot.php?+)" www.example.com 124.165.3.7 443 redirect-handler - + "-" VebIWcCoAwcAADRbdGsAAAAD TLSv1 AES256-SHA 501 1007 -% 23735 833 0 0 0 0
+```
+
+Schauen wir uns hier mal die Verteilung der _GET_ und _POST_ Requests an:
+
+```bash
+$> cat labor-04-example-access.log  | egrep  -o '"(GET|POST)'  | cut -b2- | sort | uniq -c
+   9781 GET
+     12 POST
+```
+
+Das ist ein eindeutiges Resultat. Sehen wir eigentlich viele Fehler? Also Anfragen, die mit einem HTTP Fehlercode beantwortet wurden?
+
+```bash
+cat labor-04-example-access.log | cut -d\" -f3 | cut -d\  -f2 | sort | uniq -c
+   9040 200
+      5 206
+    447 301
+     47 304
+     16 400
+      3 403
+    401 404
+     41 408
+```
+
+Da liegt neben den sechzehn Requests mit der HTTP Antwort "400 Bad Request" ein recht grosser Anteil an 404ern vor ("404 Not Found"). HTTP Status 400 bedeutet einen Protokoll-Fehler. 404 ist bekanntlich eine nicht gefundene Seite. Hier müsste man also mal zum Rechten sehen. Aber bevor wir weiter gehen, ein Hinweis auf die Anfrage mittels des Befehls _cut_. Wir haben die Logzeile mit dem Trennzeichen _"_ unterteilt, das dritte Feld mit dieser Unterteilung extrahiert und dann den Inhalt wieder unterteilt, dieses Mal aber mit dem Leerschlag (Man beachte das _\_-Zeichen) als Trennzeichen und das zweite Feld extrahiert, was nun dem Status entspricht. Danach wurde sortiert und die _uniq-Funktion_ im Zählmodus angewendet. Wir werden sehen, dass diese Art des Zugriffs auf die Daten ein sich wiederholendes Muster ist.
+Schauen wir das Logfile noch etwas genauer an.
+
+Weiter oben war die Rede von Verschlüsselungsprotokollen und wie ihre Auswertung eine Grundlage für einen Entscheid der adäquaten Reaktion auf die _POODLE_-Schwachstelle war. Welche Verschlüsselungsprotokolle kommen seither eigentlich auf dem Server in der Praxis vor:
+
+``bash
+$> cat labor-04-example-access.log | cut -d\" -f9 | cut -d\  -f4 | sort | uniq -c | sort -n
+     21 -
+     65 TLSv1.1
+   1764 TLSv1
+   8150 TLSv1.2
+```
+Es scheint vorzukommen, dass Apache kein Verschlüsselungsprotokoll notiert. Das ist etwas merkwürdig, da es aber ein sehr seltener Fall ist, gehen wir ihm für den Moment nicht nach. Wichtiger sind die Zahlenverhältnisse zwischen den TLS Protokollen. Hier dominiert nach dem Abschalten von _SSLv3_ das Protokoll _TLSv1.2_, neben einem substantiellen Anteil _TLSv1.0_. _TLSv1.1_ ist vernachlässigbar.
+
+Zum gewünschten Resultat sind wir wieder über eine Reihe von _cut_-Befehlen gelangt. Eigentlich wäre es doch angebracht, diese Befehle vorzumerken, da wir sie immer wieder brauchen. Das wäre dann eine Alias-Liste wie die folgende:
+
+```bash
+alias alip='cut -d\  -f1'
+alias alcountry='cut -d\  -f2'
+alias aluser='cut -d\  -f3'
+alias altimestamp='cut -d\  -f4,5 | tr -d "[]"'
+alias alrequestline='cut -d\" -f2'
+alias almethod='cut -d\" -f2 | cut -d\  -f1 | sed "s/^-$/**NONE**/"'
+alias aluri='cut -d\" -f2 | cut -d\  -f2 | sed "s/^-$/**NONE**/"'
+alias alprotocol='cut -d\" -f2 | cut -d\  -f3 | sed "s/^-$/**NONE**/"'
+alias alstatus='cut -d\" -f3 | cut -d\  -f2'
+alias alresponsebodysize='cut -d\" -f3 | cut -d\  -f3'
+alias alreferer='cut -d\" -f4 | sed "s/^-$/**NONE**/"'
+alias alreferrer='cut -d\" -f4 | sed "s/^-$/**NONE**/"'
+alias aluseragent='cut -d\" -f6 | sed "s/^-$/**NONE**/"'
+alias alservername='cut -d\" -f7 | cut -d\  -f2'
+alias alservername='cut -d\" -f7 | cut -d\  -f2'
+alias allocalip='cut -d\" -f7 | cut -d\  -f3'
+alias alcanonicalport='cut -d\" -f7 | cut -d\  -f4'
+alias alport='cut -d\" -f7 | cut -d\  -f4'
+alias alhandler='cut -d\" -f7 | cut -d\  -f5'
+alias albalroute='cut -d\" -f7 | cut -d\  -f6'
+alias alconnstatus='cut -d\" -f7 | cut -d\  -f7'
+alias altrkcookie='cut -d\" -f8'
+alias alreqid='cut -d\" -f9 | cut -d\  -f2'
+alias alsslprotocol='cut -d\" -f9 | cut -d\  -f3'
+alias alsslcipher='cut -d\" -f9 | cut -d\  -f4'
+alias alioin='cut -d\" -f9 | cut -d\  -f5'
+alias alioout='cut -d\" -f9 | cut -d\  -f6'
+alias aldeflateratio='cut -d\" -f9 | cut -d\  -f7 | tr -d %'
+alias alduration='cut -d\" -f9 | cut -d\  -f8'
+alias aldurationin='cut -d\" -f9 | cut -d\  -f9'
+alias aldurationapp='cut -d\" -f9 | cut -d\  -f10'
+alias aldurationout='cut -d\" -f9 | cut -d\  -f11'
+alias alscorein='cut -d\" -f9 | cut -d\  -f12 | tr "-" "0"'
+alias alscoreout='cut -d\" -f9 | cut -d\  -f13 | tr "-" "0"'
+alias alscores='cut -d\" -f9 | cut -d\  -f12,13 | tr " " ";" | tr "-" "0"'
+```
+
+Die Aliase beginnen alle mit _al_. Dies steht für _ApacheLog_ oder _AccessLog_. Darauf folgt der Feldnahme. Die einzelnen Aliase sind nicht alphabethisch geordnet. Sie folgen vielmehr der Reihenfolge der Felder im Format des Logfiles.
+
+Diese Liste mit Alias-Definitionen befindet sich in der Datei [apache-modsec.alias](../bin/apache-modsec.alias). Dort liegt sie gemeinsam mit einigen weiteren Aliasen, die wir in späteren Anleitungen definieren werden. Wenn man öfter mit Apache und seinen Logfiles arbeitet, dann bietet es sich an, diese Alias-Definitionen im Heim-Verzeichnis abzulegen und sie beim Einloggen zu laden. Also mittels folgendem Eintrag in der _.bashrc_-Datei oder über einen verwandten Mechanismus.
+
+```bash
+test -e ~/.apache-modsec.alias && . ~/.apache-modsec.alias
+```
+
+Wenden wir den neuen Alias das also gleich mal an:
+
+```bash
+$> cat labor-04-example-access.log | alsslprotocol | sort | uniq -c | sort -n
+     21 -
+     65 TLSv1.1
+   1764 TLSv1
+   8150 TLSv1.2
+```
+Das geht schon etwas leichter. Aber das wiederholte Tippen von _sort_ gefolgt von _uniq -c_ und dann nochmals ein numerisches _sort_ ist mühlselig. Da es sich erneut um ein wiederkehrendes Muster handelt, lohnt sich auch hier ein Alias, der sich als _sucs_ abgekürzen lässt: ein Zusammenzug der Anfangsbuchstaben und des _c_ von _uniq -c_.
+
+```bash
+alias sucs='sort | uniq -c | sort -n'
+```
+Das erlaubt uns dann:
+
+
+```bash
+$>cat labor-04-example-access.log | alsslprotocol | sucs
+     21 -
+     65 TLSv1.1
+   1764 TLSv1
+   8150 TLSv1.2
+```
+
+Das ist nun ein einfacher Aufruf, den man sich gut merken kann und der leicht zu schreiben ist. Wir blicken nun
+an ein Zahlenverhältnis von 1764 zu 8150. Total haben wier hier genau 10'000 Anfragen vor uns; die Prozentwerte sind von Auge abzuleiten. In der
+Praxis dürften die Logfiles aber kaum so schön aufgehen, wir benötigen also Hilfe beim Ausrechnen der Prozentzahlen.
+
+
+###Schritt 9: Auswertungen mit Prozentzahlen
+
+Was uns fehlt ist ein Befehl ähnlich wie der Alias _sucs_, der in einem Durchlauf die Zahlenwerte in Prozentzahlen
+verwandelt: _sucspercent_.
+
+```bash
+$> alias sucspercent='sort | uniq -c | awk -f $HOME/bin/percent.awk'
+```
+
+Rasche Rechnungen erledigt man in Linux traditionellerweise mit _awk_. Dafür steht neben der oben gelinkten _Alias_-Datei auch
+das _awk_-Skript _percent.awk_ zur Verfügung, das man idealerweise im Unterverzeichnis _bin_ seines Heimverzeichnisses ablegt.
+Das obenstehene _sucspercent_ Alias geht denn auch von diesem Setup aus. Das _awk_-Skript befindet sich [hier](../bin/percent.awk).
+
+```bash
+$> cat labor-04-example-access.log | alsslprotocol | sucspercent 
+                         Entry        Count Percent
+---------------------------------------------------
+                             -           21   0.21%
+                         TLSv1         1764  17.64%
+                       TLSv1.1           65   0.65%
+                       TLSv1.2         8150  81.50%
+---------------------------------------------------
+                         Total        10000 100.00%
+```
+
+Wunderbar. Nun sind wir in der Lage für beliebige, sich wiederholende Werte die Zahlenverhältnisse auszugeben. Wie sieht es mit den
+verwendeten Veschlüsslungsverfahren aus?
+
+
+```bash
+                         Entry        Count Percent
+---------------------------------------------------
+                             -           21   0.21%
+                    AES256-SHA          565   5.65%
+                  DES-CBC3-SHA            8   0.08%
+     DHE-RSA-AES256-GCM-SHA384           43   0.43%
+            DHE-RSA-AES256-SHA          169   1.69%
+         DHE-RSA-AES256-SHA256            2   0.02%
+   ECDHE-RSA-AES128-GCM-SHA256         5896  58.96%
+          ECDHE-RSA-AES128-SHA          102   1.02%
+       ECDHE-RSA-AES128-SHA256           86   0.86%
+   ECDHE-RSA-AES256-GCM-SHA384         1176  11.76%
+          ECDHE-RSA-AES256-SHA         1008  10.08%
+       ECDHE-RSA-AES256-SHA384          919   9.19%
+        ECDHE-RSA-DES-CBC3-SHA            5   0.05%
+---------------------------------------------------
+                         Total        10000 100.00%
+```
+
+Ein guter Überblick auf die Schnelle. Können wir etwas zu den HTTP-Protokollversionen sagen?
+
+```bash
+$> cat labor-04-example-access.log | alprotocol | sucspercent 
+                         Entry        Count Percent
+---------------------------------------------------
+                      HTTP/1.0           70   0.70%
+                      HTTP/1.1         9885  98.85%
+                      **NONE**           41   0.41%
+                          quit            4   0.04%
+---------------------------------------------------
+                         Total        10000 100.00%
+```
+
+Das veraltete _HTTP/1.0_ kommt also durchaus noch vor, und bei 45 Anfragen scheint etwas schief gegangen zu sein. Konzentrieren wir uns in
+der Rechnung auf die erfolgreichen Requests mit einem gültigen Protokoll und sehen wir uns die Prozentzahlen nochmals an:
+
+```bash
+$> cat labor-04-example-access.log | alprotocol | grep HTTP |  sucspercent
+                         Entry        Count Percent
+---------------------------------------------------
+                      HTTP/1.0           70   0.70%
+                      HTTP/1.1         9885  99.30%
+---------------------------------------------------
+                         Total         9955 100.00%
+``` 
+
+Wir können das Muster "Feldextraktion -> sucs" also noch durch weitere Filteroperationen verfeinern.
+
+
+Mit den verschiedenen Aliasen für die Extraktion von Werten aus dem Logfile und den beiden Aliasen _sucs_ und _sucspercent_
+haben wir nun sehr handliche Werkzeuge beisammen um Fragen nach der relativen Häufigkeit von sich wiederholenden Werten
+einfach und mit demselben Muster beantworten zu können.
+
+Bei den Messwerten, die sich nicht mehr wiederholen, also etwa der Dauer eines Requests, oder der Grösse der Antworten, nützen
+uns die Prozentzahlen aber noch wenig. Was wir brauchen ist eine einfache statistische Auswertung.
+
+FIXME
+
+
+
+
+cat labor-04-example-access.log | alduration | awk -f ~/bin/basic-statistics.awk 
+Number of values: 10000
+Minimum: 18
+Maximum: 301455050
+Range: 301455032
+-----
+Mean: 91306.4
+Standard deviation: 3.02388e+06
+Variance: 9.14388e+12
+Coefficient of variation: 33.118
+-----
+
+FIXME: awk-script from Swiss Post
+
+
+
+###Schritt 9 (Bonus): Weitere Request- und Response-Header in zusätzlichem Logfile mitschreiben
 
 Im Arbeitsalltag ist man oft nach bestimmten Requests auf der Suche oder man ist sich nicht sicher, welche Requests einen Fehler verursachen. Da erweist es sich oft als hilfreich, wenn man bestimmte zusätzliche Werte mit ins Logfile schreiben kann. Beliebige Request- und Response-Header sowie Umgebungs-Variabeln lassen sich sehr leicht mitschreiben. Unser Logformat macht davon rege Gebrauch.
 
@@ -668,7 +909,6 @@ Der Output könnte dann etwa wie folgt aussehen:
 [07/Dec/2011:16:56:06 +0100] "GET /index.html HTTP/1.1" text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8 text/html
 [07/Dec/2011:16:56:07 +0100] "GET /index.html HTTP/1.1" text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8 text/html
 ```
-
 
 ###Verweise
 
