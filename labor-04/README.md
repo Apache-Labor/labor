@@ -830,8 +830,8 @@ $> cat labor-04-example-access.log | alsslprotocol | sucspercent
                          Entry        Count Percent
 ---------------------------------------------------
                              -           21   0.21%
-                         TLSv1         1764  17.64%
                        TLSv1.1           65   0.65%
+                         TLSv1         1764  17.64%
                        TLSv1.2         8150  81.50%
 ---------------------------------------------------
                          Total        10000 100.00%
@@ -842,26 +842,27 @@ verwendeten Veschlüsslungsverfahren aus?
 
 
 ```bash
+$> cat labor-04-example-access.log | alsslcipher | sucspercent 
                          Entry        Count Percent
 ---------------------------------------------------
-                             -           21   0.21%
-                    AES256-SHA          565   5.65%
-                  DES-CBC3-SHA            8   0.08%
-     DHE-RSA-AES256-GCM-SHA384           43   0.43%
-            DHE-RSA-AES256-SHA          169   1.69%
          DHE-RSA-AES256-SHA256            2   0.02%
-   ECDHE-RSA-AES128-GCM-SHA256         5896  58.96%
-          ECDHE-RSA-AES128-SHA          102   1.02%
-       ECDHE-RSA-AES128-SHA256           86   0.86%
-   ECDHE-RSA-AES256-GCM-SHA384         1176  11.76%
-          ECDHE-RSA-AES256-SHA         1008  10.08%
-       ECDHE-RSA-AES256-SHA384          919   9.19%
         ECDHE-RSA-DES-CBC3-SHA            5   0.05%
+                  DES-CBC3-SHA            8   0.08%
+                             -           21   0.21%
+     DHE-RSA-AES256-GCM-SHA384           43   0.43%
+       ECDHE-RSA-AES128-SHA256           86   0.86%
+          ECDHE-RSA-AES128-SHA          102   1.02%
+            DHE-RSA-AES256-SHA          169   1.69%
+                    AES256-SHA          565   5.65%
+       ECDHE-RSA-AES256-SHA384          919   9.19%
+          ECDHE-RSA-AES256-SHA         1008  10.08%
+   ECDHE-RSA-AES256-GCM-SHA384         1176  11.76%
+   ECDHE-RSA-AES128-GCM-SHA256         5896  58.96%
 ---------------------------------------------------
                          Total        10000 100.00%
 ```
 
-Ein guter Überblick auf die Schnelle. Können wir etwas zu den HTTP-Protokollversionen sagen?
+Ein guter Überblick auf die Schnelle. Damit können wir für den Moment zufrieden sein. Gibt es etwas zu den HTTP-Protokollversionen sagen?
 
 ```bash
 $> cat labor-04-example-access.log | alprotocol | sucspercent 
