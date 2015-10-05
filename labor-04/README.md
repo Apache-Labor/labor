@@ -231,7 +231,7 @@ LoadModule		logio_module		modules/mod_logio.so
 ```
 
 Wir benötigen dieses Modul um zwei Werte mitschreiben zu können.
-<i>IO-In</i> und <i>IO-Out</i>. Also die total Zahl der Bytes des
+_IO-In_ und _IO-Out_. Also die total Zahl der Bytes des
 HTTP-Requests inklusive Header-Zeilen und die totale Zahl der
 Bytes in der Antwort, wiederum inklusive Header-Zeilen.
 
