@@ -864,26 +864,42 @@ haben wir nun sehr handliche Werkzeuge beisammen um Fragen nach der relativen H�
 einfach und mit demselben Muster beantworten zu können.
 
 Bei den Messwerten, die sich nicht mehr wiederholen, also etwa der Dauer eines Requests, oder der Grösse der Antworten, nützen
-uns die Prozentzahlen aber noch wenig. Was wir brauchen ist eine einfache statistische Auswertung.
+uns die Prozentzahlen aber wenig. Was wir brauchen ist eine einfache statistische Auswertung. Gefragt sind der Durchschnitt,
+vielleicht der Median, Informationen zu den Ausreissern und sinnvollerweise die Standardabweichung.
 
-FIXME
+Auch ein solches Skript steht zum Download bereit: FIXME Link.
 
-
-
-
-cat labor-04-example-access.log | alduration | awk -f ~/bin/basic-statistics.awk 
-Number of values: 10000
-Minimum: 18
-Maximum: 301455050
-Range: 301455032
------
-Mean: 91306.4
-Standard deviation: 3.02388e+06
-Variance: 9.14388e+12
-Coefficient of variation: 33.118
------
+```bash
+$> cat labor-04-example-access.log | alioout | awk -f ~/bin/basic-statistics.awk 
 
 FIXME: awk-script from Swiss Post
+
+```
+
+Mit _IO-Out_  betrachten wir die totale Grösse der HTTP Antworten. Sie scheinen sich im kleineren Rahmen zu bewegen. Der FIXME bla bla bla
+
+
+We sieht es mit der Dauer der Anfragen aus. Haben wir dort ein ähnliches Bild?
+
+```bash
+$> cat labor-04-example-access.log | alduration | awk -f ~/bin/basic-statistics.awk 
+
+```
+
+...
+
+
+Auch mit den vorgestellten Kommando-Zeilen Werkzeugen braucht es etwas Übung, um rasch zum Ziel zu kommen. Es
+lohnt sich, sich diese Erfahrung in der Praxis anzueignen. Als Inspiration für weitere Fischzüge in unserem Beispiel-Logfile 
+soll die nächste kurze Auswertung dienen: Die Durschnittsdauer der Anfragen nach Pfad, wobei wir die Pfade etwas gruppieren.
+
+
+cat labor-04/labor-04-example-access.log | grep "\"GET " | aluri | cut -d\/ -f1,2,3 | sort | uniq  | while read P; do  MEAN=$(grep "GET $P" labor-04/labor-04-example-access.log | alduration | awk -f ~/bin/basic-statistics.awk | grep Mean | sed 's/.*: //'); echo "$MEAN $P"; done  | sort -n
+
+
+
+Bei der Dauer
+
 
 
 
