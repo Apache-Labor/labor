@@ -364,9 +364,37 @@ Was es damit auf sich hat, ist für den Moment noch unwichtig. Wichtig ist, dass
 diesem startk erweiterten Logformat eine Basis gelegt haben auf die wir zukünftig aufbauen
 können, ohne das Logformat nochmals anpassen zu müssen.
 
+
+###Schritt 6: Weitere Request- und Response-Header in zusätzlichem Logfile mitschreiben
+
+Im Arbeitsalltag ist man oft nach bestimmten Requests auf der Suche oder man ist sich nicht sicher, welche Requests einen Fehler verursachen. Da erweist es sich oft als hilfreich, wenn man bestimmte zusätzliche Werte mit ins Logfile schreiben kann. Beliebige Request- und Response-Header sowie Umgebungs-Variabeln lassen sich sehr leicht mitschreiben. Unser Logformat macht davon rege Gebrauch.
+
+Bei den Werten _\"%{Referer}i\"_ sowie _\"%{User-Agent}i\"_ handelt es sich um Request-Header-Felder. Bei der Balancer-Route *%{BALANCER_WORKER_ROUTE}e* haben wir es mit einer Umgebungs-Variablen zu tun. Das Muster wird deutlich: _%{Header/Variable}<Domäne>_. Request-Header sind der Domäne _i_ zugeordnet. Environment-Variabeln der Domäne _e_, die Response-Header der Domäne _o_ und die Variablen des _SSL_-Moduls der Domäne _x_.
+
+Schreiben wir zu Debug-Zwecken also ein zusätzliches Logfile. Wir benützen nicht mehr die _LogFormat_-Direktive, sondern definieren das Format zusammen mit dem File auf einer Zeile. Dies ist ein Shortcut, wenn man ein bestimmtes Format nur ein Mal verwenden möchte.
+
+```bash
+CustomLog logs/access-debug.log "[%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] %{UNIQUE_ID}e \"%r\" %{Accept}i %{Content-Type}o"
+```
+
+Mit diesem zusätzlichen Logfile sehen wir, welche Wünsche in Bezug auf die Content-Types der Client äusserte, und was unser Server tatsächlich lieferte. Normalerweise klappt dieses Zusammenspiel zwischen Client und Server sehr gut. Aber in der Praxis gibt es da schon mal Unstimmigkeiten; da ist ein zusätzliches Logfile dieser Art hilfreich bei der Fehlersuche.
+Das Resultat könnte dann etwa wie folgt aussehen:
+
+```bash
+$> cat logs/access-debug.log
+2015-09-02 11:58:35.654011 VebITcCoAwcAADRophsAAAAX "GET / HTTP/1.1" */* text/html
+2015-09-02 11:58:37.486603 VebIT8CoAwcAADRophwAAAAX "GET /cms/feed/ HTTP/1.1" text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8 text/html
+2015-09-02 11:58:39.253209 VebIUMCoAwcAADRoph0AAAAX "GET /cms/2014/04/17/ubuntu-14-04/ HTTP/1.1" */* text/html
+2015-09-02 11:58:40.893992 VebIU8CoAwcAADRbdGkAAAAD "GET /cms/2014/05/13/download-softfiles HTTP/1.1" */* text/html
+2015-09-02 11:58:43.558478 VebIVcCoAwcAADRbdGoAAAAD "GET /cms/2014/08/25/netcapture-sshargs HTTP/1.1" */* text/html
+...
+```
+
+So lassen sich Logfiles in Apache also sehr frei definieren. Interessanter ist aber die Auswertung der Daten. Dazu benötigen wir erst einige Daten.
+
 ###Schritt 6: Ausprobieren und Logdatei füllen
 
-Konfigurieren wir das Zugriffslog wie oben beschrieben und beschäftigen wir den Server etwas!
+Konfigurieren wir das erweiterte Zugriffslog im Format _extended_,wie oben beschrieben, und beschäftigen wir den Server etwas!
 
 Wir könnten dazu _Apache Bench_ wie in der zweiten Anleitung zwei beschrieben
 verwenden, aber das würde ein sehr einförmiges Logfile ergeben. Mit den folgenden beiden Einzeilern bringen
@@ -386,7 +414,7 @@ Aneinandergehängt erhalten wir eine Menge Daten. (Falls es zu einer Fehlermeldu
 der Befehl _uuidgen_ nicht vorhanden ist. In diesem Fall wäre das Paket _uuid_ zu installieren.
 
 
-Die Bearbeitung dieser Zeile dürfte ein, zwei Minuten dauern. Als Resultat sehen wir folgendes im Logfile:
+Die Bearbeitung dieser Zeile dürfte einen Moment dauern. Als Resultat sehen wir folgendes im Logfile:
 
 ```bash
 127.0.0.1 - - [2015-10-03 05:54:09.090117] "GET /index.html?n=1a HTTP/1.1" 200 45 "-" "curl/7.35.0" www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 534 1485 -% 446 - - - - -
@@ -591,7 +619,7 @@ Die Bearbeitung dieser Zeile dürfte ein, zwei Minuten dauern. Als Resultat sehe
 127.0.0.1 - - [2015-10-03 05:55:13.453047] "POST /index.html?n=100b HTTP/1.1" 200 45 "-" "curl/7.35.0" www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 4366 1539 -% 910 - - - - -
 ```
 
-Wie oben vorhergesagt sind noch sehr viele Werte leer, oder durch _-_ gekennzeichnet. Aber wir sehen, dass wir den Server localhost auf Port 80 angesprochen haben und dass die Grösse des Requests mit jedem Request zunahm und zuletzt beinahe 4K, also 4096 Bytes, betrug. Mit diesem einfachen Logfile lassen sich bereits einfache Auswertungen durchführen.
+Wie oben vorhergesagt sind noch sehr viele Werte leer, oder durch _-_ gekennzeichnet. Aber wir sehen, dass wir den Server _www.example.com_ auf Port 443 angesprochen haben und dass die Grösse des Requests mit jedem _POST_-Request zunahm und zuletzt beinahe 4K, also 4096 Bytes, betrug. Mit diesem einfachen Logfile lassen sich bereits einfache Auswertungen durchführen.
 
 ###Schritt 7: Einfache Auswertungen mit dem Logformat Extended durchführen
 
@@ -646,7 +674,7 @@ Hier filtern wir die GET und die POST Requests anhand der Methode, die auf ein A
 
 Soweit zu diesen ersten Fingerübungen. Auf der Basis dieses selbst abgefüllten Logfiles ist das leider noch nicht sehr spanned. Nehmen wir uns also ein richtiges Logfile von einem Produktionsserver vor.
 
-### Schritt 8: Auswertungen auf einem Beispiel-Logfile
+### Schritt 8: Tiefere gehende Auswertungen auf einem Beispiel-Logfile
 
 Spannender werden die Auswertungen mit einem richtigen Logfile von einem produktiven Server. Hier ist eines, mit 10'000 Anfragen:
 
@@ -786,7 +814,7 @@ Was uns fehlt ist ein Befehl ähnlich wie der Alias _sucs_, der in einem Durchla
 verwandelt: _sucspercent_.
 
 ```bash
-$> alias sucspercent='sort | uniq -c | awk -f $HOME/bin/percent.awk'
+$> alias sucspercent='sort | uniq -c | sort -n | $HOME/bin/percent.awk'
 ```
 
 Rasche Rechnungen erledigt man in Linux traditionellerweise mit _awk_. Dafür steht neben der oben gelinkten _Alias_-Datei auch
@@ -867,64 +895,58 @@ Bei den Messwerten, die sich nicht mehr wiederholen, also etwa der Dauer eines R
 uns die Prozentzahlen aber wenig. Was wir brauchen ist eine einfache statistische Auswertung. Gefragt sind der Durchschnitt,
 vielleicht der Median, Informationen zu den Ausreissern und sinnvollerweise die Standardabweichung.
 
-Auch ein solches Skript steht zum Download bereit: FIXME Link.
+Auch ein solches Skript steht zum Download bereit: FIXME Link basicstats.awk. Es bietet sich an, dieses Skript ähnlich wie percent.awk im privaten _bin_-Verzeichnis abzulegen.
 
 ```bash
-$> cat labor-04-example-access.log | alioout | awk -f ~/bin/basic-statistics.awk 
-
-FIXME: awk-script from Swiss Post
-
+$> cat labor-04-example-access.log | alioout | basicstats.awk
+Num of values:        10000
+      Average:        15375
+       Median:         6646
+          Min:            0
+          Max:       340179
+        Range:       340179
+Std deviation:        25913
 ```
 
-Mit _IO-Out_  betrachten wir die totale Grösse der HTTP Antworten. Sie scheinen sich im kleineren Rahmen zu bewegen. Der FIXME bla bla bla
+Mit diesen Zahlen wird der Service rasch plastisch. Mit einer durchschnittlichen Antwortgrösse von 15KB und einem Median von 6.6 KB haben wir einen typischen Webservice vor uns. Der Median bedeutet ja konkret, dass die Hälfte der Antworten kleiner als 6.6 KB waren. Die grösste Antwort kam bei 340 KB zu stehen, die Standard-Abweichung von knapp 26 KB bedeutet, dass die grossen Werte selten waren.
 
-
-We sieht es mit der Dauer der Anfragen aus. Haben wir dort ein ähnliches Bild?
+Wie sieht es mit der Dauer der Anfragen aus. Haben wir dort ein ähnlich homogenes Bild?
 
 ```bash
-$> cat labor-04-example-access.log | alduration | awk -f ~/bin/basic-statistics.awk 
-
+$> cat labor-04-example-access.log | alduration | basicstats.awk
+Num of values:        10000
+      Average:        91306
+       Median:         2431
+          Min:           18
+          Max:    301455050
+        Range:    301455032
+Std deviation:      3023884
 ```
 
+Hier ist es zunächst wichtig, sich zu vergegenwärtigen, dass wir es mit Microsekunden zu tun haben. Der Median liegt bei 2400 Microekunden, das sind gut 2 Millisekunden. Der Durschschnitt ist mit 91 Millisekunden viel grösser, offensichtlich haben wir zahlreiche Ausreisser, welche den Schnitt in die Höhe gezogen haben. Tatsächlich  haben wir einen Maximalwert von 301 Sekunden und wenig überraschend eine Standardabweichung von 3 Sekunden. Das Bild ist also weniger homogen und wir haben zumindest einige Requests, die wir untersuchen sollten. Das wird nun aber etwas komplizierter. Das vorgeschlagene Vorgehen ist nur ein mögliches und es steht hier als Vorschlag und als Inspiration für den Weiteren Gebrauch unseres erweiterten Logfiles:
+
+
+
+```bash
+$> cat labor-04-example-access.log | grep "\"GET " | aluri | cut -d\/ -f1,2,3 | sort | uniq | while read P; do  AVG=$(grep "GET $P" labor-04-example-access.log | alduration | basicstats.awk | grep Average | sed 's/.*: //'); echo "$AVG $P"; done  | sort -n
 ...
-
-
-Auch mit den vorgestellten Kommando-Zeilen Werkzeugen braucht es etwas Übung, um rasch zum Ziel zu kommen. Es
-lohnt sich, sich diese Erfahrung in der Praxis anzueignen. Als Inspiration für weitere Fischzüge in unserem Beispiel-Logfile 
-soll die nächste kurze Auswertung dienen: Die Durschnittsdauer der Anfragen nach Pfad, wobei wir die Pfade etwas gruppieren.
-
-
-cat labor-04/labor-04-example-access.log | grep "\"GET " | aluri | cut -d\/ -f1,2,3 | sort | uniq  | while read P; do  MEAN=$(grep "GET $P" labor-04/labor-04-example-access.log | alduration | awk -f ~/bin/basic-statistics.awk | grep Mean | sed 's/.*: //'); echo "$MEAN $P"; done  | sort -n
-
-
-
-Bei der Dauer
-
-
-
-
-###Schritt 9 (Bonus): Weitere Request- und Response-Header in zusätzlichem Logfile mitschreiben
-
-Im Arbeitsalltag ist man oft nach bestimmten Requests auf der Suche oder man ist sich nicht sicher, welche Requests einen Fehler verursachen. Da erweist es sich oft als hilfreich, wenn man bestimmte zusätzliche Werte mit ins Logfile schreiben kann. Beliebige Request- und Response-Header sowie Umgebungs-Variabeln lassen sich sehr leicht mitschreiben. Unser Logformat macht davon rege Gebrauch.
-
-Bei den Werten _\"%{Referer}i\"_ sowie _\"%{User-Agent}i\"_ handelt es sich um Request-Header-Felder. Bei der Balancer-Route _%{BALANCER_WORKER_ROUTE}e_ haben wir es mit einer Umgebungs-Variablen zu tun. Das Muster wird deutlich: _%{Header/Variable}<Domäne>_. Request-Header sind der Domäne _i_ zugeordnet. Environment-Variabeln der Domäne _e_ und die Response-Header der Domäne _o_.
-
-Schreiben wir zu Debug-Zwecken also ein zusätzliches Logfile. Wir benützen nicht mehr die _LogFormat_-Direktive, sondern definieren das Format zusammen mit dem File. Dies ist ein Shortcut, wenn man ein bestimmtes Format nur ein Mal verwenden möchte.
-
-```bash
-CustomLog logs/access-debug.log "%t \"%r\" %{Accept}i %{Content-Type}o"
+       97459 /cms/
+       97840 /cms/application-download-soft
+       98959 /cms/category
+      109910 /cms/technical-blog
+      115564 /cms/content
+      146096 /cms/feed
+      146881 /files/application-9-sshots-appl.png
+      860889 /cms/download-softfiles
 ```
 
-Mit diesem zusätzlichen Logfile sehen wir, welche Wünsche in Bezug auf die Content-Types der Client äusserte, und was unser Server tatsächlich lieferte. Normalerweise klappt dieses Zusammenspiel zwischen Client und Server sehr gut. Aber in der Praxis gibt es da schon mal Unstimmigkeiten; da ist ein zusätzliches Logfile dieser Art sehr hilfreich bei der Fehlersuche.
+Was passiert hier nacheinander? Wir filtern mittel _grep_ nach _GET_-Requests. Wir ziehen die _URI_ heraus und zerschneiden sie mittels _cut_. Uns interessieren nur die ersten Abschnitte des Pfades. Wir beschränken uns hier, um eine vernünftige Gruppierung zu erhalten. Zuviele verschiedene Pfade bringen hier wenig Mehrwert. Die so erhaltene Pfadliste sortieren wir alphabetisch und reduzieren sie mittels _uniq_. Das ist die Hälfte der Arbeit.
 
-Der Output könnte dann etwa wie folgt aussehen:
+Nun lesen wir die Pfade nacheinander in die Variable _P_ und bauen darüber mit _while_ eine Schleife. Innerhalb der Schleife berechnen wir für den in _P_ abgespeicherten Pfad die Basisstatistiken und filtern die Ausgabe auf den Durschnitt, wobei mir mit _sed_ so filtern, dass die Variable _AVG_ nur die Zahl und nicht auch noch die Bezeichnung _Average:_ enthält. Nun geben wir diesen Durchschnittswert und den Pfadnamen aus. Ende der Schleife. Zu guter letzt sortieren wir alles noch numerisch und erhalten damit eine Übersicht, welche Pfade zu Requests mit längeren Antwortzeiten geführt haben. Offenbar schiesst ein Pfad namens _/cms/download-softfiles_ obenaus. Das Stichwort _download_ lässt dies plausibel erscheinen.
 
-```bash
-[07/Dec/2011:16:55:40 +0100] "GET /index.html HTTP/1.1" */* text/html
-[07/Dec/2011:16:56:04 +0100] "GET /index.html HTTP/1.1" text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8 text/html
-[07/Dec/2011:16:56:06 +0100] "GET /index.html HTTP/1.1" text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8 text/html
-[07/Dec/2011:16:56:07 +0100] "GET /index.html HTTP/1.1" text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8 text/html
-```
+Damit kommen wir zum Abschluss dieser Anleitung. Ziel war es ein erweitertes Logformat einzuführen und in die Arbeit mit den Logfiles einzuführen. Dabei kommen wiederkehrend eine Reihe von Aliasen und zwei _awk_-Skripts zum Einsatz, die sich sehr flexibel hintereinander reihen lassen. Mit diesen Werkzeugen und der nötigen Erfahrung in deren Handhabung ist man in der Lage, rasch auf die in den Logfiles zur Verfügung stehenden Informationen zuzugreifen.
+
+
 
 ###Verweise
 
