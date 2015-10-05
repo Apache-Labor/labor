@@ -680,7 +680,7 @@ Soweit zu diesen ersten Fingerübungen. Auf der Basis dieses selbst abgefüllten
 
 Spannender werden die Auswertungen mit einem richtigen Logfile von einem produktiven Server. Hier ist eines, mit 10'000 Anfragen:
 
-[labor-04-example-access.log](./labor-04-example-access.log)
+[labor-04-example-access.log](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-04/labor-04-example-access.log)
 
 ```bash
 $> head labor-04-example-access.log
@@ -730,6 +730,7 @@ $> cat labor-04-example-access.log | cut -d\" -f9 | cut -d\  -f4 | sort | uniq -
    1764 TLSv1
    8150 TLSv1.2
 ```
+
 Es scheint vorzukommen, dass Apache kein Verschlüsselungsprotokoll notiert. Das ist etwas merkwürdig, da es aber ein sehr seltener Fall ist, gehen wir ihm für den Moment nicht nach. Wichtiger sind die Zahlenverhältnisse zwischen den TLS Protokollen. Hier dominiert nach dem Abschalten von _SSLv3_ das Protokoll _TLSv1.2_, neben einem substantiellen Anteil _TLSv1.0_. _TLSv1.1_ ist vernachlässigbar.
 
 Zum gewünschten Resultat sind wir wieder über eine Reihe von _cut_-Befehlen gelangt. Eigentlich wäre es doch angebracht, diese Befehle vorzumerken, da wir sie immer wieder brauchen. Das wäre dann eine Alias-Liste wie die folgende:
@@ -774,7 +775,8 @@ alias alscores='cut -d\" -f9 | cut -d\  -f12,13 | tr " " ";" | tr "-" "0"'
 
 Die Aliase beginnen alle mit _al_. Dies steht für _ApacheLog_ oder _AccessLog_. Darauf folgt der Feldnahme. Die einzelnen Aliase sind nicht alphabethisch geordnet. Sie folgen vielmehr der Reihenfolge der Felder im Format des Logfiles.
 
-Diese Liste mit Alias-Definitionen befindet sich in der Datei [apache-modsec.alias](../bin/apache-modsec.alias). Dort liegt sie gemeinsam mit einigen weiteren Aliasen, die wir in späteren Anleitungen definieren werden. Wenn man öfter mit Apache und seinen Logfiles arbeitet, dann bietet es sich an, diese Alias-Definitionen im Heim-Verzeichnis abzulegen und sie beim Einloggen zu laden. Also mittels folgendem Eintrag in der _.bashrc_-Datei oder über einen verwandten Mechanismus.
+Diese Liste mit Alias-Definitionen befindet sich in der Datei [apache-modsec.alias](https://github.com/Apache-Labor/labor/blob/master/bin/.apache-modsec.alias).
+ Dort liegt sie gemeinsam mit einigen weiteren Aliasen, die wir in späteren Anleitungen definieren werden. Wenn man öfter mit Apache und seinen Logfiles arbeitet, dann bietet es sich an, diese Alias-Definitionen im Heim-Verzeichnis abzulegen und sie beim Einloggen zu laden. Also mittels folgendem Eintrag in der _.bashrc_-Datei oder über einen verwandten Mechanismus.
 
 ```bash
 test -e ~/.apache-modsec.alias && . ~/.apache-modsec.alias
@@ -821,7 +823,7 @@ $> alias sucspercent='sort | uniq -c | sort -n | $HOME/bin/percent.awk'
 
 Rasche Rechnungen erledigt man in Linux traditionellerweise mit _awk_. Dafür steht neben der oben gelinkten _Alias_-Datei auch
 das _awk_-Skript _percent.awk_ zur Verfügung, das man idealerweise im Unterverzeichnis _bin_ seines Heimverzeichnisses ablegt.
-Das obenstehene _sucspercent_ Alias geht denn auch von diesem Setup aus. Das _awk_-Skript befindet sich [hier](../bin/percent.awk).
+Das obenstehene _sucspercent_ Alias geht denn auch von diesem Setup aus. Das _awk_-Skript befindet sich [hier](https://github.com/Apache-Labor/labor/blob/master/bin/percent.awk).
 
 ```bash
 $> cat labor-04-example-access.log | alsslprotocol | sucspercent 
@@ -897,7 +899,7 @@ Bei den Messwerten, die sich nicht mehr wiederholen, also etwa der Dauer eines R
 uns die Prozentzahlen aber wenig. Was wir brauchen ist eine einfache statistische Auswertung. Gefragt sind der Durchschnitt,
 vielleicht der Median, Informationen zu den Ausreissern und sinnvollerweise die Standardabweichung.
 
-Auch ein solches Skript steht zum Download bereit: FIXME Link basicstats.awk. Es bietet sich an, dieses Skript ähnlich wie percent.awk im privaten _bin_-Verzeichnis abzulegen.
+Auch ein solches Skript steht zum Download bereit: [basicstats.awk](https://github.com/Apache-Labor/labor/blob/master/bin/basicstats.awk). Es bietet sich an, dieses Skript ähnlich wie percent.awk im privaten _bin_-Verzeichnis abzulegen.
 
 ```bash
 $> cat labor-04-example-access.log | alioout | basicstats.awk
@@ -949,9 +951,11 @@ Nun lesen wir die Pfade nacheinander in die Variable _P_ und bauen darüber mit 
 Damit kommen wir zum Abschluss dieser Anleitung. Ziel war es ein erweitertes Logformat einzuführen und in die Arbeit mit den Logfiles einzuführen. Dabei kommen wiederkehrend eine Reihe von Aliasen und zwei _awk_-Skripts zum Einsatz, die sich sehr flexibel hintereinander reihen lassen. Mit diesen Werkzeugen und der nötigen Erfahrung in deren Handhabung ist man in der Lage, rasch auf die in den Logfiles zur Verfügung stehenden Informationen zuzugreifen.
 
 
-
 ###Verweise
 
 * [Dokumentation des Apache-Moduls Log-Config](http://httpd.apache.org/docs/current/mod/mod_log_config.html)
 * [Dokumentation des Apache-Moduls SSL](http://httpd.apache.org/docs/current/mod/mod_ssl.html)
-
+* [labor-04-example-access.log](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-04/labor-04-example-access.log)
+* [.apache-modsec.alias](https://github.com/Apache-Labor/labor/blob/master/bin/.apache-modsec.alias)
+* [percent.awk](https://github.com/Apache-Labor/labor/blob/master/bin/percent.awk)
+* [basicstats.awk](https://github.com/Apache-Labor/labor/blob/master/bin/basicstats.awk)
