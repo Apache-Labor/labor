@@ -82,3 +82,4 @@ alias melidmsg='grep -o "\[id [^]]*\].*\[msg [^]]*\]" | sed -e "s/\].*\[/] [/" |
 alias melidmsg_nototal='grep --line-buffered -o "\[id [^]]*\].*\[msg [^]]*\]"  | sed -e "s/\].*\[/] [/"  -e "s/\[id \"//" -e "s/\"\] \[msg \"/ /" -e "s/\"\]//" -e "s/(Total .*/(Total ...) .../"'
 alias melmsg_nototal='grep -o "\[msg [^]]*" | cut -d\" -f2 | sed -e "s/(Total .*/(Total ...) .../"'
 alias sucs='sort | uniq -c | sort -n'
+alias sucspercent='sort | uniq -c | sort -n | $HOME/bin/percent.awk'
