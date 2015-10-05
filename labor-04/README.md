@@ -868,10 +868,10 @@ Ein guter Überblick auf die Schnelle. Damit können wir für den Moment zufried
 $> cat labor-04-example-access.log | alprotocol | sucspercent 
                          Entry        Count Percent
 ---------------------------------------------------
+                          quit            4   0.04%
+                      **NONE**           41   0.41%
                       HTTP/1.0           70   0.70%
                       HTTP/1.1         9885  98.85%
-                      **NONE**           41   0.41%
-                          quit            4   0.04%
 ---------------------------------------------------
                          Total        10000 100.00%
 ```
@@ -889,7 +889,7 @@ $> cat labor-04-example-access.log | alprotocol | grep HTTP |  sucspercent
                          Total         9955 100.00%
 ``` 
 
-Wir können das Muster "Feldextraktion -> sucs" also noch durch weitere Filteroperationen verfeinern.
+Hier kommt zusätzlich noch ein _grep_ zum Einsatz. Wir können das Muster "Alias-Feldextraktion -> sucs" also noch durch weitere Filteroperationen verfeinern.
 
 
 Mit den verschiedenen Aliasen für die Extraktion von Werten aus dem Logfile und den beiden Aliasen _sucs_ und _sucspercent_

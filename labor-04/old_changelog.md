@@ -1,5 +1,6 @@
 ##### Changelog
 
+* 5\. Oktober 2015: Aliase ersetzt, awk Skripts erweitert
 * 4\. Oktober 2015: html -> markdown, auf github eingecheckt, überarbeitet
 * 9\. Juli 2013: Umbenennen des Logfile Formats auf extended (vs. extended2011); Anpassen der Logfile-Namen; Aktualisieren des User-Agent Eintrages im Logfile.
 * 2\. Juli 2013: Entfernung der Environment Variable _ModSecAnonScore_. Sie ist inkompatibel mit dem Tutorial Nummer 6.
