@@ -707,7 +707,7 @@ $> cat labor-04-example-access.log  | egrep  -o '"(GET|POST)'  | cut -b2- | sort
 Das ist ein eindeutiges Resultat. Sehen wir eigentlich viele Fehler? Also Anfragen, die mit einem HTTP Fehlercode beantwortet wurden?
 
 ```bash
-cat labor-04-example-access.log | cut -d\" -f3 | cut -d\  -f2 | sort | uniq -c
+$> cat labor-04-example-access.log | cut -d\" -f3 | cut -d\  -f2 | sort | uniq -c
    9040 200
       5 206
     447 301
@@ -794,13 +794,13 @@ $> cat labor-04-example-access.log | alsslprotocol | sort | uniq -c | sort -n
 Das geht schon etwas leichter. Aber das wiederholte Tippen von _sort_ gefolgt von _uniq -c_ und dann nochmals ein numerisches _sort_ ist mühlselig. Da es sich erneut um ein wiederkehrendes Muster handelt, lohnt sich auch hier ein Alias, der sich als _sucs_ abgekürzen lässt: ein Zusammenzug der Anfangsbuchstaben und des _c_ von _uniq -c_.
 
 ```bash
-alias sucs='sort | uniq -c | sort -n'
+$> alias sucs='sort | uniq -c | sort -n'
 ```
 Das erlaubt uns dann:
 
 
 ```bash
-$>cat labor-04-example-access.log | alsslprotocol | sucs
+$> cat labor-04-example-access.log | alsslprotocol | sucs
      21 -
      65 TLSv1.1
    1764 TLSv1
