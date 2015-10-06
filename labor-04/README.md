@@ -394,7 +394,7 @@ $> cat logs/access-debug.log
 
 So lassen sich Logfiles in Apache also sehr frei definieren. Interessanter ist aber die Auswertung der Daten. Dazu benötigen wir erst einige Daten.
 
-###Schritt 6: Ausprobieren und Logdatei füllen
+###Schritt 7: Ausprobieren und Logdatei füllen
 
 Konfigurieren wir das erweiterte Zugriffslog im Format _extended_,wie oben beschrieben, und beschäftigen wir den Server etwas!
 
@@ -623,7 +623,7 @@ Die Bearbeitung dieser Zeile dürfte einen Moment dauern. Als Resultat sehen wir
 
 Wie oben vorhergesagt sind noch sehr viele Werte leer, oder durch _-_ gekennzeichnet. Aber wir sehen, dass wir den Server _www.example.com_ auf Port 443 angesprochen haben und dass die Grösse des Requests mit jedem _POST_-Request zunahm und zuletzt beinahe 4K, also 4096 Bytes, betrug. Mit diesem einfachen Logfile lassen sich bereits einfache Auswertungen durchführen.
 
-###Schritt 7: Einfache Auswertungen mit dem Logformat Extended durchführen
+###Schritt 8: Einfache Auswertungen mit dem Logformat Extended durchführen
 
 Wer das Beispiel-Logfile genau ansieht, wird erkennen, dass die Dauer der Requests nicht ganz sauber verteilt ist. Es gibt zwei Ausreisser. Wir können das wie folgt identifizieren:
 
@@ -676,7 +676,7 @@ Hier filtern wir die GET und die POST Requests anhand der Methode, die auf ein A
 
 Soweit zu diesen ersten Fingerübungen. Auf der Basis dieses selbst abgefüllten Logfiles ist das leider noch nicht sehr spanned. Nehmen wir uns also ein richtiges Logfile von einem Produktionsserver vor.
 
-### Schritt 8: Tiefere gehende Auswertungen auf einem Beispiel-Logfile
+### Schritt 9: Tiefere gehende Auswertungen auf einem Beispiel-Logfile
 
 Spannender werden die Auswertungen mit einem richtigen Logfile von einem produktiven Server. Hier ist eines, mit 10'000 Anfragen:
 
@@ -812,16 +812,15 @@ an ein Zahlenverhältnis von 1764 zu 8150. Total haben wier hier genau 10'000 An
 Praxis dürften die Logfiles aber kaum so schön aufgehen, wir benötigen also Hilfe beim Ausrechnen der Prozentzahlen.
 
 
-###Schritt 9: Auswertungen mit Prozentzahlen
+###Schritt 10: Auswertungen mit Prozentzahlen und einfache Statistik
 
-Was uns fehlt ist ein Befehl ähnlich wie der Alias _sucs_, der in einem Durchlauf die Zahlenwerte in Prozentzahlen
-verwandelt: _sucspercent_.
+Was uns fehlt ist ein Befehl, der ähnlich wie der Alias _sucs_ funktioniert, aber im selben Durchlauf die Zahlenwerte in Prozentzahlen verwandelt: _sucspercent_.
 
 ```bash
 $> alias sucspercent='sort | uniq -c | sort -n | $HOME/bin/percent.awk'
 ```
 
-Rasche Rechnungen erledigt man in Linux traditionellerweise mit _awk_. Dafür steht neben der oben gelinkten _Alias_-Datei auch
+Rasche Rechnungen erledigt man in Linux traditionellerweise mit _awk_. Dafür steht neben der oben gelinkten _Alias_-Datei, die _sucspercent_ ebenfalls enthält, zusätzlich
 das _awk_-Skript _percent.awk_ zur Verfügung, das man idealerweise im Unterverzeichnis _bin_ seines Heimverzeichnisses ablegt.
 Das obenstehene _sucspercent_ Alias geht denn auch von diesem Setup aus. Das _awk_-Skript befindet sich [hier](https://github.com/Apache-Labor/labor/blob/master/bin/percent.awk).
 
@@ -837,8 +836,7 @@ $> cat labor-04-example-access.log | alsslprotocol | sucspercent
                          Total        10000 100.00%
 ```
 
-Wunderbar. Nun sind wir in der Lage für beliebige, sich wiederholende Werte die Zahlenverhältnisse auszugeben. Wie sieht es mit den
-verwendeten Veschlüsslungsverfahren aus?
+Wunderbar. Nun sind wir in der Lage für beliebige, sich wiederholende Werte die Zahlenverhältnisse auszugeben. Wie sieht es denn zum Beispiel mit den verwendeten Veschlüsslungsverfahren aus?
 
 
 ```bash
@@ -893,8 +891,8 @@ Hier kommt zusätzlich noch ein _grep_ zum Einsatz. Wir können das Muster "Alia
 
 
 Mit den verschiedenen Aliasen für die Extraktion von Werten aus dem Logfile und den beiden Aliasen _sucs_ und _sucspercent_
-haben wir nun sehr handliche Werkzeuge beisammen um Fragen nach der relativen Häufigkeit von sich wiederholenden Werten
-einfach und mit demselben Muster beantworten zu können.
+haben wir uns handliche Werkzeuge zurecht gelegt, um Fragen nach der relativen Häufigkeit von sich wiederholenden Werten
+einfach und mit demselben Muster von Befehlen beantworten zu können.
 
 Bei den Messwerten, die sich nicht mehr wiederholen, also etwa der Dauer eines Requests, oder der Grösse der Antworten, nützen
 uns die Prozentzahlen aber wenig. Was wir brauchen ist eine einfache statistische Auswertung. Gefragt sind der Durchschnitt,
@@ -913,7 +911,7 @@ Num of values:        10000
 Std deviation:        25913
 ```
 
-Mit diesen Zahlen wird der Service rasch plastisch. Mit einer durchschnittlichen Antwortgrösse von 15KB und einem Median von 6.6 KB haben wir einen typischen Webservice vor uns. Der Median bedeutet ja konkret, dass die Hälfte der Antworten kleiner als 6.6 KB waren. Die grösste Antwort kam bei 340 KB zu stehen, die Standard-Abweichung von knapp 26 KB bedeutet, dass die grossen Werte selten waren.
+Mit diesen Zahlen wird der Service rasch plastisch. Mit einer durchschnittlichen Antwortgrösse von 15KB und einem Median von 6.6 KB haben wir einen typischen Webservice vor uns. Der Median bedeutet ja konkret, dass die Hälfte der Antworten kleiner als 6.6 KB waren. Die grösste Antwort kam bei 340 KB zu stehen, die Standard-Abweichung von knapp 26 KB bedeutet, dass die grossen Werte ingesamt selten waren.
 
 Wie sieht es mit der Dauer der Anfragen aus. Haben wir dort ein ähnlich homogenes Bild?
 
@@ -928,7 +926,7 @@ Num of values:        10000
 Std deviation:      3023884
 ```
 
-Hier ist es zunächst wichtig, sich zu vergegenwärtigen, dass wir es mit Microsekunden zu tun haben. Der Median liegt bei 2400 Microekunden, das sind gut 2 Millisekunden. Der Durschschnitt ist mit 91 Millisekunden viel grösser, offensichtlich haben wir zahlreiche Ausreisser, welche den Schnitt in die Höhe gezogen haben. Tatsächlich  haben wir einen Maximalwert von 301 Sekunden und wenig überraschend eine Standardabweichung von 3 Sekunden. Das Bild ist also weniger homogen und wir haben zumindest einige Requests, die wir untersuchen sollten. Das wird nun aber etwas komplizierter. Das vorgeschlagene Vorgehen ist nur ein mögliches und es steht hier als Vorschlag und als Inspiration für den Weiteren Gebrauch unseres erweiterten Logfiles:
+Hier ist es zunächst wichtig, sich zu vergegenwärtigen, dass wir es mit Microsekunden zu tun haben. Der Median liegt bei 2400 Microekunden, das sind gut 2 Millisekunden. Der Durschschnitt ist mit 91 Millisekunden viel grösser, offensichtlich haben wir zahlreiche Ausreisser, welche den Schnitt in die Höhe gezogen haben. Tatsächlich  haben wir einen Maximalwert von 301 Sekunden und wenig überraschend eine Standardabweichung von 3 Sekunden. Das Bild ist also weniger homogen und wir haben zumindest einige Requests, die wir untersuchen sollten. Das wird nun aber etwas komplizierter. Das vorgeschlagene Vorgehen ist nur ein mögliches und es steht hier als Vorschlag und als Inspiration für die weitere Arbeit mit dem Logfile:
 
 
 
@@ -945,11 +943,11 @@ $> cat labor-04-example-access.log | grep "\"GET " | aluri | cut -d\/ -f1,2,3 | 
       860889 /cms/download-softfiles
 ```
 
-Was passiert hier nacheinander? Wir filtern mittel _grep_ nach _GET_-Requests. Wir ziehen die _URI_ heraus und zerschneiden sie mittels _cut_. Uns interessieren nur die ersten Abschnitte des Pfades. Wir beschränken uns hier, um eine vernünftige Gruppierung zu erhalten. Zuviele verschiedene Pfade bringen hier wenig Mehrwert. Die so erhaltene Pfadliste sortieren wir alphabetisch und reduzieren sie mittels _uniq_. Das ist die Hälfte der Arbeit.
+Was passiert hier nacheinander? Wir filtern mittel _grep_ nach _GET_-Requests. Wir ziehen die _URI_ heraus und zerschneiden sie mittels _cut_. Uns interessieren nur die ersten Abschnitte des Pfades. Wir beschränken uns hier, um eine vernünftige Gruppierung zu erhalten, denn zu viele verschiedene Pfade bringen hier wenig Mehrwert. Die so erhaltene Pfadliste sortieren wir alphabetisch und reduzieren sie mittels _uniq_. Das ist die Hälfte der Arbeit.
 
 Nun lesen wir die Pfade nacheinander in die Variable _P_ und bauen darüber mit _while_ eine Schleife. Innerhalb der Schleife berechnen wir für den in _P_ abgespeicherten Pfad die Basisstatistiken und filtern die Ausgabe auf den Durschnitt, wobei mir mit _sed_ so filtern, dass die Variable _AVG_ nur die Zahl und nicht auch noch die Bezeichnung _Average:_ enthält. Nun geben wir diesen Durchschnittswert und den Pfadnamen aus. Ende der Schleife. Zu guter letzt sortieren wir alles noch numerisch und erhalten damit eine Übersicht, welche Pfade zu Requests mit längeren Antwortzeiten geführt haben. Offenbar schiesst ein Pfad namens _/cms/download-softfiles_ obenaus. Das Stichwort _download_ lässt dies plausibel erscheinen.
 
-Damit kommen wir zum Abschluss dieser Anleitung. Ziel war es ein erweitertes Logformat einzuführen und in die Arbeit mit den Logfiles einzuführen. Dabei kommen wiederkehrend eine Reihe von Aliasen und zwei _awk_-Skripts zum Einsatz, die sich sehr flexibel hintereinander reihen lassen. Mit diesen Werkzeugen und der nötigen Erfahrung in deren Handhabung ist man in der Lage, rasch auf die in den Logfiles zur Verfügung stehenden Informationen zuzugreifen.
+Damit kommen wir zum Abschluss dieser Anleitung. Ziel war es ein erweitertes Logformat einzuführen und die Arbeit mit den Logfiles zu demonstrieren. Dabei kommen wiederkehrend eine Reihe von Aliasen und zwei _awk_-Skripts zum Einsatz, die sich sehr flexibel hintereinander reihen lassen. Mit diesen Werkzeugen und der nötigen Erfahrung in deren Handhabung ist man in der Lage, rasch auf die in den Logfiles zur Verfügung stehenden Informationen zuzugreifen.
 
 
 ###Verweise
