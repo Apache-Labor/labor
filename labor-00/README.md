@@ -2,11 +2,11 @@
 
 ###Was machen wir?
 
-Wir kompilieren einen Apache Webservers für ein Testsystem
+Wir kompilieren einen Apache Webservers für ein Testsystem.
 
 ###Warum tun wir das?
 
-Im professionellen Einsatz des Webservers geschieht es regelmässig, dass besondere Bedürfnisse (Security, zusätzliche Debug-Messages, spezielle Funktionalität dank eines neuen Patches etc.) einen zwingen, sich von den Distributionspaketen zu verabschieden und rasch eigene Binaries herzustellen.  In diesem Fall ist es wichtig, dass die Infrastruktur bereit steht und man erste Erfahrungen mit dem Kompilieren und Produktivschalten der eigenen Binaries mitbringt. Zudem lässt sich in einem Laborsetup leichter mit selbst kompilierten Apache arbeiten, was auch beim Debuggen von Vorteil ist.
+Im professionellen Einsatz des Webservers geschieht es immer wieder, dass besondere Bedürfnisse (Sicherheit, zusätzliche Debug-Meldungen, spezielle Funktionalität durch einen neuen Patch etc.) einen zwingen, sich von den Distributionspaketen zu verabschieden und rasch eigene Binaries herzustellen.  In diesem Fall ist es wichtig, dass die Infrastruktur bereit steht und man erste Erfahrungen mit dem Kompilieren und Produktivschalten der eigenen Binaries mitbringt. Zudem lässt sich in einem Laborsetup leichter mit selbst kompilierten Apache arbeiten, um etwa neue Versionen zu testen bevor sie in die Distributionen gelangen.
 
 ###Schritt 1: Bereitmachen des Verzeichnisbaumes für den Sourcecode
 
@@ -20,25 +20,50 @@ $> sudo chown `whoami` /usr/src/apache
 ###Schritt 2: Erfüllen der Vorbedingungen apr und apr-util
 
 Seit dem Erscheinen von Apache 2.4 wird der Apache Webserver ohne zwei wichtige Bibliotheken
-ausgeliefert, die vormals Teil der Distribution waren. Wir müssen nun `apr` und `apr-util` selbst installieren, bevor wir Apache kompilieren können. Bei `apr` handelt es sich um die Apache Portable Runtime Bibliothek. Sie erweitert den normalen Satz an C-Bibliotheken mit weiteren Funktionen, die von Server-Software typischerweise benötigt wird. Darunter fallen etwa Funktionen zur Verwaltung von Hash-Tabellen oder Listen. Diese Bibliothek wird nicht nur vom Webserver Apache, sondern auch von anderen Projekten der Apache Software Foundation verwendet, weshalb sie aus dem Source-Code von Apache herausgelöst wurde. Wie `apr` ist `apr-util` Teil der Portable Runtime Libraries, welche durch `apr-util` ergänzt werden.
+ausgeliefert, die vormals Teil der Releases waren. Wir müssen nun `apr` und `apr-util` selbst installieren, bevor wir Apache kompilieren können. Bei `apr` handelt es sich um die _Apache Portable Runtime_ Bibliothek. Sie erweitert den normalen Satz an C-Bibliotheken mit weiteren Funktionen, die von Server-Software typischerweise benötigt wird. Darunter fallen etwa Funktionen zur Verwaltung von Hash-Tabellen oder Listen. Diese Bibliothek wird nicht nur vom Webserver Apache, sondern auch von anderen Projekten der Apache Software Foundation verwendet, weshalb sie aus dem Source-Code von Apache herausgelöst wurde. Wie `apr` ist `apr-util` Teil der Portable Runtime Libraries, welche durch `apr-util` ergänzt werden.
 
-Wir laden die beiden Pakete nacheinander herunter, überprüfen die Checksumme, konfigurieren die Pakete, kompilieren sie und installieren sie schliesslich. Es ist eine gute Angewohnheit, Sourcecode auf seine Integrität hin zu prüfen. Dazu dient die Checksumme, welche bei _www.apache.org_ als Link direkt neben dem Sourcecode der Software erscheint.
+Beginnen wir mit _apr_ und laden das Paket herunter:
+
 
 ```bash
 $> wget http://mirror.switch.ch/mirror/apache/dist/apr/apr-1.5.2.tar.bz2
+```
+
+Nun laden wir die Checksumme der Sourcecodedatei direkt von Apache herunter. Leider bietet _www.apache.org_ nur eine md5-Checksumme für `apr` an. Wir testen sie dennoch. Sicherheitshalber verwenden wir beim Herunterladen eine gesicherte Verbindung. Ohne https macht diese Überprüfung keinen grossen Sinn. Beide Files, der Sourcecode und die kleine Prüfsummendatei, sollten nebeneinander in `/usr/src/apache` liegen. Dann lässt sich die Prüfsumme testen:
+
+
+```bash
 $> wget https://www.apache.org/dist/apr/apr-1.5.2.tar.bz2.md5
 $> md5sum --check apr-1.5.2.tar.bz2.md5
 apr-1.5.2.tar.bz2: OK
+```
+
+Das Überprüfen sollte keine Probleme machen, _OK_. Wir können also mit dem Entpacken, Vorkonfigurieren und dem Kompilieren der _apr_ fortfahren.
+
+```bash
 $> tar xvjf apr-1.5.2.tar.bz2
 $> cd apr-1.5.2
 $> ./configure --prefix=/usr/local/apr/
-$> make
-$> sudo make install
 ```
 
-Leider bietet _www.apache.org_ nur eine md5-Checksumme für `apr` an. Wir testen sie dennoch. Bei der Konfiguration entscheiden wir uns für eine installation in einem lokalen Library-Pfad. Wenn das für `apr` geklappt hat, dann weiter mit `apr-util`:
+Wir begeben uns nach dem Entpacken in das neue Verzeichnis mit dem Sourcecode und starten _configure_. Damit konfogurieren wir den Compiler. Wir geben den Installationspfad vor und _configure_ sucht sich dann eine Vielzahl von Informationen und Einstellungen zu unserem System selbst zusammen.
+
+Wenn dies problemlos durchläuft, wovon wir ausgehen, ist es Zeit für das Kompilieren.
 
 ```bash
+$> make
+```
+
+Das dauert einen Moment und wir erhalten die kompilierte _apr_, die wir umgehen installieren.
+
+```bash
+$> make install
+```
+
+Wenn dies erfolgreich geschehen ist, verfahren wir mit den _apr-util_ analog.
+
+```bash
+$> cd /usr/src/apache
 $> wget http://mirror.switch.ch/mirror/apache/dist/apr/apr-util-1.5.4.tar.bz2
 $> wget https://www.apache.org/dist/apr/apr-util-1.5.4.tar.bz2.md5
 $> md5sum --check apr-util-1.5.4.tar.bz2.md5
@@ -63,21 +88,11 @@ $> wget http://mirror.switch.ch/mirror/apache/dist//httpd/httpd-2.4.16.tar.bz2
 
 Der gepackte Sourcecode hat etwa eine Grösse von 5MB.
 
-Nun wir die Checksumme der Sourcecodedatei direkt von Apache herunter. Dankenswerterweise steht sie immerhin als _sha1-Checksumme_ zur Verfügung. Sicherheitshalber verwenden wir dazu wieder eine gesicherte Verbindung. Ohne https macht diese Überprüfung keinen grossen Sinn.
+Nun laden wir die Checksumme der Sourcecodedatei direkt von Apache herunter. Dankenswerterweise steht sie immerhin als _sha1-Checksumme_ zur Verfügung. Wir prüfen sie sogleich.
 
 ```bash
 $> wget https://www.apache.org/dist/httpd/httpd-2.4.16.tar.bz2.sha1
-```
-
-Beide Files, der Sourcecode und die kleine Prüfsummendatei sollten nebeneinander in `/usr/src/apache` liegen. Dann lässt sich die Prüfsumme testen:
-
-```bash
 $> sha1sum --check httpd-2.4.16.tar.bz2.sha1 
-```
-
-Wir erwarten Folgendes als Antwort:
-
-```bash
 httpd-2.4.16.tar.bz2: OK
 ```
 
@@ -89,18 +104,18 @@ Nach der Überprüfung können wir das Paket entpacken.
 $> tar xvjf httpd-2.4.16.tar.bz2
 ```
 
-Das ergibt nun etwa 38MB.
+Das ergibt etwa 38MB.
 
-Wir gehen nun in das Verzeichnis und konfigurieren den Compiler mit unseren Eingaben und mit Informationen zu unserem System. Neben den Optionen der Kommando-Zeile sucht sich das Configure-Skript selbst sehr viele Informationen zu unserem System zusammen. Dies Infos werden dann für den Compiler bereit gestellt.
+Wir gehen nun in das Verzeichnis und konfigurieren den Compiler mit unseren Eingaben und mit Informationen zu unserem System. Anders als bei _apr_ sind unsere Eingaben sehr umfangreich.
 
 ```bash
 $> cd httpd-2.4.16
 $> ./configure --prefix=/opt/apache-2.4.16  --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared=event --enable-mods-shared=all --enable-nonportable-atomics=yes
 ```
 
-Hier bestimmen wir das Zielverzeichnis für den zukünftigen Apache Webserver; wieder konform mit dem _FHS_. Darauf folgen zwei Optionen, um die beiden als Vorbedingung installierten Bibliotheken anzubinden. Mittels `--enable-mpms-shared` wählen wir ein sogenanntes Prozessmodells des Servers aus. Das ist – vereinfacht gesagt – so etwas wie der Motorentyp der Maschine: Benzin oder Diesel. In unserem Fall stehen `event`, `worker`, `prefork` und ein paar experimentelle Motoren zur Verfügung. Wir nehmen hier das Modell `event`, das unter 2.4 den neuen Standard darstellt und deutlich performanter ist als die übrigen Architekturen. In den Versionslinien 2.0 und 2.2 gab es bei diesem Entscheid deutlich mehr als nur die Performance zu bedenken, aber seit 2.4 hat sich die Problematik deutlich entschärft und wir fahren nun mit `event` am Besten. Mehr Infos zu den verschiedenen Prozessmodellen (_MPMs_) liefert Apache Projekt.
+Hier bestimmen wir das Zielverzeichnis für den zukünftigen Apache Webserver; wieder konform mit dem _FHS_. Darauf folgen zwei Optionen, um die beiden als Vorbedingung installierten Bibliotheken anzubinden. Mittels `--enable-mpms-shared` wählen wir ein sogenanntes Prozessmodell des Servers aus. Das ist – vereinfacht gesagt – so etwas wie der Motorentyp der Maschine: Benzin oder Diesel. In unserem Fall stehen `event`, `worker`, `prefork` und ein paar experimentelle Motoren zur Verfügung. Wir nehmen hier das Modell `event`, das unter 2.4 den neuen Standard darstellt und deutlich performanter ist als die übrigen Architekturen. In den Versionslinien 2.0 und 2.2 gab es bei diesem Entscheid deutlich mehr als nur die Performance zu bedenken, aber seit 2.4 hat sich die Problematik deutlich entschärft und wir fahren nun mit `event` am Besten. Mehr Infos zu den verschiedenen Prozessmodellen (_MPMs_) liefert das Apache Projekt.
 
-Dann bestimmen wir, dass wie alle (_all_) Module mitkompilieren möchten. Dabei ist zu wissen, dass _all_ hier nicht wirklich alle bedeutet. Aus historischen Gründen meint _all_ nur sämtliche Kern-Module, was auch schon eine ganze Menge ist. Das Schlüsselwort _shared_ besagt, dass wir die Module separat kompiliert haben möchten, um sie dann einzeln als optionale Module einbinden zu können. Zu guter letzt folgt mit `enable-nonportable-atomics` ein Compiler-Flag, das den Compiler instruiert, besondere Optionen zu verwenden, welche nur auf modernen x86-Prozessoren zur Verfügung stehen und sich günstig auf die Performance auswirken.
+Dann bestimmen wir, dass wie alle (_all_) Module mitkompilieren möchten. Das Schlüsselwort _shared_ besagt, dass wir die Module separat kompiliert haben möchten, um sie dann einzeln als optionale Module einbinden zu können. Zu guter Letzt folgt mit `enable-nonportable-atomics` ein Compiler-Flag, das den Compiler instruiert, besondere Optionen zu verwenden, welche nur auf modernen x86-Prozessoren zur Verfügung stehen und sich günstig auf die Performance auswirken.
 
 Der Configure-Befehl beschwert sich oft über fehlende Komponenten. Ist klar: Ohne funktionierenden Compiler können wir nicht kompilieren und das Configure hat die Aufgabe nachzusehen, ob alles gut beisammen ist.
 
@@ -113,21 +128,26 @@ Sachen, die typischerweise fehlen, sind Folgende:
 - zlibc
 - zlib1g-dev
 
-(je nach Distribution mag dieses Paket anders heissen)
+Je nach Distribution mag das eine oder andere Paket anders heissen.
 
-Das lässt sich leicht beheben, indem man sie mit den Hilfsmitteln der eigenen Distribution nachinstalliert. Danach configure neu ausführen, eventuell nochmals zwei, drei Mal etwas nachinstallieren und irgendwann läuft das Skript dann erfolgreich durch.
+Das Fehlen lässt sich leicht beheben, indem man sie mit den Hilfsmitteln der eigenen Distribution nachinstalliert. Danach _configure_ neu ausführen, eventuell nochmals zwei, drei Mal etwas nachinstallieren und irgendwann läuft das Skript dann erfolgreich durch.
+
+Generell kommt es beim Kompilieren immer wieder vor, dass Bestandteile fehlen. Bisweilen ist das Nachinstallieren von Paketen schwieriger als in unserem Fall und im schlimmsten Fall kann es sein, dass Versionen inkompatibel sind. Oft findet man im Internet eine Lösung für das Problem, aber bisweilen muss man sich selbst ziemlich tief in das System eingraben, um die Wurzel der Schwierigkeiten zu beseitigen.  In unserem einfachen Fall, sollte das aber kein Thema sein.
+
 
 ###Schritt 5: Kompilieren
-Nun sind wir bereit für den Compiler. Hier sollte nun nichts mehr schief gehen.
+
+Nach dem Durchlauf von _configure_ sind wir bereit für den Compiler. Hier sollte nun nichts mehr schief gehen.
 
 ```bash
 $> make
 ```
 
-Das dauert einen Moment und aus den 38MB werden knapp 100MB.
+Das dauert wohl einige Zeit aus den 38MB werden knapp 100MB.
 
 ###Schritt 7: Installieren
-Wenn das geklappt hat, dann installieren wir den selbst gebauten Apache Webserver. Wir müssen das Installieren durch den Superuser vornehmen lassen. Aber danach schauen wir gleich zu, dass wir wieder in Besitz des Webservers kommen. Für ein Testsystem ist das viel praktischer.
+
+Wenn das Kompilieren geklappt hat, dann installieren wir den selbst gebauten Apache Webserver. Wir müssen das Installieren durch den Superuser vornehmen lassen. Aber danach schauen wir gleich zu, dass wir wieder in Besitz des Webservers kommen. Für ein Testsystem ist das viel praktischer.
 
 ```bash
 $> sudo make install
@@ -139,7 +159,7 @@ Auch die Installation dauert eine Weile.
 $> sudo chown -R `whoami` /opt/apache-2.4.16
 ```
 
-Und jetzt noch ein Kniff: Wenn man professionell mit Apache arbeitet, dann hat man oft mehrere verschiedene Versionen nebeneinander auf der Testmaschine. Verschiedene Versionen, verschiedene Patches, andere Module etc. führen zu recht mühsamen und langsamen Pfaden mit Versionsnummern und weiteren Beschreibungen. Ich mache es dann jeweils so, dass ich einen Softlink von `/apache` auf den aktuellen Apache Webserver lege. Dabei ist darauf zu achten, dass auch der Softlink uns und nicht dem root-User gehört (Dies wird bei der Konfiguration des Servers wichtig).
+Und jetzt noch ein Kniff: Wenn man mit selbst kompilierten Apache Servern arbeitet, dann hat man oft mehrere verschiedene Versionen nebeneinander auf der Testmaschine. Verschiedene Versionen, verschiedene Patches, andere Module etc. führen zu recht mühsamen und langsamen Pfaden mit Versionsnummern und weiteren Beschreibungen. Ich mache es dann jeweils so, dass ich einen Softlink von `/apache` auf den aktuellen Apache Webserver lege. Dabei ist darauf zu achten, dass auch der Softlink uns und nicht dem root-User gehört (Dies wird bei der Konfiguration des Servers wichtig).
 
 ```bash
 $> sudo ln -s /opt/apache-2.4.16 /apache
@@ -165,15 +185,15 @@ Vermutlich gibt es nun beim Start eine Warnung:
 AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1. Set the 'ServerName' directive globally to suppress this message
 ```
 
-Das ist nicht weiter schlimm und wir können sie für den Moment ignorieren.
+Das ist nicht weiter schlimm und wir können die Warnung für den Moment ignorieren.
 
 ###Schritt 9: Ausprobieren
 
-Die Maschine läuft nun also. Aber funktioniert sie auch? Zeit für den Funktionstest: Wir sprechen den Apache mit dem Browser unter folgendem Link an:
+Die Maschine läuft jetzt. Aber funktioniert sie auch? Zeit für den Funktionstest: Wir sprechen den Apache mit dem Browser unter folgendem Link an:
 
 [http://127.0.0.1](http://127.0.0.1)
 
-Da erwarten wir dann Folgendes:
+Da erwarten wir dann Folgendes.
 
 ![Screenshot: It works!](./apache-tutorial-1-screenshot-it-works.png)
 
@@ -185,7 +205,7 @@ Zurück in die Shell und Abschalten des Servers mit STRG-C oder für uns Schweiz
 
 ###Schritt 10 (Bonus): Ansehen des Binaries und der Module
 
-Der Webserver läuft nun also. Aber vielleicht möchten wir ihn noch etwas genauer ansehen und mit den Fingern über die Karosserie streichen. Informationen zu unserem Binary erhalten wir wie folgt:
+Bevor wir die Lektion abschliessen möchten wir den Server etwas genauer ansehen. Sozusagen mit den Fingern über die Karosserie streichen und die Motorhaube öffnen. Informationen zu unserem Binary erhalten wir wie folgt:
 
 ```bash
 $> ./bin/httpd -V
@@ -221,7 +241,7 @@ Server compiled with....
 
 ```
 
-Da wird die Version angegeben, wann wir kompiliert haben, `apr` kommt wieder zur Sprache und weiter unten der _MPM_ `event`. Ganz unten finden wir übrigens den Hinweis auf das Standard-Konfigurationsfile des Webservers und etwas darüber den Pfad, unter dem wir das Errorlog finden können.
+Da wird die Version angegeben, wann wir kompiliert haben, `apr` kommt wieder zur Sprache und weiter unten der _MPM_ `event`. Ganz unten finden wir übrigens den Hinweis auf das Standard-Konfigurationsfile des Webservers und etwas darüber den Pfad, unter dem wir das Default _Errorlog_ finden können.
 
 Man kann aber noch etwas mehr aus dem System rausholen und ihn etwa nach den Modulen fragen, welche fix in den Server hineinkompiliert sind:
 
@@ -236,7 +256,7 @@ Compiled in modules:
   http_core.c
 ```
 
-Diese und die obenstehenden Informationen helfen bei der Fehlersuche und wenn man einen Bugreport einsenden will. Dies sind typischerweise auch die ersten Fragen, welche gestellt werden.
+Diese und die obenstehenden Informationen helfen bei der Fehlersuche und wenn man einen Bugreport einsenden will. Dies sind typischerweise auch die ersten Fragen, welche von den Entwicklern gestellt werden.
 
 Das Binary selbst (`/apache/bin/httpd`) ist übrigens ungefähr 2.0MB gross und die Liste der Module sieht folgendermassen aus:
 
@@ -352,7 +372,7 @@ total 8.8M
 -rwxr-xr-x 1 myuser root    69K Sep 17 21:17 mod_xml2enc.so
 ```
 
-Das sind nun alle Module, welche von Apache zusammen mit dem Server verteilt werden. Weitere Module gibt es von Drittanbietern. Alle brauchen wir kaum, aber einige will man fast immer dabei haben: Sie stehen für eine Einbindung bereit..
+Das sind alle Module, welche von Apache zusammen mit dem Server verteilt werden; bekanntlich haben wir bei den zu kompilierenden Modulen die Option _all_ ausgewählt. Weitere Module gibt es von Drittanbietern. Alle unsere Module brauchen wir kaum, aber einige will man fast immer dabei haben: Sie stehen von Beginng weg für eine Einbindung bereit.
 
 #####Verweise
 - Apache: [http://httpd.apache.org](http://httpd.apache.org)
