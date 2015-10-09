@@ -15,6 +15,7 @@ Prinzipiell spielt es keine grosse Rolle, wo der Sourcecode liegt. Das Folgende 
 ```bash
 $> sudo mkdir /usr/src/apache
 $> sudo chown `whoami` /usr/src/apache
+$> cd /usr/src/apache
 ```
 
 ###Schritt 2: Erfüllen der Vorbedingungen apr und apr-util
@@ -57,7 +58,7 @@ $> make
 Das dauert einen Moment und wir erhalten die kompilierte _apr_, die wir umgehen installieren.
 
 ```bash
-$> make install
+$> sudo make install
 ```
 
 Wenn dies erfolgreich geschehen ist, verfahren wir mit den _apr-util_ analog.
@@ -208,7 +209,7 @@ Zurück in die Shell und Abschalten des Servers mit STRG-C oder für uns Schweiz
 Bevor wir die Lektion abschliessen möchten wir den Server etwas genauer ansehen. Sozusagen mit den Fingern über die Karosserie streichen und die Motorhaube öffnen. Informationen zu unserem Binary erhalten wir wie folgt:
 
 ```bash
-$> ./bin/httpd -V
+$> sudo ./bin/httpd -V
 ```
 
 ```bash
@@ -246,7 +247,7 @@ Da wird die Version angegeben, wann wir kompiliert haben, `apr` kommt wieder zur
 Man kann aber noch etwas mehr aus dem System rausholen und ihn etwa nach den Modulen fragen, welche fix in den Server hineinkompiliert sind:
 
 ```bash
-$> ./bin/httpd -l
+$> sudo ./bin/httpd -l
 ```
 
 ```bash
