@@ -48,6 +48,16 @@ $> ./configure --prefix=/usr/local/apr/
 ```
 
 Wir begeben uns nach dem Entpacken in das neue Verzeichnis mit dem Sourcecode und starten _configure_. Damit konfogurieren wir den Compiler. Wir geben den Installationspfad vor und _configure_ sucht sich dann eine Vielzahl von Informationen und Einstellungen zu unserem System selbst zusammen.
+Der Configure-Befehl beschwert sich oft über fehlende Komponenten. Ist klar: Ohne funktionierenden Compiler können wir nicht kompilieren und das Configure hat die Aufgabe nachzusehen, ob alles gut beisammen ist.
+
+Sachen, die typischerweise fehlen, sind Folgende:
+
+- build-essential
+- binutils
+- gcc
+
+Das sind die Paket-Namen auf einer debian-basierten Distribution. Andernorts mögen die Pakete anders heissen.
+Das Fehlen lässt sich leicht beheben, indem man sie mit den Hilfsmitteln der eigenen Distribution nachinstalliert. Danach _configure_ neu ausführen, eventuell nochmals etwas nachinstallieren und irgendwann läuft das Skript dann erfolgreich durch.
 
 Wenn dies problemlos durchläuft, wovon wir ausgehen, ist es Zeit für das Kompilieren.
 
@@ -116,22 +126,16 @@ $> ./configure --prefix=/opt/apache-2.4.16  --with-apr=/usr/local/apr/bin/apr-1-
 
 Hier bestimmen wir das Zielverzeichnis für den zukünftigen Apache Webserver; wieder konform mit dem _FHS_. Darauf folgen zwei Optionen, um die beiden als Vorbedingung installierten Bibliotheken anzubinden. Mittels `--enable-mpms-shared` wählen wir ein sogenanntes Prozessmodell des Servers aus. Das ist – vereinfacht gesagt – so etwas wie der Motorentyp der Maschine: Benzin oder Diesel. In unserem Fall stehen `event`, `worker`, `prefork` und ein paar experimentelle Motoren zur Verfügung. Wir nehmen hier das Modell `event`, das unter 2.4 den neuen Standard darstellt und deutlich performanter ist als die übrigen Architekturen. In den Versionslinien 2.0 und 2.2 gab es bei diesem Entscheid deutlich mehr als nur die Performance zu bedenken, aber seit 2.4 hat sich die Problematik deutlich entschärft und wir fahren nun mit `event` am Besten. Mehr Infos zu den verschiedenen Prozessmodellen (_MPMs_) liefert das Apache Projekt.
 
-Dann bestimmen wir, dass wie alle (_all_) Module mitkompilieren möchten. Das Schlüsselwort _shared_ besagt, dass wir die Module separat kompiliert haben möchten, um sie dann einzeln als optionale Module einbinden zu können. Zu guter Letzt folgt mit `enable-nonportable-atomics` ein Compiler-Flag, das den Compiler instruiert, besondere Optionen zu verwenden, welche nur auf modernen x86-Prozessoren zur Verfügung stehen und sich günstig auf die Performance auswirken.
+Dann bestimmen wir, dass wir alle (_all_) Module mitkompilieren möchten. Das Schlüsselwort _shared_ besagt, dass wir die Module separat kompiliert haben möchten, um sie dann einzeln als optionale Module einbinden zu können. Zu guter Letzt folgt mit `enable-nonportable-atomics` ein Compiler-Flag, das den Compiler instruiert, besondere Optionen zu verwenden, welche nur auf modernen x86-Prozessoren zur Verfügung stehen und sich günstig auf die Performance auswirken.
 
-Der Configure-Befehl beschwert sich oft über fehlende Komponenten. Ist klar: Ohne funktionierenden Compiler können wir nicht kompilieren und das Configure hat die Aufgabe nachzusehen, ob alles gut beisammen ist.
+Beim _configure_-Befehl des Webservers kann es nun sein, dass weitere Pakete nachinstalliert werden müssen. Dazu zählen etwa die folgenden.
 
-Sachen, die typischerweise fehlen, sind Folgende:
-
-- binutils
-- gcc
 - libpcre3-dev
 - libssl-dev
 - zlibc
 - zlib1g-dev
 
 Je nach Distribution mag das eine oder andere Paket anders heissen.
-
-Das Fehlen lässt sich leicht beheben, indem man sie mit den Hilfsmitteln der eigenen Distribution nachinstalliert. Danach _configure_ neu ausführen, eventuell nochmals zwei, drei Mal etwas nachinstallieren und irgendwann läuft das Skript dann erfolgreich durch.
 
 Generell kommt es beim Kompilieren immer wieder vor, dass Bestandteile fehlen. Bisweilen ist das Nachinstallieren von Paketen schwieriger als in unserem Fall und im schlimmsten Fall kann es sein, dass Versionen inkompatibel sind. Oft findet man im Internet eine Lösung für das Problem, aber bisweilen muss man sich selbst ziemlich tief in das System eingraben, um die Wurzel der Schwierigkeiten zu beseitigen.  In unserem einfachen Fall, sollte das aber kein Thema sein.
 
