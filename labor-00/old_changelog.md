@@ -1,4 +1,5 @@
 ##### Changelog
+* 10\. Oktober 2015: Paketabhängigkeiten teilweise zu apr geschoben, build-essential hinzugefügt
 * 9\. Oktober 2015: Spracahliche Überarbeitung, apr/apr-util Kompilierung besser kommentiert
 * 17\. September 2015: Version von 2.2 auf 2.4.16 gehoben und Text überarbeitet
 * 14\. Dezember 2013: html -> markdown, auf github eingecheckt (F. Tschannen)
