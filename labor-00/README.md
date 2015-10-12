@@ -22,13 +22,13 @@ $> cd /usr/src/apache
 
 Seit dem Erscheinen von Apache 2.4 wird der Apache Webserver ohne zwei wichtige Bibliotheken ausgeliefert, die vormals Teil der Distribution waren. Wir müssen nun `apr` und `apr-util` selbst installieren, bevor wir Apache kompilieren können. Bei `apr` handelt es sich um die Apache Portable Runtime Bibliothek. Sie erweitert den normalen Satz an C-Bibliotheken mit weiteren Funktionen, die von Server-Software typischerweise benötigt wird. Darunter fallen etwa Funktionen zur Verwaltung von Hash-Tabellen oder Listen. Diese Bibliothek wird nicht nur vom Webserver Apache, sondern auch von anderen Projekten der Apache Software Foundation verwendet, weshalb sie aus dem Source-Code von Apache herausgelöst wurde. Wie `apr` ist `apr-util` Teil der Portable Runtime Libraries, welche durch `apr-util` ergänzt werden.
 
-Wir laden die beiden Pakete nacheinander herunter, überprüfen die Checksum, konfigurieren die Pakete, kompilieren sie und installieren sie schliesslich. Es ist eine gute Angewohnheit, Sourcecode auf seine Integrität hin zu prüfen. Dazu dient die Checksum, welche bei _www.apache.org_ als Link direkt neben dem Sourcecode der Software erscheint.
+Beginnen wir mit _apr_ und laden das Paket herunter:
 
 ```bash
 $> wget http://mirror.switch.ch/mirror/apache/dist/apr/apr-1.5.2.tar.bz2
 ```
 
-Nun laden wir die Checksumme der Sourcecodedatei direkt von Apache herunter. Leider bietet _www.apache.org_ nur eine md5-Checksumme für `apr` an. Wir testen sie dennoch. Sicherheitshalber verwenden wir beim Herunterladen eine gesicherte Verbindung. Ohne https macht diese Überprüfung keinen grossen Sinn. Beide Files, der Sourcecode und die kleine Prüfsummendatei, sollten nebeneinander in `/usr/src/apache` liegen. Dann lässt sich die Prüfsumme testen:
+Nun laden wir die Checksum der Sourcecodedatei direkt von Apache herunter. Leider bietet _www.apache.org_ nur eine md5-Checksum für `apr` an. Wir testen sie dennoch. Sicherheitshalber verwenden wir beim Herunterladen eine gesicherte Verbindung. Ohne https macht diese Überprüfung keinen grossen Sinn. Beide Files, der Sourcecode und die kleine Prüfsummendatei, sollten nebeneinander in `/usr/src/apache` liegen. Dann lässt sich die Prüfsumme testen:
 
 
 ```bash
@@ -63,13 +63,13 @@ Wenn dies problemlos durchläuft, wovon wir ausgehen, ist es Zeit für das Kompi
 $> make
 ```
 
-Das dauert einen Moment und wir erhalten die kompilierte _apr_, die wir umgehen installieren.
+Das dauert einen Moment und wir erhalten die kompilierte _apr_, die wir umgehend installieren.
 
 ```bash
 $> sudo make install
 ```
 
-Leider bietet _www.apache.org_ nur eine md5-Checksum für `apr` an. Wir testen sie dennoch. Bei der Konfiguration entscheiden wir uns für eine Installation in einem lokalen Library-Pfad. Wenn das für `apr` geklappt hat, dann weiter mit `apr-util`:
+Wenn dies erfolgreich geschehen ist, verfahren wir mit den _apr-util_ analog.
 
 ```bash
 $> cd /usr/src/apache
@@ -115,7 +115,7 @@ $> tar xvjf httpd-2.4.16.tar.bz2
 
 Das ergibt etwa 38MB.
 
-Wir gehen nun in das Verzeichnis und konfigurieren den Compiler mit unseren Eingaben und mit Informationen zu unserem System. Neben den Optionen der Kommandozeile sucht sich das Configure-Script selbst sehr viele Informationen zu unserem System zusammen. Dies Infos werden dann für den Compiler bereit gestellt.
+Wir gehen nun in das Verzeichnis und konfigurieren den Compiler mit unseren Eingaben und mit Informationen zu unserem System. Anders als bei _apr_ sind unsere Eingaben sehr umfangreich.
 
 ```bash
 $> cd httpd-2.4.16
