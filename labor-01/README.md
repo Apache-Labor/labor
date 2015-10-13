@@ -15,7 +15,7 @@ Ferner ist es bei der Fehlersuche hilfreich, von einem minimalen System auszugeh
 
 ###Schritt 1: Minimale Konfiguration erstellen
 
-Unser Webserver ist auf dem Dateisystem unter `/apache` abgelegt. Unter `/apache/conf/httpd.conf` liegt seine Standart-Konfiguration. Diese ist sehr umfangreich und nur schwer zu verstehen. Ein Problem, das auch die Standart-Konfigurationen in den gängigen Linux-Distrubutionen im nochmals verstärkten Mass mit sich bringen.
+Unser Webserver ist auf dem Dateisystem unter `/apache` abgelegt. Unter `/apache/conf/httpd.conf` liegt seine Standard-Konfiguration. Diese ist sehr umfangreich und nur schwer zu verstehen. Ein Problem, das auch die Standard-Konfigurationen in den gängigen Linux-Distrubutionen im nochmals verstärkten Mass mit sich bringen.
 Wir ersetzen diese Konfigurationsdatei mit der folgenden stark vereinfachten Konfiguration.
 
 ```bash
@@ -83,9 +83,9 @@ Wir setzen den _ServerName_ auf _Localhost_, weil wir immer noch an einem Labors
 
 Der Server benötigt vor allem für die Darstellung der Fehlerseiten eine Emailadresse des Administrators. Sie wird mit dem _ServerAdmin_ gesetzt.
 
-Das _ServerRoot_ Verzeichnis bezeichnet das Haupt- oder Wurzelverzeichnis des Servers. Es ist der in Anleitung 1 als Kniff gesetzte Symlink. Dies kommt uns nun zu gute, denn durch Umlegen dieses Symlinks können wir nebeneinander verschieden kompilierte Apache Versionen ausprobieren, ohne an der Konfigurationsdatei etwas verändern zu müssen.
+Das _ServerRoot_ Verzeichnis bezeichnet das Haupt- oder Wurzelverzeichnis des Servers. Es ist der in Anleitung 1 als Kniff gesetzte Symlink. Dies kommt uns nun zugute, denn durch Umlegen dieses Symlinks können wir nebeneinander verschieden kompilierte Apache-Versionen ausprobieren, ohne an der Konfigurationsdatei etwas verändern zu müssen.
 
-Dann weisen wir dem Server mit _User_ und _Group_ den Benutzer und dessen Gruppe zu. Dies ist sinnvoll, denn wir möchten vermeiden, dass der Server als Root-Prozess läuft. Vielmehr wird der Masterprozess als Root laufen, aber die eigentlichen Serverprozesse und deren Threads laufen unter dem hier gesetzten Namen. Der User _www-data_ ist der unter einem Debian-/Ubuntu-System übliche Name. Andere Distributionen verwenden andere Namen. Bitte stellen Sie sicher, dass der von Ihnen gewählte Username und die zugehörige Gruppe auf dem System auch tatsächlich vorhanden ist.
+Dann weisen wir dem Server mit _User_ und _Group_ den Benutzer und dessen Gruppe zu. Dies ist sinnvoll, denn wir möchten vermeiden, dass der Server als Root-Prozess läuft. Vielmehr wird der Master- bzw. Parent-Prozess als Root laufen, aber die eigentlichen Server- bzw. Child-Prozesse und deren Threads laufen unter dem hier gesetzten Namen. Der User _www-data_ ist der unter einem Debian-/Ubuntu-System übliche Name. Andere Distributionen verwenden andere Namen. Bitte stellen Sie sicher, dass der von Ihnen gewählte Username und die zugehörige Gruppe auf dem System auch tatsächlich vorhanden ist.
 
 Das _PidFile_ gibt an, in welches File Apache seine Prozess-ID Nummer schreiben soll. Der gewählte Pfad entspricht dem Defaultwert. Er wird hier angeführt, damit man später nicht in der Dokumentation nach diesem Pfad zu suchen braucht.
 
@@ -107,19 +107,19 @@ Nun laden wir fünf Module:
 * unixd_module : Zugriff auf Unix Usernamen und Gruppen
 * log_config_module : Freie Definition des Zugriffs- / Access-Logs
 * authn_core_module : Basismodul für die Authentifizierung
-* authz_core_module : Basismodul für die Authorisierung
+* authz_core_module : Basismodul für die Autorisierung
 
 
 
-Wir hatten in der Lektion 1 ja alle mitgelieferten Module vorkompiliert. Hier nehmen wir nur der wichtigsten in unsere Konfiguration auf. _mpm_event_module_ und _unixd_module_ sind nötig für den Betrieb des Servers. Bei der Kompilierung im ersten Tutorial hatten wir uns für das Prozessmodell _Event_ entschieden, das wir hier nun durch das Laden des Moduls aktivieren. Interessant: Bei Apache 2.4 lässt sich auch eine so grundlegende Einstellung wie das Prozessmodell des Servers mittels der Konfiguration auswählen. Das Modul _unixd_ benötigen wir, um den Server, wie oben beschrieben, unter dem von uns definierten Usernamen laufen zu lassen.
+Wir hatten in der Lektion 1 ja alle mitgelieferten Module vorkompiliert. Hier nehmen wir nur die wichtigsten in unsere Konfiguration auf. _mpm_event_module_ und _unixd_module_ sind nötig für den Betrieb des Servers. Bei der Kompilierung im ersten Tutorial hatten wir uns für das Prozessmodell _event_ entschieden, das wir hier nun durch das Laden des Moduls aktivieren. Interessant: Bei Apache 2.4 lässt sich auch eine so grundlegende Einstellung wie das Prozessmodell des Servers mittels der Konfiguration auswählen. Das Modul _unixd_ benötigen wir, um den Server, wie oben beschrieben, unter dem von uns definierten Usernamen laufen zu lassen.
 
-Das Log-Modul _log_config_module_ erlaubt uns eine freie Definition des Access-Logs, wovon wir im Folgenden gleich Gebrauch machen werden. Schliesslich die beiden Module _authn_core_module_ und _authz_core_module_. Der erste Teil des Namens verweist auf Authentisierung (_Authn_) und Authorisierung (_Authz_). Core bedeutet dann, dass in diesen Modulen um die Basis für diese Funktionen handelt.
+Das Log-Modul _log_config_module_ erlaubt uns eine freie Definition des Access-Logs, wovon wir im Folgenden gleich Gebrauch machen werden. Schliesslich die beiden Module _authn_core_module_ und _authz_core_module_. Der erste Teil des Namens verweist auf Authentisierung (_Authn_) und Autorisierung (_Authz_). Core bedeutet dann, dass es sich bei diesen Modulen um die Basis für diese Funktionen handelt.
 
-Beim Zugriffsschutz spricht man oft von _AAA_, also _Authentisierung_, _Authorisierung_ und _Access Control_. Authentisieren bedeutet dabei das Überprüfen der Identität eines Benutzers. Unter Authorisierung versteht man das Feststellen der Zugriffsrechte eines vorher authentisierten Benutzers. Access Control schliesslich bedeutet die Entscheidung ob ein authentisierter Benutzer mit den eben festgestellten Zugriffsrechten zugelassen wird. Die Basis für diesen Mechanismus legen wir durch das Laden dieser beiden Module. Alle weiteren Module mit den beiden Kürzeln _authn_ und _authz_, von denen es eine grosse Menge gibt, setzen diese Module voraus. Für den Moment benötigen wir eigentlich nur das Authorisierungsmodul, aber mit dem Laden des Authentisierungsmoduls bereiten wir uns auf spätere Erweiterungen vor.
+Beim Zugriffsschutz spricht man oft von _AAA_, also _Authentisierung_, _Autorisierung_ und _Access Control_. Authentisieren bedeutet dabei das Überprüfen der Identität eines Benutzers. Unter Autorisierung versteht man das Feststellen der Zugriffsrechte eines vorher authentisierten Benutzers. Access Control schliesslich bedeutet die Entscheidung, ob ein authentisierter Benutzer mit den eben festgestellten Zugriffsrechten zugelassen wird. Die Basis für diesen Mechanismus legen wir durch das Laden dieser beiden Module. Alle weiteren Module mit den beiden Kürzeln _authn_ und _authz_, von denen es eine grosse Menge gibt, setzen diese Module voraus. Für den Moment benötigen wir eigentlich nur das Autorisierungsmodul, aber mit dem Laden des Authentisierungsmoduls bereiten wir uns auf spätere Erweiterungen vor.
 
-Mit _ErrorLogFormat_ greifen wir in das Format des Fehler-Logfiles ein. Wir erweitern das gängige Logformat etwas, indem wir namentlich den Zeitstempel sehr genau definieren. `[%{cu}t]` entspricht damit einem Eintrag wie `[2015-09-24 06:34:29.199635]`. Das heisst das Datum rückwärts notiert, dann die Uhrzeit mit einer Genauigkeit von Mikrosekunden. Die Umkehrung des Datums hat den Vorteil, dass sich die Zeiten im Logfile sauber ordnen lassen; die Mikrosekunden geben uns genaue Auskunft über den Zeitpunkt eines Eintrages und lassen gewisse Rückschlüsse über die Zeitdauer der Verarbeitung in verschiedenen Modulen zu. Dem dient auch der nächste Konfigurationsteil `[%-m:%-l]` , der das loggende Module und den _Loglevel_, also die Schwere des Fehlers nennt. Danach folgen die IP-Adresse des clients (` %-a`); eine eindeutige Identifikation des Requests (`%-L`); eine sogenannte Unique-ID, welche in späteren Anleitungen zur Korrelation von Requests dienen kann) und schliesslich die eigentliche Meldung, die wir mittels `%M` referenzieren.
+Mit _ErrorLogFormat_ greifen wir in das Format des Fehler-Logfiles ein. Wir erweitern das gängige Logformat etwas, indem wir namentlich den Zeitstempel sehr genau definieren. `[%{cu}t]` entspricht damit einem Eintrag wie `[2015-09-24 06:34:29.199635]`. Das heisst das Datum rückwärts notiert, dann die Uhrzeit mit einer Genauigkeit von Mikrosekunden. Die Umkehrung des Datums hat den Vorteil, dass sich die Zeiten im Logfile sauber ordnen lassen; die Mikrosekunden geben uns genaue Auskunft über den Zeitpunkt eines Eintrages und lassen gewisse Rückschlüsse über die Zeitdauer der Verarbeitung in verschiedenen Modulen zu. Dem dient auch der nächste Konfigurationsteil `[%-m:%-l]` , der das loggende Modul und den _Loglevel_, also die Schwere des Fehlers nennt. Danach folgen die IP-Adresse des Clients (` %-a`); eine eindeutige Identifikation des Requests (`%-L`); eine sogenannte Unique-ID, welche in späteren Anleitungen zur Korrelation von Requests dienen kann) und schliesslich die eigentliche Meldung, die wir mittels `%M` referenzieren.
 
-Mit _LogFormat_ definieren wir ein Format für das Zugriffs-Logfile. Wir nennen es _combined_. Dieses gängige Format schliesst Client-IP-Adresse, Zeitstempel, Methode, Pfad, HTTP-Version, HTTP-Status-Code, Antwort-Grösse, Referer und die Bezeichnung des Browsers (User-Agent) mit ein. Beim Zeitstempel wählen wir eine recht komplizierte Konstruktion. Der Grund ist der Wille, beim Error-Log und im Access-Log, die Timestamp in demselben Format anzeigen zu können. Während wir dazu im Error-Log aber eine einfache Identifikation haben, müssen wir den Zeitstempel im Falle des Access-Log-Formats mühsam konstruieren.
+Mit _LogFormat_ definieren wir ein Format für das Zugriffs-Logfile. Wir nennen es _combined_. Dieses gängige Format schliesst Client-IP-Adresse, Zeitstempel, Methode, Pfad, HTTP-Version, HTTP-Status-Code, Antwort-Grösse, Referer und die Bezeichnung des Browsers (User-Agent) mit ein. Beim Zeitstempel wählen wir eine recht komplizierte Konstruktion. Der Grund ist der Wille, beim Error-Log und im Access-Log die Timestamps in demselben Format anzeigen zu können. Während wir dazu im Error-Log aber eine einfache Identifikation haben, müssen wir den Zeitstempel im Falle des Access-Log-Formats mühsam konstruieren.
 
 Den _LogLevel_ für das Fehler-Logfile stellen wir mit _Debug_ auf die höchste Stufe. Das ist für die Produktion zu gesprächig, im Labor macht das aber durchaus Sinn. Apache ist gemeinhin nicht sehr gesprächig, so dass man mit der Datenmenge meist gut zurecht kommt.
 
@@ -127,9 +127,9 @@ Dem Fehler-Logfile weisen wir mit _ErrorLog_ den Pfad _logs/error.log_ zu. Diese
 
 Das definierte _LogFormat combined_ benützen wir nun für unser Zugriffs-Logfile namens _logs/access.log_.
 
-Der Webserver liefert Dateien aus. Diese sucht er auf einer Diskpartition, oder er generiert sie mit Hilfe einer installierten Applikation. Wir sind noch beim einfachen Fall und geben dem Server mittels _DocumentRoot bekannt_, wo er die Dateien findet. _/apache/htdocs_ ist ein absoluter Pfad unter dem _ServerRoot_. Hier könnte auch wieder ein relativer Pfad stehen, aber arbeiten wir besser mit klaren Verhältnissen! Konkret bedeutet _DocumentRoot_, dass der URL-Pfad _/_ auf _/apache/htdocs_ gemappt wird.
+Der Webserver liefert Dateien aus. Diese sucht er auf einer Diskpartition, oder er generiert sie mithlfe einer installierten Applikation. Wir sind noch beim einfachen Fall und geben dem Server mittels _DocumentRoot bekannt_, wo er die Dateien findet. _/apache/htdocs_ ist ein absoluter Pfad unter dem _ServerRoot_. Hier könnte auch wieder ein relativer Pfad stehen, aber arbeiten wir besser mit klaren Verhältnissen! Konkret bedeutet _DocumentRoot_, dass der URL-Pfad _/_ auf _/apache/htdocs_ gemappt wird.
 
-Nun folgt ein _Directory-Block_. Mit diesem Block verhindern wir, dass Dateien ausserhalb des von uns bezeichneten _DocumentRoot_ ausgeliefert werden. Für den Pfad / verbieten wir jeglichen Zugriff mittels der Direktive _Require all denied_. Dieser Eintrag referenziert die Authentisierung (_all_), macht eine Aussage zur Authorisierung (_Require_) und definiert den Zugriff: _denied_, also gar keinen Zugriff und zwar für niemanden; jedenfalls nicht für das Verzeichnis _/_.
+Nun folgt ein _Directory_-Block. Mit diesem Block verhindern wir, dass Dateien ausserhalb des von uns bezeichneten _DocumentRoot_ ausgeliefert werden. Für den Pfad / verbieten wir jeglichen Zugriff mittels der Direktiven _Require all denied_. Dieser Eintrag referenziert die Authentifizierung (_all_), macht eine Aussage zur Autorisierung (_Require_) und definiert den Zugriff: _denied_, also gar keinen Zugriff und zwar für niemanden; jedenfalls nicht für das Verzeichnis _/_.
 
 Die Direktive _Options_ setzen wir auf _SymLinksIfOwnerMatch_. Mit _Options_ können wir festlegen welche Spezialfeatures beim Ausliefern des Verzeichnisses / beachtet werden sollen. Eigentlich gar keine und in der Produktion würden wir deshalb Options _None_ schreiben. In unserem Fall haben wir aber das _DocumentRoot_ auf einen symbolischen Link gelegt und der wird nur dann gesucht und auch gefunden, wenn wir den Server mit _SymLinksIfOwnerMatch_ anweisen, unterhalb von / auch Symlinks zuzulassen. Zumindest wenn die Besitzverhältnisse sauber sind. Auf produktiven Systemen ist aus Sicherheitsgründen beim Servieren von Files besser auf Symlinks zu verzichten. Aber bei unserem Testsystem geht der Komfort noch vor.
 
@@ -150,7 +150,7 @@ $> cd /apache
 $> sudo ./bin/httpd -X
 ```
 
-###Schritt 4: Server mit Curl ansprechen
+###Schritt 4: Server mit curl ansprechen
 
 Wir können den Server nun wieder mit dem Browser ansprechen. Aber aus der Shell heraus lässt es sich erst mal sauberer arbeiten und besser verstehen, was passiert:
 
@@ -164,7 +164,7 @@ Dies liefert folgendes Resultat.
 <html><body><h1>It works!</h1></body></html>
 ```
 
-Die haben also einen HTTP-Aufruf abgesetzt und von unserem minial konfigurierten Server eine Antwort erhalten, die unseren Erwartungen entspricht.
+Wir haben also einen HTTP-Aufruf abgesetzt und von unserem minimal konfigurierten Server eine Antwort erhalten, die unseren Erwartungen entspricht.
 
 ###Schritt 5: Anfrage und Antwort untersuchen
 
@@ -252,7 +252,7 @@ $> curl   http://localhost/index.html --trace-ascii -
 
 Der Parameter _--trace-ascii_ benötigt ein File als Parameter, um darin einen _Ascii Dump_ der Kommunikation abzulegen. "-" funktioniert als Shortcut zu _STDOUT_, so dass wir uns die Mitschrift einfach anzeigen lassen können.
 
-Gegenüber _verbose_ bringt _trace-ascii_ mehr Details zur Länge der übertragenen Bytes in der _Request_- und _Response_-Phase. Die Request-Header umfassten in obigem Beispiel also 83 Bytes. Bei der Antwort werden die Bytes dann pro Header-Zeile gelistet und pauschal für den Body der Antwort: 45 Bytes. Das mag jetzt alles nach Haarspalterei klingen. Tatsächlich ist es aber bisweilen spielentscheidend, wenn man ein Stückchen vermisst und sich nicht ganz sicher ist, was wo in welcher Reihenfolge angeliefert wurde. So ist es etwa auffällig, dass bei den Headerzeilen jeweils 2 Bytes hinzukommen. Das sind der CR (Carriage Return) und NL (New Line), den das HTTP-Protokoll in den Header-Zeilen vorsieht. Anders im Response-Body, wo nur das retourniert wird, was tatsächlich in der Datei steht. Das ist hier offensichtlich nur ein NL ohne CR. Auf der Drittuntersten Zeile (_000: <html ..._) folgt auf das grösser-als-Zeichen ein Punkt. Dies ist eine Umschreibung des NL-Charakters der Antwort, der wie andere Escape-Sequenzen auch in der Form eines Punktes wiedergegeben wird.
+Gegenüber _verbose_ bringt _trace-ascii_ mehr Details zur Länge der übertragenen Bytes in der _Request_- und _Response_-Phase. Die Request-Header umfassten in obigem Beispiel also 83 Bytes. Bei der Antwort werden die Bytes dann pro Header-Zeile gelistet und pauschal für den Body der Antwort: 45 Bytes. Das mag jetzt alles nach Haarspalterei klingen. Tatsächlich ist es aber bisweilen spielentscheidend, wenn man ein Stückchen vermisst und sich nicht ganz sicher ist, was wo in welcher Reihenfolge angeliefert wurde. So ist es etwa auffällig, dass bei den Headerzeilen jeweils 2 Bytes hinzukommen. Das sind der CR (Carriage Return) und NL (New Line), den das HTTP-Protokoll in den Header-Zeilen vorsieht. Anders im Response-Body, wo nur das retourniert wird, was tatsächlich in der Datei steht. Das ist hier offensichtlich nur ein NL ohne CR. Auf der drittuntersten Zeile (_000: <html ..._) folgt auf das grösser-als-Zeichen ein Punkt. Dies ist eine Umschreibung des NL-Charakters der Antwort, der wie andere Escape-Sequenzen auch in der Form eines Punktes wiedergegeben wird.
 
 
 ###Schritt 8: Mit Trace Methode arbeiten
@@ -301,7 +301,7 @@ Vergessen Sie nicht, _TraceEnable_ wieder auszuschalten.
 
 ###Schritt 8: Server mit "ab" auf den Zahn fühlen
 
-Das wär's erst Mal mit dem simplen Server. Spasseshalber können wir ihm aber noch etwas auf den Zahn fühlen. Wir inszenieren einen kleinen Lasttest mit _ab_; kurz für _Apache Bench_. Dies ist ein sehr einfaches Lasttest-Programm, das immer zur Hand ist und rasche erste Resultate zur Performance liefern kann. So lasse ich ab gerne vor und nach einer Konfigurationsänderung laufen, um eine Idee zu erhalten, ob sich an der Performance etwas verändert hat. _Ab_ ist nicht sehr mächtig und der lokale Aufruf bringt auch keine sauberen Resultate. Aber so ein erster Augenscheint lässt sich mit diesem Hilfsmittel gewinnen.
+Das wär's erst Mal mit dem simplen Server. Spasseshalber können wir ihm aber noch etwas auf den Zahn fühlen. Wir inszenieren einen kleinen Lasttest mit _ab_; kurz für _Apache Bench_. Dies ist ein sehr einfaches Lasttest-Programm, das immer zur Hand ist und rasche erste Resultate zur Performance liefern kann. So lasse ich ab gerne vor und nach einer Konfigurationsänderung laufen, um eine Idee zu erhalten, ob sich an der Performance etwas verändert hat. _Ab_ ist nicht sehr mächtig und der lokale Aufruf bringt auch keine sauberen Resultate. Aber so ein erster Augenschein lässt sich mit diesem Hilfsmittel gewinnen.
 
 ```bash
 $> ./bin/ab -c 1 -n 1000 http://localhost/index.html
@@ -367,7 +367,7 @@ Percentage of the requests served within a certain time (ms)
 
 ```
 
-Interessant ist für uns vor allem die Zahl der Fehler (_Failed Requests_) und die Zahl der Anfragen pro Sekunde (_Request per second_). Ein Wert von über tausend ist ein guter Start. Zumal wir ja immer noch mit einem einzigen Prozess und nicht mit einem parallelisierten Daemon arbeiten (und deshalb auch der _concurrency-level_ auf 1 gesetzt ist).
+Interessant ist für uns vor allem die Zahl der Fehler (_Failed Requests_) und die Zahl der Anfragen pro Sekunde (_Request per second_). Ein Wert von über Tausend ist ein guter Start. Zumal wir ja immer noch mit einem einzigen Prozess und nicht mit einem parallelisierten Daemon arbeiten (und deshalb auch der _concurrency-level_ auf 1 gesetzt ist).
 
 ###Schritt 9: Direktiven und Module ansehen
 
@@ -389,11 +389,9 @@ $> ./bin/httpd -L
 ```
 Die Direktiven folgen hierbei der Reihenfolge wie sie geladen werden. Zu jeder Direktive folgt darauf eine kurze Beschreibung der Funktionalität.
 
-Mit dieser Liste ist es nun möglich herauszufinden, ob man sämtliche geladenen Module in der Konfiguration auch
-wirklich benötigt, respektive referenziert. In komplizierteren Konfigurationen mit zahlreichen geladenen Modulen
-kann es schliesslich schon mal vorkommen, dass man unsicher ist, ob man alle Module wirklich verwendet.
+Mit dieser Liste ist es nun möglich herauszufinden, ob man sämtliche geladenen Module in der Konfiguration auch wirklich benötigt, respektive referenziert. In komplizierteren Konfigurationen mit zahlreichen geladenen Modulen kann es schliesslich schon mal vorkommen, dass man unsicher ist, ob man alle Module wirklich verwendet.
 
-Man kann die Module also aus dem Konfigurationsfile herauslesen, den Output von _httpd -L_ pro Modul zusammenfassen und dann wiederum im Konfigurationsfile nachsehen, ob eine der gelisteten Direktiven benützt werden. Diese verschachtelte Abfrage ist eine schöne Fingerübung, die ich nur empfehlen kann. Für mich habe ich sie wie folgt gelöst:
+Man kann die Module also aus dem Konfigurationsfile herauslesen, den Output von _httpd -L_ pro Modul zusammenfassen und dann wiederum im Konfigurationsfile nachsehen, ob eine der gelisteten Direktiven benützt wird. Diese verschachtelte Abfrage ist eine schöne Fingerübung, die ich nur empfehlen kann. Für mich habe ich sie wie folgt gelöst:
 
 ```bash
 $> grep LoadModule conf/httpd.conf | awk '{print $2}' | sed -e "s/_module//" | while read M; do echo "Module $M"; R=$(./bin/httpd -L | grep $M | cut -d\  -f1 | tr -d "<" | xargs | tr " " "|");  egrep -q "$R" ./conf/httpd.conf; if [ $? -eq 0 ]; then echo "OK"; else echo "Not used"; fi; echo; done
@@ -417,7 +415,7 @@ OK
 Das Modul _authn_core_ wird also nicht verwendet. Das ist korrekt; das hatten wir oben auch so beschrieben, denn es ist für eine zukünftige Verwendung geladen. Die übrigen Module scheinen nötig.
 
 
-Soweit zu diesem Tutorial. Damit ist bereits ein tauglicher Webserver vorhanden mit dem man gut arbeiten kann. In den nächsten Lektionen bauen wir ihn weiter aus.
+Soweit zu diesem Tutorial. Damit ist bereits ein tauglicher Webserver vorhanden, mit dem man gut arbeiten kann. In den nächsten Lektionen bauen wir ihn weiter aus.
 
 
 ###Verweise
