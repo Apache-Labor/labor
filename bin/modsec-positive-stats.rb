@@ -153,7 +153,7 @@ def print_stats_wrapper(nils_in, stats_in, nils_out, stats_out)
         printf("Reqs with #{verb} score of %3d | %6d | %8.4f%% | %8.4f%% | %8.4f%%\n", key, value, round(perc, 4), round(sum_perc, 4), 100 - round(sum_perc, 4))
      }
 
-     printf("\nAverage: %8.4f        Median %8.4f         Standard deviation %8.4f\n", avg(stats), median(stats), standard_deviation(stats)) if $params[:summary]
+     printf("\n#{verb.capitalize} average: %8.4f    Median %8.4f    Standard deviation %8.4f\n", avg(stats), median(stats), standard_deviation(stats)) if $params[:summary]
 
      puts if ($params[:incoming] && $params[:outgoing] && verb == "incoming" && $params[:outgoing])
      puts if ($params[:incoming] && $params[:outgoing] && verb == "incoming" && $params[:outgoing] && ($params[:header] || $params[:summary]))
