@@ -1,4 +1,5 @@
 ##### Changelog
+* 14\. September 2015: Rechtschreibung (Benjamin Affolter)
 * 24\. September 2015: Update auf Apache 2.4, Erweiterung um --trace-ascii, httpd -L
 * 21\. September 2015: html -> markdown
 * 24\. Juli 2013: Rechtschreibfehler
