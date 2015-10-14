@@ -359,7 +359,7 @@ Reqs with incoming score of   3 |      0 |   0.0000% |  99.9500% |   0.0500%
 Reqs with incoming score of   4 |      4 |   0.0400% |  99.9900% |   0.0100%
 Reqs with incoming score of   5 |      1 |   0.0100% | 100.0000% |   0.0000%
 
-Average:   0.0067        Median   0.0000         Standard deviation   0.1329
+Incoming average:   0.0067    Median   0.0000    Standard deviation   0.1329
 
 
 OUTGOING                     Num of req. | % of req. |  Sum of % | Missing %
@@ -373,7 +373,7 @@ Reqs with outgoing score of   3 |      0 |   0.0000% |  99.9700% |   0.0300%
 Reqs with outgoing score of   4 |      2 |   0.0200% |  99.9900% |   0.0100%
 Reqs with outgoing score of   5 |      1 |   0.0100% | 100.0000% |   0.0000%
 
-Average:   0.0013        Median   0.0000         Standard deviation   0.0755
+Outgoing average:   0.0013    Median   0.0000    Standard deviation   0.0755
 
 
 Note that you can add an additional baseline of STR requests to the
