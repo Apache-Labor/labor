@@ -212,7 +212,7 @@ Dann teilt der Server mit, wann das der Antwort zu Grunde liegende File zum letz
 
 Übrigens ist die Reihenfolge dieser Header charakteristisch für einen Webserver. _NginX_ verwendet eine andere Reihenfolge und bringt den _Server-Header_ beispielsweise vor dem Datum. Apache lässt sich deshalb auch identifizieren, wenn die Server-Zeile uns in die Irre führen sollte.
 
-###Schritt 7: Die Antwort noch etwas genauer untersuchen
+###Schritt 6: Die Antwort noch etwas genauer untersuchen
 
 Es ist möglich, bei der Kommunikation noch etwas tiefer in _curl_ hineinzublicken. Das geschieht über den Kommandozeilen-Parameter _--trace-ascii_:
 
@@ -255,7 +255,7 @@ Der Parameter _--trace-ascii_ benötigt ein File als Parameter, um darin einen _
 Gegenüber _verbose_ bringt _trace-ascii_ mehr Details zur Länge der übertragenen Bytes in der _Request_- und _Response_-Phase. Die Request-Header umfassten in obigem Beispiel also 83 Bytes. Bei der Antwort werden die Bytes dann pro Header-Zeile gelistet und pauschal für den Body der Antwort: 45 Bytes. Das mag jetzt alles nach Haarspalterei klingen. Tatsächlich ist es aber bisweilen spielentscheidend, wenn man ein Stückchen vermisst und sich nicht ganz sicher ist, was wo in welcher Reihenfolge angeliefert wurde. So ist es etwa auffällig, dass bei den Headerzeilen jeweils 2 Bytes hinzukommen. Das sind der CR (Carriage Return) und NL (New Line), den das HTTP-Protokoll in den Header-Zeilen vorsieht. Anders im Response-Body, wo nur das retourniert wird, was tatsächlich in der Datei steht. Das ist hier offensichtlich nur ein NL ohne CR. Auf der drittuntersten Zeile (_000: <html ..._) folgt auf das grösser-als-Zeichen ein Punkt. Dies ist eine Umschreibung des NL-Charakters der Antwort, der wie andere Escape-Sequenzen auch in der Form eines Punktes wiedergegeben wird.
 
 
-###Schritt 8: Mit Trace Methode arbeiten
+###Schritt 7: Mit Trace Methode arbeiten
 
 Oben habe ich die Direktive _TraceEnable_ beschrieben. Wir haben sie sicherheitshalber auf _off_ geschaltet. Bei der Fehlersuche kann sie aber ganz nützlich sein. Also probieren wir das doch mal aus. Setzen wir die Option auf on:
 
