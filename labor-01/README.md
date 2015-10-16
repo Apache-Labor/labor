@@ -127,7 +127,7 @@ Dem Fehler-Logfile weisen wir mit _ErrorLog_ den Pfad _logs/error.log_ zu. Diese
 
 Das definierte _LogFormat combined_ benützen wir nun für unser Zugriffs-Logfile namens _logs/access.log_.
 
-Der Webserver liefert Dateien aus. Diese sucht er auf einer Diskpartition, oder er generiert sie mithlfe einer installierten Applikation. Wir sind noch beim einfachen Fall und geben dem Server mittels _DocumentRoot bekannt_, wo er die Dateien findet. _/apache/htdocs_ ist ein absoluter Pfad unter dem _ServerRoot_. Hier könnte auch wieder ein relativer Pfad stehen, aber arbeiten wir besser mit klaren Verhältnissen! Konkret bedeutet _DocumentRoot_, dass der URL-Pfad _/_ auf _/apache/htdocs_ gemappt wird.
+Der Webserver liefert Dateien aus. Diese sucht er auf einer Diskpartition, oder er generiert sie mithilfe einer installierten Applikation. Wir sind noch beim einfachen Fall und geben dem Server mittels _DocumentRoot bekannt_, wo er die Dateien findet. _/apache/htdocs_ ist ein absoluter Pfad unter dem _ServerRoot_. Hier könnte auch wieder ein relativer Pfad stehen, aber arbeiten wir hier besser mit klaren Verhältnissen! Konkret bedeutet _DocumentRoot_, dass der URL-Pfad _/_ auf den Betriebssystempfad _/apache/htdocs_ gemappt wird.
 
 Nun folgt ein _Directory_-Block. Mit diesem Block verhindern wir, dass Dateien ausserhalb des von uns bezeichneten _DocumentRoot_ ausgeliefert werden. Für den Pfad / verbieten wir jeglichen Zugriff mittels der Direktiven _Require all denied_. Dieser Eintrag referenziert die Authentifizierung (_all_), macht eine Aussage zur Autorisierung (_Require_) und definiert den Zugriff: _denied_, also gar keinen Zugriff und zwar für niemanden; jedenfalls nicht für das Verzeichnis _/_.
 
@@ -137,11 +137,11 @@ _AllowOverride_ teilt dem Server mit, dass er nicht auf sogenannte _.htaccess_-D
 
 Nun eröffnen wir einen _VirtualHost_. Er korrespondiert mit der oben definierten _Listen_-Direktive. Zusammen mit dem eben definierten _Directory_-Block legt er fest, dass unser Webserver per Default gar keinen Zugriff zulässt. Auf der IP-Adresse _127.0.0.1, Port 80_ wollen wir aber Zugriffe zulassen und die werden innerhalb dieses Blocks definiert.
 
-Konkret lassen wir Zugriffe auf unser _DocumentRoot_ zu. Schlüsselanweisung ist hier das _Require all granted_, womit wir im Gegensatz zum Verzeichnis _/_ kompletten Zugriff zulassen. Anders als oben sind ab diesem Pfad nun keine Symlinks mehr vorgesehen und auch sonst keine Spezialfähigkeiten: _Options None_.
+Konkret lassen wir Zugriffe auf unser _DocumentRoot_ zu. Schlüsselanweisung ist hier das _Require all granted_, womit wir im Gegensatz zum Verzeichnis _/_ kompletten Zugriff zulassen. Anders als oben sind ab diesem Pfad nun keine Symlinks mehr vorgesehen und auch sonst keine Spezialfähigkeiten: _Options None_, _AllowOverride None_.
 
 ###Schritt 3: Server starten
 
-Damit ist unser minimaler Server beschrieben. Es wäre möglich, einen noch knapperen Server zu definieren. Aber damit liesse sich nicht mehr so komfortabel arbeiten wie mit unserem und er wäre auch nicht mehr sicher. Eine gewisse Grundsicherung ist aber angebracht. Denn wenn wir nun im Labor einen Service aufbauen, dann sollte der sich auch in eine produktive Umgebung verschieben lassen. Einen Service kurz vor der Produktivschaltung noch von Grund auf sichern zu wollen ist illusorisch.
+Damit ist unser minimaler Server beschrieben. Es wäre möglich, einen noch knapperen Server zu definieren. Aber damit liesse sich nicht mehr so komfortabel arbeiten wie mit unserem und er wäre auch nicht mehr sicher. Eine gewisse Grundsicherung ist aber angebracht. Denn wenn wir nun im Labor einen Service aufbauen, dann sollte der sich auch mit punktuellen Anpassungen in eine produktive Umgebung verschieben lassen. Einen Service kurz vor der Produktivschaltung noch von Grund auf sichern zu wollen ist illusorisch.
 
 Starten wir den Server wieder wie in Lektion 1 im Vordergrund und nicht als Daemon:
 
@@ -371,7 +371,7 @@ Interessant ist für uns vor allem die Zahl der Fehler (_Failed Requests_) und d
 
 ###Schritt 9: Direktiven und Module ansehen
 
-Zum Schluss dieses Tutorials schauen wir uns die verschiedenen Direktiven an, welche ein mit unserem Konfigurationsfile zu startender Apache kennt. Die verschiedenen geladenen Module erweitern den Befehlssatz des Servers. Die damit zur Verfügung stehenden Konfigurationsparameter sind auf der Webseite des Projektes gut dokumentiert. Tatsächlich kann es aber in besonderen Fällen hilfreich sein, den durch die geladenen Module zur Verfügung stehenden Direktiven zu überblicken. Die Direktiven erhält man mit dem Kommando-Zeilen-Flah _-L_.
+Zum Schluss dieses Tutorials schauen wir uns die verschiedenen Direktiven an, welche ein mit unserem Konfigurationsfile zu startender Apache kennt. Die verschiedenen geladenen Module erweitern den Befehlssatz des Servers. Die damit zur Verfügung stehenden Konfigurationsparameter sind auf der Webseite des Projektes gut dokumentiert. Tatsächlich kann es aber in besonderen Fällen hilfreich sein, den durch die geladenen Module zur Verfügung stehenden Direktiven zu überblicken. Die Direktiven erhält man mit dem Kommando-Zeilen-Flag _-L_.
 
 ```bash
 $> ./bin/httpd -L
