@@ -130,8 +130,8 @@ Begeben wir uns ins Verzeichnis mit dem Apache Quelltext und kompilieren den Ser
 neu. 
 
 ```bash
-$> cd /usr/src/apache/httpd-2.4.16
-$> ./configure --prefix=/opt/apache-2.4.16 --enable-mods-shared=all --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared="event worker" --enable-nonportable-atomics=yes --enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.4.16/bin && make && sudo make install
+$> cd /usr/src/apache/httpd-2.4.17
+$> ./configure --prefix=/opt/apache-2.4.17 --enable-mods-shared=all --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared="event worker" --enable-nonportable-atomics=yes --enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.4.17/bin && make && sudo make install
 ```
 
 Zum bekannten _configure_ sind nun drei Optionen hinzugekommen, die sich

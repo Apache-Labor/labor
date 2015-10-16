@@ -1,4 +1,5 @@
 ##### Changelog
+* 16\. Oktober 2015: Version von 2.4.16 auf 2.4.17 erhöht
 * 12\. Oktober 2015: Orthographie- und Stilvorschläge von Benjamin Affolter eingearbeitet
 * 10\. Oktober 2015: Paketabhängigkeiten teilweise zu apr geschoben, build-essential hinzugefügt
 * 9\. Oktober 2015: Spracahliche Überarbeitung, apr/apr-util Kompilierung besser kommentiert
