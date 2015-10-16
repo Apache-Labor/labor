@@ -148,7 +148,7 @@ $> make
 
 Das dauert wohl einige Zeit aus den 38MB werden knapp 100MB.
 
-###Schritt 7: Installieren
+###Schritt 6: Installieren
 
 Wenn das Kompilieren geklappt hat, dann installieren wir den selbst gebauten Apache Webserver. Wir müssen das Installieren durch den Superuser vornehmen lassen. Aber danach schauen wir gleich zu, dass wir wieder in Besitz des Webservers kommen. Für ein Testsystem ist das viel praktischer.
 
@@ -172,7 +172,7 @@ $> cd /apache
 
 Unser Webserver hat nun also einen klaren Pfad, der ihn mit der Versionsnummer eindeutig beschreibt. Im Alltag verwenden wir aber einfach /apache für den Zugriff. Das erleichtert die Arbeit.
 
-###Schritt 8: Starten
+###Schritt 7: Starten
 
 Dann wollen wir mal sehen, ob die Maschine anspringt. Das müssen wir für den Moment wieder durch den Superuser erledigen lassen:
 
@@ -190,7 +190,7 @@ AH00558: httpd: Could not reliably determine the server's fully qualified domain
 
 Das ist nicht weiter schlimm und wir können die Warnung für den Moment ignorieren.
 
-###Schritt 9: Ausprobieren
+###Schritt 8: Ausprobieren
 
 Die Maschine läuft jetzt. Aber funktioniert sie auch? Zeit für den Funktionstest: Wir sprechen den Apache mit dem Browser unter folgendem Link an:
 
@@ -206,7 +206,7 @@ Super! Ziel erreicht: Der selbst kompilierte Apache läuft.
 
 Zurück in die Shell und Abschalten des Servers mit STRG-C oder für uns Schweizer mit CTRL-C.
 
-###Schritt 10 (Bonus): Ansehen des Binaries und der Module
+###Schritt 9 (Bonus): Ansehen des Binaries und der Module
 
 Bevor wir die Lektion abschliessen möchten wir den Server etwas genauer ansehen. Sozusagen mit den Fingern über die Karosserie streichen und die Motorhaube öffnen. Informationen zu unserem Binary erhalten wir wie folgt:
 
