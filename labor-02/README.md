@@ -23,7 +23,7 @@ sehr einfache Architektur, die sich hervorragend für ein Testsystem eignet.
 ###Schritt 1: Apache konfigurieren> 
 
 Wir konfigurieren den Webserver vorneweg; wohlwissend, dass er in dieser Konfiguration noch nicht lauffähig ist. Basierend
-auf dem in Lektion 2 beschriebenen minimalen Webserver konfigurieren wir einen sehr einfachen Applikationsserver in der Datei _conf/httpd.conf_.
+auf dem in Lektion 2 beschriebenen minimalen Webserver konfigurieren wir einen sehr einfachen Applikationsserver in der Datei *conf/httpd.conf_fastcgid*.
 
 
 ```bash
@@ -270,7 +270,8 @@ Das war alles. Nun können wir den Webserver starten und
 ausprobieren.
 
 ```bash
-$> sudo ./httpd -k start
+$> cd /apache
+$> sudo ./bin/httpd -k start -f conf/httpd.conf_fastcgid
 ```
 
 Erreichbar ist unser Testskript unter der URL [http://localhost/info.php](http://localhost/info.php).
@@ -288,7 +289,7 @@ Hier zur Zusammenfassung nochmals die relevanten Files und ihre Besitzer:
 2107977   32 -rwsr-xr-x   1 root     root        32146 Jul  2 10:44 bin/suexec
 2633547    4 drwxr-xr-x   2 myuser   root         4096 Jul  2 11:16 htdocs/
 2633758    4 -rw-r--r--   1 myuser   myuser         20 Jul  2 11:15 htdocs/info.php
-2762281    4 drwx------   2 www-data www-data     4096 Jul  2 10:46 /apache/logs/fcgidsock/
+2762281    4 drwxr-xr-x   2 www-data www-data     4096 Jul  2 10:46 /apache/logs/fcgidsock/
 ```
 
 Auffällig ist das _Suid-Bit_ auf dem _Suexec-Binary_.
@@ -305,7 +306,7 @@ wieder ein wenig ab. Nach dem Lasttest beenden wir den Server wieder.
 $> sudo ./bin/httpd -k start
 $> ./bin/ab -c 5 -n 1000 -l http://localhost/info.php
 ...
-$> sudo ./bin/httpd -k stop
+$> sudo ./bin/httpd -k stop -f conf/httpd.conf_fastcgid
 ```
 
 In meinem Fall lieferte _ab_ folgenden Output:
