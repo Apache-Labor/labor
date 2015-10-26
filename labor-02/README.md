@@ -271,7 +271,7 @@ ausprobieren.
 
 ```bash
 $> cd /apache
-$> sudo ./bin/httpd -k start -f conf/httpd.conf_fastcgid
+$> sudo ./bin/httpd -X conf/httpd.conf_fastcgid
 ```
 
 Erreichbar ist unser Testskript unter der URL [http://localhost/info.php](http://localhost/info.php).
@@ -303,7 +303,7 @@ weiter einzugehen. Denn die Seite ist ja dynamisch generiert und der Inhalt, sow
 wieder ein wenig ab. Nach dem Lasttest beenden wir den Server wieder.
 
 ```bash
-$> sudo ./bin/httpd -k start
+$> sudo ./bin/httpd -k start -f conf/httpd.conf_fastcgid
 $> ./bin/ab -c 5 -n 1000 -l http://localhost/info.php
 ...
 $> sudo ./bin/httpd -k stop -f conf/httpd.conf_fastcgid
