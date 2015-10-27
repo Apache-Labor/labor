@@ -25,7 +25,7 @@ cd labor
 - [labor-05](labor-05) ModSecurity einbinden
 - [labor-06](labor-06) OWASP ModSecurity Core Rules einbinden
 - labor-07: ModSecurity Core Rules Tunen TODO
-- labor-08: Effizient in der Shell an einer Apache Konfiguration arbeiten
+- labor-08: Effizient in der Shell an einer Apache Konfiguration arbeiten TODO
 
 ##Beitragen
 
