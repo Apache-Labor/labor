@@ -22,9 +22,9 @@ cd labor
 - [labor-02](labor-02) Aufsetzen eines Apache/PHP Applikationsservers
 - [labor-03](labor-03) Konfigurieren eines SSL Servers
 - [labor-04](labor-04) Das Zugriffslog ausbauen und Auswerten
-- labor-05: ModSecurity einbinden TODO
-- [labor-06](labor-06) ModSecurity Core Rules einbinden
-- labor-07: ModSecurity Tunen TODO
+- [labor-05](labor-05) ModSecurity einbinden
+- [labor-06](labor-06) OWASP ModSecurity Core Rules einbinden
+- labor-07: ModSecurity Core Rules Tunen TODO
 
 ##Beitragen
 
