@@ -72,8 +72,6 @@ Das Modul trägt die Zahl <i>2</i> im Namen. Dies wurde beim Versionsprung auf 2
 
 Wir können nun daran gehen, eine Grundkonfiguration einzurichten. ModSecurity ist ein Modul, das durch Apache geladen wird. Es wird deshalb innerhalb der Apache-Konfiguration konfiguriert. Normalerweise wird postuliert, ModSecurity in einem eigenen File zu konfigurieren und dann als sogenanntes <i>Include</i> nachzuladen. Wir machen das aber nur mit einem Teil der Regeln (in einem späteren Tutorial). Die Grundkonfiguration fügen wir in die Apache-Konfiguration ein, um sie immer im Blick zu haben. Dabei bauen wir auf unserer Apache Basiskonfiguration auf. Natürlich kann man diese Konfiguration auch mit dem <i>SSL-Setup</i> und dem <i>Applikations-Server-Setup</i> kombinieren. Dies tun wir hier der Einfachheit halber aber nicht - klar, dass ein produktiver Setup besser mit _SSL_ arbeitet. Was wir aber einbinden ist das erweiterte LogFormat, das wir in der 5. Anleitung kennengelernt haben. Dazu kommt ein weiteres, optionales Performance-Log das bei der Suche nach Geschwindigkeitsengpässen hilft.
 
-FIXME: Update LogEnhance
-
 ```bash
 ServerName        localhost
 ServerAdmin       root@localhost
@@ -90,6 +88,7 @@ Timeout           10
 MaxClients        100
 
 Listen            127.0.0.1:80
+Listen            127.0.0.1:443
 
 LoadModule        mpm_event_module        modules/mod_mpm_event.so
 LoadModule        unixd_module            modules/mod_unixd.so
@@ -100,13 +99,15 @@ LoadModule        logio_module            modules/mod_logio.so
 LoadModule        authn_core_module       modules/mod_authn_core.so
 LoadModule        authz_core_module       modules/mod_authz_core.so
 
+LoadModule        ssl_module              modules/mod_ssl.so
+
 LoadModule        unique_id_module        modules/mod_unique_id.so
 LoadModule        security2_module        modules/mod_security2.so
 
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
 LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e \"%{cookie}n\" %{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% %D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e %{ModSecAnomalyScoreIn}e %{ModSecAnomalyScore}e" extended
 
-LogFormat "%t %{UNIQUE_ID}e %D \
+LogFormat "[%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] %{UNIQUE_ID}e %D \
 PerfModSecInbound: %{TX.perf_modsecinbound}M \
 PerfAppl: %{TX.perf_application}M \
 PerfModSecOutbound: %{TX.perf_modsecoutbound}M \
@@ -233,6 +234,16 @@ SecAction "id:'90113',phase:5,pass,nolog,setvar:TX.perf_application=-%{TX.ModSec
 SecAction "id:'90114',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=%{PERF_PHASE3}"
 SecAction "id:'90115',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=+%{PERF_PHASE4}"
 
+SSLCertificateKeyFile   /etc/ssl/private/ssl-cert-snakeoil.key
+SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
+
+SSLProtocol             All -SSLv2 -SSLv3
+SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM !MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
+SSLHonorCipherOrder     On
+
+SSLRandomSeed           startup file:/dev/urandom 2048
+SSLRandomSeed           connect builtin
+
 DocumentRoot		/apache/htdocs
 
 <Directory />
@@ -257,6 +268,20 @@ DocumentRoot		/apache/htdocs
 
 </VirtualHost>
 
+<VirtualHost 127.0.0.1:443>
+    
+      SSLEngine On
+
+      <Directory /apache/htdocs>
+
+              Require all granted
+
+              Options None
+              AllowOverride None
+
+      </Directory>
+
+</VirtualHost>
 ```
 
 Neu sind die Module *mod_security2.so* und *mod_unique_id.so* hinzugekommen und das zusätzliche Performance-Log. Zunächst definieren wir das _LogFormat_, einige Zeilen weiter unten dann das File _logs/modsec-perf.log_. Hinten auf dieser Zeile ist eine Bedingung eingefügt: Nur wenn die Umgebungsvariable *write_perflog* gesetzt ist, wird dieses Logfile wirklich geschrieben. Wir können also pro Request entscheiden, ob wir die Performance-Daten brauchen oder nicht. Dies schont die Ressourcen und gibt uns die Möglichkeit punktgenau zu arbeiten: So können wir etwa nur bestimmte Pfade in das Log einbeziehen oder uns auf einzelne Client-IP Adressen konzentrieren.
@@ -400,7 +425,7 @@ Wir nennen diesen Typ von Regeln _Blacklist Regeln_, da beschrieben wird, was wi
 Probieren wir die Blockade einmal aus:
 
 ```bash
-$> curl http://localhost/phpMyAdmin/index.php
+$> curl http://localhost/phpmyadmin
 ```
 
 Wir erwarten folgende Antwort:
@@ -419,16 +444,10 @@ on this server.</p>
 Sehen wir auch nach, was wir im _Error-Log_ dazu finden:
 
 ```bash
-[2015-10-17 05:26:05.396583] [-:error] - - [client 127.0.0.1] ModSecurity: Access 
-denied with code 403 (phase 1). String match "/phpMyAdmin" at REQUEST_FILENAME. 
-[file "/opt/apache-2.4.17/conf/httpd.conf"] [line "173"] 
-[id "10000"] [msg "Blocking access to /phpMyAdmin/index.php."] [tag "Local 
-Lab Service"] [tag "Blacklist Rules"] [hostname "localhost"] [uri 
-"/phpMyAdmin/index.php"] [unique_id "Ubbml38AAQEAAHf@AQkAAAAA"]
-```
-FIXME: Update errorlog example
+[2015-10-27 22:43:28.265834] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Pattern match "/phpmyadmin" at REQUEST_FILENAME. [file "/apache/conf/httpd.conf_modsec_minimal"] [line "140"] [id "10000"] [msg "Blocking access to /phpmyadmin."] [tag "Local Lab Service"] [tag "Blacklist Rules"] [hostname "localhost"] [uri "/phpmyadmin"] [unique_id "Vi-wAH8AAQEAABuNHj8AAAAA"]
 
-_ModSecurity_ beschreibt hier die ausgelöste Regel und die Massnahme, die ergriffen wurde: Zunächst der Zeitstempfel. Dann die durch Apache zugewiesene Schwere des Log-Eintrages. Die Stufe _error_ wird für alle _ModSecurity_ Meldungen vergeben. Dann folgt die IP-Adresse des Clients. Dazwischen einige leere Felder, welche nur mittels "-" bezeichnet werden. Sie bleiben bei Apache 2.4 leer, weil das Logformat sich änderte und *ModSecurity* diese Änderung noch nicht nachvollzogen hat. Danach dann die eigentliche Meldung, die mit der Massnahme eröffnet: _Access denied with code 403_ und zwar bereits in der Phase 1, also während dem Empfangen der Anfrage-Header. Danach sehen wir einen Hinweis auf die Regelverletzung: Der String _"/phpMyAdmin"_ wurde im *REQUEST_FILENAME* gefunden. Dies ist genau das, was wir definiert haben. Die folgenden Informations-Stücke sind in Blöcken aus eckigen Klammern eingebettet. In jedem Block zunächst die Bezeichnung und dann durch einen Leerschlag getrennt die Information. Wir befinden uns mit unserer Regel also in der Datei _/opt/apache-2.4.17/conf/httpd.conf_ auf der Zeile 173. Die Regel besitzt - wie wir wissen - die ID 10000. Unter _msg_ sehen wir die in der Regel definierte Zusammenfassung der Regel wobei die Variable *MATCHED_VAR* durch den Pfad-Teil der Anfrage ersetzt wurde. Danach der Tag, den wir in der _SecDefaultAction_ gesetzt haben. Danach der zusätzliche für diese Regel gesetzte Tag. Schliesslich folgen noch Hostname, URI und die Unique-ID der Anfrage.
+```
+_ModSecurity_ beschreibt hier die ausgelöste Regel und die Massnahme, die ergriffen wurde: Zunächst der Zeitstempfel. Dann die durch Apache zugewiesene Schwere des Log-Eintrages. Die Stufe _error_ wird für alle _ModSecurity_ Meldungen vergeben. Dann folgt die IP-Adresse des Clients. Dazwischen einige leere Felder, welche nur mittels "-" bezeichnet werden. Sie bleiben bei Apache 2.4 leer, weil das Logformat sich änderte und *ModSecurity* diese Änderung noch nicht nachvollzogen hat. Danach dann die eigentliche Meldung, die mit der Massnahme eröffnet: _Access denied with code 403_ und zwar bereits in der Phase 1, also während dem Empfangen der Anfrage-Header. Danach sehen wir einen Hinweis auf die Regelverletzung: Der String _"/phpMyAdmin"_ wurde im *REQUEST_FILENAME* gefunden. Dies ist genau das, was wir definiert haben. Die folgenden Informations-Stücke sind in Blöcken aus eckigen Klammern eingebettet. In jedem Block zunächst die Bezeichnung und dann durch einen Leerschlag getrennt die Information. Wir befinden uns mit unserer Regel also in der Datei _/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal auf der Zeile 140. Die Regel besitzt - wie wir wissen - die ID 10000. Unter _msg_ sehen wir die in der Regel definierte Zusammenfassung der Regel wobei die Variable *MATCHED_VAR* durch den Pfad-Teil der Anfrage ersetzt wurde. Danach der Tag, den wir in der _SecDefaultAction_ gesetzt haben. Danach der zusätzliche für diese Regel gesetzte Tag. Schliesslich folgen noch Hostname, URI und die Unique-ID der Anfrage.
 
 Diese Angaben finden wir auch noch ausführlicher im oben besprochenen _Audit-Log_. Für den normalen Gebrauch reicht allerdings oft das _Error-Log_.
 
@@ -493,13 +512,13 @@ $> curl -d "username=1234&username=5678&password=test" http://localhost/login/lo
 Ein Blick in das Error-Log des Servers belegt, dass die Regeln genau so griffen wie wir sie definiert haben (Auszug gefiltert):
 
 ```bash
-[2015-10-17 05:26:05.396430] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Match of "rx ^()$" against "ARGS_GET_NAMES:debug" required. [file "/opt/apache-2.4.17/conf/httpd.conf"] [line "180"] [id "10003"] [msg "Unknown Query-String Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/index.html"] [unique_id "UcAVIn8AAQEAAFjeANQAAAAA"]
-[2015-10-17 05:26:07.539846] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Match of "rx ^()$" against "ARGS_GET_NAMES:debug" required. [file "/opt/apache-2.4.17/conf/httpd.conf"] [line "180"] [id "10003"] [msg "Unknown Query-String Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/index.html"] [unique_id "UcAVkH8AAQEAAFjeANYAAAAC"]
-[2015-10-17 05:26:12.345245] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Match of "rx ^/login/(index.html|login.do)$" against "REQUEST_FILENAME" required. [file "/opt/apache-2.4.17/conf/httpd.conf"] [line "179"] [id "10002"] [msg "Unknown Login URL"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/admin.html"] [unique_id "UcAVlH8AAQEAAFjeANcAAAAD"]
-[2015-10-17 05:26:19.976533] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^(username|password)$" against "ARGS_POST_NAMES:backdoor" required. [file "/opt/apache-2.4.17/conf/httpd.conf"] [line "181"] [id "10004"] [msg "Unknown Post Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVmn8AAQEAAFjeANkAAAAF"]
-[2015-10-17 05:26:25.165337] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9_-]{1,16}$" against "ARGS_POST:username" required. [file "/opt/apache-2.4.17/conf/httpd.conf"] [line "186"] [id "10007"] [msg "ARGS_POST:username parameter does not meet value domain"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVnn8AAQEAAFjeANoAAAAG"]
-[2015-10-17 05:26:42.924352] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9_-]{1,16}$" against "ARGS_POST:username" required. [file "/opt/apache-2.4.17/conf/httpd.conf"] [line "186"] [id "10007"] [msg "ARGS_POST:username parameter does not meet value domain"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVon8AAQEAAFjeANsAAAAH"]
-[2015-10-17 05:27:55.853951] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Operator GT matched 1 at ARGS_POST. [file "/opt/apache-2.4.17/conf/httpd.conf"] [line "183"] [id "10005"] [msg "ARGS_POST occurring more than once"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVpn8AAQEAAFjeANwAAAAI"]
+[2015-10-17 05:26:05.396430] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Match of "rx ^()$" against "ARGS_GET_NAMES:debug" required. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "180"] [id "10003"] [msg "Unknown Query-String Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/index.html"] [unique_id "UcAVIn8AAQEAAFjeANQAAAAA"]
+[2015-10-17 05:26:07.539846] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Match of "rx ^()$" against "ARGS_GET_NAMES:debug" required. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "180"] [id "10003"] [msg "Unknown Query-String Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/index.html"] [unique_id "UcAVkH8AAQEAAFjeANYAAAAC"]
+[2015-10-17 05:26:12.345245] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Match of "rx ^/login/(index.html|login.do)$" against "REQUEST_FILENAME" required. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "179"] [id "10002"] [msg "Unknown Login URL"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/admin.html"] [unique_id "UcAVlH8AAQEAAFjeANcAAAAD"]
+[2015-10-17 05:26:19.976533] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^(username|password)$" against "ARGS_POST_NAMES:backdoor" required. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "181"] [id "10004"] [msg "Unknown Post Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVmn8AAQEAAFjeANkAAAAF"]
+[2015-10-17 05:26:25.165337] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9_-]{1,16}$" against "ARGS_POST:username" required. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "186"] [id "10007"] [msg "ARGS_POST:username parameter does not meet value domain"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVnn8AAQEAAFjeANoAAAAG"]
+[2015-10-17 05:26:42.924352] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9_-]{1,16}$" against "ARGS_POST:username" required. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "186"] [id "10007"] [msg "ARGS_POST:username parameter does not meet value domain"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVon8AAQEAAFjeANsAAAAH"]
+[2015-10-17 05:27:55.853951] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Operator GT matched 1 at ARGS_POST. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "183"] [id "10005"] [msg "ARGS_POST occurring more than once"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVpn8AAQEAAFjeANwAAAAI"]
 ```
 
 Es funktioniert also von A bis Z.
@@ -517,7 +536,7 @@ Wir finden den Verkehr des in der Regel angegebenen Clients 127.0.0.1 dann im Au
 ```bash
 $> curl localhost
 ...
-$> sudo tail -1  /apache/logs/modsec_audit.log
+$> sudo tail -1 /apache/logs/modsec_audit.log
 localhost 127.0.0.1 - - [17/Oct/2015:06:17:08 +0200] "GET /index.html HTTP/1.1" 404 214 "-" "-" UcAmDH8AAQEAAGUjAMoAAAAA "-" /20151017/20151017-0617/20151017-061708-UcAmDH8AAQEAAGUjAMoAAAAA 0 15146 md5:e2537a9239cbbe185116f744bba0ad97 
 $> sudo cat /apache/logs/audit/20151017/20151017-0617/20151017-061708-UcAmDH8AAQEAAGUjAMoAAAAA
 --c54d6c5e-A--
@@ -529,33 +548,25 @@ Host: localhost
 Accept: */*
 
 --c54d6c5e-F--
-HTTP/1.1 404 Not Found
-Content-Length: 214
-Content-Type: text/html; charset=iso-8859-1
+HTTP/1.1 200 OK
+Date: Tue, 27 Oct 2015 21:39:03 GMT
+Server: Apache
+Last-Modified: Tue, 06 Oct 2015 11:55:08 GMT
+ETag: "2d-5216e4d2e6c03"
+Accept-Ranges: bytes
+Content-Length: 45
 
 --c54d6c5e-E--
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
-<html><head>
-<title>404 Not Found</title>
-</head><body>
-<h1>Not Found</h1>
-<p>The requested URL /login/index.html was not found on this server.</p>
-</body></html>
-
+<html><body><h1>It works!</h1></body></html>
 ...
 
 ```
 
-FIXME: better content of /index.html
-
-
-Die Regel, welche den Verkehr aufzeichnet, lässt sich natürlich beliebig anpassen, so dass wir sehr genau mitlesen können, was in den Server eineingeht und was er retourniert (nur eine bestimmte Client-IP, ein bestimmter User, nur ein Applikationsteil mit einem bestimmten Pfad etc.) Damit kommt man einem Fehlverhalten einer Applikation oft schnell auf die Schliche.
+Die Regel, welche den Verkehr aufzeichnet, lässt sich natürlich beliebig anpassen, so dass wir punktgenau mitlesen können, was in den Server eineingeht und was er retourniert (nur eine bestimmte Client-IP, ein bestimmter User, nur ein Applikationsteil mit einem bestimmten Pfad etc.) Damit kommt man einem Fehlverhalten einer Applikation oft schnell auf die Schliche.
 
 Damit sind wir zum Ende dieser Anleitung gelangt. *ModSecurity* ist eine wichtige Komponente für den Betrieb eines sicheren Webservers. Mit dieser Anleitung ist der Einstieg hoffentlich geglückt.
 
 ###Verweise
 
-* Apache: FIXME: <a href="http://httpd.apache.org">http://httpd.apache.org</a>
-* File Hierarchy Standard: FIXME: <a href="http://www.pathname.com/fhs/">http://www.pathname.com/fhs/</a>
-* Apache ./configure documenation: FIXME: <a href="http://httpd.apache.org/docs/trunk/programs/configure.html">http://httpd.apache.org/docs/trunk/programs/configure.html</a>
-
+* Apache [http://httpd.apache.org](http://httpd.apache.org)
+* ModSecurity [http://www.modsecurity.org](http://www.modsecurity.org)
