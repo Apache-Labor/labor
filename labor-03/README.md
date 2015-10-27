@@ -67,21 +67,21 @@ LoadModule              log_config_module       modules/mod_log_config.so
 LoadModule              authn_core_module       modules/mod_authn_core.so
 LoadModule              authz_core_module       modules/mod_authz_core.so
 
-LoadModule		ssl_module		modules/mod_ssl.so
+LoadModule              ssl_module              modules/mod_ssl.so
 
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
-LogFormat 		"%h %l %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat               "%h %l %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
 
 LogLevel                debug
 ErrorLog                logs/error.log
 CustomLog               logs/access.log combined
 
 SSLCertificateKeyFile   /etc/ssl/private/ssl-cert-snakeoil.key
-SSLCertificateFile   	/etc/ssl/certs/ssl-cert-snakeoil.pem
+SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
 
 SSLProtocol             All -SSLv2 -SSLv3
-SSLCipherSuite		'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM !MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
-SSLHonorCipherOrder	On
+SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM !MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
+SSLHonorCipherOrder     On
 
 SSLRandomSeed           startup file:/dev/urandom 2048
 SSLRandomSeed           connect builtin
@@ -90,10 +90,10 @@ DocumentRoot            /apache/htdocs
 
 <Directory />
       
-	Require all denied
+        Require all denied
 
-	Options SymLinksIfOwnerMatch
-	AllowOverride None
+        Options SymLinksIfOwnerMatch
+        AllowOverride None
 
 </Directory>
 
@@ -101,9 +101,9 @@ DocumentRoot            /apache/htdocs
       
       <Directory /apache/htdocs>
 
-      	Require all granted
+        Require all granted
 
-      	Options None
+        Options None
         AllowOverride None
 
       </Directory>
@@ -111,17 +111,17 @@ DocumentRoot            /apache/htdocs
 </VirtualHost>
 
 <VirtualHost 127.0.0.1:443>
-	
-	SSLEngine On
 
-	<Directory /apache/htdocs>
+        SSLEngine On
 
-	      	Require all granted
+        <Directory /apache/htdocs>
 
-      	        Options None
-                AllowOverride None
+            Require all granted
 
-	</Directory>
+            Options None
+            AllowOverride None
+
+        </Directory>
 
 </VirtualHost>
 
