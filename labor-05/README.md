@@ -6,6 +6,8 @@ Wir kompilieren das Sicherheits-Modul ModSecurity, binden es in den Apache Webse
 ModSecurity ist ein Sicherheitsmodul für den Webserver. Das Hilfsmittel ermöglicht die überprüfung sowohl der Anfrage als auch der Antwort nach vordefinierten Regeln. Man nennt das auch _Web Application Firewall_. Der Administrator erhält also eine direkte Kontrolle über die Requests und die Responses, welche das System durchlaufen. Das Modul gibt einem aber auch neue Möglichkeiten zum Monitoring in die Hand, denn der gesamte Verkehr zwischen Client und Server lässt sich 1:1 auf die Festplatte schreiben. Dies hilft bei der Fehlersuche.
 Eine _WAF_ greift in den HTTP Verkehr ein. Das führt zu Fehlern, wenn sie eine legitime Anfrage blockiert. Man nennt dies _False Positive_. Da die Behandlung dieser Fehler ein wichtiger Teil der Arbeit mit _ModSecurity_ ist, versuchen wir uns von Beginn weg in dieser Disziplin.
 
+FIXME: Voraussetzungen inkl. ssl
+
 ###Schritt 1: Sourcecode herunterladen und Checksumme prüfen
 
 Den Sourcecode für den Webserver haben wir nach <i>/usr/src/apache</i> heruntergeladen. Desgleichen verfahren wir nun mit ModSecurity. Dazu legen wir als Root das Verzeichnis <i>/usr/src/modsecurity/</i> an, übergeben es uns selbst und laden dann den Code herunter. 
