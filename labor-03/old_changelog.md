@@ -1,5 +1,6 @@
 ##### Changelog
 
+* 29.\. Oktober 2015: Rechtschreibung und Rewording der Signierungspassage (Benjamin Affolter)
 * 1\. Oktober 2015: Erweiterung um Erklärungen zu SSL Session Cache
 * 29\. September 2015: html -> markdown, auf github eingecheckt, Update auf Apache 2.4
 * 9\. Juli 2013: Rechtschreibfehler
