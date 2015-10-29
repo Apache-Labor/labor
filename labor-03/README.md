@@ -5,8 +5,7 @@ Wir setzen einen mit Serverzertifikat gesicherten Apache Webserver auf.
 
 ###Warum tun wir das?
 
-Das HTTP Protokoll ist ein Klartext-Protokoll, das sich sehr gut abhören lässt. Die Erweiterung HTTPS umgibt den HTTP-Verkehr in einer SSL-/TLS-Schutzschicht,
-welche das Abhören verhindert und sicherstellt, dass wir wirklich mit demjenigen Server sprechen, den wir angesprochen haben. Die Übertragung der Daten geschieht dann nur noch verschlüsselt. Das bedeutet noch keinen sicheren Webserver, aber es ist die Basis für einen gesicherten HTTP-Verkehr.
+Das HTTP Protokoll ist ein Klartext-Protokoll, das sich sehr gut abhören lässt. Die Erweiterung HTTPS umgibt den HTTP-Verkehr mit einer SSL-/TLS-Schutzschicht, welche das Abhören verhindert und sicherstellt, dass wir wirklich mit demjenigen Server sprechen, den wir angesprochen haben. Die Übertragung der Daten geschieht dann nur noch verschlüsselt. Das bedeutet noch keinen sicheren Webserver, aber es ist die Basis für einen gesicherten HTTP-Verkehr.
 
 ###Voraussetzungen
 
@@ -15,18 +14,9 @@ welche das Abhören verhindert und sicherstellt, dass wir wirklich mit demjenige
 
 ###Schritt 1: Server mit SSL/TLS, aber ohne offiziell signiertes Zertifikat konfigurieren
 
-Ein SSL Server muss sich beim Kontakt mit dem Client durch einem signierten Zertifikat ausweisen. 
-Für eine erfolgreiche Verbindung muss die Signierstelle dem Client bekannt sein, was er durch
-eine Überprüfung der Zertifikatskette vom Server-Zertifikat bis zum Root-Zertifikat der
-Signierstelle, der Certificate Authority überprüft. Offiziell signierte Zertifikate bezieht 
-man deshalb von einem öffentlichen (oder privaten) Anbieter, dessen Root-Zertifikat dem 
-Browser bekannt ist. 
+Ein SSL Server muss sich beim Kontakt mit dem Client durch ein signiertes Zertifikat ausweisen. Für eine erfolgreiche Verbindung muss die Signierstelle dem Client bekannt sein, was er durch eine Überprüfung der Zertifikatskette vom Server- bis zum Root-Zertifikat der Signierstelle, der Certificate Authority, überprüft. Offiziell signierte Zertifikate bezieht man deshalb von einem öffentlichen (oder privaten) Anbieter, dessen Root-Zertifikat dem Browser bekannt ist. 
 
-Die Konfiguration eines SSL-Servers umfasst also zwei Schritte: Den Bezug eines offiziell
-signierten Zertifikats und die Konfiguration des Servers. Die Konfiguration des Servers ist
-der interessantere und der einfachere Teil, weshalb wir ihn vorziehen. Dazu bedienen wir uns
-eines inoffiziellen Behelfzertifikats, das auf unserem System bereits vorhanden ist 
-(zumindest wenn es aus der Debian-Familie stammt und das Paket _ssl-cert_ installiert ist).
+Die Konfiguration eines SSL-Servers umfasst also zwei Schritte: Den Bezug eines offiziell signierten Zertifikats und die Konfiguration des Servers. Die Konfiguration des Servers ist der interessantere und einfachere Teil, weshalb wir ihn vorziehen. Dazu bedienen wir uns eines inoffiziellen Behelfzertifikats, das auf unserem System bereits vorhanden ist (zumindest wenn es aus der Debian-Familie stammt und das Paket _ssl-cert_ installiert ist).
 
 Das Zertifikat und der zugehörige Schlüssel befinden sich unter:
 
@@ -35,9 +25,7 @@ Das Zertifikat und der zugehörige Schlüssel befinden sich unter:
 /etc/ssl/private/ssl-cert-snakeoil.key
 ```
 
-Die Namen der Dateien deuten bereits darauf hin, dass es sich hier um ein wenig vertrauenerweckendes
-Paar handelt. Der Browser wird denn auch eine Zertifikatswarnung abgeben, wenn man sie für einen
-Server einsetzt.
+Die Namen der Dateien deuten bereits darauf hin, dass es sich hier um ein wenig vertrauenerweckendes Paar handelt. Der Browser wird denn auch eine Zertifikatswarnung abgeben, wenn man sie für einen Server einsetzt.
 
 Für einen ersten Konfigurationsversuch taugen sie aber durchaus:
 
@@ -67,21 +55,21 @@ LoadModule              log_config_module       modules/mod_log_config.so
 LoadModule              authn_core_module       modules/mod_authn_core.so
 LoadModule              authz_core_module       modules/mod_authz_core.so
 
-LoadModule		ssl_module		modules/mod_ssl.so
+LoadModule              ssl_module              modules/mod_ssl.so
 
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
-LogFormat 		"%h %l %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat               "%h %l %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
 
 LogLevel                debug
 ErrorLog                logs/error.log
 CustomLog               logs/access.log combined
 
 SSLCertificateKeyFile   /etc/ssl/private/ssl-cert-snakeoil.key
-SSLCertificateFile   	/etc/ssl/certs/ssl-cert-snakeoil.pem
+SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
 
 SSLProtocol             All -SSLv2 -SSLv3
-SSLCipherSuite		'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM !MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
-SSLHonorCipherOrder	On
+SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM !MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
+SSLHonorCipherOrder     On
 
 SSLRandomSeed           startup file:/dev/urandom 2048
 SSLRandomSeed           connect builtin
@@ -90,10 +78,10 @@ DocumentRoot            /apache/htdocs
 
 <Directory />
       
-	Require all denied
+        Require all denied
 
-	Options SymLinksIfOwnerMatch
-	AllowOverride None
+        Options SymLinksIfOwnerMatch
+        AllowOverride None
 
 </Directory>
 
@@ -101,9 +89,9 @@ DocumentRoot            /apache/htdocs
       
       <Directory /apache/htdocs>
 
-      	Require all granted
+        Require all granted
 
-      	Options None
+        Options None
         AllowOverride None
 
       </Directory>
@@ -111,25 +99,25 @@ DocumentRoot            /apache/htdocs
 </VirtualHost>
 
 <VirtualHost 127.0.0.1:443>
-	
-	SSLEngine On
 
-	<Directory /apache/htdocs>
+        SSLEngine On
 
-	      	Require all granted
+        <Directory /apache/htdocs>
 
-      	        Options None
-                AllowOverride None
+            Require all granted
 
-	</Directory>
+            Options None
+            AllowOverride None
+
+        </Directory>
 
 </VirtualHost>
 
 ```
 
-Ich beschreibe nicht die gesamte Konfiguration; nur die gegenüber Lektion 2 hinzugekommenen Direktiven. Neu lauschen wir neben dem Port 80 auch noch auf Port 443; dem _HTTPS-Port_. Wie erwartet ist das _SSL-_Modul neu hinzugeladen. Dann konfigurieren wird den Schlüssel und das Zertifikat mittels der Direktiven _SSLCertificateKeyFile_ und _SSLCertificateFile_. In der Protokollzeile (_SSLProtocol_) ist es sehr wichtig, das wir das ältere und unsichere Protokoll _SSLv2_ ausschalten, aber auch _SSLv3_ ist seit der _POODLE_ Attacke nicht mehr länger sicher. Am Besten wäre es, nurmehr _TLSv1.2_ zuzulassen, aber das beherrschen noch nicht alle Browser. Wir schliessen also einfach _SSLv2_ sowie _SSLv3_ vom Gebrauch aus und lassen damit zur Zeit faktisch TLSv1, das sehr seltene TLSv1.1 sowie das quantitativ dominierende TLSv1.2 zu. Der Handshake und die Verschlüsselung geschieht durch einen Satz von mehreren Algorithmen. Diese kryptographischen Algorithmen definieren wir mit der sogenannten _Cipher-Suite_. Es ist wichtig, eine saubere _Cipher-Suite_ zu verwenden, denn an dieser Stelle setzen Abhörangriffe typischerweise an: Sie nützen die Schwächen und die zu geringe Schlüssellänge älterer Algorithmen aus. Eine sehr eingeschränkte Suite verhindert allerdings, dass ältere Browser auf unseren Server zugreifen können. Die vorgeschlagene _Cipher-Suite_ weist eine hohe Sicherheit auf und berücksichtigt auch einige ältere Browser ab Windows Vista. Windows XP und sehr alte Android-Versionen schliessen wir damit von der Kommunikation aus.
+Ich beschreibe nicht die gesamte Konfiguration, nur die gegenüber Lektion 2 hinzugekommenen Direktiven. Neu lauschen wir neben dem Port 80 auch noch auf Port 443; dem _HTTPS-Port_. Wie erwartet ist das _SSL-_Modul neu hinzugeladen. Dann konfigurieren wir den Schlüssel und das Zertifikat mittels der Direktiven _SSLCertificateKeyFile_ und _SSLCertificateFile_. In der Protokollzeile (_SSLProtocol_) ist es sehr wichtig, das wir das ältere und unsichere Protokoll _SSLv2_ ausschalten, aber auch _SSLv3_ ist seit der _POODLE_ Attacke nicht mehr länger sicher. Am besten wäre es, nurmehr _TLSv1.2_ zuzulassen, aber das beherrschen noch nicht alle Browser. Wir schliessen also einfach _SSLv2_ sowie _SSLv3_ vom Gebrauch aus und lassen damit zur Zeit faktisch TLSv1, das sehr seltene TLSv1.1 sowie das quantitativ dominierende TLSv1.2 zu. Der Handshake und die Verschlüsselung geschieht durch einen Satz von mehreren Algorithmen. Diese kryptographischen Algorithmen definieren wir mit der sogenannten _Cipher-Suite_. Es ist wichtig, eine saubere _Cipher-Suite_ zu verwenden, denn an dieser Stelle setzen Abhörangriffe typischerweise an: Sie nützen die Schwächen und die zu geringe Schlüssellänge älterer Algorithmen aus. Eine sehr eingeschränkte Suite verhindert allerdings, dass ältere Browser auf unseren Server zugreifen können. Die vorgeschlagene _Cipher-Suite_ weist eine hohe Sicherheit auf und berücksichtigt auch einige ältere Browser ab Windows Vista. Windows XP und sehr alte Android-Versionen schliessen wir damit aber von der Kommunikation aus.
 
-Im Kern der _Cipher-Suite_ stehen die Algorithmen der Gruppe _HIGH_. Das ist die Gruppe der hochwertigen Ciphers, welche _OpenSSL_ uns via das _SSL-Modul_ zur Verfügung stellt. Die vor diesem Schlüsselwort angeführten Algorithmen, welche an sich auch Teil der _HIGH-Gruppe_ sind, erhalten durch das Voranstellen die Priorität. Danach fügem dir den Hashing-Algorithmus _SHA_ hinzu und schliessen dann eine Reihe von Algorithmen aus, die aus dem einen oder anderen Grund in unserer _Cipher-Suite_ nicht erwünscht sind.
+Im Kern der _Cipher-Suite_ stehen die Algorithmen der Gruppe _HIGH_. Das ist die Gruppe der hochwertigen Ciphers, welche _OpenSSL_ uns via das _SSL-Modul_ zur Verfügung stellt. Die vor diesem Schlüsselwort angeführten Algorithmen, welche an sich auch Teil der _HIGH-Gruppe_ sind, erhalten durch das Voranstellen die Priorität. Danach fügen wir den Hashing-Algorithmus _SHA_ hinzu und schliessen dann eine Reihe von Algorithmen aus, die aus dem einen oder anderen Grund in unserer _Cipher-Suite_ nicht erwünscht sind.
 
 Darauf folgt die Direktive _SSLHonorCipherOrder_. Sie ist von hoher Wichtigkeit. Man spricht bei SSL oft von _Downgrade Attacks_. Dabei versucht ein Angreifer, ein sogenannter Mittelsmann oder Man-in-the-Middle, in den Verkehr einzugreifen und beim Handshake die Parameter so zu beeinflussen, dass zum Schluss ein schlechteres Protokoll verwendet wird als eigentlich möglich wäre. Namentlich die in der _Cipher-Suite_ festgelegte Priorisierung wird damit ausgehebelt. Die Direktive _SSLHonorCipherOrder_ verhindert diese Angriffsart, indem auf der Algorithmen-Präferenz unseres Servers bestanden wird.
 
@@ -170,10 +158,9 @@ $> curl -v https://127.0.0.1/index.html
 curl: (51) SSL: certificate subject name 'myhost.home' does not match target host name '127.0.0.1'
 ```
 
-Leider waren wir noch nicht erfolgreich. Kein Wunder, denn wir haben einen Server unter der IP Adresse
-_127.0.0.1_ angesprochen, er hat sich bei uns aber mit einem Zerifikat für _myhost.home_ gemeldet. Ein typischer Fall eines Handshake-Fehlers.
+Leider waren wir noch nicht erfolgreich. Kein Wunder, denn wir haben einen Server unter der IP-Adresse _127.0.0.1_ angesprochen, er hat sich bei uns aber mit einem Zerifikat für _myhost.home_ gemeldet. Ein typischer Fall eines Handshake-Fehlers.
 
-Wir können _curl_ instruieren, den Fehler zu ignorieren dennoch eine Verbindung herzustellen. Dies geschieht mit dem Flag _--insecure_, respektive _-k_.:
+Wir können _curl_ instruieren, den Fehler zu ignorieren und dennoch eine Verbindung herzustellen. Dies geschieht mit dem Flag _--insecure_, respektive _-k_.:
 
 ```bash
 curl -v -k https://127.0.0.1/index.html
@@ -221,20 +208,19 @@ curl -v -k https://127.0.0.1/index.html
 
 Nun klappt es also und unser SSL-Server läuft. Freilich mit einem faulen Zertifikat und wir sind damit weit von einem produktiven Einsatz entfernt.
 
-Im Folgenden geht es nun darum, ein offizielles Zertifikat zu beziehen, dieses dann korrekt zu installieren und unsere
-Konfiguration noch etwas zu verfeinern.
+Im Folgenden geht es nun darum, ein offizielles Zertifikat zu beziehen, dieses dann korrekt zu installieren und unsere Konfiguration noch etwas zu verfeinern.
 
 
 
-###Schritt 3a: SSL Schlüssel und Zertifikat beziehen
+###Schritt 3a: SSL-Schlüssel und -Zertifikat beziehen
 
-HTTPS erweitert das bekannte HTTP Protokoll um eine SSL-Schicht. Technisch wurde SSL (_Secure Socket Layer_) zwar heute von TLS (_Transport Security Layer_) ersetzt, aber man spricht dennoch immer noch von SSL. Das Protokoll garantiert verschlüsselten und damit abhörsicheren Datenverkehr. Der Verkehr wird symmetrisch verschlüsselt, was einen hohen Durchsatz garantiert, setzt aber im Fall von HTTPS einen Public-/Private-Key Setup voraus, der den sicheren Austausch der symmetrischen Schlüssel durch sich zuvor unbekannte Kommunikationspartner voraus. Dieser Public-/Private-Key Handshake geschieht mit Hilfe eines Serverzertifikats, das durch eine offizielle Stelle signiert werden muss.
+HTTPS erweitert das bekannte HTTP-Protokoll um eine SSL-Schicht. Technisch wurde SSL (_Secure Socket Layer_) zwar heute von TLS (_Transport Security Layer_) ersetzt, aber man spricht dennoch immer noch von SSL. Das Protokoll garantiert verschlüsselten und damit abhörsicheren Datenverkehr. Der Verkehr wird symmetrisch verschlüsselt, was einen hohen Durchsatz garantiert, setzt aber im Fall von HTTPS einen Public-/Private-Key Setup voraus, der den sicheren Austausch der symmetrischen Schlüssel durch sich zuvor unbekannte Kommunikationspartner voraus. Dieser Public-/Private-Key Handshake geschieht mit Hilfe eines Serverzertifikats, das durch eine offizielle Stelle signiert werden muss.
 
-Serverzertifikate existieren in verschiedenen Formen, Validierungen und Gültigkeitsbereichen. Nicht jedes Merkmal ist wirklich technischer Natur, das Marketing spielt auch eine Rolle. Die Preisunterschiede sind sehr gross, weshalb sich ein Vergleich lohnt. Für unseren Test-Setup verwenden wir ein freies Zertifikat, das wir aber dennoch offiziell beglaubigen lassen. Bei <a href="https://www.startssl.com">_StartSSL_</a> lässt sich beides einfach und ohne Bezahlung mit einer Laufzeit von 12 Monaten beziehen. _StartSSL_ steht immer wieder in der Kritik, weshalb dieser Gratis-Service keinen guten Ruf besitzt. Es ist allerdings ein einfacher Weg, um zu einem offiziellen Zertifikat für einen Test-Server zu kommen und vergleichbare Gratis-Angebote haben Laufzeiten von 90 Tagen und weniger. 
+Serverzertifikate existieren in verschiedenen Formen, Validierungen und Gültigkeitsbereichen. Nicht jedes Merkmal ist wirklich technischer Natur, das Marketing spielt auch eine Rolle. Die Preisunterschiede sind sehr gross, weshalb sich ein Vergleich lohnt. Für unseren Test-Setup verwenden wir ein freies Zertifikat, das wir aber dennoch offiziell beglaubigen lassen. Bei <a href="https://www.startssl.com">_StartSSL_</a> lässt sich beides einfach und ohne Bezahlung mit einer Laufzeit von 12 Monaten beziehen. _StartSSL_ steht immer wieder in der Kritik, weshalb dieser Gratis-Service keinen guten Ruf besitzt (bspw. ist die Revozierung eines Zertifikats kostenpflichtig). Es ist allerdings ein einfacher Weg, um zu einem offiziellen Zertifikat für einen Test-Server zu kommen und vergleichbare Gratis-Angebote haben Laufzeiten von 90 Tagen und weniger.
 
-Dieses Zertifikat ist an sich auch für einen sicheren Einsatz auf einem produktiven Server geeignet, allerdings tut man bis heute meist gut daran, ein qualifiziertere _Certificate Authority_ zu benützen als die vorgeschlagene. Für den 16. November 2015 ist die Eröffnung von _Let's Encrypt_ angekündigt. Dies ist eine _CA_, welche ausschliesslich gratis-Zertifikate anbieten will. Sobald _Let's Encrypt_ erfolgreich aktiv ist, wird diese Anleitung hier angepasst werden.
+Dieses Zertifikat ist an sich auch für einen sicheren Einsatz auf einem produktiven Server geeignet, allerdings tut man bis heute meist gut daran, eine qualifiziertere _Certificate Authority_ zu benützen als die vorgeschlagene. Für den 16. November 2015 ist die Eröffnung von _Let's Encrypt_ angekündigt. Dies ist eine _CA_, welche ausschliesslich Gratis-Zertifikate anbieten will. Sobald _Let's Encrypt_ erfolgreich aktiv ist, wird diese Anleitung hier angepasst werden.
 
-Für den Moment setzen wir aber auf _StartSSL_. Der Anbieter überprüft zunächst die Identität eines Antragsstellers und dann vor der Ausstellung des Zertifikats auch noch dessen Berechtigung ein bestimmtes Zertifikat für eine bestimmte Domain zu erhalten. Diese Überprüfung geschieht durch ein Email an eine vordefinierte Adresse der gewünschten Zertifikats-Domäne. Konkret bedeutet dies im Fall der Domäne _example.com_, dass _StartSSL_ eine Email-Nachricht mit einem Sicherheitscode an eine der drei Adressen _postmaster@example.com_, _webmaster@example.com_ oder _hostmaster@example.com_ versendet. Dies verhindert, dass jemand ein Zertifikat für eine fremde Domäne beziehen kann, denn in diesem Fall ginge die Nachricht mit dem Code in die Leere.
+Für den Moment setzen wir aber auf _StartSSL_. Der Anbieter überprüft zunächst die Identität eines Antragsstellers und dann vor der Ausstellung des Zertifikats auch noch dessen Berechtigung, ein bestimmtes Zertifikat für eine bestimmte Domain zu erhalten. Diese Überprüfung geschieht durch ein Email an eine vordefinierte Adresse der gewünschten Zertifikats-Domäne. Konkret bedeutet dies im Fall der Domäne _example.com_, dass _StartSSL_ eine Email-Nachricht mit einem Sicherheitscode an eine der drei Adressen _postmaster@example.com_, _webmaster@example.com_ oder _hostmaster@example.com_ versendet. Dies verhindert, dass jemand ein Zertifikat für eine fremde Domäne beziehen kann, denn in diesem Fall ginge die Nachricht mit dem Code ins Leere.
 
 Zur Zeit kommt man über die folgenden Schritte zu einem Server-Zertifikat:
 
@@ -246,11 +232,11 @@ Zur Zeit kommt man über die folgenden Schritte zu einem Server-Zertifikat:
 * Zertifikat signieren
 * Signiertes Zertifikat und Schlüssel herunterladen und installieren
 
-Neben diesem Ablauf ist durchaus üblich, ein Zertifikat selbst zu erstellen und es dann online nur noch signieren zu lassen. _StartSSL_ lässt diese flexible Option als Alternative auch zu. Wichtig ist in beiden Varianten, dass man den Schlüssel durch ein starkes Passwort schützt. Dieses Passwort benötigen wir später bei der Konfiguration des Servers.
+Natürlich ist es auch möglich, Zertifikat und Private Key selbst zu erstellen und ersteres dann online nur noch signieren zu lassen. So bekommt die CA unseren Private Key erst gar nie in die Hände, was durchaus sehr empfohlen, wenn nicht sogar Pflicht ist. Wichtig ist in beiden Varianten, dass man den Schlüssel durch ein starkes Passwort schützt. Dieses Passwort benötigen wir später bei der Konfiguration des Servers.
 
 ###Schritt 3b: Zertifikat selbst erstellen und offiziell signieren lassen
 
-Bei _StartSSL_ lassen sich auch Zertifikate von selbst erstellen Schlüsseln signieren. Dies bietet einem zusätzliche Möglichkeiten bei der Konstruktion des Zertifikats. Wenn man also ein Super-Zertifikat möchte, eines das in der Sonne glänzt und neidige Blicke erntet, dann ist dies ein passemder Weg. Einen sehr guten Schlüssel generieren wir wie folgt:
+Einen sehr guten Schlüssel generieren wir wie folgt:
 
 ```bash
 $> openssl genrsa -des3 -out server.key 2048
@@ -267,7 +253,7 @@ Enter pass phrase for server.key:
 Verifying - Enter pass phrase for server.key:
 ```
 
-Merken Sie sich diese Passphrase gut.  Mit dem neuen Schlüssel generieren wir nun einen Signierungsantrag, einen _Certificate Signing Request_, kurz _CSR_:
+Merken Sie sich diese Passphrase gut. Mit dem neuen Schlüssel generieren wir nun einen Signierungsantrag, einen _Certificate Signing Request_, kurz _CSR_:
 
 ```bash
 $> openssl req -new -key server.key > server.csr
@@ -305,7 +291,7 @@ Wir erhalten darauf einen _CSR_ mit Namen server.csr. Damit gehen wir zu _StartS
 
 Ich setze voraus, dass Sie ein offiziell signiertes Zertifikat mit zugehörigem Schlüssel wie beschrieben bezogen oder selbst generiert und offiziell signiert haben.
 
-Die Funktionsweise des _SSL/TLS_-Protokolls ist anspruchsvoll. Eine gute Einführung bietet das _OpenSSL Cookbook_ von Ivan Ristić (siehe Links) oder sein umfassenderes Werk _Bulletproof SSL und TLS_. Ein Bereich, der schwer verständlich ist, umfasst die Vertrauensbeziehungen, die _SSL_ garantiert. Der Webbrowser vertraut von Beginn weg einer Liste von Zertifizierungs-Authoritäten, wozu auch _StartSSL_ gehört. Beim Aufbau der _SSL_-Verbindung wird dieses Vertrauen auf unseren Webserver erweitert. Dies geschieht mit Hilfe des Zertifikates. Es wird eine Vertrauenskette zwischen der Zertifizierungs-Authorität und unserem Server gebildet. Aus technischen Gründen gibt es ein Zwischenglied zwischen der Zertifizierungs-Authorität und unserem Webserver. Dieses Glied müssen wir in der Konfiguration auch definieren. Zunächst müssen wir die Datei aber beziehen:
+Die Funktionsweise des _SSL-/TLS_-Protokolls ist anspruchsvoll. Eine gute Einführung bietet das _OpenSSL Cookbook_ von Ivan Ristić (siehe Links) oder sein umfassenderes Werk _Bulletproof SSL und TLS_. Ein Bereich, der schwer verständlich ist, umfasst die Vertrauensbeziehungen, die _SSL_ garantiert. Der Webbrowser vertraut von Beginn weg einer Liste von Zertifizierungs-Authoritäten, wozu auch _StartSSL_ gehört. Beim Aufbau der _SSL_-Verbindung wird dieses Vertrauen auf unseren Webserver erweitert. Dies geschieht mit Hilfe des Zertifikates. Es wird eine Vertrauenskette zwischen der Zertifizierungs-Authorität und unserem Server gebildet. Aus technischen Gründen gibt es ein Zwischenglied zwischen der Zertifizierungs-Authorität und unserem Webserver. Dieses Glied müssen wir in der Konfiguration auch definieren. Zunächst müssen wir die Datei aber beziehen:
 
 ```bash
 $> wget https://www.startssl.com/certs/sub.class1.server.ca.pem -O startssl-class1-chain-ca.pem
@@ -339,9 +325,7 @@ $> chown -R root:root /apache/conf/ssl.*/
 
 ###Schritt 6: Passphrase Dialog automatisch beantworten
 
-Beim Beziehen des Schlüssels mussten wir eine Passphrase definieren, um den Schlüssel zu entsperren. Damit unser Webserver den Schlüssel benutzen kann müssen wir 
-ihm diesen Code bekannt geben. Er wird uns beim Starten des Servers danach fragen. Möchten wir das nicht, dann müssen wir es in der Konfiguration mit angeben. 
-Wir tun dies mittels einer separaten Datei, die auf Anfrage die Passphrase liefert. Nennen wir diese Datei _/apache/bin/gen_passphrase.sh_ und tragen wir die oben gewählte  Passphrase ein:
+Beim Beziehen des Schlüssels mussten wir eine Passphrase definieren, um den Schlüssel zu entsperren. Damit unser Webserver den Schlüssel benutzen kann, müssen wir ihm diesen Code bekannt geben. Er wird uns beim Starten des Servers danach fragen. Möchten wir das nicht, dann müssen wir es in der Konfiguration mit angeben. Wir tun dies mittels einer separaten Datei, die auf Anfrage die Passphrase liefert. Nennen wir diese Datei _/apache/bin/gen_passphrase.sh_ und tragen wir die oben gewählte Passphrase ein:
 
 ```bash
 #!/bin/sh
@@ -399,7 +383,7 @@ Sinnvoll ist es, den mit dem Zertifikat übereinstimmenden _ServerName_ auch im 
 
 Neu hinzugekommen sind auch die beiden Optionen _SSLSessionCache_ sowie _SSLSessionTickets_. Die beiden Direktiven kontrollieren das Verhalten des _SSL Session Caches_. Voraussetzung für den Cache ist das Modul *socache_shmcb*, welches die Caching-Funktionalität zur Verfügung stellt und von *mod_ssl* angesprochen wird. Das funktioniert folgendermassen: Während des SSL Handshakes werden Parameter der Verbindung wie etwa der Schlüssel und ein Verschlüsselungsalgorithmus ausgehandelt. Dies geschieht im Public-Key Modus, der sehr rechenintensiv ist. Ist der Handshake erfolgreich beendet, verkehrt der Server mit dem Client über die performantere symmetrische Verschlüsselung mit Hilfe der eben ausgehandelten Parameter. Ist der Request beendet und die _Keep-Alive_ Periode ohne neue Anfrage verstrichen, dann gehen die TCP-Verbindung und die mit der Verbindung verhängten Parameter verloren. Wird die Verbindung kurze Zeit später neu aufgebaut, müssen die Parameter neu ausgehandelt werden. Das ist aufwändig, wie wir eben gesehen haben. Besser wäre es, man könnte die vormals ausgehandelten Parameter re-aktivieren. Diese Möglichkeit besteht in der Form des _SSL Session Caches_. Traditionell wird dieser Cache serverseitig verwaltet.
 
-Beim Session Cache via Tickets werden die Parameter in einem Session Ticket zusammengefasst und dem Client übergeben, wo sie clientseitig gespeichert werden, was auf dem Webserver Speicherplatz spart. Beim Aufbau einer neuen Verbindung sendet der Client die Parameter an den Server und dieser konfiguriert die Verbindung entsprechend. Um eine Manipulation der Parameter im Ticket zu verhindern, signiert der Server das Ticket vorgängig und überprüft es beim Aufbei einer Verbindung wieder. Bei diesem Mechanismus ist daran zu denken, dass die Signatur von einem Signierschlüssel anhängt und es sinnvoll ist, diesen meist dynamisch erzeugten Schlüssel regelmässig zu erneuern. Ein neues Laden des Server gewährleistet dies.
+Beim Session Cache via Tickets werden die Parameter in einem Session Ticket zusammengefasst und dem Client übergeben, wo sie clientseitig gespeichert werden, was auf dem Webserver Speicherplatz spart. Beim Aufbau einer neuen Verbindung sendet der Client die Parameter an den Server und dieser konfiguriert die Verbindung entsprechend. Um eine Manipulation der Parameter im Ticket zu verhindern, signiert der Server das Ticket vorgängig und überprüft es beim Aufbei einer Verbindung wieder. Bei diesem Mechanismus ist daran zu denken, dass die Signatur von einem Signierschlüssel abhängt und es sinnvoll ist, diesen meist dynamisch erzeugten Schlüssel regelmässig zu erneuern. Ein neues Laden des Server gewährleistet dies.
 
 SSL Session Tickets sind jünger und nunmehr von allen relevanten Browsern unterstützt. Sie gelten auch als sicher. Das ändert aber nichts an der Tatsache, dass zumindest eine theoretische Verwundbarkeit besteht, indem die Session Parameter clientseitig gestohlen werden können. 
 
@@ -415,21 +399,21 @@ Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance. Allerd
 
 ###Schritt 8: Ausprobieren
 
-Zu Übungszwecken haben wir unseren Testserver erneut auf der lokalen IP-Adresse _127.0.0.1_ konfiguriert. Um das Funktionieren der Zertifikatskette zu testen, dürfen wir den Server nicht einfach mittels der IP-Adresse ansprechen, sondern wir müssen ihn mit dem korrekten Hostnamen kontaktieren. Und dieser Hostname muss natürlich mit demjenigen auf dem Zertifikat übereinstimmen. Im Fall von _127.0.0.1_ erreichen wir dies, idem wir das _Host-File_ unter _/etc/hosts_ anpassen:
+Zu Übungszwecken haben wir unseren Testserver erneut auf der lokalen IP-Adresse _127.0.0.1_ konfiguriert. Um das Funktionieren der Zertifikatskette zu testen, dürfen wir den Server nicht einfach mittels der IP-Adresse ansprechen, sondern wir müssen ihn mit dem korrekten Hostnamen kontaktieren. Und dieser Hostname muss natürlich mit demjenigen auf dem Zertifikat übereinstimmen. Im Fall von _127.0.0.1_ erreichen wir dies, indem wir das _Host-File_ unter _/etc/hosts_ anpassen:
 
 ```bash
 127.0.0.1	localhost myhost www.example.com
 ...
 ```
 
-Nun können wir entweder mit dem Browser, oder mit curl auf die URL [https://www.example.com](https://www.example.com) zugreifen. Wenn dies ohne eine Zertifikats-Warnung funktioniert, dann haben wir den Server korrekt konfiguriert. Etwas genauer lässt sich die Verschlüsselung und die Vertrauenskette mit dem Kommendozeilen-Tool _OpenSSL_ überprüfen. Da _OpenSSL_ aber anders als der Browser und curl keine Liste mit Zertifikatsauthoritäten besitzt müssen wir dem Tool das Zertifikat der Authorität auch mitgeben. Wir besorgen es uns bei _StartSSL_.
+Nun können wir entweder mit dem Browser oder mit curl auf die URL [https://www.example.com](https://www.example.com) zugreifen. Wenn dies ohne eine Zertifikats-Warnung funktioniert, dann haben wir den Server korrekt konfiguriert. Etwas genauer lässt sich die Verschlüsselung und die Vertrauenskette mit dem Kommendozeilen-Tool _OpenSSL_ überprüfen. Da _OpenSSL_ aber anders als der Browser und curl keine Liste mit Zertifikatsauthoritäten besitzt, müssen wir dem Tool das Zertifikat der Authorität auch mitgeben. Wir besorgen es uns bei _StartSSL_.
 
 ```bash
 $> wget https://www.startssl.com/certs/ca.pem
 ...
 $> openssl s_client -showcerts -CAfile ca.pem -connect www.example.com:443
 ```
-Hier instruieren _OpenSSL_, den eingebauten client zu verwenden, uns die vollen Zertifikatsinformationen zu zeigen, das eben heruntergeladene CA-Zertifikat zu verwenden und mit diesen Parametern auf unseren Server zuzugreifen. Im optimalen Fall sieht der Output (leicht gekürzt) wie folgt aus:
+Hier instruieren wir _OpenSSL_, den eingebauten client zu verwenden, uns die vollen Zertifikatsinformationen zu zeigen, das eben heruntergeladene CA-Zertifikat zu verwenden und mit diesen Parametern auf unseren Server zuzugreifen. Im optimalen Fall sieht der Output (leicht gekürzt) wie folgt aus:
 
 ```bash
 CONNECTED(00000003)
@@ -489,7 +473,7 @@ Interessanterweise gibt es im Internet so etwas wie eine Hitparade, was sichere 
 
 ###Schritt 9 (Bonus): Qualität der SSL Sicherung extern überprüfen lassen
 
-Ivan Ristić, der oben erwähnte Autor von mehreren Büchern über Apache und SSL betreibt im Dienst von Qualys einen Analyse-Service zur Überprüfung von _SSL-Webservern_. Er befindet sich bei [www.ssllabs.com](https://www.ssllabs.com/ssldb/index.html). Ein Webserver wie oben konfiguriert brachte mir im Test die Höchstnote von _A+_ ein.
+Ivan Ristić, der oben erwähnte Autor von mehreren Büchern über Apache und SSL, betreibt im Dienst von Qualys einen Analyse-Service zur Überprüfung von _SSL-Webservern_. Er befindet sich unter [www.ssllabs.com](https://www.ssllabs.com/ssldb/index.html). Ein Webserver wie oben konfiguriert brachte mir im Test die Höchstnote von _A+_ ein.
 
 ![Screenshot: SSLLabs](./apache-tutorial-03-screenshot-ssllabs.png)
 Die Höchstnote ist mit dieser Anleitung in Reichweite.
@@ -503,5 +487,4 @@ Die Höchstnote ist mit dieser Anleitung in Reichweite.
 * [OpenSSL Cookbook](https://www.feistyduck.com/books/openssl-cookbook/)
 * [Bulletproof SSL und TLS](https://www.feistyduck.com/books/bulletproof-ssl-and-tls/)
 * [Keylength.com - Hintergrundinformationen zu Ciphers und Keys](http://www.keylength.com)
-
 

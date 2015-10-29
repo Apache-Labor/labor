@@ -6,60 +6,82 @@ Wir binden die OWASP ModSecurity Core Rules in unseren Apache Webserver ein und 
 
 ###Warum tun wir das?
 
-Die Web Application Firewall ModSecurity, wie wir sie in an Anleitung Nummer 6 eingerichtet haben, besitzt noch beinahe keine Regeln. Der Schutz spielt aber erst, wenn man ein möglichst umfassendes Regelset hinzukonfiguriert und die ganzen Fehlalarme (*False Positives*) ausmerzt. Die Core Rules bieten generisches Blacklisting. Das heisst, sie untersuchen die Anfragen und die Antworten nach Hinweisen auf Angriffe. Die Hinweise sind oft Schlüsselwörter und typische Muster, die auf verschiedenste Arten von Angriffen hindeuten können. Das bringt es mit sich, dass auch Fehlalarme ausgelöst werden. Herr (FIXME Test) *Anderegg*, um einen typischen Schweizer Nachnamen zu nennen, wir beim Ausfüllen eines Adressformulars etwa einen *SQL-Injection* Alarm auslösen, weil sein Name die Zeichenkette *And* enthält, was auch ein SQL Schlüsselwort ist. Wir müssen also Sorge tragen, dass die entsprechende Regel auf dem Adressformular nicht mehr zuschlägt.
+Die Web Application Firewall ModSecurity, wie wir sie in an Anleitung Nummer 6 eingerichtet haben, besitzt noch beinahe keine Regeln. Der Schutz spielt aber erst, wenn man ein möglichst umfassendes Regelset hinzukonfiguriert und die ganzen Fehlalarme (*False Positives*) ausmerzt. Die Core Rules bieten generisches Blacklisting. Das heisst, sie untersuchen die Anfragen und die Antworten nach Hinweisen auf Angriffe. Die Hinweise sind oft Schlüsselwörter und typische Muster, die auf verschiedenste Arten von Angriffen hindeuten können. Das bringt es mit sich, dass auch Fehlalarme ausgelöst werden.
+
+###Voraussetzungen
+
+* Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
+* Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
+* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren)
+* Ein Apache Webserver mit erweitertem Zugriffslog wie in [Anleitung 5 (Das Zugriffslog Ausbauen und Auswerten)](https://www.netnea.com/cms/apache-tutorial-5-zugriffslog-ausbauen/)
+* Ein Apache Webserver mit ModSecurity wie in [Anleitung 6 (ModSecurity einbinden)](https://www.netnea.com/cms/apache-tutorial-6-modsecurity-einbinden/)
+
 
 ###Schritt 1: OWASP ModSecurity Core Rules Herunterladen
 
-Die ModSecurity Core Rules werden unter dem Dach von *OWASP*, dem Open Web Application Security Project entwickelt. Die Rules selbst liegen auf *github* und können wie folgt heruntergeladen werden. Vorausgesetzt wird eine Verzeichnisstruktur, wie wir sie in der Apache Anleitung Teil 1 angelegt haben.**
+Die ModSecurity Core Rules werden unter dem Dach von *OWASP*, dem Open Web Application Security Project entwickelt. Die Rules selbst liegen auf *github* und können wie folgt heruntergeladen werden. 
 
 ```
-$> cd /apache/conf
-$> wget https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/2.2.8.tar.gz
-$> tar xvzf 2.2.8.tar.gz
-$> mv owasp-modsecurity-crs-2.2.8/base_rules modsecurity-core-rules-2.2.8
-$> ln -s modsecurity-core-rules-2.2.8 modsecurity-core-rules-latest
-$> rm -r 2.2.8.tar.gz owasp-modsecurity-crs-2.2.8 
+$> wget https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/2.2.9.tar.gz
+$> tar xvzf 2.2.9.tar.gz
+owasp-modsecurity-crs-2.2.9/
+owasp-modsecurity-crs-2.2.9/.gitignore
+owasp-modsecurity-crs-2.2.9/CHANGES
+owasp-modsecurity-crs-2.2.9/INSTALL
+owasp-modsecurity-crs-2.2.9/LICENSE
+owasp-modsecurity-crs-2.2.9/README.md
+...
+$> sudo mkdir /opt/core-rules-2.2.9
+$> sudo chown `whoami` /opt/modsecurity-core-rules-2.2.9
+$> cp owasp-modsecurity-crs-2.2.9/base_rules/* /opt/modsecurity-core-rules-2.2.9
+$> sudo ln -s /opt/modsecurity-core-rules-2.2.9 /modsecurity-core-rules
+$> rm -r 2.2.9.tar.gz owasp-modsecurity-crs-2.2.9 
 ```
 
-Damit entpacken wir den Standard-Teil der Core-Rules in einer Verzeichnis *modsecurity-core-rules*. Den ganzen Rest des Core-Rules Paketes löschen wir wieder. Tatsächlich gibt es noch eine Vielzahl von optionalen Regeln, welche von Interesse sein können. Für unseren Labor-Setup spielen sie aber für den Moment keine Rolle. Ferner arbeiten die Core-Rules auch noch mit einem File namens *modsecurity_crs_10_setup.conf*. Den Inhalt dieses Files werden wir im nächsten Abschnitt direkt in unsere Apache-Konfiguration integrieren, so dass wir die Datei nicht benötigen.
+Damit entpacken wir den Basis-Teil der Core-Rules in einer Verzeichnis =/opt/modsecurity-core-rules-2.2.9=. Dazu erzeugen wir einen Link von =/modsecurity-core-rules= auf dieses Verzeichnis. Den ganzen Rest des Core-Rules Paketes löschen wir wieder. Tatsächlich gibt es noch eine Vielzahl von optionalen Regeln, welche je nach Situation von Interesse sein können. Für den Einstieg in unserem Labor-Setup lassen wir sie aber links liegen. Ferner übrgehen wir ein File namens =modsecurity_crs_10_setup.conf=. Üblicherweise wird eine Grundkonfiguration in dieses File geschrieben und die Datei dann via *Include* durch Apache importiert. Das hat sich aus meiner Sicht aber nicht bewährt. Den Inhalt dieses Files werden wir im nächsten Abschnitt direkt in unsere Apache-Konfiguration integrieren, so dass wir die Datei selbst nicht benötigen.
 
 ###Schritt 2: Core Rules Einbinden
 
-In der Anleitung 6, in welcher wir ModSecurity selbst eingebunden haben, markierten wir bereits einen Bereich für die Core-Rules. In diesen Bereich fügen wir die Include-Direktive jetzt ein. Konkret kommen vier Teile hinzu. (1) Die Core Rules Basis-Konfiguration, (2) ein Teil für selbst zu definierende Ignore-Rules vor den Core Rules. Dann (3) die Core Rules selbst und schliesslich ein Teil (4) für selbst zu definierende Ignore-Rules nach den Core Rules.
+In der Anleitung 6, in welcher wir ModSecurity selbst eingebunden haben, markierten wir bereits einen Bereich für die Core-Rules. In diesen Bereich fügen wir die Include-Direktive jetzt ein. Konkret kommen vier Teile zur bestehenden Konfiguration hinzu. (1) Die Core Rules Basis-Konfiguration, (2) ein Teil für selbst zu definierende Ignore-Rules vor den Core Rules. Dann (3) die Core Rules selbst und schliesslich ein Teil (4) für selbst zu definierende Ignore-Rules nach den Core Rules.
 
 Die sogenannten Ignore-Rules bezeichnen Regeln, welche dazu dienen, mit den oben beschriebenen Fehlalarmen umzugehen. Manche Fehlalarme müssen verhindert werden, bevor die entsprechende Core Rule geladen wird. Manche Fehlalarme können erst nach der Definition der Core Rule selbst abgefangen werden. Aber der Reihe nach. Hier zunächst das komplette Konfigurationfile:
 
-```
+```bash
 ServerName        localhost
 ServerAdmin       root@localhost
 ServerRoot        /apache
 User              www-data
 Group             www-data
-PidFile           /apache/logs/httpd.pid
+PidFile           logs/httpd.pid
 
 ServerTokens      Prod
 UseCanonicalName  On
 TraceEnable       Off
 
-Timeout           30
+Timeout           10
 MaxClients        100
 
 Listen            127.0.0.1:80
+Listen            127.0.0.1:443
 
-LoadFile          /usr/lib/x86_64-linux-gnu/libxml2.so
-LoadModule        authz_host_module  modules/mod_authz_host.so
-LoadModule        mime_module        modules/mod_mime.so
-LoadModule        log_config_module  modules/mod_log_config.so
-LoadModule        logio_module       modules/mod_logio.so
-LoadModule        unique_id_module   modules/mod_unique_id.so
-LoadModule        security2_module   modules/mod_security2.so
+LoadModule        mpm_event_module        modules/mod_mpm_event.so
+LoadModule        unixd_module            modules/mod_unixd.so
 
+LoadModule        log_config_module       modules/mod_log_config.so
+LoadModule        logio_module            modules/mod_logio.so
 
-LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e \
-%X \"%{cookie}n\" %{UNIQUE_ID}e %I %O %{ratio}n%% %D %{TX.perf_modsecinbound}M %{TX.perf_application}M \
-%{TX.perf_modsecoutbound}M %{TX.INBOUND_ANOMALY_SCORE}M %{TX.OUTBOUND_ANOMALY_SCORE}M" extended
+LoadModule        authn_core_module       modules/mod_authn_core.so
+LoadModule        authz_core_module       modules/mod_authz_core.so
 
-LogFormat "%t %{UNIQUE_ID}e %D \
+LoadModule        ssl_module              modules/mod_ssl.so
+
+LoadModule        unique_id_module        modules/mod_unique_id.so
+LoadModule        security2_module        modules/mod_security2.so
+
+ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
+LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e \"%{cookie}n\" %{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% %D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e %{ModSecAnomalyScoreIn}e %{ModSecAnomalyScore}e" extended
+
+LogFormat "[%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] %{UNIQUE_ID}e %D \
 PerfModSecInbound: %{TX.perf_modsecinbound}M \
 PerfAppl: %{TX.perf_application}M \
 PerfModSecOutbound: %{TX.perf_modsecoutbound}M \
@@ -83,8 +105,6 @@ LogLevel                      debug
 ErrorLog                      logs/error.log
 CustomLog                     logs/access.log extended
 CustomLog                     logs/modsec-perf.log perflog env=write_perflog
-
-DefaultType                   text/html
 
 # == ModSec Base Configuration
 
@@ -116,6 +136,7 @@ SecAuditLog                   /apache/logs/modsec_audit.log
 SecAuditLogStorageDir         /apache/logs/audit/
 
 SecDefaultAction              "phase:1,pass,log,tag:'Local Lab Service'"
+
 
 
 # == ModSec Rule ID Namespace Definition
@@ -175,8 +196,8 @@ SecAction "id:'900001',phase:1,t:none, \
    setvar:tx.warning_anomaly_score=3, \
    setvar:tx.notice_anomaly_score=2, \
    nolog, pass"
-SecAction "id:'900002',phase:1,t:none,setvar:tx.inbound_anomaly_score_level=1000,nolog,pass"
-SecAction "id:'900003',phase:1,t:none,setvar:tx.outbound_anomaly_score_level=1000,nolog,pass"
+SecAction "id:'900002',phase:1,t:none,setvar:tx.inbound_anomaly_score_level=10000,setvar:tx.inbound_anomaly_score=0,nolog,pass"
+SecAction "id:'900003',phase:1,t:none,setvar:tx.outbound_anomaly_score_level=10000,setvar:tx.outbound_anomaly_score=0,nolog,pass"
 SecAction "id:'900004',phase:1,t:none,setvar:tx.anomaly_score_blocking=on,nolog,pass"
 
 SecAction "id:'900006',phase:1,t:none,setvar:tx.max_num_args=255,nolog,pass"
@@ -208,7 +229,7 @@ SecRule &TX:REAL_IP "@eq 0" "id:'900021',phase:1,t:none,initcol:global=global,in
 
 # === ModSecurity Core Rules Inclusion
 
-Include    conf/modsecurity-core-rules-latest/*.conf
+Include    /modsecurity-core-rules/*.conf
 
 # === ModSecurity Ignore Rules After Core Rules Inclusion; order by id of ignored rule (ids: 50000-79999)
 
@@ -232,83 +253,109 @@ SecAction "id:'90113',phase:5,pass,nolog,setvar:TX.perf_application=-%{TX.ModSec
 SecAction "id:'90114',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=%{PERF_PHASE3}"
 SecAction "id:'90115',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=+%{PERF_PHASE4}"
 
+SSLCertificateKeyFile   /etc/ssl/private/ssl-cert-snakeoil.key
+SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
+
+SSLProtocol             All -SSLv2 -SSLv3
+SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM !MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
+SSLHonorCipherOrder     On
+
+SSLRandomSeed           startup file:/dev/urandom 2048
+SSLRandomSeed           connect builtin
+
 DocumentRoot		/apache/htdocs
 
 <Directory />
-	Order Deny,Allow
-	Deny from all
+      
+	Require all denied
 
 	Options SymLinksIfOwnerMatch
 	AllowOverride None
+
 </Directory>
 
-
 <VirtualHost 127.0.0.1:80>
-	
-	<Directory /apache/htdocs>
-		Order Deny,Allow
-		Allow from all
+      
+      <Directory /apache/htdocs>
 
-		Options None
-		AllowOverride None
-	</Directory>
+        Require all granted
+
+        Options None
+        AllowOverride None
+
+      </Directory>
+
+</VirtualHost>
+
+<VirtualHost 127.0.0.1:443>
+    
+      SSLEngine On
+
+      <Directory /apache/htdocs>
+
+              Require all granted
+
+              Options None
+              AllowOverride None
+
+      </Directory>
 
 </VirtualHost>
 
 ```
 
-FIXME: AnomalyScore is not initialized in AccessLog! It is "-" instead of "0".
+In der Basis-Konfiguration definieren wir verschiedene Werte, welche durch die Core Rules abgerufen und benützt werden. In der Regel *900001* werden verschiedenen Schweregraden Zahlenwerte, sogenannte Scores zugeweisen. Ein "kritischer Fehler" erhält den Wert 5, ein Fehler der Stufe *Error* die 4, eine "Warnung" 3 und eine "Notiz" einen Score von 2. Eine HTTP-Anfrage durchläuft die Core Rules wie einen grossen Filter. Jeder Core-Rule ist ein Schweregrad zugewiesen. Verletzt also eine Anfrage eine Regel der Stufe *Critical*, dann erhält der Request 5 Punkte. Eine Anfrage kann mehrere Regeln verletzten und dieselbe Regel kann mehrmals verletzt werden, wenn verschiedene Parameter abgefragt werden und die Regel mehrfach greift. Die sogenannten Anomalie-Werte (*Anomaly Scores*) werden dann pro Anfrage aufsummiert, jeweils für den Request, aber auch separat für die Response. Dabei kann eine recht hohe Summe zusammen kommen; Scores von über 500 sind keine Seltenheit und auch 1000 wurde schon gesehen.
 
-In der Basis-Konfiguration definieren wir verschiedene Werte, welche durch die Core Rules abgerufen und benützt werden. In der Regel *900001* werden verschiedenen Schweregraden Zahlenwerte, sogenannte Scores zugeweisen. Ein *kritischer Fehler" erhält den Wert 5, ein Fehler der Stufe *Error* die 4, eine "Warnung" 3 und eine "Notiz" einen Score von 2. Eine HTTP-Anfrage durchläuft die Core Rules wie einen grossen Filter. Jeder Core-Rule ist ein Schweregrad zugewiesen. Verletzt also eine Anfrage eine Regel der Stufe *Critical*, dann erhält der Request 5 Punkte. Eine Anfrage kann mehrere Regeln verletzten und dieselbe Regel kann mehrmals verletzt werden, wenn verschiedene Parameter abgefragt werden und die Regel mehrfach greift. Die sogenannten Anomalie-Werte (*Anomaly Scores*) werden dann pro Anfrage aufsummiert, wobei eine recht hohe Summe zusammen kommen kann.
+In der Regel *900002* und *900003* definieren wir die Limiten, bei welcher ein Request blockiert werden soll. Eine Limite betrifft die Anfragen (*Inbound*), eine zweite Limite die Antworten (*outbound*). Wir legen für den Start sehr hohe Werte von 10000 für beide Limiten fest. In der Praxis bedeutet dies, dass die Limiten niemals erreicht werden. In der Regel *900004* aktivieren wir formell den blockierenden Modus. Wir könnten hier auch festlegen, dass wir gar nicht blockieren möchten, sondern im Monitoring-Modus arbeiten möchten. Davon rate ich aber entschieden ab. Wir sollten von Anfang im Blocking-Modus arbeiten und die Limiten Schritt um Schritt reduzieren. Das Reduzieren der Limiten im Monitoring-Modus bleibt häufig auf halbem Weg stecken und gelingt es dennoch sie zu reduzieren traut man sich am Ende oft nicht in den Blocking-Modus zu wechseln. Besser ist es also im Blocking-Modus zu starten und bei jeder Reduktion mehr Vertrauen in die Installation zu erhalten.
 
-In der Regel *900002* und *900003* definieren wir die Limiten, bei welcher ein Request blockiert werden soll. Eine Limite betrifft die Anfragen (*Inbound*), eine zweite Limite die Antworten (*outbound*). Wir legen für den Start sehr hohe Werte von 1000 für beide Limiten fest. In der Praxis bedeutet dies, dass die Limiten niemals erreicht werden. In der Regel *900004* aktivieren wir formell den blockierenden Modus. Wir könnten hier auch festlegen, dass wir gar nicht blockieren möchten.
+Zusammengefasst haben wir für die Core Rules nun als eine blockierende Betriebsart mit sehr laxen Limiten gewählt. Die Limiten können wir zu einem späteren Zeitpunkt schrittweise anziehen; am Blocking-Prinzip selbst müssen wir aber nichts mehr ändern.
 
-Zusammengefasst haben wir für die Core Rules nun als eine blockierende Betriebsart mit sehr laxen Limiten gewählt. Die Limiten können wir zu einem späteren Zeitpunkt schrittweise anziehen; am Blocking-Prinzip selbst müssen wir aber nichts mehr ändern, denn erfahrungsgemäss ist es sehr schwer von einem Monitoring-Modus in einen Blocking-Modus zu gelanden. Viel einfacher ist es, bestehende Limiten enger zu setzen.
-
-In den Regeln *900006* bis *900009* setzen wir nacheinander die maximale Zahl der Anfrage-Parameter, die maximale Zeichenlänge der Parameternamen, die Länge eines Parameters und schliesslich die kombinierte Länge aller Parameter. Der letzte Wert korrespondiert mit dem oben in der Datei als *SecRequestBodyNoFilesLimit* gesetzten Wert. Hier bietet es sich an, dieselben Limiten zu setzen, um nicht zu einem späteren Zeitpunkt für Verwirrung zu sorgen. Wichtig ist einfach die Tatsache, dass dieser Wert demnach durch die Engine selbst und durch eine Core Rule überprüft wird.
+In den Regeln *900006* bis *900009* setzen wir nacheinander die maximale Zahl der Anfrage-Parameter, die maximale Zeichenlänge der Parameternamen, die Länge eines Parameters und schliesslich die kombinierte Länge aller Parameter. Der letzte Wert korrespondiert mit dem oben in der Datei als *SecRequestBodyNoFilesLimit* gesetzten Wert. Hier bietet es sich an, dieselben Limiten zu setzen, um nicht zu einem späteren Zeitpunkt für Verwirrung zu sorgen. Wichtig ist einfach die Tatsache, dass dieser Wert demnach durch die Engine selbst und danach noch durch eine Core Rule überprüft wird.
 
 Dies trifft auch für die folgenden Regeln *900010* und *900011* zu, welche maximale Dateigrössen und kombinierte Dateigrössen fixieren. In der Regel *900012* werden die erlaubten HTTP-Methoden angeführt, denn wir akzeptieren nicht mehr länger sämtliche Methoden. Dann die in den Anfragen erlaubten Media-Typen: Dies sind primär der Standard *application/x-www-form-urlencoded* und der bei Datei-Uploads eingesetzte *multipart/form-data*. Dazu kommen nun noch zwei, drei XML Varianten und *application/json*. Es folgen die akzeptablen HTTP-Versionen, dann eine Liste mit nicht erwünschten Datei-Endungen und schliesslich verbotene Anfrage-Header.
 
 Es folgen nun die Regeln *900018* bis und mit *900021*. Diese Regeln sind sehr anspruchsvoll. Sie arbeiten zusammen und kreieren zwei sogenannten Collections. Collections sind Datensammlungen, welche über eine einzelne Anfrage hinaus erhalten bleiben. Damit lassen sich User-Sessions erfassen und beobachten. In der Regel *900018* wird der *User-Agent Header* aus der Anfrage mit dem SHA1-Verfahren in einen Hash übersetzt und dann im Hexadezimalformat codiert. Diesen Wert - hier *ua_hash*, also User-Agent-Hash, genannt - wird in eine Variable geschrieben. Dies geschieht via *%{matched_var}*, eine interne Variable, welche den Wert im Bedingungsteil der Regel repräsentiert. *%{matched_var}* ist bei einer *SecRule*-Direktive immer vorhanden. Darauf wird in der Regel *900019* nach einem Forwarded-For Header Ausschau gehalten. Forwarded-For Header werden von Proxies geschrieben, welche typischerweise HTTP-Clients in Firmennetzen abweisen. Im Header selbst steht dann die ursprüngliche IP-Adresse des Clients. Falls vorhanden nehmen wir die IP-Adresse und setzen die Variable *real_ip* entsprechend. Anders als in der vorausgegangenen Regel nehmen wir aber nicht mehr *%{matched_var}*, sondern wählen den in der Klammer des regulären Ausrucks vorgefundenen Wert aus. Dazu setzen wir die Aktion *capture* ab und greifen dann mittels *%{tx.1}* auf die erste Klammer zu. Bei *TX* handelt es sich um ein Kürzel für *Transaktion*. Gemeint ist eine Collection, die den momentanen Request und hier den momentanen Treffer des regulären Ausdrucks betrifft. Hat das geklappt, dann initialisieren wir bei *900020* die Collection *GLOBAL* mit dem Wert *global* und initialisieren gleichzeitig die Collection IP mit dem zusammengesetzten Schlüssel aus *real_ip* und *ua_hash*. Falls wir keinen Forwarded-For Header vorgefunden haben, dann setzen wir die Collection *IP* in der Regel *900021* auf die IP-Adresse der TCP-Verbindung, also den Wert der internen Variable *REMOTE_ADDR* respektive hier *remote_addr*. 
 
-Damit sind alle nötigen Variabeln initialisiert und wir sind bereit für das Laden der *OWASP ModSecurity Core Rules*, die wir ja bereit gestellt haben. Vor dem dazu nötigen *Include-Befehl* folgt in der Konfigurations-Datei aber noch der erwähnte Block für die zukünftige Behandlung von Fehlalarmen. Dieser Block besteht zur Zeit erst aus einem Kommentar und einem Platzhalter. Dann der eigentliche *Include-Befehl* für die Core-Rules, wiederum gefolgt von einem Kommentar als Platzhalter für die zkünftige Behandlung von Fehlalarmen.
+Damit sind alle nötigen Variabeln initialisiert und wir sind bereit für das Laden der *OWASP ModSecurity Core Rules*, die wir ja vorher bereit gestellt haben. Vor dem dazu nötigen *Include-Befehl* folgt in der Konfigurations-Datei aber noch der erwähnte Block für die zukünftige Behandlung von Fehlalarmen. Dieser Block besteht zur Zeit erst aus einem Kommentar und einem Platzhalter. Darauf der eigentliche *Include-Befehl* für die Core-Rules, wiederum gefolgt von einem Kommentar als Platzhalter für die zukünftige Behandlung von Fehlalarmen. Die Fehlalarme können auf verschiedene Arten bekämpft werden. Zum Teil muss das vor dem Laden der Core Rules geschehen, zum Teil nachdem sie bereits geladen wurden. Deshalb stellen wir zwei Plätze für diese Direktiven bereit.
 
-Damit haben wir die Core-Rules eingebunden und wir sind bereit für den Testbetrieb. Die Regeln werden Anfragen und Antworten untersuchen. Sie werden auch Alarme auslösen, aber sie werden noch keine Requests blockieren, da die Limiten sehr breit gesetzt wurden. Das Auslösen von Alarmen und tatsächliche Blockierungen lassen sich im Apache Error-Log sehr einfach unterscheiden. Zumal die einzelnen Core Rules, wie wir gesehen haben, ja nur einen Anomalie-Wert erhöhen, aber noch keine Blockade auslösen. Die Blockade selbst, wird durch eine separate Blockierungs-Regel mit Rücksicht auf die Limiten durchgeführt. Normale Regelverletzungen rapportiert ModSecurity im Error-Log mit *ModSecurity. Warning ...*, Blockaden als *ModSecurity. Access denied ...*. Solange also kein *Access denied* rapportiert wird, arbeiten die Benutzer ohne Beeinträchtigung durch ModSecurity.
+Damit haben wir die Core Rules eingebunden und sind bereit für den Testbetrieb. Die Regeln werden Anfragen und Antworten untersuchen. Sie werden auch Alarme auslösen, aber sie werden noch keine Requests blockieren, da die Limiten sehr breit gesetzt wurden. Das Auslösen von Alarmen und tatsächliche Blockierungen lassen sich im Apache Error-Log sehr einfach unterscheiden. Zumal die einzelnen Core Rules, wie wir gesehen haben, ja nur einen Anomalie-Wert erhöhen, aber noch keine Blockade auslösen. Die Blockade selbst wird durch eine separate Blockierungs-Regel mit Rücksicht auf die Limiten durchgeführt. Diese wird für den Moment aber noch nicht anschlagen. Normale Regelverletzungen rapportiert ModSecurity im Error-Log mit *ModSecurity. Warning ...*, Blockaden als *ModSecurity. Access denied ...*. Solange also kein *Access denied* rapportiert wird, arbeiten die Benutzer ohne Beeinträchtigung durch ModSecurity.
 
-###Schritt 3: Testhalber Alarme Auslösen
+###Schritt 3: Testhalber Alarme auslösen
 
 Damit haben wir unseren Webserver nun mit einer kompletten WAF-Installation komplementiert. Was noch aussteht ist das Tuning, also das Verfeinern der Konfiguration: Eben das Ausmerzen der Fehlalarme. Zunächst wollen wir aber einmal sehen, wie die Alarme überhaupt aussehen. Lassen wir dazu einen einfachen Schwachstellen-Scanner gegen unsere Testinstallation laufen. *Nikto* ist ein solches simples Hilfsmittel, das uns rasch Resultate liefert. *Nikto* muss je nach dem noch installiert werden. Der Scanner ist aber in den meisten Distributionen enthalten.
 
-```
+```bash
 $> nikto -h localhost
 - Nikto v2.1.4
 ---------------------------------------------------------------------------
 + Target IP:          127.0.0.1
 + Target Hostname:    localhost
 + Target Port:        80
-+ Start Time:         2013-11-27 14:03:27
++ Start Time:         2015-10-27 19:03:27
 ---------------------------------------------------------------------------
 + Server: Apache
 + No CGI Directories found (use '-C all' to force check all possible dirs)
 + ETag header found on server, inode: 2883787, size: 44, mtime: 0x3e9564c23b600
 + Allowed HTTP Methods: POST, OPTIONS, GET, HEAD 
 + 6448 items checked: 0 error(s) and 2 item(s) reported on remote host
-+ End Time:           2013-11-27 14:04:17 (50 seconds)
++ End Time:           2013-11-27 19:04:17 (50 seconds)
 ---------------------------------------------------------------------------
 + 1 host(s) tested
 ```
 
 Dieser Scan sollte auf dem Server zahlreiche *ModSecurity-Alarme* ausgelöst haben. Sehen wir uns das *Apache Error-Log* einmal genauer an. In meinem Fall waren es gut 33'000 Einträge im Error-Log. Hier eine Beispielmeldung:
 
+```bash
+[Tue Oct 27 14:03:32 2015] [error] [client 127.0.0.1] ModSecurity: Warning. Pattern match "(fromcharcode|alert|eval)\\\\s*\\\\(" at ARGS:ctr. [file "/apache/conf/modsecurity-core-rules-latest/modsecurity_crs_41_xss_attacks.conf"] [line "391"] [id "973307"] [rev "2"] [msg "XSS Attack Detected"] [data "Matched Data: alert( found within ARGS:ctr: \\x22>&lt;script&gt;alert('vulnerable')</script>"] [ver "OWASP_CRS/2.2.8"] [maturity "8"] [accuracy "8"] [tag "Local Lab Service"] [tag "OWASP_CRS/WEB_ATTACK/XSS"] [tag "WASCTC/WASC-8"] [tag "WASCTC/WASC-22"] [tag "OWASP_TOP_10/A2"] [tag "OWASP_AppSensor/IE1"] [tag "PCI/6.5.1"] [hostname "localhost"] [uri "/SiteServer/Knowledge/Default.asp"] [unique_id "UpScJH8AAQEAAGCVA-AAAAAB"]
 ```
-[Tue Nov 26 14:03:32 2013] [error] [client 127.0.0.1] ModSecurity: Warning. Pattern match "(fromcharcode|alert|eval)\\\\s*\\\\(" at ARGS:ctr. [file "/apache/conf/modsecurity-core-rules-latest/modsecurity_crs_41_xss_attacks.conf"] [line "391"] [id "973307"] [rev "2"] [msg "XSS Attack Detected"] [data "Matched Data: alert( found within ARGS:ctr: \\x22>&lt;script&gt;alert('vulnerable')</script>"] [ver "OWASP_CRS/2.2.8"] [maturity "8"] [accuracy "8"] [tag "Local Lab Service"] [tag "OWASP_CRS/WEB_ATTACK/XSS"] [tag "WASCTC/WASC-8"] [tag "WASCTC/WASC-22"] [tag "OWASP_TOP_10/A2"] [tag "OWASP_AppSensor/IE1"] [tag "PCI/6.5.1"] [hostname "localhost"] [uri "/SiteServer/Knowledge/Default.asp"] [unique_id "UpScJH8AAQEAAGCVA-AAAAAB"]
-```
+FIXME apache 2.4 format
 
+FIXME: has not this been explained in labor-05
 Die *ModSecurity*-Meldungen besitzen ein bestimmtes Format. Es folgt immer dem gleichen Muster. Den Beginn machen die apache-spezifischen Teile, also der Zeitstempel und der Schweregrad der Meldung aus Sicht des Apache Servers. Die *ModSecurity*-Meldungen werden immer auf Stufe *error* abgesetzt. Dann folgt die IP Adresse des Clients. Darauf ein Hinweis auf ModSecurity. Hier ist es sehr wichtig zu wissen, dass die Meldung *ModSecurity: Warning.* wirklich nur eine Warnung darstellt. Wenn das Modul in den Verkehr eingreift, dann schreibt es *ModSecurity: Access denied with code ...*. Auf diese Unterscheidung ist Verlass. Ein *Warning* kann auf den Client also keine direkten Auswirkungen haben. Ohne ein *Access denied* können wir sicher sein, dass kein Request blockiert wurde.
 
 Wie geht es nun weiter? Es folgt ein Hinweis auf das Muster, das in der Anfrage gefunden wurde. Im Anfragen-Argument *ctr* wurde ein bestimmtes Muster eines regulären Ausdrucks gefunden. Nun folgen eine Reihe von Parametern, die immer dasselbe Muster besitzen: Sie stehen in eckigen Klammern und besitzen einen eigenen Bezeichner. Zunächst der Bezeichner *file*. Er zeigt uns, in welchem File die Regel definiert wurde, die nun den Alarm auslöste. Dem folgt mit *line* die Zeilennummer in dieser Datei. Wichtiger scheint mir der Parameter *id*. Jede Regel in *ModSecurity* besitzt eine Identifikationsnummer und ist damit eindeutig identifizierbar. Darauf folgt mit *rev* ein Hinweis auf die Revisionsnummer der Regel. In den Core-Rules wird mit diesem Parameter ausgedrückt, wie oft die Regel schon revidiert wurde. Kommt es also zu einer Regeländerung wird *rev* um eins erhöht. Die *msg*, kurz für *Message*, beschreibt den Typ des identifizierten Angriffs. Bei *data* wird der relevante Teil der Anfrage, also der Parameter *ctr* gezeigt: Es handelt sich in meinem Beispiel um einen offensichtlichen Fall von *Cross Site Scripting* (XSS).
 
-Wir kommen mit *ver* zum Release des Core-Rule-Sets, dann folgt mit *maturity* ein Hinweis auf die Qualität der Regel. Eine hohe *Maturität* besagt, dass wir dieser Regel trauen können, da sie breit eingesetzt wird und kaum zu Problemen geführt hat. Eine niedrige *Maturität* deutet hingegen eher auf eine experimentelle Regel hin. Der Wert 1 kommt in den *Core Rules* denn auch nur sechs Mal vor, während in der verwendeten Version 116 Regeln einen Wert von 8 besitzen, bei 99 Regeln wird sogar eine Reife von 9 angenommen. Ähnlich wie mit der *Maturity* verhält es sich mit *Accuracy*, also der Exaktheit der Regel. Auch dies ist ein optionaler Wert, den der Regelschreiber bei der Definition der Regel festgelegt hat. Hier kommen im Regelwerk gar keine tiefen Werte vor, 8 ist der häufigste Wert (144 Mal), 9 ist auch verbreitet (82). Nun folgen eine Reihe von *Tags*, die der Regel zugewiesen werden. Zunächst der Tag *Local Lab Service*. Den hatten wir selbst in unserer Konfiguration definiert. Er wird also wie gewünscht jeder Regelverletzung mitgegeben. Danach folgen mehrere Tags aus dem *Core Rule Set*, welche die Art des Angriffs klassifiziert. Mit diesen Hinweisen lassen sich beispielsweise Statistiken erstellen.
+Wir kommen mit *ver* zum Release des Core-Rule-Sets, dann folgt mit *maturity* ein Hinweis auf die Qualität der Regel. Eine hohe *Maturität* besagt, dass wir dieser Regel trauen können, da sie breit eingesetzt wird und kaum zu Problemen geführt hat. Eine niedrige *Maturität* deutet hingegen eher auf eine experimentelle Regel hin. Der Wert 1 kommt in den *Core Rules* denn auch nur sechs Mal vor, während in der verwendeten Version 116 Regeln einen Wert von 8 besitzen, bei 99 Regeln wird sogar eine Reife von 9 angenommen.  FIXME über Aussagekraft dieser Werte. Ähnlich wie mit der *Maturity* verhält es sich mit *Accuracy*, also der Exaktheit der Regel. Auch dies ist ein optionaler Wert, den der Regelschreiber bei der Definition der Regel festgelegt hat. Hier kommen im Regelwerk gar keine tiefen Werte vor, 8 ist der häufigste Wert (144 Mal), 9 ist auch verbreitet (82). Nun folgen eine Reihe von *Tags*, die der Regel zugewiesen werden. Zunächst der Tag *Local Lab Service*. Den hatten wir selbst in unserer Konfiguration definiert. Er wird also wie gewünscht jeder Regelverletzung mitgegeben. Danach folgen mehrere Tags aus dem *Core Rule Set*, welche die Art des Angriffs klassifiziert. Mit diesen Hinweisen lassen sich beispielsweise Statistiken erstellen.
 
 Gegen das Ende des Alarms folgen mit *hostname*, *uri* und *unique_id* drei weitere Werte, welche die Anfrage klarer spezifizieren. Mit der *Unique ID* können wir die Verbindung zu unserem *Access-Log* machen und mit der *URI* finden wir die betroffene Ressource auf unserem Server.
 
@@ -733,6 +780,8 @@ SecRule REQUEST_FILENAME "@beginsWith /index.html" "chain,phase:2,t:none,log,pas
 
 Wir haben hier zwei Regeln vor uns, die mittels dem Kommando *chain* verbunden werden. Das heisst, dass die erste Regel eine Bedingung formuliert und die zweite Regel nur ausgeführt wird, wenn die erste Bedingung zutrifft. In der zweiten Regl wird eine weitere, etwas kryptische Bedingung formuliert. Konkret sehen wir nach, eine bestimmte Variable gesetzt ist, nämlich *TX:960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS*. Diese Transaktionsvariable wurde durch die Regel *960015* gesetzt und weist auf einen Treffer der Regel 960015 hin. Sollten wir diese Variable also vorfinden, dann bedeutet dies, dass die Regel 960015 angeschlagen hat. In diesem Fall reduzieren wir den *Inbound Anomaly Score* wieder um den Wert, um den die Regel ihn erhöht hat. Wir neutralisieren also den Effekt der Regel, ohne die Meldung selbst zu unterdrücken.
 
+FIXME: What if a rule is triggered multiple times. How do we ignore the counting multiple times.
+
 Im *Error-Log* ergibt das nachher für den oben bereits vorgestellen *curl-*Aufruf folgende zwei Einträge:
 
 ```
@@ -744,7 +793,7 @@ Der Eintrag zum abschliessenden *Anomaly-Score* fällt weg, da dieser Wert wiede
 
 Die konstruierte Doppelregel ist anstrengend: Während die erst Bedingung einem bekannten Muster folgt ist die zweite Regel, welche die Transaktionsvariable einschliesst mit einigem Schreibaufwand verbunden: Wie kommen wir zum Variablen-Namen und woher kennen wir genau den Score?
 
-Den Variabel-Namen können wir entweder aus der Regeldefinition in den *Core Rules* ableiten - oder wir halten uns an das *Debug-Log*, das wir in der höchsten Stufe (*SecDebugLogLevel 9*) definieren:
+Den Variable-Namen können wir entweder aus der Regeldefinition in den *Core Rules* ableiten - oder wir halten uns an das *Debug-Log*, das wir in der höchsten Stufe (*SecDebugLogLevel 9*) definieren:
 
 ```
 $> sudo egrep "Set variable.*960015" logs/modsec_debug.log
