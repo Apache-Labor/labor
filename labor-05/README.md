@@ -43,7 +43,7 @@ Damit sind die Voraussetzungen geschaffen und wir sind bereit für ModSecurity.
 ```bash
 $> tar xvzf modsecurity-2.9.0.tar.gz
 $> cd modsecurity-2.9.0
-./configure --with-apxs=/apache/bin/apxs \
+$> ./configure --with-apxs=/apache/bin/apxs \
 --with-apr=/usr/local/apr/bin/apr-1-config \
 --with-pcre=/usr/bin/pcre-config \
 --enable-request-early
@@ -60,6 +60,9 @@ $> make
 ```
 
 FIXME: Fails against apache 2.4.17
+FIXME: package: libexpat1-dev
+
+
 
 ###Schritt 4: Installieren
 
