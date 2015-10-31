@@ -210,7 +210,7 @@ Das war alles. Nun können wir den Webserver starten und ausprobieren.
 
 ```bash
 $> cd /apache
-$> sudo ./bin/httpd -X conf/httpd.conf_fastcgid
+$> sudo ./bin/httpd -X -f conf/httpd.conf_fastcgid
 ```
 
 Erreichbar ist unser Testskript unter der URL [http://localhost/info.php](http://localhost/info.php).
