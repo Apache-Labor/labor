@@ -8,7 +8,12 @@ Wir kompilieren das Sicherheits-Modul ModSecurity, binden es in den Apache Webse
 ModSecurity ist ein Sicherheitsmodul für den Webserver. Das Hilfsmittel ermöglicht die überprüfung sowohl der Anfrage als auch der Antwort nach vordefinierten Regeln. Man nennt das auch _Web Application Firewall_. Der Administrator erhält also eine direkte Kontrolle über die Requests und die Responses, welche das System durchlaufen. Das Modul gibt einem aber auch neue Möglichkeiten zum Monitoring in die Hand, denn der gesamte Verkehr zwischen Client und Server lässt sich 1:1 auf die Festplatte schreiben. Dies hilft bei der Fehlersuche.
 Eine _WAF_ greift in den HTTP Verkehr ein. Das führt zu Fehlern, wenn sie eine legitime Anfrage blockiert. Man nennt dies _False Positive_. Da die Behandlung dieser Fehler ein wichtiger Teil der Arbeit mit _ModSecurity_ ist, versuchen wir uns von Beginn weg in dieser Disziplin.
 
-FIXME: Voraussetzungen inkl. ssl
+###Voraussetzungen
+
+* Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
+* Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
+* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren)
+* Ein ausgebautes Zugriffslog und einen Satz von Shell-Aliasen wie in [Anleitung 5 (Das Zugriffslog Ausbauen und Auswerten)](https://www.netnea.com/cms/apache-tutorials/apache-tutorial-5-zugriffslog-ausbauen)
 
 ###Schritt 1: Sourcecode herunterladen und Checksumme prüfen
 
@@ -36,7 +41,7 @@ modsecurity-2.9.0.tar.gz: OK
 
 ###Schritt 2: Entpacken und Compiler Konfigurieren
 
-Wir entpacken nun den Sourcecode und leiten die Konfiguration ein. Noch vorher gilt es aber zwei Pakete zu installieren, die eine Voraussetzung für das Kompilieren von _ModSecurity_ bilden. Eine Library zum Parsen von XML-Strukturen und die Grundlagen-/Header-Dateien der systemeigenen Regular Expression Library: *libxml2-dev* und _libpcre3-dev_.
+Wir entpacken nun den Sourcecode und leiten die Konfiguration ein. Noch vorher gilt es aber zwei Pakete zu installieren, die eine Voraussetzung für das Kompilieren von _ModSecurity_ bilden. Eine Library zum Parsen von XML-Strukturen und die Grundlagen-/Header-Dateien der systemeigenen Regular Expression Library: *libxml2-dev*, libexpat1-dev_ und _libpcre3-dev_.
 
 Damit sind die Voraussetzungen geschaffen und wir sind bereit für ModSecurity.
 
@@ -58,10 +63,6 @@ Nach dieser Vorbereitung sollte das Kompilieren keine Probleme mehr bereiten.
 ```bash
 $> make
 ```
-
-FIXME: Fails against apache 2.4.17
-FIXME: package: libexpat1-dev
-
 
 
 ###Schritt 4: Installieren
@@ -234,12 +235,19 @@ SecAction "id:'90014',phase:5,pass,nolog,setvar:TX.ModSecTimestamp5end=%{DURATIO
 
 # === ModSec performance calculations and variable export (ids: 90100 - 90199)
 
-SecAction "id:'90110',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=%{PERF_PHASE1}"
-SecAction "id:'90111',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=+%{PERF_PHASE2}"
-SecAction "id:'90112',phase:5,pass,nolog,setvar:TX.perf_application=%{TX.ModSecTimestamp3start}"
-SecAction "id:'90113',phase:5,pass,nolog,setvar:TX.perf_application=-%{TX.ModSecTimestamp2end}"
-SecAction "id:'90114',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=%{PERF_PHASE3}"
-SecAction "id:'90115',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=+%{PERF_PHASE4}"
+SecAction "id:'90100',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=%{PERF_PHASE1}"
+SecAction "id:'90101',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=+%{PERF_PHASE2}"
+SecAction "id:'90102',phase:5,pass,nolog,setvar:TX.perf_application=%{TX.ModSecTimestamp3start}"
+SecAction "id:'90103',phase:5,pass,nolog,setvar:TX.perf_application=-%{TX.ModSecTimestamp2end}"
+SecAction "id:'90104',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=%{PERF_PHASE3}"
+SecAction "id:'90105',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=+%{PERF_PHASE4}"
+SecAction "id:'90106',phase:5,pass,nolog,setenv:ModSecTimeIn=%{TX.perf_modsecinbound}"
+SecAction "id:'90107',phase:5,pass,nolog,setenv:ApplicationTime=%{TX.perf_application}"
+SecAction "id:'90108',phase:5,pass,nolog,setenv:ModSecTimeOut=%{TX.perf_modsecoutbound}"
+SecAction "id:'90109',phase:5,pass,nolog,setenv:ModSecAnomalyScoreIn=%{TX.inbound_anomaly_score}"
+SecAction "id:'90110',phase:5,pass,nolog,setenv:ModSecAnomalyScoreOut=%{TX.outbound_anomaly_score}"
+
+
 
 SSLCertificateKeyFile   /etc/ssl/private/ssl-cert-snakeoil.key
 SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
@@ -251,14 +259,14 @@ SSLHonorCipherOrder     On
 SSLRandomSeed           startup file:/dev/urandom 2048
 SSLRandomSeed           connect builtin
 
-DocumentRoot		/apache/htdocs
+DocumentRoot            /apache/htdocs
 
 <Directory />
       
-	Require all denied
+        Require all denied
 
-	Options SymLinksIfOwnerMatch
-	AllowOverride None
+        Options SymLinksIfOwnerMatch
+        AllowOverride None
 
 </Directory>
 
@@ -327,10 +335,12 @@ Content-Type: application/x-www-form-urlencoded
 
 ```
 
-Die beschriebenen Teile gliedern das File in Abschnitte. Es folgt der Teil _--5a70c866-A--_, als Teil A, dann _--5a70c866-B--_ als Teil B etc. In einem späteren Tutorial werden wir uns dieses Log im Detail ansehen. Für den Moment genügt diese Einführung.
+Die beschriebenen Teile gliedern das File in Abschnitte. Es folgt der Teil _--5a70c866-A--_, als Teil A, dann _--5a70c866-B--_ als Teil B etc. In einem späteren Tutorial werden wir uns dieses Log im Detail ansehen. Für den Moment genügt diese Einführung. Was aber noch nicht genügt ist unser Dateisystem. Denn um das _Audit-Log_ überhaupt schreiben zu können, muss das Verzeichnis erst erstellt und die entsprechenden Berechtigungen vergeben werden:
 
-FIXME Audit-Log Verzeichnis mit korrekten Permissions erstellen?
-
+```bash
+$> sudo mkdir /apache/logs/audit
+$> sudo chown www-data:www-data
+``
 
 Wir kommen damit zur Direktive _SecDefaultAction_. Sie bezeichnet die Grundeinstellung einer Sicherheits-Regel. Wir können diese Werte zwar pro Regel festlegen, es ist aber üblich mit einem Default-Wert zu arbeiten, der dann an alle Regeln vererbt wird. ModSecurity kennt fünf Phasen. Die hier aufgeführte Phase 1 läuft an, sobald die Request-Header auf dem Server eingetroffen sind. Bei der Kompilation des Moduls haben wir mit _--enable-request-early_ festgelegt, dass das wirklich so ist, denn aus technischen Gründen wurde dieses Verhalten verändert und die Phase 1 mit der folgenden Phase zusammengelegt. Mit dem besagten Flag machen wir diese Verhaltensänderung rückgängig. Die übrigen Phasen sind _Request-Body-Phase (Phase 2)_, _Response-Header-Phase (Phase 3)_, _Response-Body-Phase (Phase 4)_ und _Logging-Phase (Phase 5)_. Dann sagen wir, dass wir beim Anschlagen einer Regel den Request im Normalfall passieren lassen möchten. Blockierungs-Massnahmen werden wir separat definieren. Wir möchten loggen; das heisst, wir möchten einen Hinweis auf die ausgelöste Regel im _Error-Log_ des Apache Servers sehen und schliesslich vergeben wir jedem dieser Logeinträge ein *Tag*. Das gesetzte Tag _Local Lab Service_ ist nur ein Beispiel dafür, dass hier beliebige Zeichenketten, auch mehrere, gesetzt werden können. In einem grösseren Unternehmen kann es zum Beispiel sinnvoll sein, Zusatzinformationen zu einem Service (Vertragsnummer, Kontaktdaten des Kunden, Hinweise zur Dokumentation etc.) abzubilden. Diese Informationen werden dann bei jedem Logeintrag mitgegeben. Das klingt zunächst nach Ressourcen-Verschwendung, tatsächlich kann ein Mitarbeiter im Betriebssicherheits-Team aber für mehrere hundert Services zuständig sein, und die URL alleine reicht ihm bei unbekannten Services in diesem Moment nicht. Diese Service-Metadaten, die sich über Tags hinzufügen lassen, erlauben eine rasche und adäquate Reaktion auf Angriffe.
 
@@ -348,7 +358,7 @@ Soweit zu diesem Performance Teil. Es folgen nun die Regeln, welche durch das *M
 
 Die nächste Regel ist wiederum etwas komplizierter. Wir untersuchen die interne Variable *REQBODY_ERROR*. Im Bedingungsteil nehmen wir den numerischen Vergleichsoperator _@eq_. Das vorangestellte Ausrufezeichen negiert seinen Wert. Die Syntax meint also, falls der *REQBODY_ERROR* nicht gleich null ist. Natürlich könnten wir hier auch mit einem regulären Ausdruck arbeiten, aber der _@eq_ Operator ist in der Verarbeitung durch das Modul effizienter. Im Aktions-Teil der Regel kommt erstmals ein _deny_ zur Anwendung. Der Request soll also blockiert werden, falls die Verarbeitung des Request Bodies zu einem Fehler führte. Konkret retournieren wir den HTTP Status Code _400 Bad Request_ (_status:400_). Wir möchten erstmals loggen und geben die Nachricht vor. Zusätzlich loggen wir als weitere Informationen in einem separaten Logfeld namens _logdata_ die genaue Bezeichnung des Fehlers. Diese Information wird sowohl im Error-Log als auch im Audit-Log des Servers auftauchen. Zu guter Letzt wird der Regel die _Severity_ also die _Schwere_ 2 zugewiesen. Dies ist ein Grad für die Wichtigkeit der Regel, was bei der Auswertung von sehr vielen Regelverletzungen genützt werden kann.
 
-Die Regel mit der Identifikation 200002 kümmert sich ebenfalls um Fehler im Request Body. Es geht um _Multipart HTTP Bodies_. Dies kommt dann zum tragen, wenn Dateien via HTTP Requests an den Server übermittelt werden sollen. Dies ist einerseits sehr gebräuchlich, aber andererseits ein grosses Sicherheitsproblem. ModSecurity untersucht _Multipart HTTP Bodies_ deshalb sehr genau. Es besitzt eine interne Variable namens *MULTIPART_STRICT_ERROR*, welche die zahlreichen Checks zusammenfasst. Sollte hier ein anderer Wert als 0 stehen, dann blockieren wir den Request mit dem Status Code 403 (_Forbidden_). In der Logmeldung rapportieren wir dann die Resultate der einzelnen Checks. In der Praxis ist zu wissen, dass diese Rule in sehr seltenen Fällen auch bei legalen Requests anschlagen könnte. Falls dies der Fall ist, muss sie gebenenfalls adaptiert oder als _False Positive_ ausgeschaltet werden. Wir werden weiter unten auf die Ausmerzung von False Positives zurückkommen. (FIXME: oder andere Anleitung)
+Die Regel mit der Identifikation 200002 kümmert sich ebenfalls um Fehler im Request Body. Es geht um _Multipart HTTP Bodies_. Dies kommt dann zum tragen, wenn Dateien via HTTP Requests an den Server übermittelt werden sollen. Dies ist einerseits sehr gebräuchlich, aber andererseits ein grosses Sicherheitsproblem. ModSecurity untersucht _Multipart HTTP Bodies_ deshalb sehr genau. Es besitzt eine interne Variable namens *MULTIPART_STRICT_ERROR*, welche die zahlreichen Checks zusammenfasst. Sollte hier ein anderer Wert als 0 stehen, dann blockieren wir den Request mit dem Status Code 403 (_Forbidden_). In der Logmeldung rapportieren wir dann die Resultate der einzelnen Checks. In der Praxis ist zu wissen, dass diese Rule in sehr seltenen Fällen auch bei legalen Requests anschlagen könnte. Falls dies der Fall ist, muss sie gebenenfalls adaptiert oder als _False Positive_ ausgeschaltet werden. Wir werden weiter unten auf die Ausmerzung von False Positives zurückkommen und in einer späteren Anleitung das Thema im Detail kennenlernen.
 
 Die Beispielkonfiguration der ModSecurity Distribution weist im Weiteren eine Regel mit der Identifikation 200003 auf. Ich habe sie aber nicht in die Anleitung übernommen, da sie in der Praxis zu viele legitime Anfragen blockiert (_False Positives_). Es wird die Variable *MULTIPART_UNMATCHED_BOUNDARY* überprüft. Dieser Wert, der einen Fehler in der Abgrenzung der Multipart Bodies bezeichnet, ist fehleranfällig und rapportiert häufig Textschnippsel, die keine Abgrenzungen meinen. In der Praxis hat sie sich aus meiner Sicht nicht bewährt.
 
@@ -356,8 +366,7 @@ Mit 200004 folgt eine weitere Regel, welche interne Verarbeitungs-Fehler abfäng
 
 Wir haben nun einige Regeln angesehen und das prinzipielle Funktionieren der _WAF_ ModSecurity kennengelernt. Die Regelsprache ist anspruchsvoll, aber sehr systematisch. Die Struktur orientiert sich dabei zwangsläufig an der Struktur von Apache Direktiven. Denn bevor ModSecurity die Direktiven verarbeiten kann werden sie durch den Konfigurationsparser von Apache eingelesen. Dies bringt auch die Komplexität in der Ausdrucksweise mit sich. Gegenwärtig wird *ModSecurity* in eine Richtung weiterentwickelt, welche das Modul von Apache frei macht. Wir werden hoffentlich via einfacher zu lesende Konfigurationen davon profitieren.
 
-In der Konfigurationsdatei folgt nun ein Kommentar, der den Platz markiert, um weitere Regeln einzugeben. Nach diesem Block, der unter Umständen sehr gross werden kann, folgen noch einige Regeln, welche Performance-Daten für das oben definierte Performance-Log zur Verfügung stellen. Der Block mit den Rule-IDs 90010 bis 90014 speichert den Zeitpunkt des Endes der einzelnen ModSecurity-Phasen ab. Dies korrespondiert mit dem oben kennengelernten Block der IDs 90000 - 90004. Im letzten ModSecurity-Block wird dann mit den erhobenen Performance-Daten gerechnet. Für uns bedeutet dies, dass wir die Zeit, welche Phase 1 und Phase 2 benötigten, zur Variable *perf_modsecinbound* zusammenrechnen. In der Regel mit der ID 90110 wird diese Variable auf die Performance der Phase 1 gesetzt, in der folgenden Regel wird die Performance der Phase 2 hinzuaddiert. Die Variable *perf_application* müssen wir aus den Timestamps herausrechnen. Wir ziehen dazu das Ende der Phase 2 vom Start der Phase 3 ab (Rule ID 90112 und 90113). Dies ist natürlich keine ganz exakte Berechnung der Zeit, welche die Applikation selbst auf dem Server benötigte, denn es spielen je nach dem auch noch andere Apache-Module hinein (die Authentifizierung etwa), aber der Wert ist ein Hinweis, der Aufschluss darüber gibt, ob tatsächlich ModSecurity die Performance einschränkt, oder ob das Problem eher bei der Applikation liegt. In den Rule IDs 90114 und 15 schliesslich noch die Berechnung des Zeitverbrauchs der Phase 3 und 4, analog zu den Phasen 1 und 2. Damit haben wir die 3 relevanten Werte, welche die Performance einfach zusammenfassen: *perf_modsecinbound*, *perf_application* und *perf_modsecoutbound*.
-FIXME: have the variables correspond with the CustomLog
+In der Konfigurationsdatei folgt nun ein Kommentar, der den Platz markiert, um weitere Regeln einzugeben. Nach diesem Block, der unter Umständen sehr gross werden kann, folgen noch einige Regeln, welche Performance-Daten für das oben definierte Performance-Log zur Verfügung stellen. Der Block mit den Rule-IDs 90010 bis 90014 speichert den Zeitpunkt des Endes der einzelnen ModSecurity-Phasen ab. Dies korrespondiert mit dem oben kennengelernten Block der IDs 90000 - 90004. Im letzten ModSecurity-Block wird dann mit den erhobenen Performance-Daten gerechnet. Für uns bedeutet dies, dass wir die Zeit, welche Phase 1 und Phase 2 benötigten, zur Variable *perf_modsecinbound* zusammenrechnen. In der Regel mit der ID 90100 wird diese Variable auf die Performance der Phase 1 gesetzt, in der folgenden Regel wird die Performance der Phase 2 hinzuaddiert. Die Variable *perf_application* müssen wir aus den Timestamps herausrechnen. Wir ziehen dazu das Ende der Phase 2 vom Start der Phase 3 ab (Rule ID 90102 und 90103). Dies ist natürlich keine ganz exakte Berechnung der Zeit, welche die Applikation selbst auf dem Server benötigte, denn es spielen je nach dem auch noch andere Apache-Module hinein (die Authentifizierung etwa), aber der Wert ist ein Hinweis, der Aufschluss darüber gibt, ob tatsächlich ModSecurity die Performance einschränkt, oder ob das Problem eher bei der Applikation liegt. In den Rule IDs 90104 und 5 schliesslich noch die Berechnung des Zeitverbrauchs der Phase 3 und 4, analog zu den Phasen 1 und 2. Damit haben wir die 3 relevanten Werte, welche die Performance einfach zusammenfassen: *perf_modsecinbound*, *perf_application* und *perf_modsecoutbound*. Sie werden im separaten Performance-Log ausgewiesen. Allerdings haben wir auch im normalen Zugriffslog einen Platz für diese drei Werte vorgesehen. Dort haben wir sie _ModSecTimeIn_, _ApplicationTime_ und _ModSecTimeOut_. In den Regeln 90106 bis 90108 exportieren wir unsere _perf_-Werte in die entsprechenden Umgebungsvariabeln, damit sie im _Access-Log_ angezeigt werden können. Zum Schluss noch die Regeln 90109 und 90110. In diesen Exportieren wir die _OWASP ModSecurity Core Rules_ Anomalie-Werte. Diese Werte werden noch nicht geschrieben, aber da wir diese Regeln in der nächsten Anleitung bereitstellen werden, können wir den Variable-Export hier schon vorbereiten.
 
 Damit sind wir nun soweit, dass wir das Performance-Log verstehen können. Die obenstehende Definition bringt die folgenden Teile:
 
@@ -407,14 +416,11 @@ Perf-ModSecCombined: %{PERF_COMBINED}M" perflog
    * Perf-ModSecLogging: %{PERF_LOGGING}M : Die Zeit welche das Loggen durch ModSecurity, namentlich das Error-Log und das Audit-Log verbrauchten
    * Perf-ModSecCombined: %{PERF_COMBINED}M : Die Zeit, welche ModSecurity total für alle Arbeiten benötigte
 
-FIXME: bis hier korrigiert
-
 Mit dieser langen Liste von Zahlen lassen sich ModSecurity Performance-Probleme sehr gut eingrenzen und gegebenenfalls beheben. Wenn noch tiefer gesucht werden muss, dann kann das _Debug-Log_ helfen, oder man nimmt die Variable-Sammlung *PERF_RULES* zu Hilfe, die im Referenz-Handbuch gut erklärt ist.
-
 
 ###Schritt 6: Einfache Blacklist Regeln schreiben
 
-Mit der obenstehenden Konfiguration ist ModSecurity aufgesetzt und konfiguriert. Es kann fleissig Performance-Datan loggen, aber auf der Sicherheitsseite sind nur die rudimentären Grundlagen vorhanden. In einer späteren Anleitung werden wir die sogenannten OWASP ModSecurity Core Rules, eine umfassende Regelsammlung, einbinden. Zunächst ist es aber wichtig, dass wir lernen, selbst Regel zu schreiben. In der Grundkonfiguration wurden schon einige Regeln erklärt. Von da ist es nur noch ein kleiner Schritt.<p>
+Mit der obenstehenden Konfiguration ist ModSecurity aufgesetzt und konfiguriert. Es kann fleissig Performance-Datan loggen, aber auf der Sicherheitsseite sind nur die rudimentären Grundlagen vorhanden. In einer späteren Anleitung werden wir wie angekündigt die _OWASP ModSecurity Core Rules_, eine umfassende Regelsammlung, einbinden. Zunächst ist es aber wichtig, dass wir lernen, selbst Regel zu schreiben. In der Grundkonfiguration wurden schon einige Regeln erklärt. Von da ist es nur noch ein kleiner Schritt.<p>
 
 Nehmen wir einen einfachen Fall: Wir möchten sicher stellen, dass der Zugriff auf eine bestimmte URI auf dem Server verboten wird. Wir wollen auf eine solche Anfrage mit einem _HTTP Status 403_ antworten. Die entsprechende Regel schreiben wir in der Konfiguration in den Bereich _ModSecurity Rules_ und teilen ihr die ID 10000 (_service-specific before core-rules_) zu.
 
@@ -423,7 +429,7 @@ SecRule  REQUEST_FILENAME "/phpmyadmin" "id:'10000',phase:1,deny,t:lowercase,t:n
 msg:'Blocking access to %{MATCHED_VAR}.',tag:'Blacklist Rules'"
 ```
 
-Die Regel leiten wir mit _SecRule_ ein. Dann sagen wir, dass wir den Pfad der Anfrage, also die *REQUEST_FILENAME* untersuchen möchten. Falls in diesem Pfad irgendwo _/phpmyadmin_ auftaucht, wollen wir ihn gleich schon in der ersten Verabreitungsphase blockieren. Das Schlüsselwort _deny_ bewerkstelligt dies für uns. Unser Pfad-Kriterium ist in Kleinbuchstaben gehalten. Da wir die Transformation _t:lowercase_ anwenden, erwischen wir damit sämtliche möglichen Gross-Kleinbuchstaben-Kombinationen des Pfades. Der Pfad könnte nun natürlich auch in ein Unterverzeichnis weisen oder auf andere Art und Weise verschleiert werden. Wir helfen dem ab, in dem wir die Transformation _t:normalisePath_ einschalten. Damit wird der Pfad transformiert bevor wir unsere Regel anwenden. Im _msg-Teil_ tragen wir eine Nachricht ein, die dann so im _Error-Log_ des Servers auftauchen wird, wenn die Regel zuschlägt. Schliesslich geben wir auch noch einen Tag an. Wir haben dies in der Grundkonfiguration bereits mit _SecDefaultAction_ getan. Hier nun ein weiterer Tag, der sich etwa dazu verwenden lässt, verschiedene Regeln zu gruppieren.
+Die Regel leiten wir mit _SecRule_ ein. Dann sagen wir, dass wir den Pfad der Anfrage, also die Variable *REQUEST_FILENAME* untersuchen möchten. Falls in diesem Pfad irgendwo _/phpmyadmin_ auftaucht, wollen wir ihn gleich schon in der ersten Verabreitungsphase blockieren. Das Schlüsselwort _deny_ bewerkstelligt dies für uns. Unser Pfad-Kriterium ist in Kleinbuchstaben gehalten. Da wir die Transformation _t:lowercase_ anwenden, erwischen wir damit sämtliche möglichen Gross-Kleinbuchstaben-Kombinationen des Pfades. Der Pfad könnte nun natürlich auch in ein Unterverzeichnis weisen oder auf andere Art und Weise verschleiert werden. Wir helfen dem ab, in dem wir die Transformation _t:normalisePath_ einschalten. Damit wird der Pfad transformiert bevor wir unsere Regel anwenden. Im _msg-Teil_ tragen wir eine Nachricht ein, die dann so im _Error-Log_ des Servers auftauchen wird, wenn die Regel zuschlägt. Schliesslich geben wir auch noch einen Tag an. Wir haben dies in der Grundkonfiguration bereits mit _SecDefaultAction_ getan. Hier nun ein weiterer Tag, der sich etwa dazu verwenden lässt, verschiedene Regeln zu gruppieren.
 
 Wir nennen diesen Typ von Regeln _Blacklist Regeln_, da beschrieben wird, was wir verbieten wollen. Prinzipiell lassen wir alles passieren, ausser Anfragen, welche die konfigurierten Regel verletzen. Der umgekehrte Weg, also das Beschreiben der erwünschten Anfragen und damit das Blockieren von allen unbekannten Anfragen, nenne wir _Whitelist Regeln_. _Blacklist Regeln_ sind einfacher zu schreiben, bleiben aber oft unvollständig. _Whitelist Regeln_ sind umfassender und bei richtiger Schreibweise kann man damit einen Server komplett abdichten. Aber sie sind schwer zu schreiben und führen in der Praxis oft zu Problemen, wenn sie nicht sehr ausgereift konstruiert werden. Weiter unten folgt ein _Whitelisting Beispiel_.
 
@@ -452,15 +458,15 @@ Sehen wir auch nach, was wir im _Error-Log_ dazu finden:
 
 ```bash
 [2015-10-27 22:43:28.265834] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Pattern match "/phpmyadmin" at REQUEST_FILENAME. [file "/apache/conf/httpd.conf_modsec_minimal"] [line "140"] [id "10000"] [msg "Blocking access to /phpmyadmin."] [tag "Local Lab Service"] [tag "Blacklist Rules"] [hostname "localhost"] [uri "/phpmyadmin"] [unique_id "Vi-wAH8AAQEAABuNHj8AAAAA"]
-
 ```
-_ModSecurity_ beschreibt hier die ausgelöste Regel und die Massnahme, die ergriffen wurde: Zunächst der Zeitstempfel. Dann die durch Apache zugewiesene Schwere des Log-Eintrages. Die Stufe _error_ wird für alle _ModSecurity_ Meldungen vergeben. Dann folgt die IP-Adresse des Clients. Dazwischen einige leere Felder, welche nur mittels "-" bezeichnet werden. Sie bleiben bei Apache 2.4 leer, weil das Logformat sich änderte und *ModSecurity* diese Änderung noch nicht nachvollzogen hat. Danach dann die eigentliche Meldung, die mit der Massnahme eröffnet: _Access denied with code 403_ und zwar bereits in der Phase 1, also während dem Empfangen der Anfrage-Header. Danach sehen wir einen Hinweis auf die Regelverletzung: Der String _"/phpMyAdmin"_ wurde im *REQUEST_FILENAME* gefunden. Dies ist genau das, was wir definiert haben. Die folgenden Informations-Stücke sind in Blöcken aus eckigen Klammern eingebettet. In jedem Block zunächst die Bezeichnung und dann durch einen Leerschlag getrennt die Information. Wir befinden uns mit unserer Regel also in der Datei _/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal auf der Zeile 140. Die Regel besitzt - wie wir wissen - die ID 10000. Unter _msg_ sehen wir die in der Regel definierte Zusammenfassung der Regel wobei die Variable *MATCHED_VAR* durch den Pfad-Teil der Anfrage ersetzt wurde. Danach der Tag, den wir in der _SecDefaultAction_ gesetzt haben. Danach der zusätzliche für diese Regel gesetzte Tag. Schliesslich folgen noch Hostname, URI und die Unique-ID der Anfrage.
+
+_ModSecurity_ beschreibt hier die ausgelöste Regel und die Massnahme, die ergriffen wurde: Zunächst der Zeitstempfel. Dann die durch Apache zugewiesene Schwere des Log-Eintrages. Die Stufe _error_ wird für alle _ModSecurity_ Meldungen vergeben. Dann folgt die IP-Adresse des Clients. Dazwischen einige leere Felder, welche nur mittels "-" bezeichnet werden. Sie bleiben bei Apache 2.4 leer, weil das Logformat sich änderte und *ModSecurity* diese Änderung noch nicht nachvollzogen hat. Danach dann die eigentliche Meldung, die mit der Massnahme eröffnet: _Access denied with code 403_ und zwar bereits in der Phase 1, also während dem Empfangen der Anfrage-Header. Danach sehen wir einen Hinweis auf die Regelverletzung: Der String _"/phpMyAdmin"_ wurde im *REQUEST_FILENAME* gefunden. Dies ist genau das, was wir definiert haben. Die folgenden Informations-Stücke sind in Blöcken aus eckigen Klammern eingebettet. In jedem Block zunächst die Bezeichnung und dann durch einen Leerschlag getrennt die Information. Wir befinden uns mit unserer Regel also in der Datei */opt/apache-2.4.17/conf/httpd.conf_modsec_minimal* auf der Zeile 140. Die Regel besitzt - wie wir wissen - die ID 10000. Unter _msg_ sehen wir die in der Regel definierte Zusammenfassung der Regel wobei die Variable *MATCHED_VAR* durch den Pfad-Teil der Anfrage ersetzt wurde. Danach der Tag, den wir in der _SecDefaultAction_ gesetzt haben; schliesslich der zusätzliche für diese Regel gesetzte Tag. Schliesslich folgen noch Hostname, URI und die Unique-ID der Anfrage.
 
 Diese Angaben finden wir auch noch ausführlicher im oben besprochenen _Audit-Log_. Für den normalen Gebrauch reicht allerdings oft das _Error-Log_.
 
 ###Schritt 8: Einfache Whitelist Regeln schreiben
 
-Mit dem im Schritt 6 beschriebenen Regeln konnten wir den Zugriff auf eine bestimmte URL verhindern. Nun werden wir den umgekehrten Fall behandeln: Wir möchten sicher stellen, dass nur noch auf eine bestimmte URL zugegriffen werden kann. Darüber hinaus werden wir nur noch vorher bekannte _POST-Parameter_ in einem vorgegebenen Format akzeptieren. Eine solche Whitelist Regel zu schreiben, das geht so:
+Mit der im Schritt 7 beschriebenen Regeln konnten wir den Zugriff auf eine bestimmte URL verhindern. Nun werden wir den umgekehrten Fall behandeln: Wir möchten sicher stellen, dass nur noch auf eine bestimmte URL zugegriffen werden kann. Darüber hinaus werden wir nur noch vorher bekannte _POST-Parameter_ in einem vorgegebenen Format akzeptieren. Eine solche Whitelist Regel zu schreiben, das geht so:
 
 ```bash
 
@@ -532,12 +538,11 @@ Es funktioniert also von A bis Z.
 
 ###Schritt 10 Bonus: Client-Verkehr komplett auf Disk schreiben
 
-Bevor wir zum Ende dieser Anleitung kommen, folgt hier noch ein ein Tipp, der einem in der Praxis oft hilft. _ModSecurity_ ist nämlich nicht nur eine _Web Application Firewall_. Es ist auch ein sehr exaktes Debugging-Hilfsmittel. So lässt sich etwa der komplette Verkehr zwischen Client und Server aufzeichnen. Das geht so:
+Bevor wir zum Ende dieser Anleitung kommen, folgt hier noch ein ein Tipp, der einem in der Praxis oft hilft: _ModSecurity_ ist nämlich nicht nur eine _Web Application Firewall_. Es ist auch ein sehr exaktes Debugging-Hilfsmittel. So lässt sich etwa der komplette Verkehr zwischen Client und Server aufzeichnen. Das geht so:
 
 ```bash
 SecRule REMOTE_ADDR  "@streq 127.0.0.1"   "id:11000,phase:1,pass,log,auditlog,msg:'Initializing full traffic log'"
 ```
-
 Wir finden den Verkehr des in der Regel angegebenen Clients 127.0.0.1 dann im Audit-Log.
 
 ```bash
@@ -569,11 +574,11 @@ Content-Length: 45
 
 ```
 
-Die Regel, welche den Verkehr aufzeichnet, lässt sich natürlich beliebig anpassen, so dass wir punktgenau mitlesen können, was in den Server eineingeht und was er retourniert (nur eine bestimmte Client-IP, ein bestimmter User, nur ein Applikationsteil mit einem bestimmten Pfad etc.) Damit kommt man einem Fehlverhalten einer Applikation oft schnell auf die Schliche.
+Die Regel, welche den Verkehr aufzeichnet, lässt sich natürlich beliebig anpassen, so dass wir punktgenau mitlesen können, was in den Server eineingeht und was er retourniert (nur eine bestimmte Client-IP, ein bestimmter User, nur ein Applikationsteil mit einem bestimmten Pfad etc.). Damit kommt man einem Fehlverhalten einer Applikation oft schnell auf die Schliche.
 
 Damit sind wir zum Ende dieser Anleitung gelangt. *ModSecurity* ist eine wichtige Komponente für den Betrieb eines sicheren Webservers. Mit dieser Anleitung ist der Einstieg hoffentlich geglückt.
 
 ###Verweise
 
-* Apache [http://httpd.apache.org](http://httpd.apache.org)
-* ModSecurity [http://www.modsecurity.org](http://www.modsecurity.org)
+* Apache [https://httpd.apache.org](http://httpd.apache.org)
+* ModSecurity [https://www.modsecurity.org](http://www.modsecurity.org)
