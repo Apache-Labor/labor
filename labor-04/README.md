@@ -4,29 +4,22 @@
 
 Wir definieren ein stark erweitertes Logformat, um den Verkehr besser überwachen zu können.
 
+
 ###Warum tun wir das?
 
-In der gebräuchlichen Konfiguration des Apache Webservers wird ein
-Logformat eingesetzt, das nur die nötigsten Informationen zu den
-Zugriffen der verschiedenen Clients mitschreibt. In der Praxis werden
-oft zusätzliche Informationen benötigt, die sich leicht im Zugriffslog
-(Accesslog) des Servers notieren lassen. 
+In der gebräuchlichen Konfiguration des Apache Webservers wird ein Logformat eingesetzt, das nur die nötigsten Informationen zu den Zugriffen der verschiedenen Clients mitschreibt. In der Praxis werden oft zusätzliche Informationen benötigt, die sich leicht im Zugriffslog (Accesslog) des Servers notieren lassen. 
 
 
 ###Voraussetzungen
-
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
 * Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren)
 
 
-
 ###Schritt 1: Logformat Common verstehen
 
-Das Logformat _Common_ ist ein sehr simples Format, das nurmehr sehr
-selten eingesetzt wird. Es hat den Vorteil, sehr platzsparend zu sein und kaum
-überflüssige Informationen zu schreiben.
+Das Logformat _Common_ ist ein sehr simples Format, das nurmehr sehr selten eingesetzt wird. Es hat den Vorteil, sehr platzsparend zu sein und kaum überflüssige Informationen zu schreiben.
 
 ```bash
 LogFormat "%h %l %u %t \"%r\" %>s %b" common
@@ -34,68 +27,33 @@ LogFormat "%h %l %u %t \"%r\" %>s %b" common
 CustomLog logs/access.log common
 ```
 
-Mit der Direktive _LogFormat_ definieren wir ein Format und geben
-ihm einen Namen; hier _common_.
+Mit der Direktiven _LogFormat_ definieren wir ein Format und geben ihm einen Namen; hier _common_.
 
-Diesen Namen rufen wir in der Definition des Logfiles mit der Direktive _CustomLog_ ab. Diese beiden Befehle können wir in der Konfiguration mehrmals einsetzen. Es lassen sich also mehrere Logformate mit mehreren Namenskürzeln nebeneinander definieren und mehrere Logfiles in verschiedenen Formaten schreiben. Es bietet sich etwa an, für verschiedene Dienste auf demselben Server separate Logfiles zu schreiben.
+Diesen Namen rufen wir in der Definition des Logfiles mit der Direktiven _CustomLog_ ab. Diese beiden Befehle können wir in der Konfiguration mehrmals einsetzen. Es lassen sich also mehrere Logformate mit mehreren Namenskürzeln nebeneinander definieren und mehrere Logfiles in verschiedenen Formaten schreiben. Es bietet sich etwa an, für verschiedene Dienste auf demselben Server separate Logfiles zu schreiben.
 
 Die einzelnen Elemente des Logformats _common_ lauten wie folgt:
 
-_%h_ bezeichnet den _Remote host_, normalerweise die IP
-Adresse des Clients, der den Request abgesetzt hat. Falls dieser Client
-aber hinter einem Proxy-Server steht, dann sehen wir hier die IP Adresse
-dieses Proxy-Servers. Wenn sich deshalb mehrere Clients den Proxy Server
-teilen, dann werden sie hier alle denselben _Remote host_-Eintrag
-besitzen. Zudem ist es möglich auf unserem Server die IP Adressen durch
-einen DNS Reverse Lookup rückzuübersetzen. Falls wir dies konfigurieren
-(was nicht zu empfehlen ist), dann stünde hier der eruierte Hostname
-des Clients.
+_%h_ bezeichnet den _Remote host_, normalerweise die IP-Adresse des Clients, der den Request abgesetzt hat. Falls dieser Client aber hinter einem Proxy-Server steht, dann sehen wir hier die IP-Adresse dieses Proxy-Servers. Wenn sich deshalb mehrere Clients den Proxy Server teilen, dann werden sie hier alle denselben _Remote host_-Eintrag besitzen. Zudem ist es möglich auf unserem Server die IP-Adressen durch einen DNS Reverse Lookup rückzuübersetzen. Falls wir dies konfigurieren (was nicht zu empfehlen ist), dann stünde hier der eruierte Hostname des Clients.
 
-_%l_ stellt den _Remote logname_ dar. Er ist in aller Regel leer 
-und wird durch einen Strich ("-") wiedergegeben. Tatsächlich ginge es dabei um 
-die Identifizierung eines
-Clients durch einen _ident_-Zugriff auf den Client. Dies wird von
-den Clients kaum unterstützt und führt zu grossen Performance-Engpässen,
-weshalb es sich beim _%l_ um ein Artefakt aus den frühen 1990er
-Jahren handelt. 
+_%l_ stellt den _Remote logname_ dar. Er ist in aller Regel leer und wird durch einen Strich ("-") wiedergegeben. Tatsächlich ginge es dabei um die Identifizierung eines Clients durch einen _ident_-Zugriff auf den Client. Dies wird von den Clients kaum unterstützt und führt zu grossen Performance-Engpässen, weshalb es sich beim _%l_ um ein Artefakt aus den frühen 1990er Jahren handelt.
 
-_%u_ ist gebräuchlicher und bezeichnet den Usernamen eines
-authentifizierten Users. Der Name wird durch ein
-Authentifizierungsmodul gesetzt und bleibt leer (also wiederum "-"),
-solange ein Zugriff ohne Authentifizierung auf dem Server auskommt.
+_%u_ ist gebräuchlicher und bezeichnet den Usernamen eines authentifizierten Users. Der Name wird durch ein Authentifizierungsmodul gesetzt und bleibt leer (also wiederum "-"), solange ein Zugriff ohne Authentifizierung auf dem Server auskommt.
 
-_%t_ meint die Uhrzeit des Zugriffes. Bei grossen, langsamen
-Requests meint es die Uhrzeit, in dem Moment in dem der Server die
-sogenannte Request-Zeile empfangen hat. Da Apache einen Request erst
-nach Abschluss der Antwort in das Logfile schreibt, kann es vorkommen,
-dass ein langsamer Request mit einer früheren Uhrzeit mehrere Einträge
-tiefer als ein kurzer Request steht, der später gestartet ist.
-Beim Lesen des Logfiles führt das bisweilen zu Verwirrung.
+_%t_ meint die Uhrzeit des Zugriffes. Bei grossen, langsamen Requests meint es die Uhrzeit, in dem Moment in dem der Server die sogenannte Request-Zeile empfangen hat. Da Apache einen Request erst nach Abschluss der Antwort in das Logfile schreibt, kann es vorkommen, dass ein langsamer Request mit einer früheren Uhrzeit mehrere Einträge tiefer als ein kurzer Request steht, der später gestartet ist. Beim Lesen des Logfiles führt das bisweilen zu Verwirrung.
 
-Die Uhrzeit wird standardmässig zwischen rechteckigen Klammern ausgegeben.
-Es wird normalerweise in der lokalen Zeit inklusive der Abweichung von
-der Standardzeit geschrieben. Zum Beispiel:
+Die Uhrzeit wird standardmässig zwischen rechteckigen Klammern ausgegeben. Es wird normalerweise in der lokalen Zeit inklusive der Abweichung von der Standardzeit geschrieben. Zum Beispiel:
 
 ```bash
 [25/Nov/2014:08:51:22 +0100]
 ```
 
-Hier meint es also den 25. November 2014, 8 Uhr 51, 1 Stunde vor der
-Standardzeit. Das Format der Uhrzeit selbst lässt sich gegebenenfalls
-anpassen. Dies geschieht nach dem Muster _%{format}t_, wobei
-_format_ der Spezifikation von _strftime(3)_ folgt. Wir haben von
-dieser Möglichkeit in der 2. Anleitung bereis Gebrauch gemacht.
-Sehen wir es uns aber in einem Beispiel genauer an:
+Hier meint es also den 25. November 2014, 8 Uhr 51, 1 Stunde vor der Standardzeit. Das Format der Uhrzeit selbst lässt sich gegebenenfalls anpassen. Dies geschieht nach dem Muster _%{format}t_, wobei _format_ der Spezifikation von _strftime(3)_ folgt. Wir haben von dieser Möglichkeit in der 2. Anleitung bereis Gebrauch gemacht. Sehen wir es uns aber in einem Beispiel genauer an:
 
 ```bash
 %{[%Y-%m-%d %H:%M:%S %z (%s)]}t
 ```
 
-In diesem Beispiel bringen wir das Datum in die Reihenfolge
-_Jahr-Monat-Tag_, um eine bessere Sortierbarkeit zu erreichen. Und
-nach der Abweichung von der Standardzeit fügen wir die Zeit in Sekunden
-seit dem Start der Unixepoche im Januar 1970 ein. Dies ist ein durch 
-ein Skript leichter les- und interpretierbares Format.
+In diesem Beispiel bringen wir das Datum in die Reihenfolge _Jahr-Monat-Tag_, um eine bessere Sortierbarkeit zu erreichen. Und nach der Abweichung von der Standardzeit fügen wir die Zeit in Sekunden seit dem Start der Unixepoche im Januar 1970 ein. Dies ist ein durch ein Skript leichter les- und interpretierbares Format.
 
 Dieses Beispiel bringt uns Einträgen nach folgendem Muster:
 
@@ -104,12 +62,7 @@ Dieses Beispiel bringt uns Einträgen nach folgendem Muster:
 ```
 
 Soweit zu _%t_.
-Damit kommen wir zu _%r_ und damit zur Request-Zeile. Hierbei
-handelt es sich um die erste Zeile des HTTP-Requests, wie er vom Client 
-an den Server gesendet wurde. Stren genommen gehört die Requestzeile
-nicht in die Gruppe der Request-Header; in aller Regel subsummiert
-man sie aber zusammen mit letzteren. Wie dem auch sei, auf der Request-Zeile übermittelt der
-Client dem Server die Identifikation der Resource, die er verlangt.
+Damit kommen wir zu _%r_ und zur Request-Zeile. Hierbei handelt es sich um die erste Zeile des HTTP-Requests, wie er vom Client an den Server gesendet wurde. Streng genommen gehört die Requestzeile nicht in die Gruppe der Request-Header; in aller Regel subsummiert man sie aber zusammen mit letzteren. Wie dem auch sei, auf der Request-Zeile übermittelt der Client dem Server die Identifikation der Ressource, die er verlangt.
 
 Konkret folgt die Zeile diesem Muster:
 
@@ -123,54 +76,22 @@ In der Praxis lautet ein einfaches Beispiel also wie folgt:
 GET /index.html HTTP/1.1
 ```
 
-Es wird also die _GET_-Methode angewendet. Dann folgt ein
-Leerschlag, dann der absolute Pfad auf die Resource auf dem Server. Hier
-die Index-Datei. Optional kann der Client bekanntlich noch einen
-_Query-String_ an dem Pfad anhängen. Dieser _Query-String_ in
-der Regel mit einem Fragezeichen eingeleitet und bringt verschiedene
-Parameter-Wert-Paare. Der _Query-String_
-wird im Logformat auch wiedergegeben. Schliesslich das Protokoll, das
-in aller Regel HTTP in der Version 1.1 lautet. Zum Teil wird aber
-gerade von Agents, also automatisierten Skripten, nach wie vor
-die Version 1.0 verwendet. Das neue Protokoll HTTP/2 wird in der
-Request-Zeile des ersten Requests noch nicht vorkommen. Vielmehr
-findet in HTTP/2 während des Requests ein Update von HTTP/1.1 auf HTTP/2
-statt. Der Start folgt also obenstehendem Muster.
+Es wird also die _GET_-Methode angewendet. Dann folgt ein Leerschlag, dann der absolute Pfad auf die Ressource auf dem Server. Hier die Index-Datei. Optional kann der Client bekanntlich noch einen _Query-String_ an den Pfad anhängen. Dieser _Query-String_ wird in der Regel mit einem Fragezeichen eingeleitet und bringt verschiedene Parameter-Wert-Paare. Der _Query-String_ wird im Logformat auch wiedergegeben. Schliesslich das Protokoll, das in aller Regel HTTP in der Version 1.1 lautet. Zum Teil wird aber gerade von Agents, also automatisierten Skripten, nach wie vor die Version 1.0 verwendet. Das neue Protokoll HTTP/2 wird in der Request-Zeile des ersten Requests noch nicht vorkommen. Vielmehr findet in HTTP/2 während des Requests ein Update von HTTP/1.1 auf HTTP/2 statt. Der Start folgt also obenstehendem Muster.
 
-Das folgende Format-Element folgt einem etwas anderen Muster: _%>s_.
-Dies meint den Status der Antwort, also etwa _200_ für
-einen erfolgreich abgeschlossenen Request. Die spitze Klammer weist
-darauf hin, dass wir uns für den finalen Status interessieren. Es
-kann vorkommen, dass eine Anfrage innerhalb des Servers weitergereicht
-wird. In diesem Fall interessiert uns nicht der Status, der das
-Weiterreichen ausgelöst hat, sondern den Status der Antwort des
-finalen internen Requests.
+Das folgende Format-Element folgt einem etwas anderen Muster: _%>s_. Dies meint den Status der Antwort, also etwa _200_ für einen erfolgreich abgeschlossenen Request. Die spitze Klammer weist darauf hin, dass wir uns für den finalen Status interessieren. Es kann vorkommen, dass eine Anfrage innerhalb des Servers weitergereicht wird. In diesem Fall interessiert uns nicht der Status, der das Weiterreichen ausgelöst hat, sondern den Status der Antwort des finalen internen Requests.
 
-Ein typisches Beispiel wäre ein Aufruf, der auf dem Server zu einem
-Fehler führt (also Status 500). Wenn dann aber die zugehörige Fehlerseite
-nicht vorhanden ist, dann ergibt die interne Weiterreichung einen
-Status 404. Mit der spitzen Klammer erreichen wir, dass in diesem
-Fall das 404 in das Logfile geschrieben wird. Setzen wir die spitze
-Klammer in umgekehrter Richtung, dann würde der Status 500 geloggt.
-Um ganz sicher zu gehen, könnte es angebracht sein, beide Werte zu
-loggen, also folgender - in der Praxis ebenfalls unüblicher - Eintrag:
+Ein typisches Beispiel wäre ein Aufruf, der auf dem Server zu einem Fehler führt (also Status 500). Wenn dann aber die zugehörige Fehlerseite nicht vorhanden ist, dann ergibt die interne Weiterreichung einen Status 404. Mit der spitzen Klammer erreichen wir, dass in diesem Fall das 404 in das Logfile geschrieben wird. Setzen wir die spitze Klammer in umgekehrter Richtung, dann würde der Status 500 geloggt. Um ganz sicher zu gehen, könnte es angebracht sein, beide Werte zu loggen, also folgender - in der Praxis ebenfalls unüblicher - Eintrag:
 
 ```bash
 %<s %>s
 ```
 
-_%b_ ist das letzte Element des Logformats _common_. Es
-gibt die Zahl der im Content-Length Response Headers angekündigten Bytes wieder.  Bei einer Anfrage
-an _http://www.example.com/index.html_ entspricht dieser Wert der Grösse
-der Datei _index.html_. Die ebenfalls übertragenen _Response-Header_ werden
-nicht mitgezählt. Dazu kommt, dass diese Zahl nur eine Ankündigung wiedergibt und keine
-Garantie darstellt, dass diese Daten auch wirklich übertragen wurden.
+_%b_ ist das letzte Element des Logformats _common_. Es gibt die Zahl der im Content-Length Response Headers angekündigten Bytes wieder. Bei einer Anfrage an _http://www.example.com/index.html_ entspricht dieser Wert der Grösse der Datei _index.html_. Die ebenfalls übertragenen _Response-Header_ werden nicht mitgezählt. Dazu kommt, dass diese Zahl nur eine Ankündigung wiedergibt und keine Garantie darstellt, dass diese Daten auch wirklich übertragen wurden.
 
 
 ###Schritt 2: Logformat Combined verstehen
 
-Das am weitesten verbreitete Logformat _combined_ baut auf dem Logformat _common_ auf und
-erweitert es um zwei Elemente.
+Das am weitesten verbreitete Logformat _combined_ baut auf dem Logformat _common_ auf und erweitert es um zwei Elemente.
 
 ```bash
 LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combined
@@ -178,81 +99,35 @@ LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combine
 CustomLog logs/access.log combined
 ```
  
-Das Element _"%{Referer}i"_ bezeichnet den Referrer. Er wird in
-Anführungszeichen wiedergegeben. Der Referrer meint diejenige
-Resource, von der aus ursprünglich der jetzt erfolgte Request ausgelöst
-wurde. Diese komplizierte Umschreibung lässt sich an einem Beispiel
-besser Umschreiben. Wenn man in einer Suchmaschine einen Link anklickt,
-um auf _www.example.com_ zu gelangen und dort automatisch auf
-_shop.example.com_ weitergeleitet wird, dann wird der
-Logeintrag auf dem Server _shop.example.com_ den Referrer auf die
-Suchmaschine tragen und nicht den Verweis auf _www.example.com_.
-Wenn dann aber von _shop.example.com_ eine abhängige CSS-Datei
-geladen wird, dann geht der Referrer normalerweise auf
-_shop.example.com_. Bei alledem ist aber zu beachten, dass der
-Referrer ein Teil der Anfrage des Clients ist. Der Client ist
-angehalten, sich an das Protokoll und die Konventionen zu halten,
-tatsächlich kann er aber beliebige Informationen senden, weshalb man
-sich in Sicherheitsfragen nicht auf Header wie diesen verlassen darf.
+Das Element _"%{Referer}i"_ bezeichnet den Referrer. Er wird in Anführungszeichen wiedergegeben. Der Referrer meint diejenige Ressource, von der aus ursprünglich der jetzt erfolgte Request ausgelöst wurde. Diese komplizierte Umschreibung lässt sich an einem Beispiel besser illustrieren. Wenn man in einer Suchmaschine einen Link anklickt, um auf _www.example.com_ zu gelangen und dort automatisch auf _shop.example.com_ weitergeleitet wird, dann wird der Logeintrag auf dem Server _shop.example.com_ den Referrer auf die Suchmaschine tragen und nicht den Verweis auf _www.example.com_. Wenn dann aber von _shop.example.com_ eine abhängige CSS-Datei geladen wird, dann geht der Referrer normalerweise auf _shop.example.com_. Bei alledem ist aber zu beachten, dass der Referrer ein Teil der Anfrage des Clients ist. Der Client ist angehalten, sich an das Protokoll und die Konventionen zu halten, tatsächlich kann er aber beliebige Informationen senden, weshalb man sich in Sicherheitsfragen nicht auf Header wie diesen verlassen darf.
 
-_"%{User-agent}i"_ schliesslich meint den sogenannten User-Agent des Clients,
-der wiederum in Anführungszeichen gesetzt wird.
-Auch dies ist wieder ein Wert, der durch den Client kontrolliert wird,
-und auf den wir uns nicht zu sehr verlassen sollten. Mit dem User-Agent
-ist die Browser-Software des Clients gemeint; normalerweise angereichert
-um die Version, die Rendering Engine, verschiedene Kompatibilitätsangaben
-mit anderen Browsern und diverse installierte Plugins. Das führt zu sehr
-langen User-Agent-Einträgen und kann im Einzelfall so viele
-Informationen enhalten, dass ein individueller Client sich darüber
-eindeutig identifizieren lässt, weil er eine besondere Kombination
-von verschiedenen Zusatzmodulen in bestimmten Versionen besitzt.
+_"%{User-agent}i"_ schliesslich meint den sogenannten User-Agent des Clients, der wiederum in Anführungszeichen gesetzt wird. Auch dies ist wieder ein Wert, der durch den Client kontrolliert wird und auf den wir uns nicht zu sehr verlassen sollten. Mit dem User-Agent ist die Browser-Software des Clients gemeint; normalerweise angereichert um die Version, die Rendering Engine, verschiedene Kompatibilitätsangaben mit anderen Browsern und diverse installierte Plugins. Das führt zu sehr langen User-Agent-Einträgen und kann im Einzelfall so viele Informationen enthalten, dass ein individueller Client sich darüber eindeutig identifizieren lässt, weil er eine besondere Kombination von verschiedenen Zusatzmodulen in bestimmten Versionen besitzt.
+
 
 ###Schritt 3: Modul Logio aktivieren
 
-Mit dem _combined_ Format haben wir das am weitesten verbreitete Apache
-Logformat kennengelernt. Um die alltägliche Arbeit zu erleichtern
-reichen die dargestellten Werte aber nicht. Weitere Informationen werden
-deshalb mit Vorteil im Logfile mitgeschrieben.
+Mit dem _combined_ Format haben wir das am weitesten verbreitete Apache Logformat kennengelernt. Um die alltägliche Arbeit zu erleichtern, reichen die dargestellten Werte aber nicht. Weitere Informationen werden deshalb mit Vorteil im Logfile mitgeschrieben.
 
-Es bietet sich an, auf sämtlichen Servern dasselbe Logformat zu
-verwenden. Anstatt jetzt also ein, zwei weitere Werte zu propagieren,
-beschreibt diese Anleitung ein sehr umfassendes Logformat, das
-sich in der Praxis in verschiedenen Szenarien bewährt hat.
+Es bietet sich an, auf sämtlichen Servern dasselbe Logformat zu verwenden. Anstatt jetzt also ein, zwei weitere Werte zu propagieren, beschreibt diese Anleitung ein sehr umfassendes Logformat, das sich in der Praxis in verschiedenen Szenarien bewährt hat.
 
-Um das in der Folge beschriebene Logformat konfigurieren zu können,
-muss aber zunächst das Modul _Logio_ aktiviert werden.
+Um das in der Folge beschriebene Logformat konfigurieren zu können, muss aber zunächst das Modul _Logio_ aktiviert werden.
 
-Wenn der Server wie in der Anleitung 1 beschrieben
-kompiliert wurde, dann ist das Modul bereits vorhanden und muss nur noch in der Liste
-der zu ladenden Module in der Konfigurationsdatei des Servers ergänzt werden.
+Wenn der Server wie in der Anleitung 1 beschrieben kompiliert wurde, dann ist das Modul bereits vorhanden und muss nur noch in der Liste der zu ladenden Module in der Konfigurationsdatei des Servers ergänzt werden.
 
 ```bash
 LoadModule		logio_module		modules/mod_logio.so
 ```
 
-Wir benötigen dieses Modul um zwei Werte mitschreiben zu können.
-_IO-In_ und _IO-Out_. Also die total Zahl der Bytes des
-HTTP-Requests inklusive Header-Zeilen und die totale Zahl der
-Bytes in der Antwort, wiederum inklusive Header-Zeilen.
+Wir benötigen dieses Modul um zwei Werte mitschreiben zu können. _IO-In_ und _IO-Out_. Also die totale Zahl der Bytes des HTTP-Requests inklusive Header-Zeilen und die totale Zahl der Bytes in der Antwort, wiederum inklusive Header-Zeilen.
+
 
 ###Schritt 4: Neues Logformat Extended konfigurieren
 
-Damit sind wir bereit für ein neues, sehr umfassendes Logformat. Das Format
-umfasst auch Werte, die der Server mit den bis hierhin definierten Modulen
-noch nicht kennt. Er wird sie leer lassen, respektive durch einen Strich _"-"_
-darstellen. Nur mit dem eben aktivierten Modul _Logio_ klappt das nicht.
-Wenn wir dessen Werte ansprechen, ohne dass sie vorhanden wären, stürzt
-der Server ab.
+Damit sind wir bereit für ein neues, sehr umfassendes Logformat. Das Format umfasst auch Werte, die der Server mit den bis hierhin definierten Modulen noch nicht kennt. Er wird sie leer lassen, respektive durch einen Strich _"-"_ darstellen. Nur mit dem eben aktivierten Modul _Logio_ klappt das nicht. Wenn wir dessen Werte ansprechen, ohne dass sie vorhanden wären, stürzt der Server ab.
 
-In den folgenden Anleitungen werden wir diese Werte dann nach und nach
-füllen. Weil es aber wie oben erklärt sinnvoll ist, überall dasselbe Logformat zu
-verwenden, greifen wir hier mit der nun folgenden Konfiguration bereits etwas vor.
+In den folgenden Anleitungen werden wir diese Werte dann nach und nach füllen. Weil es aber wie oben erklärt sinnvoll ist, überall dasselbe Logformat zu verwenden, greifen wir hier mit der nun folgenden Konfiguration bereits etwas vor.
 
-Wir gehen vom _Combined_-Format aus und erweitern es nach rechts. Dies hat
-den Vorteil, dass die erweiterten Logfiles in vielen Standard-Tools weiterhin
-lesbar sind, denn die zusätzlichen Werte werden einfach ignoriert. Ferner ist
-es sehr leicht, die erweiterten Logfiles in die Basis zurückzuübersetzen um
-dann eben wieder ein Logformat _combined_ vor sich zu haben.
+Wir gehen vom _Combined_-Format aus und erweitern es nach rechts. Dies hat den Vorteil, dass die erweiterten Logfiles in vielen Standard-Tools weiterhin lesbar sind, denn die zusätzlichen Werte werden einfach ignoriert. Ferner ist es sehr leicht, die erweiterten Logfiles in die Basis zurückzuübersetzen um dann eben wieder ein Logformat _combined_ vor sich zu haben.
 
 Wir definieren das Logformat wie folgt:
 
@@ -266,105 +141,44 @@ CustomLog		logs/access.log extended
 
 ```
 
+
 ###Schritt 5: Neues Logformat Extended verstehen
 
-Das neue Logformat erweitert die Zugriffsprotokolle um 19 Werte. Das sieht auf den ersten
-Blick übertrieben aus, tatsächlich hat das aber alles seine Berechtigung und im
-täglichen Einsatz ist man um jeden dieser Werte froh, gerade wenn man einem Fehler
-auf der Spur ist.
+Das neue Logformat erweitert die Zugriffsprotokolle um 19 Werte. Das sieht auf den ersten Blick übertrieben aus, tatsächlich hat das aber alles seine Berechtigung und im täglichen Einsatz ist man um jeden dieser Werte froh, gerade wenn man einem Fehler auf der Spur ist.
 
 Schauen wir uns die Werte nacheinander an.
 
-In der Erklärung zum Log-Format _common_ haben wir gesehen, dass der zweite Wert, der Eintrag _logname_
-gleich nach der IP Adresse des Clients ein unbenutztes Artefakt darstellt. Wir ersetzen diese Position
-im Logfile mit dem Country-Code der IP Adresse des Clients. Das macht Sinn, weil dieser Country-Code 
-eine IP Adresse stark charakterisiert (In vielen Fällen macht es einen grossen Unterschied,
-ob die Anfrage aus dem Inland oder aus der Südsee stammt). Praktisch ist es nun, sie gleich neben
-die IP-Adresse zu stellen und der nichtssagenden Nummer ein Mehr an Information zuzugesellen.
+In der Erklärung zum Log-Format _common_ haben wir gesehen, dass der zweite Wert, der Eintrag _logname_ gleich nach der IP-Adresse des Clients ein unbenutztes Artefakt darstellt. Wir ersetzen diese Position im Logfile mit dem Country-Code der IP-Adresse des Clients. Das macht Sinn, weil dieser Country-Code eine IP-Adresse stark charakterisiert. (In vielen Fällen macht es einen grossen Unterschied, ob die Anfrage aus dem Inland oder aus der Südsee stammt). Praktisch ist es nun, sie gleich neben die IP-Adresse zu stellen und der nichtssagenden Nummer ein Mehr an Information zuzugesellen.
 
-Danach das bereits in der Anleitung 2 definierte Zeitformat, das sich am Zeitformat des Error-Logs
-orientiert und nun mit diesem Kongruent ist. Wir bilden die Microsekunden auch ab und erhalten
-so sehr präzise Timing-Informationen. Die nächsten Werte sind bekannt.
+Danach das bereits in der Anleitung 2 definierte Zeitformat, das sich am Zeitformat des Error-Logs orientiert und nun mit diesem kongruent ist. Wir bilden die Mikrosekunden auch ab und erhalten so sehr präzise Timing-Informationen. Die nächsten Werte sind bekannt.
 
-_%v_ bezeichnet den kanonischen Servernamen, der den Request bearbeitet hat. Falls wir
-den Server mittels eines Alias ansprechend, wird hier nicht dieses Alias geschrieben, sondern
-der eigentliche Name des Servers. In einem Virtual-Host Setup sind die Servernamen der
-Virtual-Hosts auch kanonisch. Sie werden hier also auftauchen und wir
-können sie in der Logdatei unterscheiden.
+_%v_ bezeichnet den kanonischen Servernamen, der den Request bearbeitet hat. Falls wir den Server mittels eines Alias ansprechen, wird hier nicht dieses Alias geschrieben, sondern der eigentliche Name des Servers. In einem Virtual-Host Setup sind die Servernamen der Virtual-Hosts auch kanonisch. Sie werden hier also auftauchen und wir können sie in der Logdatei unterscheiden.
 
-Mit _%A_ folgt die IP-Adresse mit welcher der Server die Anfrage empfangen hat.
-Dieser Wert hilft uns, die Server auseinander zu halten, wenn mehrere Logfiles zusammengefügt werden 
-oder mehrere Server in dasselbe Logfile schreiben.
+Mit _%A_ folgt die IP-Adresse mit welcher der Server die Anfrage empfangen hat. Dieser Wert hilft uns, die Server auseinander zu halten, wenn mehrere Logfiles zusammengefügt werden oder mehrere Server in dasselbe Logfile schreiben.
 
-Dann beschreibt _%p_ die Portnummer auf welcher der Request empfangen wurde. Auch dies
-ist wichtig, um verschiedene Einträge auseinanderhalten zu können, wenn wir verschiedene Logfiles 
-(etwa diejenigen für Port 80 und diejenigen für Port 443) zusammenfügen. 
+Dann beschreibt _%p_ die Portnummer, auf welcher der Request empfangen wurde. Auch dies ist wichtig, um verschiedene Einträge auseinanderhalten zu können, wenn wir verschiedene Logfiles (etwa diejenigen für Port 80 und diejenigen für Port 443) zusammenfügen.
 
-_%R_ gibt den Handler wieder, der die Antwort auf einen Request generiert hat.
-Dieser Wert kann leer sein (also _"-"_) wenn eine statische Datei ausgeliefert
-wurde. Oder aber er bezeichnet mit _proxy_, dass der Request an einen anderen
-Server weitergeleitet worden ist.
+_%R_ gibt den Handler wieder, der die Antwort auf einen Request generiert hat. Dieser Wert kann leer sein (also _"-"_) wenn eine statische Datei ausgeliefert wurde. Oder aber er bezeichnet mit _proxy_, dass der Request an einen anderen Server weitergeleitet worden ist.
 
-*%{BALANCER_WORKER_ROUTE}e* hat auch mit dem Weitergeben von Anfragen zu tun.
-Wenn wir zwischen mehreren Zielserver abwechseln belegt dieser Wert, wohin die
-Anfrage geschickt wurde.
+*%{BALANCER_WORKER_ROUTE}e* hat auch mit dem Weitergeben von Anfragen zu tun. Wenn wir zwischen mehreren Zielserver abwechseln, belegt dieser Wert, wohin die Anfrage geschickt wurde.
 
-_%X_ gibt den Status der TCP-Verbindung nach Abschluss der Anfrage wieder. Es sind drei Werte möglich:
-Die Verbindung ist geschlossen (_-_), die Verbindung wird mittels _Keep-Alive_ offen gehalten (_+_)
-oder aber die Verbindung wurde abgebrochen bevor der Request abgeschlossen werden konnte (_X_).
+_%X_ gibt den Status der TCP-Verbindung nach Abschluss der Anfrage wieder. Es sind drei Werte möglich: Die Verbindung ist geschlossen (_-_), die Verbindung wird mittels _Keep-Alive_ offen gehalten (_+_) oder aber die Verbindung wurde abgebrochen bevor der Request abgeschlossen werden konnte (_X_).
 
-Mit _"%{cookie}n"_ folgt ein Wert, der dem User-Tracking dient. Damit können wir einen Client mittels
-eines Cookies identifizieren und ihn zu einem späteren Zeitpunkt wiedererkennen - sofern er das Cookie
-immer noch trägt. Wenn wir das Cookie domänenweit setzen, also auf example.com und nicht beschränkt auf www.example.com,
-dann können wir einem Client sogar über mehrere Hosts hinweg folgen.
-Im Idealfall wäre dies aufgrund der IP Adresse des Clients ebenfalls möglich, aber sie kann im Laufe einer Session
-gewechselt werden und es kann auch sein, dass sich mehrere Clients eine IP Adresse teilen.
+Mit _"%{cookie}n"_ folgt ein Wert, der dem User-Tracking dient. Damit können wir einen Client mittels eines Cookies identifizieren und ihn zu einem späteren Zeitpunkt wiedererkennen - sofern er das Cookie immer noch trägt. Wenn wir das Cookie domänenweit setzen, also auf example.com und nicht beschränkt auf www.example.com, dann können wir einem Client sogar über mehrere Hosts hinweg folgen. Im Idealfall wäre dies aufgrund der IP-Adresse des Clients ebenfalls möglich, aber sie kann im Laufe einer Session gewechselt werden und es kann auch sein, dass sich mehrere Clients eine IP-Adresse teilen.
 
-Der Wert *%{UNIQUE_ID}e* ist ein sehr hilfreicher Wert. Für jeden Request wird damit auf dem Server
-eine eindeutige Identifizierung kreiert. Wenn wir den Wert etwa auf einer Fehlerseite ausgeben, dann lässt
-sich ein Request im Logfile aufgrund eines Screenshots bequem identifizieren - und im Idealfall die gesamte Session 
-aufgrund des User-Tracking-Cookies nachvollziehen.
+Der Wert *%{UNIQUE_ID}e* ist ein sehr hilfreicher Wert. Für jeden Request wird damit auf dem Server eine eindeutige Identifizierung kreiert. Wenn wir den Wert etwa auf einer Fehlerseite ausgeben, dann lässt sich ein Request im Logfile aufgrund eines Screenshots bequem identifizieren - und im Idealfall die gesamte Session aufgrund des User-Tracking-Cookies nachvollziehen.
 
-Nun folgen zwei Werte, die von *mod_ssl* bekannt gegeben werden. Das Verschlüsselungsmodul
-gibt dem Logmodul Werte in einem eigenen Namensraum bekannt, der mit dem Kürzel _x_ bezeichnet
-wird. In der Dokumentation von *mod_ssl* werden die verschiedenen Werte einzeln erklärt.
-Für den Betrieb eines Servers sind vor allem das verwendete Protokoll und die verwendete
-Verschlüsselung von Interesse. Diese beiden Werte, mittels *%{SSL_PROTOCOL}x* und *%{SSL_CIPHER}x*
-referenziert, helfen uns dabei einen Überblick über den Einsatz der Verschlüsselung zu
-erhalten. Früher oder später sind wir soweit, dass wir das _TLSv1_ Protokoll abschalten
-werden. Zuerst möchten wir aber sicher sein, dass es in der Praxis keine nennenswerte
-Rolle mehr spielt. Das Logfile wird uns dabei helfen. Analog der Verschlüsselungsalgorithmus,
-der uns die tatsächlich verwendeten _Ciphers_ mitteilt und uns hilft eine Aussage zu machen,
-welche Ciphers nicht mehr länger verwendet werden. Die Informationen sind wichtig. Wenn
-zum Beispiel Schwächen in einzelnen Protokollversionen oder einzelnen Verschlüsselungsverfahren 
-bekannt werden, dann können den Effekt unseres Massnahmen anhand des Logfiles abschätzen.
-So war etwa die folgende Aussage im Frühjahr 2015 Gold wert: "Das sofortige Abschalten des SSLv3 
-Protokolls als Reaktion auf die POODLE Schwachstelle wird bei ca. 0.8% der Zugriffe zu 
-einem Fehler führen. Hochgerechnet auf unsere Kundenbasis werden soundsoviele Kunden 
-betroffen sein." Mit diesen Zahlen wurde das Risiko und der Effekt der Massnahme voraussagbar.
+Nun folgen zwei Werte, die von *mod_ssl* bekannt gegeben werden. Das Verschlüsselungsmodul gibt dem Logmodul Werte in einem eigenen Namensraum bekannt, der mit dem Kürzel _x_ bezeichnet wird. In der Dokumentation von *mod_ssl* werden die verschiedenen Werte einzeln erklärt. Für den Betrieb eines Servers sind vor allem das verwendete Protokoll und die verwendete Verschlüsselung von Interesse. Diese beiden Werte, mittels *%{SSL_PROTOCOL}x* und *%{SSL_CIPHER}x* referenziert, helfen uns dabei, einen Überblick über den Einsatz der Verschlüsselung zu erhalten. Früher oder später sind wir soweit, dass wir das _TLSv1_ Protokoll abschalten werden. Zuerst möchten wir aber sicher sein, dass es in der Praxis keine nennenswerte Rolle mehr spielt. Das Logfile wird uns dabei helfen. Analog der Verschlüsselungsalgorithmus, der uns die tatsächlich verwendeten _Ciphers_ mitteilt und uns hilft eine Aussage zu machen, welche Ciphers nicht mehr länger verwendet werden. Die Informationen sind wichtig. Wenn zum Beispiel Schwächen in einzelnen Protokollversionen oder einzelnen Verschlüsselungsverfahren bekannt werden, dann können wir den Effekt unseres Massnahmen anhand des Logfiles abschätzen. So war etwa die folgende Aussage im Frühjahr 2015 Gold wert: "Das sofortige Abschalten des SSLv3 Protokolls als Reaktion auf die POODLE Schwachstelle wird bei ca. 0.8% der Zugriffe zu einem Fehler führen. Hochgerechnet auf unsere Kundenbasis werden soundsoviele Kunden betroffen sein." Mit diesen Zahlen wurde das Risiko und der Effekt der Massnahme voraussagbar.
 
-Mit _%I_ und _%O_ folgen die beiden Werte, welche durch das Modul _Logio_ definiert werden.
-Es ist die gesamte Zahl der Bytes im Request und die gesamte Zahl der Bytes in der Response.
-Wir kennen bereits _%b_ für die Summer der Bytes im Response-Body. _%O_ ist hier etwas genauer
-und hilft zu erkennen, wenn die Anfrage oder ihre Antwort entsprechende Grössen-Limiten verletzte.
+Mit _%I_ und _%O_ folgen die beiden Werte, welche durch das Modul _Logio_ definiert werden. Es ist die gesamte Zahl der Bytes im Request und die gesamte Zahl der Bytes in der Response. Wir kennen bereits _%b_ für die Summe der Bytes im Response-Body. _%O_ ist hier etwas genauer und hilft zu erkennen, wenn die Anfrage oder ihre Antwort entsprechende Grössen-Limiten verletzte.
 
-_%{ratio}n%%_ bedeutet die Prozentzahl der Kompression der übermittelten Daten, welche durch die Anwendung des
-Modules _Deflate_ erreicht werden konnte. Dies ist für den Moment noch ohne Belang, bringt uns
-in Zukunft aber interessante Performance-Daten.
+_%{ratio}n%%_ bedeutet die Prozentzahl der Kompression der übermittelten Daten, welche durch die Anwendung des Modules _Deflate_ erreicht werden konnte. Dies ist für den Moment noch ohne Belang, bringt uns in Zukunft aber interessante Performance-Daten.
 
-_%D_ gibt die komplette Dauer des Requests in Microsekunden wieder. Gemessen wird vom Erhalt
-der Request-Zeile bis zum Moment, wenn der letzte Teil der Antwort den Server verlässt.
+_%D_ gibt die komplette Dauer des Requests in Mikrosekunden wieder. Gemessen wird vom Erhalt der Request-Zeile bis zum Moment, wenn der letzte Teil der Antwort den Server verlässt.
 
-Wir fahren weiter mit Performance-Daten. Wir werden in Zukunft die Stoppuhr ansetzen und 
-die Anfrage auf dem Weg in den Server hiein, bei der Applikation und während der Verarbeitung
-der Antwort separat messen. Die entsprechenden Werte werden wir in den Environment
-Variablen _ModSecTimeIn_, _ApplicationTime_ sowie _ModSecTimeOut_ ablegen.
+Wir fahren weiter mit Performance-Daten. Wir werden in Zukunft die Stoppuhr ansetzen und die Anfrage auf dem Weg in den Server hinein, bei der Applikation und während der Verarbeitung der Antwort separat messen. Die entsprechenden Werte werden wir in den Environment Variablen _ModSecTimeIn_, _ApplicationTime_ sowie _ModSecTimeOut_ ablegen.
 
-Und zu guter Letzt noch zwei weitere Werte, die uns _ModSecurity_ in einer späteren Anleitung
-zur Verfügung stellen wird, nämlich die Anomalie-Punktezahl der Anfrage und der Antwort.
-Was es damit auf sich hat, ist für den Moment noch unwichtig. Wichtig ist, dass wir mit
-diesem startk erweiterten Logformat eine Basis gelegt haben auf die wir zukünftig aufbauen
-können, ohne das Logformat nochmals anpassen zu müssen.
+Und zu guter Letzt noch zwei weitere Werte, die uns _ModSecurity_ in einer späteren Anleitung zur Verfügung stellen wird, nämlich die Anomalie-Punktezahl der Anfrage und der Antwort. Was es damit auf sich hat, ist für den Moment noch unwichtig. Wichtig ist, dass wir mit diesem stark erweiterten Logformat eine Basis gelegt haben, auf die wir zukünftig aufbauen können, ohne das Logformat nochmals anpassen zu müssen.
 
 
 ###Schritt 6: Weitere Request- und Response-Header in zusätzlichem Logfile mitschreiben
@@ -379,7 +193,7 @@ Schreiben wir zu Debug-Zwecken also ein zusätzliches Logfile. Wir benützen nic
 CustomLog logs/access-debug.log "[%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] %{UNIQUE_ID}e \"%r\" %{Accept}i %{Content-Type}o"
 ```
 
-Mit diesem zusätzlichen Logfile sehen wir, welche Wünsche in Bezug auf die Content-Types der Client äusserte, und was unser Server tatsächlich lieferte. Normalerweise klappt dieses Zusammenspiel zwischen Client und Server sehr gut. Aber in der Praxis gibt es da schon mal Unstimmigkeiten; da ist ein zusätzliches Logfile dieser Art hilfreich bei der Fehlersuche.
+Mit diesem zusätzlichen Logfile sehen wir, welche Wünsche der Client in Bezug auf die Content-Types äusserte und was unser Server tatsächlich lieferte. Normalerweise klappt dieses Zusammenspiel zwischen Client und Server sehr gut. Aber in der Praxis gibt es da schon mal Unstimmigkeiten; da ist ein zusätzliches Logfile dieser Art hilfreich bei der Fehlersuche.
 Das Resultat könnte dann etwa wie folgt aussehen:
 
 ```bash
@@ -394,26 +208,20 @@ $> cat logs/access-debug.log
 
 So lassen sich Logfiles in Apache also sehr frei definieren. Interessanter ist aber die Auswertung der Daten. Dazu benötigen wir erst einige Daten.
 
+
 ###Schritt 7: Ausprobieren und Logdatei füllen
 
-Konfigurieren wir das erweiterte Zugriffslog im Format _extended_,wie oben beschrieben, und beschäftigen wir den Server etwas!
+Konfigurieren wir das erweiterte Zugriffslog im Format _extended_ wie oben beschrieben und beschäftigen wir den Server etwas!
 
-Wir könnten dazu _Apache Bench_ wie in der zweiten Anleitung zwei beschrieben
-verwenden, aber das würde ein sehr einförmiges Logfile ergeben. Mit den folgenden beiden Einzeilern bringen
-wir etwas Abwechslung hinein.
+Wir könnten dazu _Apache Bench_ wie in der zweiten Anleitung zwei beschrieben verwenden, aber das würde ein sehr einförmiges Logfile ergeben. Mit den folgenden beiden Einzeilern bringen wir etwas Abwechslung hinein.
 
 ```bash
 $> for N in {1..100}; do curl --silent http://localhost/index.html?n=${N}a >/dev/null; done
 $> for N in {1..100}; do PAYLOAD=$(uuid -n $N | xargs); curl --silent --data "payload=$PAYLOAD" http://localhost/index.html?n=${N}b >/dev/null; done
 ```
 
-Auf der ersten Zeile setzen wir einfach hundert Requests ab, wobei wir sie im _Query-String_ nummerieren.
-Auf der zweiten Zeile dann die interessantere Idee: Wieder setzen wir hundert Anfragen ab. Dieses Mal
-möchten wir aber Daten mit Hilfe eines POST-Requests im Body-Teil der Anfrage mitschicken. Diesen
-sogenannen Payload generieren wir dynamisch und zwar so, dass er mit jedem Aufruf grösser wird. Die benötigten
-Daten generieren wir mittels _uuidgen_. Dabei handelt es sich um einen Befehl, der eine _ascii-ID_ generiert.
-Aneinandergehängt erhalten wir eine Menge Daten. (Falls es zu einer Fehlermeldung kommt, könnte es sein, dass
-der Befehl _uuidgen_ nicht vorhanden ist. In diesem Fall wäre das Paket _uuid_ zu installieren.
+Auf der ersten Zeile setzen wir einfach hundert Requests ab, wobei wir sie im _Query-String_ nummerieren. Auf der zweiten Zeile dann die interessantere Idee: Wieder setzen wir hundert Anfragen ab. Dieses Mal möchten wir aber Daten mit Hilfe eines POST-Requests im Body-Teil der Anfrage mitschicken. Diesen sogenannen Payload generieren wir dynamisch und zwar so, dass er mit jedem Aufruf grösser wird. Die benötigten Daten generieren wir mittels _uuidgen_. Dabei handelt es sich um einen Befehl, der eine _ascii-ID_ generiert.
+Aneinandergehängt erhalten wir eine Menge Daten. (Falls es zu einer Fehlermeldung kommt, könnte es sein, dass der Befehl _uuidgen_ nicht vorhanden ist. In diesem Fall wäre das Paket _uuid_ zu installieren).
 
 
 Die Bearbeitung dieser Zeile dürfte einen Moment dauern. Als Resultat sehen wir folgendes im Logfile:
@@ -621,7 +429,8 @@ Die Bearbeitung dieser Zeile dürfte einen Moment dauern. Als Resultat sehen wir
 127.0.0.1 - - [2015-10-03 05:55:13.453047] "POST /index.html?n=100b HTTP/1.1" 200 45 "-" "curl/7.35.0" www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 4366 1539 -% 910 - - - - -
 ```
 
-Wie oben vorhergesagt sind noch sehr viele Werte leer, oder durch _-_ gekennzeichnet. Aber wir sehen, dass wir den Server _www.example.com_ auf Port 443 angesprochen haben und dass die Grösse des Requests mit jedem _POST_-Request zunahm und zuletzt beinahe 4K, also 4096 Bytes, betrug. Mit diesem einfachen Logfile lassen sich bereits einfache Auswertungen durchführen.
+Wie oben vorhergesagt sind noch sehr viele Werte leer oder durch _-_ gekennzeichnet. Aber wir sehen, dass wir den Server _www.example.com_ auf Port 443 angesprochen haben und dass die Grösse des Requests mit jedem _POST_-Request zunahm, wobei sie zuletzt beinahe 4K, also 4096 Bytes, betrug. Mit diesem einfachen Logfile lassen sich bereits einfache Auswertungen durchführen.
+
 
 ###Schritt 8: Einfache Auswertungen mit dem Logformat Extended durchführen
 
@@ -632,7 +441,7 @@ $> egrep -o "\% [0-9]+ " logs/access.log | cut -b3- | tr -d " " | sort -n
 ```
 
 Mit diesem Einzeiler schneiden wir den Wert, der die Dauer eines Requests angibt, aus dem Logfile heraus. Wir benützen das Prozentzeichen des Deflate-Wertes als Anker für eine einfache Regular Expression und nehmen die darauf folgende Zahl. _egrep_ bietet sich an, weil wir mit RegEx arbeiten wollen, die Option _-o_ führt dazu, dass nicht die gesamte Zeile, sondern nur der Treffer selbst ausgegeben wird. Das ist sehr hilfreich.
-Ein Detail, das uns zukünftige Fehler verhindern hilft ist das Leerzeichen nach dem Pluszeichen. Es nimmt nur diejenigen Werte, die auf die Zahl ein Leerzeichen folgen lassen. Das Problem ist der User-Agent, der in unserem Logformat ja auch vorkommt und der bisweilen auch Prozentzeichen enthält. Wir gehen hier davon aus, dass zwar im User-Agent Prozentzeichen gefolgt von Leerschlag und einer Ganzzahl folgen können. Dass danach aber kein weitere Leerschlag folgt und diese Kombination nur im hinteren Teil der Logzeile nach dem Prozentzeichen der _Deflate-Platzeinsparungen_ vorkommt. Dann schneiden wir mittels _cut_ so, dass nur das dritte und die folgenden Zeichen ausgegeben werden und schliesslich trennen wir noch mit _tr_ das abschliessende Leerzeichen (siehe Regex) ab. Dann sind wir bereit für das numerische Sortieren. Das liefert folgendes Resultat:
+Ein Detail, das uns zukünftige Fehler verhindern hilft, ist das Leerzeichen nach dem Pluszeichen. Es nimmt nur diejenigen Werte, die auf die Zahl ein Leerzeichen folgen lassen. Das Problem ist der User-Agent, der in unserem Logformat ja auch vorkommt und der bisweilen auch Prozentzeichen enthält. Wir gehen hier davon aus, dass zwar im User-Agent Prozentzeichen gefolgt von Leerschlag und einer Ganzzahl folgen können. Dass danach aber kein weiterer Leerschlag folgt und diese Kombination nur im hinteren Teil der Logzeile nach dem Prozentzeichen der _Deflate-Platzeinsparungen_ vorkommt. Dann schneiden wir mittels _cut_ so, dass nur das dritte und die folgenden Zeichen ausgegeben werden und schliesslich trennen wir noch mit _tr_ das abschliessende Leerzeichen (siehe Regex) ab. Dann sind wir bereit für das numerische Sortieren. Das liefert folgendes Resultat:
 
 ```bash
 ...
@@ -647,7 +456,7 @@ Ein Detail, das uns zukünftige Fehler verhindern hilft ist das Leerzeichen nach
 3937
 ```
 
-In unserem Beispiel stechen vier Werte mit einer Dauer von über 1000 Microsekunden, also mehr als einer Millisekunde heraus, drei davon sind noch im Rahmen, aber einer ist mit 4 Millisekunden klar ein statistischer Ausreisser und steht den anderen Werten gegenüber klar im Abseits.
+In unserem Beispiel stechen vier Werte mit einer Dauer von über 1000 Mikrosekunden, also mehr als einer Millisekunde heraus, drei davon sind noch im Rahmen, aber einer ist mit 4 Millisekunden klar ein statistischer Ausreisser und steht den anderen Werten gegenüber klar im Abseits.
 
 Wir wissen, dass wir je 100 GET und 100 POST Requests gestellt haben. Aber zählen wir sie übungshalber dennoch einmal aus:
 
@@ -667,7 +476,7 @@ Wir können GET und POST auch einander gegenüber stellen. Wir tun dies folgende
 $> egrep  -o '"(GET|POST)' logs/access.log | cut -b2- | sort | uniq -c
 ```
 
-Hier filtern wir die GET und die POST Requests anhand der Methode, die auf ein Anführungszeichen folgt heraus. Dann schneiden wir das Anführungszeichen ab, sortieren und zählen gruppiert aus:
+Hier filtern wir die GET und die POST Requests anhand der Methode, die auf ein Anführungszeichen folgt, heraus. Dann schneiden wir das Anführungszeichen ab, sortieren und zählen gruppiert aus:
 
 ```bash
     100 GET 
@@ -676,7 +485,8 @@ Hier filtern wir die GET und die POST Requests anhand der Methode, die auf ein A
 
 Soweit zu diesen ersten Fingerübungen. Auf der Basis dieses selbst abgefüllten Logfiles ist das leider noch nicht sehr spanned. Nehmen wir uns also ein richtiges Logfile von einem Produktionsserver vor.
 
-### Schritt 9: Tiefere gehende Auswertungen auf einem Beispiel-Logfile
+
+### Schritt 9: Tiefer gehende Auswertungen auf einem Beispiel-Logfile
 
 Spannender werden die Auswertungen mit einem richtigen Logfile von einem produktiven Server. Hier ist eines, mit 10'000 Anfragen:
 
@@ -718,7 +528,7 @@ $> cat labor-04-example-access.log | cut -d\" -f3 | cut -d\  -f2 | sort | uniq -
      41 408
 ```
 
-Da liegt neben den sechzehn Requests mit der HTTP Antwort "400 Bad Request" ein recht grosser Anteil an 404ern vor ("404 Not Found"). HTTP Status 400 bedeutet einen Protokoll-Fehler. 404 ist bekanntlich eine nicht gefundene Seite. Hier müsste man also mal zum Rechten sehen. Aber bevor wir weiter gehen, ein Hinweis auf die Anfrage mittels des Befehls _cut_. Wir haben die Logzeile mit dem Trennzeichen _"_ unterteilt, das dritte Feld mit dieser Unterteilung extrahiert und dann den Inhalt wieder unterteilt, dieses Mal aber mit dem Leerschlag (Man beachte das _\_-Zeichen) als Trennzeichen und das zweite Feld extrahiert, was nun dem Status entspricht. Danach wurde sortiert und die _uniq-Funktion_ im Zählmodus angewendet. Wir werden sehen, dass diese Art des Zugriffs auf die Daten ein sich wiederholendes Muster ist.
+Da liegt neben den sechzehn Requests mit der HTTP Antwort "400 Bad Request" ein recht grosser Anteil an 404ern vor ("404 Not Found"). HTTP Status 400 bedeutet ein Protokoll-Fehler. 404 ist bekanntlich eine nicht gefundene Seite. Hier müsste man also mal nach dem Rechten sehen. Aber bevor wir weiter gehen, ein Hinweis auf die Anfrage mittels des Befehls _cut_. Wir haben die Logzeile mit dem Trennzeichen _"_ unterteilt, das dritte Feld mit dieser Unterteilung extrahiert und dann den Inhalt wieder unterteilt, dieses Mal aber mit dem Leerschlag (man beachte das _\_-Zeichen) als Trennzeichen und das zweite Feld extrahiert, was nun dem Status entspricht. Danach wurde sortiert und die _uniq-Funktion_ im Zählmodus angewendet. Wir werden sehen, dass diese Art des Zugriffs auf die Daten ein sich wiederholendes Muster ist.
 Schauen wir das Logfile noch etwas genauer an.
 
 Weiter oben war die Rede von Verschlüsselungsprotokollen und wie ihre Auswertung eine Grundlage für einen Entscheid der adäquaten Reaktion auf die _POODLE_-Schwachstelle war. Welche Verschlüsselungsprotokolle kommen seither eigentlich auf dem Server in der Praxis vor:
@@ -775,8 +585,7 @@ alias alscores='cut -d\" -f9 | cut -d\  -f12,13 | tr " " ";" | tr "-" "0"'
 
 Die Aliase beginnen alle mit _al_. Dies steht für _ApacheLog_ oder _AccessLog_. Darauf folgt der Feldnahme. Die einzelnen Aliase sind nicht alphabethisch geordnet. Sie folgen vielmehr der Reihenfolge der Felder im Format des Logfiles.
 
-Diese Liste mit Alias-Definitionen befindet sich in der Datei [apache-modsec.alias](https://github.com/Apache-Labor/labor/blob/master/bin/.apache-modsec.alias).
- Dort liegt sie gemeinsam mit einigen weiteren Aliasen, die wir in späteren Anleitungen definieren werden. Wenn man öfter mit Apache und seinen Logfiles arbeitet, dann bietet es sich an, diese Alias-Definitionen im Heim-Verzeichnis abzulegen und sie beim Einloggen zu laden. Also mittels folgendem Eintrag in der _.bashrc_-Datei oder über einen verwandten Mechanismus.
+Diese Liste mit Alias-Definitionen befindet sich in der Datei [apache-modsec.alias](https://github.com/Apache-Labor/labor/blob/master/bin/.apache-modsec.alias). Dort liegt sie gemeinsam mit einigen weiteren Aliasen, die wir in späteren Anleitungen definieren werden. Wenn man öfter mit Apache und seinen Logfiles arbeitet, dann bietet es sich an, diese Alias-Definitionen im Heim-Verzeichnis abzulegen und sie beim Einloggen zu laden. Also mittels folgendem Eintrag in der _.bashrc_-Datei oder über einen verwandten Mechanismus.
 
 ```bash
 test -e ~/.apache-modsec.alias && . ~/.apache-modsec.alias
@@ -791,11 +600,12 @@ $> cat labor-04-example-access.log | alsslprotocol | sort | uniq -c | sort -n
    1764 TLSv1
    8150 TLSv1.2
 ```
-Das geht schon etwas leichter. Aber das wiederholte Tippen von _sort_ gefolgt von _uniq -c_ und dann nochmals ein numerisches _sort_ ist mühlselig. Da es sich erneut um ein wiederkehrendes Muster handelt, lohnt sich auch hier ein Alias, der sich als _sucs_ abgekürzen lässt: ein Zusammenzug der Anfangsbuchstaben und des _c_ von _uniq -c_.
+Das geht schon etwas leichter. Aber das wiederholte Tippen von _sort_ gefolgt von _uniq -c_ und dann nochmals ein numerisches _sort_ ist mühselig. Da es sich erneut um ein wiederkehrendes Muster handelt, lohnt sich auch hier ein Alias, der sich als _sucs_ abkürzen lässt: ein Zusammenzug der Anfangsbuchstaben und des _c_ von _uniq -c_.
 
 ```bash
 $> alias sucs='sort | uniq -c | sort -n'
 ```
+
 Das erlaubt uns dann:
 
 
@@ -807,9 +617,7 @@ $> cat labor-04-example-access.log | alsslprotocol | sucs
    8150 TLSv1.2
 ```
 
-Das ist nun ein einfacher Aufruf, den man sich gut merken kann und der leicht zu schreiben ist. Wir blicken nun
-an ein Zahlenverhältnis von 1764 zu 8150. Total haben wier hier genau 10'000 Anfragen vor uns; die Prozentwerte sind von Auge abzuleiten. In der
-Praxis dürften die Logfiles aber kaum so schön aufgehen, wir benötigen also Hilfe beim Ausrechnen der Prozentzahlen.
+Das ist nun ein einfacher Aufruf, den man sich gut merken kann und der leicht zu schreiben ist. Wir blicken nun auf ein Zahlenverhältnis von 1764 zu 8150. Total haben wier hier genau 10'000 Anfragen vor uns; die Prozentwerte sind von Auge abzuleiten. In der Praxis dürften die Logfiles aber kaum so schön aufgehen, wir benötigen also Hilfe beim Ausrechnen der Prozentzahlen.
 
 
 ###Schritt 10: Auswertungen mit Prozentzahlen und einfache Statistik
@@ -860,7 +668,7 @@ $> cat labor-04-example-access.log | alsslcipher | sucspercent
                          Total        10000 100.00%
 ```
 
-Ein guter Überblick auf die Schnelle. Damit können wir für den Moment zufrieden sein. Gibt es etwas zu den HTTP-Protokollversionen sagen?
+Ein guter Überblick auf die Schnelle. Damit können wir für den Moment zufrieden sein. Gibt es etwas zu den HTTP-Protokollversionen zu sagen?
 
 ```bash
 $> cat labor-04-example-access.log | alprotocol | sucspercent 
@@ -874,8 +682,7 @@ $> cat labor-04-example-access.log | alprotocol | sucspercent
                          Total        10000 100.00%
 ```
 
-Das veraltete _HTTP/1.0_ kommt also durchaus noch vor, und bei 45 Anfragen scheint etwas schief gegangen zu sein. Konzentrieren wir uns in
-der Rechnung auf die erfolgreichen Requests mit einem gültigen Protokoll und sehen wir uns die Prozentzahlen nochmals an:
+Das veraltete _HTTP/1.0_ kommt also durchaus noch vor, und bei 45 Anfragen scheint etwas schief gegangen zu sein. Konzentrieren wir uns in der Rechnung auf die erfolgreichen Requests mit einem gültigen Protokoll und sehen wir uns die Prozentzahlen nochmals an:
 
 ```bash
 $> cat labor-04-example-access.log | alprotocol | grep HTTP |  sucspercent
@@ -890,13 +697,9 @@ $> cat labor-04-example-access.log | alprotocol | grep HTTP |  sucspercent
 Hier kommt zusätzlich noch ein _grep_ zum Einsatz. Wir können das Muster "Alias-Feldextraktion -> sucs" also noch durch weitere Filteroperationen verfeinern.
 
 
-Mit den verschiedenen Aliasen für die Extraktion von Werten aus dem Logfile und den beiden Aliasen _sucs_ und _sucspercent_
-haben wir uns handliche Werkzeuge zurecht gelegt, um Fragen nach der relativen Häufigkeit von sich wiederholenden Werten
-einfach und mit demselben Muster von Befehlen beantworten zu können.
+Mit den verschiedenen Aliasen für die Extraktion von Werten aus dem Logfile und den beiden Aliasen _sucs_ und _sucspercent_ haben wir uns handliche Werkzeuge zurecht gelegt, um Fragen nach der relativen Häufigkeit von sich wiederholenden Werten einfach und mit demselben Muster von Befehlen beantworten zu können.
 
-Bei den Messwerten, die sich nicht mehr wiederholen, also etwa der Dauer eines Requests, oder der Grösse der Antworten, nützen
-uns die Prozentzahlen aber wenig. Was wir brauchen ist eine einfache statistische Auswertung. Gefragt sind der Durchschnitt,
-vielleicht der Median, Informationen zu den Ausreissern und sinnvollerweise die Standardabweichung.
+Bei den Messwerten, die sich nicht mehr wiederholen, also etwa der Dauer eines Requests, oder der Grösse der Antworten, nützen uns die Prozentzahlen aber wenig. Was wir brauchen ist eine einfache statistische Auswertung. Gefragt sind der Durchschnitt, vielleicht der Median, Informationen zu den Ausreissern und sinnvollerweise die Standardabweichung.
 
 Auch ein solches Skript steht zum Download bereit: [basicstats.awk](https://github.com/Apache-Labor/labor/blob/master/bin/basicstats.awk). Es bietet sich an, dieses Skript ähnlich wie percent.awk im privaten _bin_-Verzeichnis abzulegen.
 
@@ -926,9 +729,7 @@ Num of values:        10000
 Std deviation:      3023884
 ```
 
-Hier ist es zunächst wichtig, sich zu vergegenwärtigen, dass wir es mit Microsekunden zu tun haben. Der Median liegt bei 2400 Microekunden, das sind gut 2 Millisekunden. Der Durschschnitt ist mit 91 Millisekunden viel grösser, offensichtlich haben wir zahlreiche Ausreisser, welche den Schnitt in die Höhe gezogen haben. Tatsächlich  haben wir einen Maximalwert von 301 Sekunden und wenig überraschend eine Standardabweichung von 3 Sekunden. Das Bild ist also weniger homogen und wir haben zumindest einige Requests, die wir untersuchen sollten. Das wird nun aber etwas komplizierter. Das vorgeschlagene Vorgehen ist nur ein mögliches und es steht hier als Vorschlag und als Inspiration für die weitere Arbeit mit dem Logfile:
-
-
+Hier ist es zunächst wichtig, sich zu vergegenwärtigen, dass wir es mit Mikrosekunden zu tun haben. Der Median liegt bei 2400 Mikroekunden, das sind gut 2 Millisekunden. Der Durschschnitt ist mit 91 Millisekunden viel grösser, offensichtlich haben wir zahlreiche Ausreisser, welche den Schnitt in die Höhe gezogen haben. Tatsächlich  haben wir einen Maximalwert von 301 Sekunden und wenig überraschend eine Standardabweichung von 3 Sekunden. Das Bild ist also weniger homogen und wir haben zumindest einige Requests, die wir untersuchen sollten. Das wird nun aber etwas komplizierter. Das vorgeschlagene Vorgehen ist nur ein mögliches und es steht hier als Vorschlag und als Inspiration für die weitere Arbeit mit dem Logfile:
 
 ```bash
 $> cat labor-04-example-access.log | grep "\"GET " | aluri | cut -d\/ -f1,2,3 | sort | uniq | while read P; do  AVG=$(grep "GET $P" labor-04-example-access.log | alduration | basicstats.awk | grep Average | sed 's/.*: //'); echo "$AVG $P"; done  | sort -n
@@ -943,9 +744,9 @@ $> cat labor-04-example-access.log | grep "\"GET " | aluri | cut -d\/ -f1,2,3 | 
       860889 /cms/download-softfiles
 ```
 
-Was passiert hier nacheinander? Wir filtern mittel _grep_ nach _GET_-Requests. Wir ziehen die _URI_ heraus und zerschneiden sie mittels _cut_. Uns interessieren nur die ersten Abschnitte des Pfades. Wir beschränken uns hier, um eine vernünftige Gruppierung zu erhalten, denn zu viele verschiedene Pfade bringen hier wenig Mehrwert. Die so erhaltene Pfadliste sortieren wir alphabetisch und reduzieren sie mittels _uniq_. Das ist die Hälfte der Arbeit.
+Was passiert hier nacheinander? Wir filtern mittels _grep_ nach _GET_-Requests. Wir ziehen die _URI_ heraus und zerschneiden sie mittels _cut_. Uns interessieren nur die ersten Abschnitte des Pfades. Wir beschränken uns hier, um eine vernünftige Gruppierung zu erhalten, denn zu viele verschiedene Pfade bringen hier wenig Mehrwert. Die so erhaltene Pfadliste sortieren wir alphabetisch und reduzieren sie mittels _uniq_. Das ist die Hälfte der Arbeit.
 
-Nun lesen wir die Pfade nacheinander in die Variable _P_ und bauen darüber mit _while_ eine Schleife. Innerhalb der Schleife berechnen wir für den in _P_ abgespeicherten Pfad die Basisstatistiken und filtern die Ausgabe auf den Durschnitt, wobei mir mit _sed_ so filtern, dass die Variable _AVG_ nur die Zahl und nicht auch noch die Bezeichnung _Average:_ enthält. Nun geben wir diesen Durchschnittswert und den Pfadnamen aus. Ende der Schleife. Zu guter letzt sortieren wir alles noch numerisch und erhalten damit eine Übersicht, welche Pfade zu Requests mit längeren Antwortzeiten geführt haben. Offenbar schiesst ein Pfad namens _/cms/download-softfiles_ obenaus. Das Stichwort _download_ lässt dies plausibel erscheinen.
+Nun lesen wir die Pfade nacheinander in die Variable _P_ und bauen darüber mit _while_ eine Schleife. Innerhalb der Schleife berechnen wir für den in _P_ abgespeicherten Pfad die Basisstatistiken und filtern die Ausgabe auf den Durschnitt, wobei wir mit _sed_ so filtern, dass die Variable _AVG_ nur die Zahl und nicht auch noch die Bezeichnung _Average:_ enthält. Nun geben wir diesen Durchschnittswert und den Pfadnamen aus. Ende der Schleife. Zu guter letzt sortieren wir alles noch numerisch und erhalten damit eine Übersicht, welche Pfade zu Requests mit längeren Antwortzeiten geführt haben. Offenbar schiesst ein Pfad namens _/cms/download-softfiles_ obenaus. Das Stichwort _download_ lässt dies plausibel erscheinen.
 
 Damit kommen wir zum Abschluss dieser Anleitung. Ziel war es ein erweitertes Logformat einzuführen und die Arbeit mit den Logfiles zu demonstrieren. Dabei kommen wiederkehrend eine Reihe von Aliasen und zwei _awk_-Skripts zum Einsatz, die sich sehr flexibel hintereinander reihen lassen. Mit diesen Werkzeugen und der nötigen Erfahrung in deren Handhabung ist man in der Lage, rasch auf die in den Logfiles zur Verfügung stehenden Informationen zuzugreifen.
 
