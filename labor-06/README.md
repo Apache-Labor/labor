@@ -360,7 +360,9 @@ Die *ModSecurity*-Meldungen besitzen ein bestimmtes Format. Es folgt immer dem g
 
 Wie geht es nun weiter? Es folgt ein Hinweis auf das Muster, das in der Anfrage gefunden wurde. Im Anfragen-Argument *ctr* wurde ein bestimmtes Muster eines regulären Ausdrucks gefunden. Nun folgen eine Reihe von Parametern, die immer dasselbe Muster besitzen: Sie stehen in eckigen Klammern und besitzen einen eigenen Bezeichner. Zunächst der Bezeichner *file*. Er zeigt uns, in welchem File die Regel definiert wurde, die nun den Alarm auslöste. Dem folgt mit *line* die Zeilennummer in dieser Datei. Wichtiger scheint mir der Parameter *id*. Jede Regel in *ModSecurity* besitzt eine Identifikationsnummer und ist damit eindeutig identifizierbar. Darauf folgt mit *rev* ein Hinweis auf die Revisionsnummer der Regel. In den Core-Rules wird mit diesem Parameter ausgedrückt, wie oft die Regel schon revidiert wurde. Kommt es also zu einer Regeländerung wird *rev* um eins erhöht. Die *msg*, kurz für *Message*, beschreibt den Typ des identifizierten Angriffs. Bei *data* wird der relevante Teil der Anfrage, also der Parameter *ctr* gezeigt: Es handelt sich in meinem Beispiel um einen offensichtlichen Fall von *Cross Site Scripting* (XSS).
 
-Wir kommen mit *ver* zum Release des Core-Rule-Sets, dann folgt mit *maturity* ein Hinweis auf die Qualität der Regel. Eine hohe *Maturität* besagt, dass wir dieser Regel trauen können, da sie breit eingesetzt wird und kaum zu Problemen geführt hat. Eine niedrige *Maturität* deutet hingegen eher auf eine experimentelle Regel hin. Der Wert 1 kommt in den *Core Rules* denn auch nur sechs Mal vor, während in der verwendeten Version 116 Regeln einen Wert von 8 besitzen, bei 99 Regeln wird sogar eine Reife von 9 angenommen. Ähnlich wie mit der *Maturity* verhält es sich mit *Accuracy*, also der Exaktheit der Regel. Auch dies ist ein optionaler Wert, den der Regelschreiber bei der Definition der Regel festgelegt hat. Hier kommen im Regelwerk gar keine tiefen Werte vor, 8 ist der häufigste Wert (144 Mal), 9 ist auch verbreitet (82). Diese verschiedenen Zusatzhinweise in der Log-Meldung dienen lediglich Dokumentationszwecken. In meiner Erfahrung sind sie wenig relevant und verändern sich zwischen den *Core Rules* Releases auch kaum.Nun folgen eine Reihe von *Tags*, die der Regel zugewiesen werden. Zunächst der Tag *Local Lab Service*. Den hatten wir selbst in unserer Konfiguration definiert. Er wird also wie gewünscht jeder Regelverletzung mitgegeben. Danach folgen mehrere Tags aus dem *Core Rule Set*, welche die Art des Angriffs klassifiziert. Mit diesen Hinweisen lassen sich beispielsweise Statistiken erstellen.
+Wir kommen mit *ver* zum Release des Core-Rule-Sets, dann folgt mit *maturity* ein Hinweis auf die Qualität der Regel. Eine hohe *Maturität* besagt, dass wir dieser Regel trauen können, da sie breit eingesetzt wird und kaum zu Problemen geführt hat. Eine niedrige *Maturität* deutet hingegen eher auf eine experimentelle Regel hin. Der Wert 1 kommt in den *Core Rules* denn auch nur sechs Mal vor, während in der verwendeten Version 116 Regeln einen Wert von 8 besitzen, bei 99 Regeln wird sogar eine Reife von 9 angenommen. Ähnlich wie mit der *Maturity* verhält es sich mit *Accuracy*, also der Exaktheit der Regel. Auch dies ist ein optionaler Wert, den der Regelschreiber bei der Definition der Regel festgelegt hat. Hier kommen im Regelwerk gar keine tiefen Werte vor, 8 ist der häufigste Wert (144 Mal), 9 ist auch verbreitet (82). Diese verschiedenen Zusatzhinweise in der Log-Meldung dienen lediglich Dokumentationszwecken. In meiner Erfahrung sind sie wenig relevant und verändern sich zwischen den *Core Rules* Releases auch kaum.
+
+Nun folgen eine Reihe von *Tags*, die der Regel zugewiesen werden. Zunächst der Tag *Local Lab Service*. Den hatten wir selbst in unserer Konfiguration definiert. Er wird also wie gewünscht jeder Regelverletzung mitgegeben. Danach folgen mehrere Tags aus dem *Core Rule Set*, welche die Art des Angriffs klassifiziert. Mit diesen Hinweisen lassen sich beispielsweise Auswertungen und Statistiken erstellen.
 
 Gegen das Ende des Alarms folgen mit *hostname*, *uri* und *unique_id* drei weitere Werte, welche die Anfrage klarer spezifizieren. Mit der *Unique ID* können wir die Verbindung zu unserem *Access-Log* machen und mit der *URI* finden wir die betroffene Ressource auf unserem Server.
 
@@ -368,10 +370,11 @@ Ein einzelner Alarm bringt also sehr viel Information mit sich. Bei über 30'000
 
 ###Schritt 4: Anomalie-Werte Auswerten
 
-Das Format der Einträge im Error-Log ist zwar sehr klar, aber ohne Hilfsmittel ist es sehr anstrengend zu lesen. Einfache Abhilfe schaffen einige *Shell-Aliase*, welche einzelne Informationsteile aus den Einträgen ausschneiden:
+Das Format der Einträge im Error-Log ist zwar sehr klar, aber ohne Hilfsmittel ist es sehr anstrengend zu lesen. Einfache Abhilfe schaffen einige *Shell-Aliase*, welche einzelne Informationsteile aus den Einträgen ausschneiden. Sie sind im Alias-File abgespeichert, welches wir bereits in der 5. Anleitung hinzugeladen haben.
 
 ```
-$> cat .alias_modsec
+$> cat ~/.apache-modsec.alias
+...
 alias meldata='grep -o "\[data [^]]*" | cut -d\" -f2'
 alias melfile='grep -o "\[file [^]]*" | cut -d\" -f2'
 alias melhostname='grep -o "\[hostname [^]]*" | cut -d\" -f2'
@@ -383,9 +386,11 @@ alias melmsg='grep -o "\[msg [^]]*" | cut -d\" -f2'
 alias meltimestamp='cut -b2-25'
 alias melunique_id='grep -o "\[unique_id [^]]*" | cut -d\" -f2'
 alias meluri='grep -o "\[uri [^]]*" | cut -d\" -f2'
+...
+$> source ~/.apache-modsec.alias 
 ```
 
-Diese Abkürzungen beginnen mit dem Prefix *mel* - kurz für *ModSecurity-Error-Log*. Darauf folgt der Feldname. Probieren wir das einmal aus:
+Diese Abkürzungen beginnen mit dem Prefix *mel* - kurz für *ModSecurity-Error-Log*. Darauf folgt der Feldname. Probieren wir das einmal aus, um die Regel-ID der Meldungen auszugeben.
 
 ```
 $> cat logs/error.log | melid | head
@@ -535,7 +540,7 @@ $> cat logs/error.log | melid | sort | uniq -c | sort -n  | while read STR; do e
 6135 990012 Rogue web site crawler
 ```
 
-Damit lässt sich arbeiten. Aber es bietet sich wohl an, den *One-Liner* genauer zu erklären. Wir extrahieren die Regelidentifikationen aus dem *Error-Log*, dann sortieren wir sie (*sort*), dann summieren wir diese Liste Liste nach den gefundenen IDs (*uniq -c*) und sortieren sie neu nach der Anzahl der Funde. Das ist der erste *One-Liner*. Da fehlt natürlich noch die Bezeichnung der einzelnen Regeln, denn mit der Identifikationsnummer könne wir noch nicht so viel anfangen. Die Bezeichnungen holen wir wieder aus dem *Error-Log* indem wir die vorher durchgeführte Auswertung Zeile um Zeile in einer Schleife durchsehen. In dieser Schleife zeigen wir mal an, was wir haben. Dann müssen wir die Summer der Funde und die Identifikation wieder trennen. Dies geschieht mittels einem eingebetteten Unter-Kommando (*ID=$(echo "$STR" | sed -e "s/.*\ //")*). Wir suchen dann mit der neu gefundenen Identifikation im *Error-Log* selbst wieder nach einem Eintrag, nehmen aber nur den ersten, holen den *msg*-Teil heraus und zeigen ihn an. Fertig.
+Damit lässt sich arbeiten. Aber es bietet sich wohl an, den *One-Liner* genauer zu erklären. Wir extrahieren die Regelidentifikationen aus dem *Error-Log*, dann sortieren wir sie (*sort*), dann summieren wir diese Liste Liste nach den gefundenen IDs (*uniq -c*) und sortieren sie neu nach der Anzahl der Funde. Das ist der erste *One-Liner*. Da fehlt natürlich noch die Bezeichnung der einzelnen Regeln, denn mit der Identifikationsnummer könne wir noch nicht so viel anfangen. Die Bezeichnungen holen wir wieder aus dem *Error-Log* indem wir die vorher durchgeführte Auswertung Zeile um Zeile in einer Schleife durchsehen. In dieser Schleife zeigen wir mal an, was wir haben. Dann müssen wir die Summer der Funde und die Identifikation wieder trennen. Dies geschieht mittels einem eingebetteten Unter-Kommando (_ID=$(echo "$STR" | sed -e "s/.*\ //")_). Wir suchen dann mit der neu gefundenen Identifikation im *Error-Log* selbst wieder nach einem Eintrag, nehmen aber nur den ersten, holen den *msg*-Teil heraus und zeigen ihn an. Fertig.
 
 Dieses Kommando kann je nach Rechnerleistung einige Sekunden oder sogar Minuten dauern. Man könnte nun meinen, es wäre schlauer einen zusätzlichen Alias zu definieren, um Identifikation und Beschreibung der Regel in einem Schritt zu eruieren. Dies führte uns aber auf den Holzweg, denn die Regel 981203 hat eine Bezeichnung, die mit dem *Score* dynamische Teile enthält. Da wir das *Uniq*-Kommando nur auf der Identifikation laufen lassen, können wir sie zusammenfassen. Wenn wir das Kommando auf der Kombination von Identifikation und dynamischem Bezeichner ausführen würden, würde es viel mehr unterschiedliche Zeilen retournieren und obige Auswertung wäre unmöglich. Um die Auswertung also wirklich zu vereinfachen müssen wir die dynamischen Bezeichnungen eliminieren. Hier ein neues Set mit zusätzlichen *Aliasen*.
 
@@ -543,10 +548,10 @@ Dieses Kommando kann je nach Rechnerleistung einige Sekunden oder sogar Minuten 
 alias melidmsg='grep -o "\[id [^]]*\].*\[msg [^]]*\]" | sed -e "s/\].*\[/] [/" | cut -b6-11,19- | tr -d \" | tr -d \]'
 alias melidmsg_nototal='grep -o "\[id [^]]*\].*\[msg [^]]*\]" | sed -e "s/\].*\[/] [/" | cut -b6-11,19- | tr -d \] | sed -e "s/(Total .*/(Total ...) .../" | tr -d \"'
 alias melmsg_nototal='grep -o "\[msg [^]]*" | cut -d\" -f2 | sed -e "s/(Total .*/(Total ...) .../"'
-alias sucs='sort | uniq -c | sort -n'
 ```
+FIXME: Evtl nototal eliminieren
 
-Die Abkürzung *melidmsg* bringt einfach die Kombination *id* und *msg*. Falls weitere Werte zwischen den beiden Einträgen stehen, werden diese gelöscht. Der Alias *melmsg_nototal* ist ähnlich, aber eben ohne den dynamischen Teil. Für *melmsg* führen wir auch eine Schwester *melmsg_nototal* ein. Schliesslich noch ein Alias, der nicht nur bei der Arbeit mit *ModSecurity* hilfreich ist: *sucs*; kurz für *sort | uniq -c | sort -n*. Damit lässt sich die Auswertung viel einfacher schreiben. Schneller ist sie dadurch nicht geworden, aber viel lesbarer:
+Die Abkürzung *melidmsg* bringt einfach die Kombination *id* und *msg*. Falls weitere Werte zwischen den beiden Einträgen stehen, werden diese gelöscht. Der Alias *melmsg_nototal* ist ähnlich, aber eben ohne den dynamischen Teil. Für *melmsg* führen wir auch eine Schwester *melmsg_nototal* ein: 
 
 ```
 $> cat logs/error.log | melidmsg_nototal  | sucs
@@ -619,10 +624,13 @@ $> cat logs/error.log | melidmsg_nototal  | sucs
 
 Mit unserem *Nikto*-Scan haben wir tausende von Alarmen losgetreten. Sie waren wohl berechtigt. Anders sieht es im normalen Einsatz von *ModSecurity* aus: Eine normale Installation wird je nach Applikation ebenfalls sehr viele Alarme sehen und erfahrungsgemäss sind die meisten Fehlalarme. Die Konfiguration muss zunächst justiert werden, um einen sauberen Betrieb sicher zu stellen. Was wir erreichen möchten ist eine hohe Trennschärfe. Wir wollen *ModSecurity* so konfigurieren, dass die Engine genau zwischen legitimen Anfragen und Angriffen zu unterscheiden weiss.
 
-Fehlalarme sind in beide Richtungen möglich. Angriffe, welche nicht erkannt werden, nennt man *False Negative*. Die *Core-Rules* sind streng und achten darauf, *False Negatives* klein zu halten. Ein Angreifer muss schon sehr viel Grips investieren, um am Regelwerk vorbeizukommen. Diese Strenge führt leider dazu, dass auch erwünschte Anfragen an den Webserver zu Alarmen führen. Man nennt dies *False Positive* und davon gibt es sehr viele. Gemeinhin ist es so, dass man bei niedriger Trennschärfe entweder viele *False Negatives* erhält, oder viele *False Positives*. Die *False Negatives* zu reduzieren führt zu einer Erhöhung *False Positives*. Die beiden Werte hängen eng miteinander zusammen. Wir müssen die Trennschärfe erhöhen um, die *False Positives* reduzieren zu können, ohne dass die *False Negatives* zunehmen. Dies erreichen wir, indem wir das Regelwerk punktuell nachjustieren. Zunächst benötigen wir aber ein klares Bild, der gegenwärtigen Situation: Wie viele *False Positives* sind vorhanden und welche Regeln werden in welchem Kontext verletzt. Wir benötigen auch einen Plan, oder ein Ziel. Wie viele *False Positives* wollen wir dem System noch zugestehen? Sie auf null zu reduzieren wird uns nur sehr schwer gelingen, aber wir können mit Prozentzahlen arbeiten. Ein mögliches Ziel wäre: 99,99% der legitimen Anfragen sollen ohne Blockierung passieren dürfen. Das ist realistisch, bedeutet aber je nach Applikation einigen Aufwand.
+Fehlalarme sind in beide Richtungen möglich. Angriffe, welche nicht erkannt werden, nennt man *False Negative*. Die *Core-Rules* sind streng und achten darauf, *False Negatives* klein zu halten. Ein Angreifer muss schon sehr viel Grips investieren, um am Regelwerk vorbeizukommen. Diese Strenge führt leider dazu, dass auch erwünschte Anfragen an den Webserver zu Alarmen führen. Man nennt dies *False Positive* und davon gibt es sehr viele. Gemeinhin ist es so, dass man bei niedriger Trennschärfe entweder viele *False Negatives* erhält, oder viele *False Positives*. Die *False Negatives* zu reduzieren führt zu einer Erhöhung *False Positives*. Die beiden Werte hängen also eng miteinander zusammen. 
+
+Diese Verbindung müssen wir überwinden: Wir wollen die Trennschärfe erhöhen, um die *False Positives* reduzieren zu können, ohne dass die *False Negatives* zunehmen. Dies erreichen wir, indem wir das Regelwerk punktuell nachjustieren. Zunächst benötigen wir aber ein klares Bild, der gegenwärtigen Situation: Wie viele *False Positives* sind vorhanden und welche Regeln werden in welchem Kontext verletzt. Wir benötigen auch einen Plan, oder ein Ziel. Wie viele *False Positives* wollen wir dem System noch zugestehen? Sie auf null zu reduzieren wird uns nur sehr schwer gelingen, aber wir können mit Prozentzahlen arbeiten. Ein mögliches Ziel wäre: 99,99% der legitimen Anfragen sollen ohne Blockierung passieren dürfen. Das ist realistisch, bedeutet aber je nach Applikation einigen Aufwand.
 
 Um ein solches Ziel zu erreichen, benötigen wir ein, zwei Hilfsmittel, die uns bei der Standort-Bestimmung helfen. Konkret geht es darum herauszufinden, welche *Anomaly-Scores* die verschiedenen Anfragen an den Server erreicht haben und welche Regeln denn tatsächlich verletzt wurden. Wir haben das *LogFormat* so angepasst, dass die *Anomaly-Scores* sich einfach aus dem *Access-Log* herauslesen lassen. Es geht nun darum, diese Daten in geeigneter Form darzustellen.
 
+FIXME: Testlog aus anderer Anleitung
 Zu Übungszwecken habe ich unter <a href="./labor-06_access_10000.log">labor-06_access_10000.log</a> ein Beispiel-Logfile mit 10'000 Einträgen bereit gestellt. Es stammt von einem richtigen Server, die IP-Adressen, Servername und Pfade wurden aber vereinfacht, respektive umgeschrieben. Die für unsere Auswertung notwendigen Informationen sind aber nach wie vor vorhanden. Schauen wir uns die Verteilung der *Anomaly-Scores* einmal an:
 
 ```
@@ -714,6 +722,8 @@ Reqs with outgoing score of   5 |      2 |   0.0200% | 100.0000% |   0.0000%
 Average:   0.0018        Median   0.0000         Standard deviation   0.0905
 ```
 
+FIXME: New output
+
 Das Skript gliedert die eingehenden und die ausgehenden *Anomaly-Scores*. Zunächst werden die eingehenden behandelt. Zunächst beschreibt eine Zeile, wie oft ein leerer *Anomaly-Score* gefunden wurde (*empty incoming score*). In unserem Fall war das nie der Fall. Dann folgt die Aussage zum *score 0*: 9967 Anfragen. Dies entspricht einer Abdeckung von 99.67%. 0.33% hatten einen höheren *Anomaly-Score.* Wir haben oben definiert, dass wir erreichen wollen, dass 99.99% der Anfragen den Server passieren können. Davon trennen uns also noch 0.32% respektive 32 Anfragen. Der nächste im Datenbestand vorkommende *Anomaly-Score* ist 4. Er kommt drei Mal vor, also 0.03%. Die Requests bis und mit einem *Score* von 4 decken 99.70% der Anfragen ab. Nehmen wir den *Score* 5 hinzu, erreichen wir eine Abdeckung von 99.85%. Erst unter Einbezug der Anfragen bis und mit einem *Score* von 20 gelangen wir zur gewünschten Abdeckung. Auf unserem System möchten wir Anfragen mit einem *Score* von 20 aber auf jeden Fall blockieren. Vermutlich liegen *False Positives* vor. Diese gilt es nun sowohl für die eingehenden Anfragen, wie für die Antworten (wo 99.96% der Anfragen problemlos durchliefen), auszumerzen.
 
 ###Schritt 6: Fehlalarme Unterdrücken: Einzelne Regeln Ausschalten
@@ -724,7 +734,7 @@ Wir haben oben die Liste der Alarme gesehen, welche wir mit dem Security Scanner
 
 In unserem Konfigurationsfile haben wir zwei Positionen markiert an dem *Ignore Rules* platziert werden sollen. Ein Mal vor den *Core Rules*, ein zweites Mal nach den *Core Rules*:
 
-```
+```bash
 # === ModSecurity Ignore Rules Before Core Rules Inclusion; order by id of ignored rule (ids: 10000-49999)
 
 ...
@@ -741,7 +751,7 @@ Include    conf/modsecurity-core-rules-latest/*.conf
 
 Wir unterdrücken die Regel *960015* im oberen Abschnitt. Bevor wir dies tun provozieren wir einen Alarm der Regel:
 
-```
+```bash
 $> curl -v -H "Accept: " http://localhost/index.html
 ...
 > GET /index.html HTTP/1.1
@@ -756,9 +766,10 @@ $> tail /apache/logs/error.log
 
 Wir haben *curl* angewiesen einen Request ohne den *Accept-Header* abzusetzen. Mit der *Verbose*-Option (*-v*) können wir dieses Verhalten schön kontrollieren. Das *Error-Log* zeigt dann auch tatsächlich den provozierten Alarm und auf der folgenden Zeile die Zusammenfassung des *Anomaly Scores*: Die Regelverletzung brachte dem Request 2 Punkte. Nun unterdrücken wir die Regel durch das Schreiben einer *Ignore-Rule*, welche wir im dazu vorgesehenen Konfigurationsteil vor dem *Core-Rules Include" positionieren:
 
-```
+```bash
 SecRule REQUEST_FILENAME "@beginsWith /" "phase:1,nolog,pass,id:10000,ctl:ruleRemoveById=960015"
 ```
+FIXME: SecAction?
 
 Wir definieren eine Regel, welche zunächst den Pfad überprüft. Mit der Bedingung auf dem Pfad *"/"* wird die Regel natürlich immer zutreffen und die Bedingung ist damit an sich überflüssig. Wir setzen Sie mit Vorteil dennoch in dieser Art, denn sie lässt sich leicht für verschiedene Pfade einschränken und wir können so immer *Ignore-Rules* mit demselben Muster verwenden. Wir definieren unsere Regel in der Phase 1, wir wollen nicht loggen, weisen ihr eine Identifikation zu Beginn unseres Blocks zu (*10000*). Schliesslich unterdrücken wir die Regel *960015*. Dies geschieht über eine Kontroll-Anweisung (*ctl:*).
 
@@ -774,7 +785,7 @@ Nun haben wir also eine Regel ausgeschaltet. Sei es für den kompletten Service 
 setvar:tx.inbound_anomaly_score=+%{tx.notice_anomaly_score}"
 ```
 
-Hier wird also der Transaktionsvariablen *inbound_anomaly_score* der Wert *tx.notice_anomaly_score* addiert. Wir haben die Möglichkeit diese Regel zu verändern. Die Addition können wir nicht unterdrücken, aber wir können sie mit einer Subtraktion neutralisieren. Dies bedeutet aber ein anderes Regelmuster in Form einer Regel, die nach der Einbindung der *Core-Rules* konfiguriert wird.
+Hier wird also der Transaktionsvariablen *inbound_anomaly_score* der Wert *tx.notice_anomaly_score* addiert. Wir haben die Möglichkeit diese Regel konfigurativ zu verändern, ohne das Regelfile zu berühren. Die Addition können wir nicht unterdrücken, aber wir können sie mit einer Subtraktion neutralisieren. Dies bedeutet aber ein anderes Regelmuster in Form einer Regel, die nach der Einbindung der *Core-Rules* konfiguriert wird.
 
 ```
 ...
@@ -783,13 +794,13 @@ SecRule REQUEST_FILENAME "@beginsWith /index.html" "chain,phase:2,t:none,log,pas
 ...
 ```
 
-Wir haben hier zwei Regeln vor uns, die mittels dem Kommando *chain* verbunden werden. Das heisst, dass die erste Regel eine Bedingung formuliert und die zweite Regel nur ausgeführt wird, wenn die erste Bedingung zutrifft. In der zweiten Regl wird eine weitere, etwas kryptische Bedingung formuliert. Konkret sehen wir nach, eine bestimmte Variable gesetzt ist, nämlich *TX:960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS*. Diese Transaktionsvariable wurde durch die Regel *960015* gesetzt und weist auf einen Treffer der Regel 960015 hin. Sollten wir diese Variable also vorfinden, dann bedeutet dies, dass die Regel 960015 angeschlagen hat. In diesem Fall reduzieren wir den *Inbound Anomaly Score* wieder um den Wert, um den die Regel ihn erhöht hat. Wir neutralisieren also den Effekt der Regel, ohne die Meldung selbst zu unterdrücken.
+Wir haben hier zwei Regeln vor uns, die mittels dem Kommando *chain* verbunden werden. Das heisst, dass die erste Regel eine Bedingung formuliert und die zweite Regel nur ausgeführt wird, wenn die erste Bedingung zutrifft. In der zweiten Regl wird eine weitere, etwas kryptische Bedingung formuliert. Konkret sehen wir nach, ob eine bestimmte Variable gesetzt ist, nämlich *TX:960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS*. Diese Transaktionsvariable wurde durch die Regel *960015* gesetzt und weist auf einen Treffer der Regel 960015 hin. Sollten wir diese Variable also vorfinden, dann bedeutet dies, dass die Regel 960015 angeschlagen hat. In diesem Fall reduzieren wir den *Inbound Anomaly Score* wieder um den Wert, um den die Regel ihn erhöht hat. Wir neutralisieren also den Effekt der Regel, ohne die Meldung selbst zu unterdrücken.
 
 FIXME: What if a rule is triggered multiple times. How do we ignore the counting multiple times.
 
 Im *Error-Log* ergibt das nachher für den oben bereits vorgestellen *curl-*Aufruf folgende zwei Einträge:
 
-```
+```bash
 [Mon Dec 16 09:37:11 2013] [error] [client 127.0.0.1] ModSecurity: Warning. Operator EQ matched 0 at REQUEST_HEADERS. [file "/apache/conf/modsecurity-core-rules-latest/modsecurity_crs_21_protocol_anomalies.conf"] [line "47"] [id "960015"] [rev "1"] [msg "Request Missing an Accept Header"] [severity "NOTICE"] [ver "OWASP_CRS/2.2.8"] [maturity "9"] [accuracy "9"] [tag "Local Lab Service"] [tag "OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER_ACCEPT"] [tag "WASCTC/WASC-21"] [tag "OWASP_TOP_10/A7"] [tag "PCI/6.5.10"] [hostname "localhost"] [uri "/index.html"] [unique_id "Uq67t38AAQEAAHuLAU0AAAAD"]
 [Mon Dec 16 09:37:11 2013] [error] [client 127.0.0.1] ModSecurity: Warning. Operator GE matched 1 at TX. [file "/apache/conf/httpd.conf_apachetut_7"] [line "187"] [id "50001"] [msg "Adjusting inbound anomaly score for rule 960015"] [tag "Local Lab Service"] [hostname "localhost"] [uri "/index.html"] [unique_id "Uq67t38AAQEAAHuLAU0AAAAD"]
 ```
@@ -808,7 +819,7 @@ $> sudo egrep "Set variable.*960015" logs/modsec_debug.log
 
 Die hier als *tx.960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS* muss in einer Regel als *TX:960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS* geschrieben werden; genau so, wie wir es oben gemacht haben. Das vorgestellte *&* bdeutet, dass nicht die Variable selbst untersucht wird, sondern die Anzahl der Variablen mit diesem Namen: Also *1*. Den genauen Wert, den wir im *Inbound Anomaly Score* wieder abziehen müssen, finden wir ebenfalls im *Debug Log*:
 
-```
+```bash
 $> sudo egrep -B9 "Set variable.*960015" logs/modsec_debug.log
 [16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/index.html][9] Setting variable: tx.anomaly_score=+%{tx.notice_anomaly_score}
 [16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/index.html][9] Recorded original collection variable: tx.anomaly_score = "0"
@@ -824,17 +835,20 @@ $> sudo egrep -B9 "Set variable.*960015" logs/modsec_debug.log
 
 Wir sehen hier im Detail, wie *ModSecurity* seine arithmetischen Funktionen durchführt. Interessant ist die erste Zeile, in der dargelegt wird, wie der Anomaly Score erhöht wird. Er wird um *tx.notice_anomaly_score* erhöht. Diesen Wert würden wir auch in der Definition der *Core Rules* finden, hier ist er aber leichter zu lesen.
 
+Wir sehen also, wir können *ModSecurity* instruieren, die Core Rules anschlagen zu lassen, ohne den Score hochzuzählen. Ich benütze diese Technik in der Praxis aber nicht und kämpfe deshalb mit der eingangs des Kapitels beschriebenen Blindheit.
+
 ###Schritt 7: Fehlalarme Unterdrücken: Einzelne Regeln für bestimmte Parameter Ausschalten
 
-Bislang haben wir einzelne Regeln für bestimmte Pfade unterdrückt. In der Praxis gibt einen zweiten Fall, der weit stärker verbreitet ist: Ein einzelner Parameter löst unabhängig vom Pfad Regelverletzungen aus. Man müsste die Regel also für den Grundpfad */* ausschalten - oder man schafft es, die Regel für den betreffenden Parameter auszuschalten. Das geht in der einfachen Variante so:
+Bislang haben wir einzelne Regeln für bestimmte Pfade unterdrückt. In der Praxis gibt einen zweiten Fall, der weit stärker verbreitet ist: Ein einzelner Parameter, typischerweise ein Cookie, löst unabhängig vom Pfad Regelverletzungen aus. Man müsste die Regel also für den Grundpfad */* ausschalten - oder man schafft es, die Regel für den betreffenden Parameter auszuschalten. Das geht in der einfachen Variante so:
 
+```bash
+SecRuleUpdateTargetById 981242 "!REQUEST_COOKIES:basket_id"
 ```
-SecRuleUpdateTargetById 981242 "!ARGS:debug"
-```
+FIXME: check
 
-Dieses Kommando, das nach dem Laden der *Core Rules* konfiguriert werden muss, passt die sogenannte *Target List* der Regel 981242 an. Das heisst, dass der *Request Parameter "debug"* nicht mehr länger durch die Regel 981242 untersucht werden soll. Es stellt sich dasselbe Problem wie bei den Pfaden: Wir werden durch diese Direktive blind in Bezug auf Regel 981242 und den Parameter *debug*. Besser ist es, wenn wir den Weg über die Transaktionsvariable gehen:
+Dieses Kommando, das nach dem Laden der *Core Rules* konfiguriert werden muss, passt die sogenannte *Target List* der Regel 981242 an. Das heisst, dass das Cookie *basket_id* nicht mehr länger durch die Regel 981242 untersucht werden soll. Es stellt sich dasselbe Problem wie bei den Pfaden: Wir werden durch diese Direktive blind in Bezug auf Regel 981242 und das Cookie *basket_id*. Besser ist es, wenn wir den Weg über die Transaktionsvariable gehen:
 
-```
+```bash
 $> sudo egrep -B7 "Set variable.*981242" /tmp/modsec_debug.log 
 ...
 [16/Dec/2013:10:53:28 +0100] [localhost/sid#2528170][rid#7f921c018e40][/index.html][9] Resolved macro %{tx.critical_anomaly_score} to: 5
@@ -845,19 +859,19 @@ $> sudo egrep -B7 "Set variable.*981242" /tmp/modsec_debug.log
 
 Der *Anomaly Score* wird also um *tx.critical_anomaly_score* erhöht und das Zuschlagen der Regel lässt sich am Vorhandensein der Variable *tx.981242-Detects classic SQL injection probings 1/2-OWASP_CRS/WEB_ATTACK/SQLI-ARGS:debug* ablesen. Leider besitzt diese Variable Leerzeichen im Namen, was *ModSecurity* verwirren kann. Wenn wir auf die Variable zugreifen möchten, dann können wir das nur, indem wir den Weg über einen regulären Ausdruck gehen:
 
-```
+```bash
 SecRule REQUEST_FILENAME "@beginsWith /index.html" "chain,phase:2,t:none,log,pass,id:50002,msg:'Adjusting inbound anomaly score for rule 960015'"
-   SecRule "&TX:/^981242.*-ARGS:debug$/" "@ge 1" "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
+   SecRule "&TX:/^981242.*-REQUEST_COOKIES:basket_id$/" "@ge 1" "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
 ```
 
 Dies bringt das gewünschte Resultat im *Error Log*:
 
-```
+```bash
 [Mon Dec 16 11:04:50 2013] [error] [client 127.0.0.1] ModSecurity: Warning. Pattern match "(?i:(?:[\\"'`\\xc2\\xb4\\xe2\\x80\\x99\\xe2\\x80\\x98]\\\\s*?(x?or|div|like|between|and)\\\\s*?[\\"'`\\xc2\\xb4\\xe2\\x80\\x99\\xe2\\x80\\x98]?\\\\d)|(?:\\\\\\\\x(?:23|27|3d))|(?:^.?[\\"'`\\xc2\\xb4\\xe2\\x80\\x99\\xe2\\x80\\x98]$)|(?:(?:^[\\"'`\\xc2\\xb4\\xe2\\x80\\x99\\xe2\\x80\\x98\\\\\\\\]*?(?:[\\\\ ..." at ARGS:debug. [file "/apache/conf/modsecurity-core-rules-latest/modsecurity_crs_41_sql_injection_attacks.conf"] [line "237"] [id "981242"] [msg "Detects classic SQL injection probings 1/2"] [data "Matched Data: ' found within ARGS:debug: '"] [severity "CRITICAL"] [tag "Local Lab Service"] [tag "OWASP_CRS/WEB_ATTACK/SQL_INJECTION"] [hostname "localhost"] [uri "/index.html"] [unique_id "Uq7QQn8AAQEAAAWYANcAAAAA"]
 [Mon Dec 16 11:04:50 2013] [error] [client 127.0.0.1] ModSecurity: Warning. Operator GE matched 1 at TX. [file "/apache/conf/httpd.conf_apachetut_7"] [line "190"] [id "50002"] [msg "Adjusting inbound anomaly score for rule 981242"] [tag "Local Lab Service"] [hostname "localhost"] [uri "/index.html"] [unique_id "Uq7QQn8AAQEAAAWYANcAAAAA"]
 ```
 
-Mit den verschiedenen Techniken der Konstruktion von *Ignore-Rules* besitzen wir nun das nötige Handwerkszeug, um die *False Positives* eine nach der anderen abzuarbeiten. Um zügig arbeiten zu können braucht es etwas Erfahrung. Es ist aber auch sinnvoll, eine bewusste Entscheidug zu treffen, mit welchem Rezept man arbeiten möchte. Technisch gesehen ist die Variante über die Manipulation des *Anomaly Scores* die bevorzugte Vorgehensweise. Allerdings ist sie nur schwer zu lesen und auch der Schreib- und Testaufwand überwiegt gegenüber den einfacheren Varianten, obschon diese wiederum den beschriebenen Nachteil mit sich bringen, dass man die Meldungen zur Regel unterdrückt.
+Mit den verschiedenen Techniken der Konstruktion von *Ignore-Rules* besitzen wir nun das nötige Handwerkszeug, um die *False Positives* eine nach der anderen abzuarbeiten. Um zügig arbeiten zu können braucht es etwas Erfahrung. Es ist aber auch sinnvoll, eine bewusste Entscheidug zu treffen, mit welchem Rezept man arbeiten möchte. Technisch gesehen ist die Variante über die Manipulation des *Anomaly Scores* die bevorzugte Vorgehensweise. Allerdings ist sie nur schwer zu lesen und auch der Schreib- und Testaufwand überwiegt gegenüber den einfacheren Varianten, obschon diese wiederum den beschriebenen Nachteil mit sich bringen, dass man sämtliche Meldungen zur Regel unterdrückt.
 
 ###Schritt 8: Anomalie-Limite Nachjustieren
 
