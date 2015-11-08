@@ -31,7 +31,7 @@ owasp-modsecurity-crs-2.2.9/INSTALL
 owasp-modsecurity-crs-2.2.9/LICENSE
 owasp-modsecurity-crs-2.2.9/README.md
 ...
-$> sudo mkdir /opt/core-rules-2.2.9
+$> sudo mkdir /opt/modsecurity-core-rules-2.2.9
 $> sudo chown `whoami` /opt/modsecurity-core-rules-2.2.9
 $> cp owasp-modsecurity-crs-2.2.9/base_rules/* /opt/modsecurity-core-rules-2.2.9
 $> sudo ln -s /opt/modsecurity-core-rules-2.2.9 /modsecurity-core-rules
@@ -244,17 +244,19 @@ SecAction "id:'90013',phase:4,pass,nolog,setvar:TX.ModSecTimestamp4end=%{DURATIO
 SecAction "id:'90014',phase:5,pass,nolog,setvar:TX.ModSecTimestamp5end=%{DURATION}"
 
 
-# === ModSec Performance Calculations and Variable Export (ids: 90100 - 90199)
+# === ModSec performance calculations and variable export (ids: 90100 - 90199)
 
-SecAction "id:'90110',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=%{PERF_PHASE1}"
-SecAction "id:'90111',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=+%{PERF_PHASE2}"
-SecAction "id:'90112',phase:5,pass,nolog,setvar:TX.perf_application=%{TX.ModSecTimestamp3start}"
-SecAction "id:'90113',phase:5,pass,nolog,setvar:TX.perf_application=-%{TX.ModSecTimestamp2end}"
-SecAction "id:'90114',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=%{PERF_PHASE3}"
-SecAction "id:'90115',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=+%{PERF_PHASE4}"
-SecAction "id:'90116',phase:5,pass,nolog,setenv:ModSecAnomalyScoreIn=%{TX.inbound_anomaly_score},setenv:ModSecAnomalyScoreOut=%{TX.outbound_anomaly_score}"
-
-FIXME: Take the new version from labor-05
+SecAction "id:'90100',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=%{PERF_PHASE1}"
+SecAction "id:'90101',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=+%{PERF_PHASE2}"
+SecAction "id:'90102',phase:5,pass,nolog,setvar:TX.perf_application=%{TX.ModSecTimestamp3start}"
+SecAction "id:'90103',phase:5,pass,nolog,setvar:TX.perf_application=-%{TX.ModSecTimestamp2end}"
+SecAction "id:'90104',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=%{PERF_PHASE3}"
+SecAction "id:'90105',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=+%{PERF_PHASE4}"
+SecAction "id:'90106',phase:5,pass,nolog,setenv:ModSecTimeIn=%{TX.perf_modsecinbound}"
+SecAction "id:'90107',phase:5,pass,nolog,setenv:ApplicationTime=%{TX.perf_application}"
+SecAction "id:'90108',phase:5,pass,nolog,setenv:ModSecTimeOut=%{TX.perf_modsecoutbound}"
+SecAction "id:'90109',phase:5,pass,nolog,setenv:ModSecAnomalyScoreIn=%{TX.inbound_anomaly_score}"
+SecAction "id:'90110',phase:5,pass,nolog,setenv:ModSecAnomalyScoreOut=%{TX.outbound_anomaly_score}"
 
 SSLCertificateKeyFile   /etc/ssl/private/ssl-cert-snakeoil.key
 SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
@@ -335,14 +337,14 @@ $> nikto -h localhost
 + Target IP:          127.0.0.1
 + Target Hostname:    localhost
 + Target Port:        80
-+ Start Time:         2015-10-27 19:03:27
++ Start Time:         2015-11-08 08:33:59
 ---------------------------------------------------------------------------
 + Server: Apache
 + No CGI Directories found (use '-C all' to force check all possible dirs)
-+ ETag header found on server, inode: 2883787, size: 44, mtime: 0x3e9564c23b600
++ ETag header found on server, fields: 0x2d 0x432a5e4a73a80 
 + Allowed HTTP Methods: POST, OPTIONS, GET, HEAD 
 + 6448 items checked: 0 error(s) and 2 item(s) reported on remote host
-+ End Time:           2013-11-27 19:04:17 (50 seconds)
++ End Time:           2015-11-08 08:34:14 (15 seconds)
 ---------------------------------------------------------------------------
 + 1 host(s) tested
 ```
@@ -350,13 +352,12 @@ $> nikto -h localhost
 Dieser Scan sollte auf dem Server zahlreiche *ModSecurity-Alarme* ausgelöst haben. Sehen wir uns das *Apache Error-Log* einmal genauer an. In meinem Fall waren es gut 33'000 Einträge im Error-Log. Hier eine Beispielmeldung:
 
 ```bash
-[Tue Oct 27 14:03:32 2015] [error] [client 127.0.0.1] ModSecurity: Warning. Pattern match "(fromcharcode|alert|eval)\\\\s*\\\\(" at ARGS:ctr. [file "/apache/conf/modsecurity-core-rules-latest/modsecurity_crs_41_xss_attacks.conf"] [line "391"] [id "973307"] [rev "2"] [msg "XSS Attack Detected"] [data "Matched Data: alert( found within ARGS:ctr: \\x22>&lt;script&gt;alert('vulnerable')</script>"] [ver "OWASP_CRS/2.2.8"] [maturity "8"] [accuracy "8"] [tag "Local Lab Service"] [tag "OWASP_CRS/WEB_ATTACK/XSS"] [tag "WASCTC/WASC-8"] [tag "WASCTC/WASC-22"] [tag "OWASP_TOP_10/A2"] [tag "OWASP_AppSensor/IE1"] [tag "PCI/6.5.1"] [hostname "localhost"] [uri "/SiteServer/Knowledge/Default.asp"] [unique_id "UpScJH8AAQEAAGCVA-AAAAAB"]
+[2015-11-07 08:34:13.816811] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Pattern match "(fromcharcode|alert|eval)\\\\s*\\\\(" at ARGS:how_many_back. [file "/modsecurity-core-rules/modsecurity_crs_41_xss_attacks.conf"] [line "391"] [id "973307"] [rev "2"] [msg "XSS Attack Detected"] [data "Matched Data: alert( found within ARGS:how_many_back: \\x22><script>alert(1)</script>"] [ver "OWASP_CRS/2.2.9"] [maturity "8"] [accuracy "8"] [tag "Local Lab Service"] [tag "OWASP_CRS/WEB_ATTACK/XSS"] [tag "WASCTC/WASC-8"] [tag "WASCTC/WASC-22"] [tag "OWASP_TOP_10/A2"] [tag "OWASP_AppSensor/IE1"] [tag "PCI/6.5.1"] [hostname "localhost"] [uri "/scripts/message/message_dialog.tml"] [unique_id "Vj2pdX8AAQEAABa9vbcAAAAU"]
 ```
-FIXME apache 2.4 format
 
-FIXME: has not this been explained in labor-05
+Das *Error-Log* wurde bereits in der vorangegangenen Anleitung beschrieben. Die Meldungen, welche durch die Core-Rules ausgelöst werden, bringen gegenüber den Standard-Meldungen noch weitere Informationen, so dass es sich anbietet, das Logformat noch einmal zu besprechen.
 
-Die *ModSecurity*-Meldungen besitzen ein bestimmtes Format. Es folgt immer dem gleichen Muster. Den Beginn machen die apache-spezifischen Teile, also der Zeitstempel und der Schweregrad der Meldung aus Sicht des Apache Servers. Die *ModSecurity*-Meldungen werden immer auf Stufe *error* abgesetzt. Dann folgt die IP Adresse des Clients. Darauf ein Hinweis auf ModSecurity. Hier ist es sehr wichtig zu wissen, dass die Meldung *ModSecurity: Warning.* wirklich nur eine Warnung darstellt. Wenn das Modul in den Verkehr eingreift, dann schreibt es *ModSecurity: Access denied with code ...*. Auf diese Unterscheidung ist Verlass. Ein *Warning* kann auf den Client also keine direkten Auswirkungen haben.
+Den Beginn der Zeile machen die apache-spezifischen Teile, also der Zeitstempel und der Schweregrad der Meldung aus Sicht des Apache Servers. Leider bleiben einige Felder leer (-> "-"). Dies liegt an einem Fehler in *ModSecurity*, der in der nächsten Version behoben werden sein soll. Die *ModSecurity*-Meldungen werden immer auf Stufe *error* abgesetzt. Dann folgt die IP Adresse des Clients. Darauf ein Hinweis auf ModSecurity. Hier ist es sehr wichtig zu wissen, dass die Meldung *ModSecurity: Warning.* wirklich nur eine Warnung darstellt. Wenn das Modul in den Verkehr eingreift, dann schreibt es *ModSecurity: Access denied with code ...*. Auf diese Unterscheidung ist Verlass. Ein *Warning* kann auf den Client also keine direkten Auswirkungen haben.
 
 Wie geht es nun weiter? Es folgt ein Hinweis auf das Muster, das in der Anfrage gefunden wurde. Im Anfragen-Argument *ctr* wurde ein bestimmtes Muster eines regulären Ausdrucks gefunden. Nun folgen eine Reihe von Parametern, die immer dasselbe Muster besitzen: Sie stehen in eckigen Klammern und besitzen einen eigenen Bezeichner. Zunächst der Bezeichner *file*. Er zeigt uns, in welchem File die Regel definiert wurde, die nun den Alarm auslöste. Dem folgt mit *line* die Zeilennummer in dieser Datei. Wichtiger scheint mir der Parameter *id*. Jede Regel in *ModSecurity* besitzt eine Identifikationsnummer und ist damit eindeutig identifizierbar. Darauf folgt mit *rev* ein Hinweis auf die Revisionsnummer der Regel. In den Core-Rules wird mit diesem Parameter ausgedrückt, wie oft die Regel schon revidiert wurde. Kommt es also zu einer Regeländerung wird *rev* um eins erhöht. Die *msg*, kurz für *Message*, beschreibt den Typ des identifizierten Angriffs. Bei *data* wird der relevante Teil der Anfrage, also der Parameter *ctr* gezeigt: Es handelt sich in meinem Beispiel um einen offensichtlichen Fall von *Cross Site Scripting* (XSS).
 
@@ -545,11 +546,11 @@ Damit lässt sich arbeiten. Aber es bietet sich wohl an, den *One-Liner* genauer
 Dieses Kommando kann je nach Rechnerleistung einige Sekunden oder sogar Minuten dauern. Man könnte nun meinen, es wäre schlauer einen zusätzlichen Alias zu definieren, um Identifikation und Beschreibung der Regel in einem Schritt zu eruieren. Dies führte uns aber auf den Holzweg, denn die Regel 981203 hat eine Bezeichnung, die mit dem *Score* dynamische Teile enthält. Da wir das *Uniq*-Kommando nur auf der Identifikation laufen lassen, können wir sie zusammenfassen. Wenn wir das Kommando auf der Kombination von Identifikation und dynamischem Bezeichner ausführen würden, würde es viel mehr unterschiedliche Zeilen retournieren und obige Auswertung wäre unmöglich. Um die Auswertung also wirklich zu vereinfachen müssen wir die dynamischen Bezeichnungen eliminieren. Hier ein neues Set mit zusätzlichen *Aliasen*.
 
 ```
-alias melidmsg='grep -o "\[id [^]]*\].*\[msg [^]]*\]" | sed -e "s/\].*\[/] [/" | cut -b6-11,19- | tr -d \" | tr -d \]'
-alias melidmsg_nototal='grep -o "\[id [^]]*\].*\[msg [^]]*\]" | sed -e "s/\].*\[/] [/" | cut -b6-11,19- | tr -d \] | sed -e "s/(Total .*/(Total ...) .../" | tr -d \"'
-alias melmsg_nototal='grep -o "\[msg [^]]*" | cut -d\" -f2 | sed -e "s/(Total .*/(Total ...) .../"'
+alias melidmsg='grep -o "\[id [^]]*\].*\[msg [^]]*\]" | sed -e "s/\].*\[/] [/" | cut -b6-11,19- | tr -d \] | sed -e "s/(Total .*/(Total ...) .../" | tr -d \"'
+alias melidmsg_total='grep -o "\[id [^]]*\].*\[msg [^]]*\]" | sed -e "s/\].*\[/] [/" | cut -b6-11,19- | tr -d \" | tr -d \]'
 ```
-FIXME: Evtl nototal eliminieren
+
+FIXME: Die Eliminierung des Total im obigen Alias genauer erklären.
 
 Die Abkürzung *melidmsg* bringt einfach die Kombination *id* und *msg*. Falls weitere Werte zwischen den beiden Einträgen stehen, werden diese gelöscht. Der Alias *melmsg_nototal* ist ähnlich, aber eben ohne den dynamischen Teil. Für *melmsg* führen wir auch eine Schwester *melmsg_nototal* ein: 
 
@@ -630,101 +631,92 @@ Diese Verbindung müssen wir überwinden: Wir wollen die Trennschärfe erhöhen,
 
 Um ein solches Ziel zu erreichen, benötigen wir ein, zwei Hilfsmittel, die uns bei der Standort-Bestimmung helfen. Konkret geht es darum herauszufinden, welche *Anomaly-Scores* die verschiedenen Anfragen an den Server erreicht haben und welche Regeln denn tatsächlich verletzt wurden. Wir haben das *LogFormat* so angepasst, dass die *Anomaly-Scores* sich einfach aus dem *Access-Log* herauslesen lassen. Es geht nun darum, diese Daten in geeigneter Form darzustellen.
 
-FIXME: Testlog aus anderer Anleitung
-Zu Übungszwecken habe ich unter <a href="./labor-06_access_10000.log">labor-06_access_10000.log</a> ein Beispiel-Logfile mit 10'000 Einträgen bereit gestellt. Es stammt von einem richtigen Server, die IP-Adressen, Servername und Pfade wurden aber vereinfacht, respektive umgeschrieben. Die für unsere Auswertung notwendigen Informationen sind aber nach wie vor vorhanden. Schauen wir uns die Verteilung der *Anomaly-Scores* einmal an:
+In der Anleitung 4 haben wir mit einem Beispiel-Logfile mit 10'000 Einträgen gearbeitet. Dieses Logfile ziehen wir hier nun erneut heran: [labor-04-example-access.log](https://github.com/Apache-Labor/labor/blob/master/labor-04/labor-04-example-access.log). Die Datei stammt von einem richtigen Server, die IP-Adressen, Servername und Pfade wurden aber vereinfacht, respektive umgeschrieben. Die für unsere Auswertung notwendigen Informationen sind aber nach wie vor vorhanden. Schauen wir uns die Verteilung der *Anomaly-Scores* einmal an:
 
 ```
-$> egrep -o "[0-9]+ [0-9]+$" labor-06_access_10000.log | cut -d\  -f1 | sucs
-      1 45
-      2 20
-      3 4
-      4 15
-      8 10
-     15 5
-   9967 0
-$> egrep -o "[0-9]+$" labor-06_access_10000.log | sucs
-      2 4
-      2 5
-   9996 0
+$> egrep -o "[0-9-]+ [0-9-]+$" labor-04-example-access.log | cut -d\  -f1 | sucs
+      1 21
+      2 41
+      8 5
+     11 2
+     17 3
+     41 -
+   9920 0
+$> egrep -o "[0-9-]+$" labor-04-example-access.log | sucs
+     41 -
+   9959 0
 ```
 
-Die erste Befehlszeile liest den eingehenden *Anomaly-Score* aus. Er ist auf der *Access-Log-Zeile* der zweithinterste Wert. Wir nehmen die beiden hintersten Werte (*egrep*) und schneiden dann den ersten aus (*cut*). Dann sortieren wir die Resultate mit dem oben eingerichteten Alias *sucs*. Der ausgehende *Anomaly-Score* ist der hinterste Wert der *Log-Zeile*. Der *cut-*Befehl entfällt deshalb auf der zweiten Befehlszeile.
+Die erste Befehlszeile liest den eingehenden *Anomaly-Score* aus. Er ist auf der *Access-Log-Zeile* der zweithinterste Wert. Wir nehmen die beiden hintersten Werte (*egrep*) und schneiden dann den ersten aus (*cut*). Dann sortieren wir die Resultate mit dem bereits bekannten Alias *sucs*. Der ausgehende *Anomaly-Score* ist der hinterste Wert der *Log-Zeile*. Der *cut-*Befehl entfällt deshalb auf der zweiten Befehlszeile.
 
-Diese Resultate geben uns eine Idee der Situation: Die allermeisten Anfragen passieren das *ModSecurity-Modul* ohne Regelverletzung. Es kommt ein Score von 45 hoch, was neun schweren Regelverletzungen entspricht, was in der Praxis durchaus gängig ist. Auch der deutliche Überhang von Regelverletzungen der Anfragen im Gegensatz zu den eher seltenen Regelverletzungen der Antworten ist typisch. So eine richtige Idee über die nötigen *Tuning-Schritte* gibt uns dies aber noch nicht. Um diese Information in geeigneter Form darzustellen habe ich ein Skript vorbereitet, das die *Anomaly-Scores* auswertet: <a href="./modsec-positive-stats.rb">modsec-positive-stats.rb</a>. Das Skript auf das Logfile angewendet bringt folgendes Resultat:
+Diese Resultate geben uns eine Idee der Situation: Die allermeisten Anfragen passieren das *ModSecurity-Modul* ohne Regelverletzung. Es kommt ein Score von 41 zwei Mal vor, was zahlreichen schweren Regelverletzungen entspricht. Das ist in der Praxis durchaus gängig. Bei den Scores in den Antworten des Servers haben wir in 41 Fällen gar keinen Score erhalten. Dabei handelt es sich um Logeinträge von leeren Requests, wo zwar eine Verbindund mit dem Client zu Stande kam, aber kein Request abgesetzt wurde. Dieser Möglichkeit haben wir im regulären Ausdruck beim *egrep* jeweils Rechnung getragen und den Default-Wert "-" mitberücksichtigt. Neben diesen leeren Einträgen gab es gar keine anderen Auffälligkeiten. Das ist typisch. Wir werden in aller Regel zahlreiche Verletzungen bei den Anfragen und sehr wenige Alarme bei den Antworten sehen.
+
+So eine richtige Idee über die nötigen *Tuning-Schritte* gibt uns dies aber noch nicht. Um diese Information in geeigneter Form darzustellen habe ich ein Skript vorbereitet, das die *Anomaly-Scores* auswertet: [modsec-positive-stats.rb](https://github.com/Apache-Labor/labor/blob/master/bin/modsec-positive-stats.rb). Das Skript auf das Logfile angewendet bringt folgendes Resultat:
 
 ```
-$> cat labor-06_access_10000.log  | egrep -o "[0-9]+ [0-9]+$" | tr " " ";" | ./modsec-positive-stats.rb
+$> cat labor-04-example-access.log  | egrep -o "[0-9-]+ [0-9-]+$" | tr " " ";" | modsec-positive-stats.rb
 INCOMING                     Num of req. | % of req. |  Sum of % | Missing %
 Number of incoming req. (total) |  10000 | 100.0000% | 100.0000% |   0.0000%
 
-Empty or miss. incoming score   |      0 |   0.0000% |   0.0000% | 100.0000%
-Reqs with incoming score of   0 |   9967 |  99.6700% |  99.6700% |   0.3300%
-Reqs with incoming score of   1 |      0 |   0.0000% |  99.6700% |   0.3300%
-Reqs with incoming score of   2 |      0 |   0.0000% |  99.6700% |   0.3300%
-Reqs with incoming score of   3 |      0 |   0.0000% |  99.6700% |   0.3300%
-Reqs with incoming score of   4 |      3 |   0.0300% |  99.7000% |   0.3000%
-Reqs with incoming score of   5 |     15 |   0.1500% |  99.8500% |   0.1500%
-Reqs with incoming score of   6 |      0 |   0.0000% |  99.8500% |   0.1500%
-Reqs with incoming score of   7 |      0 |   0.0000% |  99.8500% |   0.1500%
-Reqs with incoming score of   8 |      0 |   0.0000% |  99.8500% |   0.1500%
-Reqs with incoming score of   9 |      0 |   0.0000% |  99.8500% |   0.1500%
-Reqs with incoming score of  10 |      8 |   0.0800% |  99.9300% |   0.0700%
-Reqs with incoming score of  11 |      0 |   0.0000% |  99.9300% |   0.0700%
-Reqs with incoming score of  12 |      0 |   0.0000% |  99.9300% |   0.0700%
-Reqs with incoming score of  13 |      0 |   0.0000% |  99.9300% |   0.0700%
-Reqs with incoming score of  14 |      0 |   0.0000% |  99.9300% |   0.0700%
-Reqs with incoming score of  15 |      4 |   0.0400% |  99.9700% |   0.0300%
+Empty or miss. incoming score   |     41 |   0.4100% |   0.4100% |  99.5900%
+Reqs with incoming score of   0 |   9920 |  99.2000% |  99.6100% |   0.3900%
+Reqs with incoming score of   1 |      0 |   0.0000% |  99.6100% |   0.3900%
+Reqs with incoming score of   2 |     11 |   0.1100% |  99.7200% |   0.2800%
+Reqs with incoming score of   3 |     17 |   0.1699% |  99.8900% |   0.1100%
+Reqs with incoming score of   4 |      0 |   0.0000% |  99.8900% |   0.1100%
+Reqs with incoming score of   5 |      8 |   0.0800% |  99.9700% |   0.0300%
+Reqs with incoming score of   6 |      0 |   0.0000% |  99.9700% |   0.0300%
+Reqs with incoming score of   7 |      0 |   0.0000% |  99.9700% |   0.0300%
+Reqs with incoming score of   8 |      0 |   0.0000% |  99.9700% |   0.0300%
+Reqs with incoming score of   9 |      0 |   0.0000% |  99.9700% |   0.0300%
+Reqs with incoming score of  10 |      0 |   0.0000% |  99.9700% |   0.0300%
+Reqs with incoming score of  11 |      0 |   0.0000% |  99.9700% |   0.0300%
+Reqs with incoming score of  12 |      0 |   0.0000% |  99.9700% |   0.0300%
+Reqs with incoming score of  13 |      0 |   0.0000% |  99.9700% |   0.0300%
+Reqs with incoming score of  14 |      0 |   0.0000% |  99.9700% |   0.0300%
+Reqs with incoming score of  15 |      0 |   0.0000% |  99.9700% |   0.0300%
 Reqs with incoming score of  16 |      0 |   0.0000% |  99.9700% |   0.0300%
 Reqs with incoming score of  17 |      0 |   0.0000% |  99.9700% |   0.0300%
 Reqs with incoming score of  18 |      0 |   0.0000% |  99.9700% |   0.0300%
 Reqs with incoming score of  19 |      0 |   0.0000% |  99.9700% |   0.0300%
-Reqs with incoming score of  20 |      2 |   0.0200% |  99.9900% |   0.0100%
-Reqs with incoming score of  21 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  22 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  23 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  24 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  25 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  26 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  27 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  28 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  29 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  30 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  31 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  32 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  33 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  34 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  35 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  36 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  37 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  38 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  39 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  40 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  41 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  42 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  43 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  44 |      0 |   0.0000% |  99.9900% |   0.0100%
-Reqs with incoming score of  45 |      1 |   0.0100% | 100.0000% |   0.0000%
+Reqs with incoming score of  20 |      0 |   0.0000% |  99.9700% |   0.0300%
+Reqs with incoming score of  21 |      1 |   0.0100% |  99.9800% |   0.0200%
+Reqs with incoming score of  22 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  23 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  24 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  25 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  26 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  27 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  28 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  29 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  30 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  31 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  32 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  33 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  34 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  35 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  36 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  37 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  38 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  39 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  40 |      0 |   0.0000% |  99.9800% |   0.0200%
+Reqs with incoming score of  41 |      2 |   0.0200% | 100.0000% |   0.0000%
 
-Average|   0.0312        Median   0.0000         Standard deviation   0.7027
+Average:   0.0217        Median   0.0000         Standard deviation   0.6490
 
 
 OUTGOING                     Num of req. | % of req. |  Sum of % | Missing %
 Number of outgoing req. (total) |  10000 | 100.0000% | 100.0000% |   0.0000%
 
-Empty or miss. outgoing score   |      0 |   0.0000% |   0.0000% | 100.0000%
-Reqs with outgoing score of   0 |   9996 |  99.9600% |  99.9600% |   0.0400%
-Reqs with outgoing score of   1 |      0 |   0.0000% |  99.9600% |   0.0400%
-Reqs with outgoing score of   2 |      0 |   0.0000% |  99.9600% |   0.0400%
-Reqs with outgoing score of   3 |      0 |   0.0000% |  99.9600% |   0.0400%
-Reqs with outgoing score of   4 |      2 |   0.0200% |  99.9800% |   0.0200%
-Reqs with outgoing score of   5 |      2 |   0.0200% | 100.0000% |   0.0000%
+Empty or miss. outgoing score   |     41 |   0.4100% |   0.4100% |  99.5900%
+Reqs with outgoing score of   0 |   9959 |  99.5900% | 100.0000% |   0.0000%
 
-Average:   0.0018        Median   0.0000         Standard deviation   0.0905
+Average:   0.0000        Median   0.0000         Standard deviation   0.0000
 ```
 
-FIXME: New output
+Das Skript gliedert die eingehenden und die ausgehenden *Anomaly-Scores*. Zunächst werden die eingehenden behandelt. Zunächst beschreibt eine Zeile, wie oft ein leerer *Anomaly-Score* gefunden wurde (*empty incoming score*). In unserem Fall war das wie vorhin gesehen 41 Mal der Fall. Dann folgt die Aussage zum *score 0*: 9920 Anfragen. Dies entspricht einer Abdeckung von 99.2%. Zusammen mit den leeren Scores ist das bereits eine Abdeckung von 99.61% (*Sum of %*). 0.39% hatten einen höheren *Anomaly-Score.* (*Missing %*). Wir haben oben definiert, dass wir erreichen wollen, dass 99.99% der Anfragen den Server passieren können. Davon trennen uns also noch 0.38% respektive 38 Anfragen. Der nächste im Datenbestand vorkommende *Anomaly-Score* ist 2. Er kommt 11 Mal vor, also 0.11%. Dann 17 Mal die 3 und 8 Mal einen Score von 5. Aufsummiert stehen wir damit bei 99.97%. Dann gab es einen Request mit einem Score von 21 und schliesslich noch 2 Anfragen mit 41. Um 99.99% Abdeckung zu erreichen müssen wir letztlich bis zu dieser Grenze gehen (und erhalten damit basierend auf dem Logfile 100% Abdeckung). 
 
-Das Skript gliedert die eingehenden und die ausgehenden *Anomaly-Scores*. Zunächst werden die eingehenden behandelt. Zunächst beschreibt eine Zeile, wie oft ein leerer *Anomaly-Score* gefunden wurde (*empty incoming score*). In unserem Fall war das nie der Fall. Dann folgt die Aussage zum *score 0*: 9967 Anfragen. Dies entspricht einer Abdeckung von 99.67%. 0.33% hatten einen höheren *Anomaly-Score.* Wir haben oben definiert, dass wir erreichen wollen, dass 99.99% der Anfragen den Server passieren können. Davon trennen uns also noch 0.32% respektive 32 Anfragen. Der nächste im Datenbestand vorkommende *Anomaly-Score* ist 4. Er kommt drei Mal vor, also 0.03%. Die Requests bis und mit einem *Score* von 4 decken 99.70% der Anfragen ab. Nehmen wir den *Score* 5 hinzu, erreichen wir eine Abdeckung von 99.85%. Erst unter Einbezug der Anfragen bis und mit einem *Score* von 20 gelangen wir zur gewünschten Abdeckung. Auf unserem System möchten wir Anfragen mit einem *Score* von 20 aber auf jeden Fall blockieren. Vermutlich liegen *False Positives* vor. Diese gilt es nun sowohl für die eingehenden Anfragen, wie für die Antworten (wo 99.96% der Anfragen problemlos durchliefen), auszumerzen.
+Vermutlich liegen hier *False Positives* vor. In der Praxis müssen wir dies sicherstellen, bevor wir in das Tuning der Regeln einsteigen. Es wäre ja grundfalsch aufgrund eines berechtigten Alarms ein False Positive anzunehmen und den Alarm zukünftig zu unterdrücken. Es muss also vor dem Tuning sicher gestellt werden, dass keine Angriffe im Logfile vorliegen. Das ist nicht immer ganz leicht. Manueller Review hilft, die Beschränkung auf bekannte IP-Adressen, das Testen / Tunen in einem eigenen, vom Internet getrennten Test-System, das filtern des Access-Logs nach Herkunftsländern der IP Adressen etc.: Es ist ein weites Feld und generelle Empfehlungen fallen schwer.
 
 ###Schritt 6: Fehlalarme Unterdrücken: Einzelne Regeln Ausschalten
 
@@ -769,17 +761,16 @@ Wir haben *curl* angewiesen einen Request ohne den *Accept-Header* abzusetzen. M
 ```bash
 SecRule REQUEST_FILENAME "@beginsWith /" "phase:1,nolog,pass,id:10000,ctl:ruleRemoveById=960015"
 ```
-FIXME: SecAction?
 
-Wir definieren eine Regel, welche zunächst den Pfad überprüft. Mit der Bedingung auf dem Pfad *"/"* wird die Regel natürlich immer zutreffen und die Bedingung ist damit an sich überflüssig. Wir setzen Sie mit Vorteil dennoch in dieser Art, denn sie lässt sich leicht für verschiedene Pfade einschränken und wir können so immer *Ignore-Rules* mit demselben Muster verwenden. Wir definieren unsere Regel in der Phase 1, wir wollen nicht loggen, weisen ihr eine Identifikation zu Beginn unseres Blocks zu (*10000*). Schliesslich unterdrücken wir die Regel *960015*. Dies geschieht über eine Kontroll-Anweisung (*ctl:*).
+Wir definieren eine Regel, welche zunächst den Pfad überprüft. Mit der Bedingung auf dem Pfad *"/"* wird die Regel natürlich immer zutreffen und die Bedingung ist damit an sich überflüssig. Wir setzen Sie mit Vorteil dennoch in dieser Art, denn auf diesem Grundmuster lässt sie sich leicht für verschiedene Pfade einschränken verwenden. Ohne Bedingung würden wir sie als *SecAction* formulieren. Wir definieren unsere Regel in der Phase 1, wir wollen nicht loggen, sondern weisen ihr eine Identifikation zu Beginn unseres Blocks zu (*10000*). Schliesslich unterdrücken wir die Regel *960015*. Dies geschieht über eine Kontroll-Anweisung (*ctl:*).
 
-Das war sehr wichtig. Deshalb nochmals zusammengefasst: Wir definieren eine Regel, um eine andere Regel zu unterdrücken. Wir benützen dazu ein Muster, das uns einen Pfad definieren lässt. Damit können wir Regeln für einzelne Applikationsteile ausschalten. Just dort wo der Fehlalarm auftritt. Dies verhindert, dass wir die Regel auf dem gesamten Server ausschalten, während der Fehlalarm doch nur bei der Verarbeitung eines einzelnen Formular auftritt, was sehr häufig der Fall ist. Das sähe etwa so aus:
+Das war sehr wichtig. Deshalb nochmals zusammengefasst: Wir definieren eine Regel, um eine andere Regel zu unterdrücken. Wir benützen dazu ein Muster, das uns einen Pfad als Bedingung definieren lässt. Damit können wir Regeln für einzelne Applikationsteile ausschalten. Just dort wo der Fehlalarm auftritt. Dies verhindert, dass wir die Regel auf dem gesamten Server ausschalten, während der Fehlalarm doch nur bei der Verarbeitung eines einzelnen Formular auftritt, was sehr häufig der Fall ist. Das sähe etwa so aus:
 
 ```
-SecRule REQUEST_FILENAME "@beginsWith /index.html" "phase:1,nolog,pass,id:10001,ctl:ruleRemoveById=950119"
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:1,nolog,pass,id:10001,ctl:ruleRemoveById=960015"
 ```
 
-Nun haben wir also eine Regel ausgeschaltet. Sei es für den kompletten Service (Pfad *"/"*) oder für einen bestimmten Unterpfad (Pfad *"/index.html"*). Leider sind wir damit blind geworden, was diese Regel betrifft: Wir wissen gar nicht mehr, ob eingehende Requests die Regel verletzen würden. Denn nicht immer kennen wir die Applikationen auf unseren Servern bis ins Detail und wenn wir nun ein Jahr abwarten und uns überlegen ob wir die *Ignore-Rule* weiterhin brauchen werden wir keine Antwort darauf haben. Wir haben jede Meldung zum Thema unterdrückt. Ideal wäre es, wenn wir das Zuschnappen der Regel noch beobachten könnten, aber so, dass der Request nicht blockiert wird und auch der *Anomaly Score* unverändert bleibt. Die Erhöhung des *Anomaly Scores* geschieht in der Definition der Regel. Dies ist in den *Core-Rules* für die Regel *960015* wie folgt gelöst:
+Nun haben wir also eine Regel ausgeschaltet. Sei es für den kompletten Service (Pfad *"/"*) oder für einen bestimmten Unterpfad (Pfad *"/app/submit.do"*). Leider sind wir damit blind geworden, was diese Regel betrifft: Wir wissen gar nicht mehr, ob eingehende Requests die Regel verletzen würden. Denn nicht immer kennen wir die Applikationen auf unseren Servern bis ins Detail und wenn wir nun ein Jahr abwarten und uns überlegen ob wir die *Ignore-Rule* weiterhin brauchen werden wir keine Antwort darauf haben. Wir haben jede Meldung zum Thema unterdrückt. Ideal wäre es, wenn wir das Zuschnappen der Regel noch beobachten könnten, aber so, dass der Request nicht blockiert wird und auch der *Anomaly Score* unverändert bleibt. Die Erhöhung des *Anomaly Scores* geschieht in der Definition der Regel. Dies ist in den *Core-Rules* für die Regel *960015* wie folgt gelöst:
 
 ```
 setvar:tx.inbound_anomaly_score=+%{tx.notice_anomaly_score}"
@@ -796,82 +787,94 @@ SecRule REQUEST_FILENAME "@beginsWith /index.html" "chain,phase:2,t:none,log,pas
 
 Wir haben hier zwei Regeln vor uns, die mittels dem Kommando *chain* verbunden werden. Das heisst, dass die erste Regel eine Bedingung formuliert und die zweite Regel nur ausgeführt wird, wenn die erste Bedingung zutrifft. In der zweiten Regl wird eine weitere, etwas kryptische Bedingung formuliert. Konkret sehen wir nach, ob eine bestimmte Variable gesetzt ist, nämlich *TX:960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS*. Diese Transaktionsvariable wurde durch die Regel *960015* gesetzt und weist auf einen Treffer der Regel 960015 hin. Sollten wir diese Variable also vorfinden, dann bedeutet dies, dass die Regel 960015 angeschlagen hat. In diesem Fall reduzieren wir den *Inbound Anomaly Score* wieder um den Wert, um den die Regel ihn erhöht hat. Wir neutralisieren also den Effekt der Regel, ohne die Meldung selbst zu unterdrücken.
 
-FIXME: What if a rule is triggered multiple times. How do we ignore the counting multiple times.
 
 Im *Error-Log* ergibt das nachher für den oben bereits vorgestellen *curl-*Aufruf folgende zwei Einträge:
 
 ```bash
-[Mon Dec 16 09:37:11 2013] [error] [client 127.0.0.1] ModSecurity: Warning. Operator EQ matched 0 at REQUEST_HEADERS. [file "/apache/conf/modsecurity-core-rules-latest/modsecurity_crs_21_protocol_anomalies.conf"] [line "47"] [id "960015"] [rev "1"] [msg "Request Missing an Accept Header"] [severity "NOTICE"] [ver "OWASP_CRS/2.2.8"] [maturity "9"] [accuracy "9"] [tag "Local Lab Service"] [tag "OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER_ACCEPT"] [tag "WASCTC/WASC-21"] [tag "OWASP_TOP_10/A7"] [tag "PCI/6.5.10"] [hostname "localhost"] [uri "/index.html"] [unique_id "Uq67t38AAQEAAHuLAU0AAAAD"]
-[Mon Dec 16 09:37:11 2013] [error] [client 127.0.0.1] ModSecurity: Warning. Operator GE matched 1 at TX. [file "/apache/conf/httpd.conf_apachetut_7"] [line "187"] [id "50001"] [msg "Adjusting inbound anomaly score for rule 960015"] [tag "Local Lab Service"] [hostname "localhost"] [uri "/index.html"] [unique_id "Uq67t38AAQEAAHuLAU0AAAAD"]
+[2015-11-08 08:16:19.215089] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Operator EQ matched 0 at REQUEST_HEADERS. [file "/modsecurity-core-rules/modsecurity_crs_21_protocol_anomalies.conf"] [line "47"] [id "960015"] [rev "1"] [msg "Request Missing an Accept Header"] [severity "NOTICE"] [ver "OWASP_CRS/2.2.9"] [maturity "9"] [accuracy "9"] [tag "Local Lab Service"] [tag "OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER_ACCEPT"] [tag "WASCTC/WASC-21"] [tag "OWASP_TOP_10/A7"] [tag "PCI/6.5.10"] [hostname "localhost"] [uri "/app/submit.do"] [unique_id "Vj72w38AAQEAADwHNSoAAAAA"]
+[2015-11-08 08:16:19.220263] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Operator GE matched 1 at TX. [file "/apache/conf/httpd.conf_labor-06"] [line "187"] [id "10001"] [msg "Adjusting inbound anomaly score for rule 960015"] [tag "Local Lab Service"] [hostname "localhost"] [uri "/app/submit.do"] [unique_id "Vj72w38AAQEAADwHNSoAAAAA"]
 ```
 
 Der Eintrag zum abschliessenden *Anomaly-Score* fällt weg, da dieser Wert wieder auf 0 zurückgesetzt wurde. Das alles bedeutet nun, dass wir weiterhin informiert werden, wenn eine Regelverletzung vorliegt, aber dem Request wird kein *Anomaly-Score* mehr aufgrund dieser Regel zugewiesen. Wir haben den Alarm in diesem Sinn akzeptiert.
 
-Die konstruierte Doppelregel ist anstrengend: Während die erst Bedingung einem bekannten Muster folgt ist die zweite Regel, welche die Transaktionsvariable einschliesst mit einigem Schreibaufwand verbunden: Wie kommen wir zum Variablen-Namen und woher kennen wir genau den Score?
+
+Diese Arten von Regeln sind anstrengend: Während die erste Bedingung einem bekannten Muster folgt, ist die zweite Regel, welche die Transaktionsvariable einschliesst, mit einigem Schreibaufwand verbunden: Wie kommen wir zum Variablen-Namen und woher kennen wir genau den Score?
 
 Den Variable-Namen können wir entweder aus der Regeldefinition in den *Core Rules* ableiten - oder wir halten uns an das *Debug-Log*, das wir in der höchsten Stufe (*SecDebugLogLevel 9*) definieren:
 
 ```
 $> sudo egrep "Set variable.*960015" logs/modsec_debug.log
-[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/index.html][9] Set variable "tx.960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS" to "0".
+[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/app/submit.do][9] Set variable "tx.960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS" to "0".
 ```
-
 
 Die hier als *tx.960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS* muss in einer Regel als *TX:960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS* geschrieben werden; genau so, wie wir es oben gemacht haben. Das vorgestellte *&* bdeutet, dass nicht die Variable selbst untersucht wird, sondern die Anzahl der Variablen mit diesem Namen: Also *1*. Den genauen Wert, den wir im *Inbound Anomaly Score* wieder abziehen müssen, finden wir ebenfalls im *Debug Log*:
 
 ```bash
 $> sudo egrep -B9 "Set variable.*960015" logs/modsec_debug.log
-[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/index.html][9] Setting variable: tx.anomaly_score=+%{tx.notice_anomaly_score}
-[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/index.html][9] Recorded original collection variable: tx.anomaly_score = "0"
-[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/index.html][9] Resolved macro %{tx.notice_anomaly_score} to: 2
-[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/index.html][9] Relative change: anomaly_score=0+2
-[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/index.html][9] Set variable "tx.anomaly_score" to "2".
-[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/index.html][9] Setting variable: tx.%{rule.id}-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-%{matched_var_name}=%{matched_var}
-[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/index.html][9] Resolved macro %{rule.id} to: 960015
-[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/index.html][9] Resolved macro %{matched_var_name} to: REQUEST_HEADERS
-[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/index.html][9] Resolved macro %{matched_var} to: 0
-[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/index.html][9] Set variable "tx.960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS" to "0".
+[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Setting variable: tx.anomaly_score=+%{tx.notice_anomaly_score}
+[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Recorded original collection variable: tx.anomaly_score = "0"
+[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Resolved macro %{tx.notice_anomaly_score} to: 2
+[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Relative change: anomaly_score=0+2
+[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Set variable "tx.anomaly_score" to "2".
+[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Setting variable: tx.%{rule.id}-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-%{matched_var_name}=%{matched_var}
+[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Resolved macro %{rule.id} to: 960015
+[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Resolved macro %{matched_var_name} to: REQUEST_HEADERS
+[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Resolved macro %{matched_var} to: 0
+[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Set variable "tx.960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS" to "0"
 ```
 
 Wir sehen hier im Detail, wie *ModSecurity* seine arithmetischen Funktionen durchführt. Interessant ist die erste Zeile, in der dargelegt wird, wie der Anomaly Score erhöht wird. Er wird um *tx.notice_anomaly_score* erhöht. Diesen Wert würden wir auch in der Definition der *Core Rules* finden, hier ist er aber leichter zu lesen.
 
-Wir sehen also, wir können *ModSecurity* instruieren, die Core Rules anschlagen zu lassen, ohne den Score hochzuzählen. Ich benütze diese Technik in der Praxis aber nicht und kämpfe deshalb mit der eingangs des Kapitels beschriebenen Blindheit.
+Es kommt natürlich vor, dass eine Regel mehrfach verletzt wird. Das heisst, dass mehrere Parameter dieselbe Regel verletzen. Auch diesen Fall können wir abdecken, wenn auch unter der weiteren Erhöhung der Komplexität. In diesem Fall schreibt *ModSecurity* eine Collection-Variable, welche den Variable-Namen mit einschliesst: also Regelnummer sowie Bezeichnung und dies um das Suffix *-ARGS:<name>* erweitert. Das ergibt für eine *File Injection Regel* wie *950005* zum Beispiel *TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_name*. Haben wir es mit zwei Parametern zu tun, welche diese Regel verletzen (sagen wir *contact_form_name* und *contact_form_address*), die folgende Konstruktion:
+
+```bash
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "chain,phase:2,t:none,log,pass,id:50001,msg:'Adjusting inbound anomaly score for rule 950005'"
+   SecRule "&TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_name" "@ge 1" "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
+
+SecRule REQUEST_FILENAME "@beginsWith /submit.do" "chain,phase:2,t:none,log,pass,id:50002,msg:'Adjusting inbound anomaly score for rule 950005'"
+   SecRule "&TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_address" "@ge 1" "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
+```
+
+Auslösen können wir die Regelverletzung und die eben konfigurierte Nachjustierung der Anomalie-Werte durch folgenden Aufruf:
+
+```bash
+$> curl -d "contact_form_name=/etc/passwd" -d "contact_form_address=/etc/passwd" http://localhost/app/submit.do
+...
+$> tail -1 logs/access.log
+127.0.0.1 - - [2015-11-08 08:25:46.950543] "POST /app/submit.do HTTP/1.1" 404 45 "-" "curl/7.46.0-DEV" localhost 127.0.0.1 80 - - "-" Vj74@n8AAQEAADydhKkAAAAE - - 219 231 -% 21734 19189 71 588 0 0
+$> grep Vj74@n8AAQEAADydhKkAAAAE logs/error.log
+...
+[2015-11-08 08:25:46.961718] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Pattern match "(?:\\\\b(?:\\\\.(?:ht(?:access|passwd|group)|www_?acl)|global\\\\.asa|httpd\\\\.conf|boot\\\\.ini)\\\\b|\\\\/etc\\\\/)" at ARGS:contact_form_address. [file "/modsecurity-core-rules/modsecurity_crs_40_generic_attacks.conf"] [line "205"] [id "950005"] [rev "3"] [msg "Remote File Access Attempt"] [data "Matched Data: /etc/ found within ARGS:contact_form_address: /etc/passwd"] [severity "CRITICAL"] [ver "OWASP_CRS/2.2.9"] [maturity "9"] [accuracy "9"] [tag "Local Lab Service"] [tag "OWASP_CRS/WEB_ATTACK/FILE_INJECTION"] [tag "WASCTC/WASC-33"] [tag "OWASP_TOP_10/A4"] [tag "PCI/6.5.4"] [hostname "localhost"] [uri "/app/submit.do"] [unique_id "Vj74@n8AAQEAADydhKkAAAAE"]
+[2015-11-08 08:25:46.961953] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Pattern match "(?:\\\\b(?:\\\\.(?:ht(?:access|passwd|group)|www_?acl)|global\\\\.asa|httpd\\\\.conf|boot\\\\.ini)\\\\b|\\\\/etc\\\\/)" at ARGS:contact_form_name. [file "/modsecurity-core-rules/modsecurity_crs_40_generic_attacks.conf"] [line "205"] [id "950005"] [rev "3"] [msg "Remote File Access Attempt"] [data "Matched Data: /etc/ found within ARGS:contact_form_name: /etc/passwd"] [severity "CRITICAL"] [ver "OWASP_CRS/2.2.9"] [maturity "9"] [accuracy "9"] [tag "Local Lab Service"] [tag "OWASP_CRS/WEB_ATTACK/FILE_INJECTION"] [tag "WASCTC/WASC-33"] [tag "OWASP_TOP_10/A4"] [tag "PCI/6.5.4"] [hostname "localhost"] [uri "/app/submit.do"] [unique_id "Vj74@n8AAQEAADydhKkAAAAE"]
+[2015-11-08 08:25:46.970259] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Operator GE matched 1 at TX. [file "/apache/conf/httpd.conf_labor-06"] [line "187"] [id "50001"] [msg "Adjusting inbound anomaly score for rule 950005"] [tag "Local Lab Service"] [hostname "localhost"] [uri "/app/submit.do"] [unique_id "Vj74@n8AAQEAADydhKkAAAAE"]
+[2015-11-08 08:25:46.970320] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Operator GE matched 1 at TX. [file "/apache/conf/httpd.conf_labor-06"] [line "190"] [id "50002"] [msg "Adjusting inbound anomaly score for rule 950005"] [tag "Local Lab Service"] [hostname "localhost"] [uri "/app/submit.do"] [unique_id "Vj74@n8AAQEAADydhKkAAAAE"]
+
+```
+
+Wir sehen also, wir können *ModSecurity* instruieren, die Core Rules anschlagen zu lassen, ohne den Score hochzuzählen. Man muss aber ehrlicherweise einräumen, dass die damit verbundenen Konstruktionen unheimlich aufwändig und auch fehleranfällig sind. Ich benütze diese Technik in der Praxis deshalb nicht, sondern unterdrücke *False Positives* durch selektives Ausschalten von Regeln und kämpfe aus diesem Grund mit der eingangs beschriebenen Blindheit. Beim Ausschalten der Regeln haben wir eine sehr einfache Methode noch nicht kennengelernt. 
 
 ###Schritt 7: Fehlalarme Unterdrücken: Einzelne Regeln für bestimmte Parameter Ausschalten
 
-Bislang haben wir einzelne Regeln für bestimmte Pfade unterdrückt. In der Praxis gibt einen zweiten Fall, der weit stärker verbreitet ist: Ein einzelner Parameter, typischerweise ein Cookie, löst unabhängig vom Pfad Regelverletzungen aus. Man müsste die Regel also für den Grundpfad */* ausschalten - oder man schafft es, die Regel für den betreffenden Parameter auszuschalten. Das geht in der einfachen Variante so:
+Bislang haben wir einzelne Regeln für bestimmte Pfade unterdrückt. In der Praxis gibt einen zweiten Fall, der zumindest quantitativ verbreitet ist: Ein einzelner Parameter, typischerweise ein Cookie, löst unabhängig vom Pfad Regelverletzungen aus. Bei jedem einzelnen Request kommt es also zu einer Regelverletzungen. Bei einem ersten Blick auf die Statistik ist das erst einmal erschreckend. Aber wenn man sieht, wie einfach man dies bekämpfen kann, entspannt sich die Situation wieder etwas. Man müsste die Regel also für den Grundpfad */* ausschalten - oder man schafft es, die Regel generell für den betreffenden Parameter auszuschalten. Das geht so:
 
 ```bash
-SecRuleUpdateTargetById 981242 "!REQUEST_COOKIES:basket_id"
+SecRuleUpdateTargetById 950005 "!REQUEST_COOKIES:basket_id"
 ```
-FIXME: check
 
-Dieses Kommando, das nach dem Laden der *Core Rules* konfiguriert werden muss, passt die sogenannte *Target List* der Regel 981242 an. Das heisst, dass das Cookie *basket_id* nicht mehr länger durch die Regel 981242 untersucht werden soll. Es stellt sich dasselbe Problem wie bei den Pfaden: Wir werden durch diese Direktive blind in Bezug auf Regel 981242 und das Cookie *basket_id*. Besser ist es, wenn wir den Weg über die Transaktionsvariable gehen:
+Dieses Kommando, das nach dem Laden der *Core Rules* konfiguriert werden muss, passt die sogenannte *Target List* der Regel 950005 an. Das heisst, dass das Cookie *basket_id* nicht mehr länger durch die Regel 950005 untersucht werden soll.  Das führt wieder zur erwähnten Blindheit, immerhin ist es bei einem Cookie aber zu einem späteren Zeitpunkt sehr leicht zu überprüfen, ob die damit verbundenen Regeln noch relevant sind.
+
+Bei Formular-Parametern sollten wir nicht so generell vorgehen, dass wir ihre Behandlung auf dem gesamten Service ausschalten. Es gibt aber ein Regel-Muster, das sehr eng an diesem Beispiel anlehnt, aber nur für einen einzelnen Parameter auf einem einzigen Pfad greift:
 
 ```bash
-$> sudo egrep -B7 "Set variable.*981242" /tmp/modsec_debug.log 
-...
-[16/Dec/2013:10:53:28 +0100] [localhost/sid#2528170][rid#7f921c018e40][/index.html][9] Resolved macro %{tx.critical_anomaly_score} to: 5
-...
-[16/Dec/2013:10:53:28 +0100] [localhost/sid#2528170][rid#7f921c018e40][/index.html][9] Set variable "tx.981242-Detects classic SQL injection probings 1/2-OWASP_CRS/WEB_ATTACK/SQLI-ARGS:debug" to "'".
-...
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:2,nolog,pass,id:50002,ctl:ruleRemoveTargetById=950005;ARGS:contact_form_name"
 ```
 
-Der *Anomaly Score* wird also um *tx.critical_anomaly_score* erhöht und das Zuschlagen der Regel lässt sich am Vorhandensein der Variable *tx.981242-Detects classic SQL injection probings 1/2-OWASP_CRS/WEB_ATTACK/SQLI-ARGS:debug* ablesen. Leider besitzt diese Variable Leerzeichen im Namen, was *ModSecurity* verwirren kann. Wenn wir auf die Variable zugreifen möchten, dann können wir das nur, indem wir den Weg über einen regulären Ausdruck gehen:
+Hier schalten wir die Behandlung des Parameters *contact_form_name* durch die Regel *950005* für den Pfad */app/submit.do* aus. Das ist punktgenau und in meiner Praxis die bevorzugte Art und Weise ein einzelnes False Positive für einen Parameter zu unterdrücken.
 
-```bash
-SecRule REQUEST_FILENAME "@beginsWith /index.html" "chain,phase:2,t:none,log,pass,id:50002,msg:'Adjusting inbound anomaly score for rule 960015'"
-   SecRule "&TX:/^981242.*-REQUEST_COOKIES:basket_id$/" "@ge 1" "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
-```
+Mit den verschiedenen Techniken der Konstruktion von *Ignore-Rules* besitzen wir nun das nötige Handwerkszeug, um die *False Positives* eine nach der anderen abzuarbeiten. Um zügig arbeiten zu können braucht es Erfahrung und unterstützende Hilfsmittel, welche wir in der nächsten Anleitung kennen lernen werden. 
 
-Dies bringt das gewünschte Resultat im *Error Log*:
 
-```bash
-[Mon Dec 16 11:04:50 2013] [error] [client 127.0.0.1] ModSecurity: Warning. Pattern match "(?i:(?:[\\"'`\\xc2\\xb4\\xe2\\x80\\x99\\xe2\\x80\\x98]\\\\s*?(x?or|div|like|between|and)\\\\s*?[\\"'`\\xc2\\xb4\\xe2\\x80\\x99\\xe2\\x80\\x98]?\\\\d)|(?:\\\\\\\\x(?:23|27|3d))|(?:^.?[\\"'`\\xc2\\xb4\\xe2\\x80\\x99\\xe2\\x80\\x98]$)|(?:(?:^[\\"'`\\xc2\\xb4\\xe2\\x80\\x99\\xe2\\x80\\x98\\\\\\\\]*?(?:[\\\\ ..." at ARGS:debug. [file "/apache/conf/modsecurity-core-rules-latest/modsecurity_crs_41_sql_injection_attacks.conf"] [line "237"] [id "981242"] [msg "Detects classic SQL injection probings 1/2"] [data "Matched Data: ' found within ARGS:debug: '"] [severity "CRITICAL"] [tag "Local Lab Service"] [tag "OWASP_CRS/WEB_ATTACK/SQL_INJECTION"] [hostname "localhost"] [uri "/index.html"] [unique_id "Uq7QQn8AAQEAAAWYANcAAAAA"]
-[Mon Dec 16 11:04:50 2013] [error] [client 127.0.0.1] ModSecurity: Warning. Operator GE matched 1 at TX. [file "/apache/conf/httpd.conf_apachetut_7"] [line "190"] [id "50002"] [msg "Adjusting inbound anomaly score for rule 981242"] [tag "Local Lab Service"] [hostname "localhost"] [uri "/index.html"] [unique_id "Uq7QQn8AAQEAAAWYANcAAAAA"]
-```
 
-Mit den verschiedenen Techniken der Konstruktion von *Ignore-Rules* besitzen wir nun das nötige Handwerkszeug, um die *False Positives* eine nach der anderen abzuarbeiten. Um zügig arbeiten zu können braucht es etwas Erfahrung. Es ist aber auch sinnvoll, eine bewusste Entscheidug zu treffen, mit welchem Rezept man arbeiten möchte. Technisch gesehen ist die Variante über die Manipulation des *Anomaly Scores* die bevorzugte Vorgehensweise. Allerdings ist sie nur schwer zu lesen und auch der Schreib- und Testaufwand überwiegt gegenüber den einfacheren Varianten, obschon diese wiederum den beschriebenen Nachteil mit sich bringen, dass man sämtliche Meldungen zur Regel unterdrückt.
 
 ###Schritt 8: Anomalie-Limite Nachjustieren
 
@@ -916,7 +919,13 @@ Den *Outbound Anomaly Score* scheren wir über denselben Kamm. In der Praxis wir
 
 ###Schritt 9 (Bonus): Ein Bier
 
-Diese Anleitung war ein hartes Stück Arbeit. Für einmal brechen wir also hier ab und genehmigen uns ein Bier.
+FIXME Arten der Unterdrückung von False Positives nochmals zusammenfassen
+FIXME Bemerkungen zur Positionierung der einzelnen Arten der Unterdrückung im Regel-File
+
+FIXME: include this paragraph
+Es ist dabei auch sinnvoll, eine bewusste Entscheidug zu treffen, mit welchem Rezept man arbeiten möchte. Technisch gesehen ist die Variante über die Manipulation des *Anomaly Scores* die bevorzugte Vorgehensweise. Allerdings ist sie nur schwer zu lesen und auch der Schreib- und Testaufwand überwiegt gegenüber den einfacheren Varianten, obschon diese wiederum den beschriebenen Nachteil mit sich bringen, dass man sämtliche Meldungen zur Regel unterdrückt.
+
+Diese Anleitung war ein hartes Stück Arbeit. Für einmal brechen wir also hier ab und genehmigen uns ein Bier. In der nächsten Anleitung geht es um die Praxis beim Tuning. Die prinzipiellen Techniken haben wir in dieser Anleitung kennengelernt, aber wie wendet man diese Techniken gezielt an, wenn man in einer Vielzahl von False Positives versinkt?
 
 
 ###Verweise
