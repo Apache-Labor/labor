@@ -576,7 +576,7 @@ Content-Length: 45
 
 Die Regel, welche den Verkehr aufzeichnet, lässt sich natürlich beliebig anpassen, so dass wir punktgenau mitlesen können, was in den Server eingeht und was er retourniert (nur eine bestimmte Client-IP, ein bestimmter User, nur ein Applikationsteil mit einem bestimmten Pfad etc.). Damit kommt man einem Fehlverhalten einer Applikation oft schnell auf die Schliche.
 
-Damit sind wir am Ende dieser Anleitung gelangt. *ModSecurity* ist eine wichtige Komponente für den Betrieb eines sicheren Webservers. Mit dieser Anleitung ist der Einstieg hoffentlich geglückt.
+Damit sind wir zum Ende dieser Anleitung gelangt. *ModSecurity* ist eine wichtige Komponente für den Betrieb eines sicheren Webservers. Mit dieser Anleitung ist der Einstieg hoffentlich geglückt.
 
 ###Verweise
 
