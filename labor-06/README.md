@@ -315,8 +315,7 @@ In der Regel *900002* und *900003* definieren wir die Limiten, bei welcher ein R
 
 Zusammengefasst haben wir für die Core Rules nun als eine blockierende Betriebsart mit sehr laxen Limiten gewählt. Die Limiten können wir zu einem späteren Zeitpunkt schrittweise anziehen; am Blocking-Prinzip selbst müssen wir aber nichts mehr ändern.
 
-In den Regeln *900006* bis *900009* setzen wir nacheinander die maximale Zahl der Anfrage-Parameter, die maximale Zeichenlänge der Parameternamen, die Länge eines Parameters und schliesslich die kombinierte Länge aller Parameter. Der letzte Wert korrespondiert mit dem oben in der Datei als *SecRequestBodyNoFilesLimit* gesetzten Wert. Hier bietet es sich an, dieselben Limiten zu setzen, um nicht zu einem späteren Zeitpunkt für Verwirrung zu sorgen. Wichtig ist einfach die Tatsache, dass dieser Wert demnach durch die Engine selbst und danach noch durch eine Core Rule überprüft wird.
-FIXME: No files? Korrespondiert das wirklich und wie sieht es im Detail aus?
+In den Regeln *900006* bis *900009* setzen wir nacheinander die maximale Zahl der Anfrage-Parameter, die maximale Zeichenlänge der Parameternamen, die Länge eines Parameters und schliesslich die kombinierte Länge aller Parameter. Der letzte Wert korrespondiert ein Stück weit mit dem oben in der Datei als *SecRequestBodyLimit* und *SecRequestBodyNoFilesLimit* gesetzten Werten. Während diese beiden Werte aber harte Limiten darstellen, sind die Parameter *tx.max_file_size* sowie *tx.combined_file_sizes=1000* weicher, indem sie einfach eine Verletzung einer *Core Rule* der Severity *notice* (= 2 Punkte) mit sich bringen. In diesem Sinn handelt es sich um eine serverseitige Warnung im Log und noch nicht um eine Blockade. Möchte man sofort hart reagieren, dann sind *SecRequestBodyLimit* und *SecRequestBodyNoFilesLimit* die richtigen Werte.
 
 Dies trifft auch für die folgenden Regeln *900010* und *900011* zu, welche maximale Dateigrössen und kombinierte Dateigrössen fixieren. In der Regel *900012* werden die erlaubten HTTP-Methoden angeführt, denn wir akzeptieren nicht mehr länger sämtliche Methoden. Dann die in den Anfragen erlaubten Media-Typen: Dies sind primär der Standard *application/x-www-form-urlencoded* und der bei Datei-Uploads eingesetzte *multipart/form-data*. Dazu kommen nun noch zwei, drei XML Varianten und *application/json*. Es folgen die akzeptablen HTTP-Versionen, dann eine Liste mit nicht erwünschten Datei-Endungen und schliesslich verbotene Anfrage-Header.
 
@@ -543,19 +542,14 @@ $> cat logs/error.log | melid | sort | uniq -c | sort -n  | while read STR; do e
 
 Damit lässt sich arbeiten. Aber es bietet sich wohl an, den *One-Liner* genauer zu erklären. Wir extrahieren die Regelidentifikationen aus dem *Error-Log*, dann sortieren wir sie (*sort*), dann summieren wir diese Liste Liste nach den gefundenen IDs (*uniq -c*) und sortieren sie neu nach der Anzahl der Funde. Das ist der erste *One-Liner*. Da fehlt natürlich noch die Bezeichnung der einzelnen Regeln, denn mit der Identifikationsnummer könne wir noch nicht so viel anfangen. Die Bezeichnungen holen wir wieder aus dem *Error-Log* indem wir die vorher durchgeführte Auswertung Zeile um Zeile in einer Schleife durchsehen. In dieser Schleife zeigen wir mal an, was wir haben. Dann müssen wir die Summer der Funde und die Identifikation wieder trennen. Dies geschieht mittels einem eingebetteten Unter-Kommando (_ID=$(echo "$STR" | sed -e "s/.*\ //")_). Wir suchen dann mit der neu gefundenen Identifikation im *Error-Log* selbst wieder nach einem Eintrag, nehmen aber nur den ersten, holen den *msg*-Teil heraus und zeigen ihn an. Fertig.
 
-Dieses Kommando kann je nach Rechnerleistung einige Sekunden oder sogar Minuten dauern. Man könnte nun meinen, es wäre schlauer einen zusätzlichen Alias zu definieren, um Identifikation und Beschreibung der Regel in einem Schritt zu eruieren. Dies führte uns aber auf den Holzweg, denn die Regel 981203 hat eine Bezeichnung, die mit dem *Score* dynamische Teile enthält. Da wir das *Uniq*-Kommando nur auf der Identifikation laufen lassen, können wir sie zusammenfassen. Wenn wir das Kommando auf der Kombination von Identifikation und dynamischem Bezeichner ausführen würden, würde es viel mehr unterschiedliche Zeilen retournieren und obige Auswertung wäre unmöglich. Um die Auswertung also wirklich zu vereinfachen müssen wir die dynamischen Bezeichnungen eliminieren. Hier ein neues Set mit zusätzlichen *Aliasen*.
+Dieses Kommando kann je nach Rechnerleistung einige Sekunden oder sogar Minuten dauern. Man könnte nun meinen, es wäre schlauer einen zusätzlichen Alias zu definieren, um Identifikation und Beschreibung der Regel in einem Schritt zu eruieren. Dies führte uns aber auf den Holzweg, denn die Regel 981203 hat eine Bezeichnung, die in der Klammer und nach der Klammer dynamische Teile enthält. Das möchten wir natürlich zusammenfassen, um die Regel nur einmal abzubilden. Um die Auswertung also wirklich zu vereinfachen müssen wir die dynamischen Bezeichnungen eliminieren. Hier ein zusätzlicher *Alias*, der diese Idee umsetzt. Er ist Teil des bereits bekannten *Alias-Files .apache-modsec.alias*.
 
-```
+```bash
 alias melidmsg='grep -o "\[id [^]]*\].*\[msg [^]]*\]" | sed -e "s/\].*\[/] [/" | cut -b6-11,19- | tr -d \] | sed -e "s/(Total .*/(Total ...) .../" | tr -d \"'
-alias melidmsg_total='grep -o "\[id [^]]*\].*\[msg [^]]*\]" | sed -e "s/\].*\[/] [/" | cut -b6-11,19- | tr -d \" | tr -d \]'
 ```
 
-FIXME: Die Eliminierung des Total im obigen Alias genauer erklären.
-
-Die Abkürzung *melidmsg* bringt einfach die Kombination *id* und *msg*. Falls weitere Werte zwischen den beiden Einträgen stehen, werden diese gelöscht. Der Alias *melmsg_nototal* ist ähnlich, aber eben ohne den dynamischen Teil. Für *melmsg* führen wir auch eine Schwester *melmsg_nototal* ein: 
-
 ```
-$> cat logs/error.log | melidmsg_nototal  | sucs
+$> cat logs/error.log | melidmsg | sucs
       1 950000 Session Fixation
       1 950107 URL Encoding Abuse Attack Attempt
       1 950907 System Command Injection
@@ -759,7 +753,7 @@ $> tail /apache/logs/error.log
 Wir haben *curl* angewiesen einen Request ohne den *Accept-Header* abzusetzen. Mit der *Verbose*-Option (*-v*) können wir dieses Verhalten schön kontrollieren. Das *Error-Log* zeigt dann auch tatsächlich den provozierten Alarm und auf der folgenden Zeile die Zusammenfassung des *Anomaly Scores*: Die Regelverletzung brachte dem Request 2 Punkte. Nun unterdrücken wir die Regel durch das Schreiben einer *Ignore-Rule*, welche wir im dazu vorgesehenen Konfigurationsteil vor dem *Core-Rules Include" positionieren:
 
 ```bash
-SecRule REQUEST_FILENAME "@beginsWith /" "phase:1,nolog,pass,id:10000,ctl:ruleRemoveById=960015"
+SecRule REQUEST_FILENAME "@beginsWith /" "phase:1,nolog,pass,t:none,id:10000,ctl:ruleRemoveById=960015"
 ```
 
 Wir definieren eine Regel, welche zunächst den Pfad überprüft. Mit der Bedingung auf dem Pfad *"/"* wird die Regel natürlich immer zutreffen und die Bedingung ist damit an sich überflüssig. Wir setzen Sie mit Vorteil dennoch in dieser Art, denn auf diesem Grundmuster lässt sie sich leicht für verschiedene Pfade einschränken verwenden. Ohne Bedingung würden wir sie als *SecAction* formulieren. Wir definieren unsere Regel in der Phase 1, wir wollen nicht loggen, sondern weisen ihr eine Identifikation zu Beginn unseres Blocks zu (*10000*). Schliesslich unterdrücken wir die Regel *960015*. Dies geschieht über eine Kontroll-Anweisung (*ctl:*).
@@ -767,7 +761,7 @@ Wir definieren eine Regel, welche zunächst den Pfad überprüft. Mit der Beding
 Das war sehr wichtig. Deshalb nochmals zusammengefasst: Wir definieren eine Regel, um eine andere Regel zu unterdrücken. Wir benützen dazu ein Muster, das uns einen Pfad als Bedingung definieren lässt. Damit können wir Regeln für einzelne Applikationsteile ausschalten. Just dort wo der Fehlalarm auftritt. Dies verhindert, dass wir die Regel auf dem gesamten Server ausschalten, während der Fehlalarm doch nur bei der Verarbeitung eines einzelnen Formular auftritt, was sehr häufig der Fall ist. Das sähe etwa so aus:
 
 ```
-SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:1,nolog,pass,id:10001,ctl:ruleRemoveById=960015"
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:1,nolog,pass,t:none,id:10001,ctl:ruleRemoveById=960015"
 ```
 
 Nun haben wir also eine Regel ausgeschaltet. Sei es für den kompletten Service (Pfad *"/"*) oder für einen bestimmten Unterpfad (Pfad *"/app/submit.do"*). Leider sind wir damit blind geworden, was diese Regel betrifft: Wir wissen gar nicht mehr, ob eingehende Requests die Regel verletzen würden. Denn nicht immer kennen wir die Applikationen auf unseren Servern bis ins Detail und wenn wir nun ein Jahr abwarten und uns überlegen ob wir die *Ignore-Rule* weiterhin brauchen werden wir keine Antwort darauf haben. Wir haben jede Meldung zum Thema unterdrückt. Ideal wäre es, wenn wir das Zuschnappen der Regel noch beobachten könnten, aber so, dass der Request nicht blockiert wird und auch der *Anomaly Score* unverändert bleibt. Die Erhöhung des *Anomaly Scores* geschieht in der Definition der Regel. Dies ist in den *Core-Rules* für die Regel *960015* wie folgt gelöst:
@@ -780,7 +774,7 @@ Hier wird also der Transaktionsvariablen *inbound_anomaly_score* der Wert *tx.no
 
 ```
 ...
-SecRule REQUEST_FILENAME "@beginsWith /index.html" "chain,phase:2,t:none,log,pass,id:50001,msg:'Adjusting inbound anomaly score for rule 960015'"
+SecRule REQUEST_FILENAME "@beginsWith /index.html" "chain,phase:2,log,pass,t:none,id:10004,msg:'Adjusting inbound anomaly score for rule 960015'"
    SecRule "&TX:960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS" "@ge 1" "setvar:tx.inbound_anomaly_score=-%{tx.notice_anomaly_score}"
 ...
 ```
@@ -828,10 +822,10 @@ Wir sehen hier im Detail, wie *ModSecurity* seine arithmetischen Funktionen durc
 Es kommt natürlich vor, dass eine Regel mehrfach verletzt wird. Das heisst, dass mehrere Parameter dieselbe Regel verletzen. Auch diesen Fall können wir abdecken, wenn auch unter der weiteren Erhöhung der Komplexität. In diesem Fall schreibt *ModSecurity* eine Collection-Variable, welche den Variable-Namen mit einschliesst: also Regelnummer sowie Bezeichnung und dies um das Suffix *-ARGS:<name>* erweitert. Das ergibt für eine *File Injection Regel* wie *950005* zum Beispiel *TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_name*. Haben wir es mit zwei Parametern zu tun, welche diese Regel verletzen (sagen wir *contact_form_name* und *contact_form_address*), die folgende Konstruktion:
 
 ```bash
-SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "chain,phase:2,t:none,log,pass,id:50001,msg:'Adjusting inbound anomaly score for rule 950005'"
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "chain,phase:2,log,t:none,pass,id:10003,msg:'Adjusting inbound anomaly score for rule 950005'"
    SecRule "&TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_name" "@ge 1" "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
 
-SecRule REQUEST_FILENAME "@beginsWith /submit.do" "chain,phase:2,t:none,log,pass,id:50002,msg:'Adjusting inbound anomaly score for rule 950005'"
+SecRule REQUEST_FILENAME "@beginsWith /submit.do" "chain,phase:2,log,pass,t:none,id:10004,msg:'Adjusting inbound anomaly score for rule 950005'"
    SecRule "&TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_address" "@ge 1" "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
 ```
 
@@ -866,7 +860,7 @@ Dieses Kommando, das nach dem Laden der *Core Rules* konfiguriert werden muss, p
 Bei Formular-Parametern sollten wir nicht so generell vorgehen, dass wir ihre Behandlung auf dem gesamten Service ausschalten. Es gibt aber ein Regel-Muster, das sehr eng an diesem Beispiel anlehnt, aber nur für einen einzelnen Parameter auf einem einzigen Pfad greift:
 
 ```bash
-SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:2,nolog,pass,id:50002,ctl:ruleRemoveTargetById=950005;ARGS:contact_form_name"
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:2,nolog,pass,t:none,id:10002,ctl:ruleRemoveTargetById=950005;ARGS:contact_form_name"
 ```
 
 Hier schalten wir die Behandlung des Parameters *contact_form_name* durch die Regel *950005* für den Pfad */app/submit.do* aus. Das ist punktgenau und in meiner Praxis die bevorzugte Art und Weise ein einzelnes False Positive für einen Parameter zu unterdrücken.
@@ -917,17 +911,50 @@ SecAction "id:'900003',phase:1,t:none,setvar:tx.outbound_anomaly_score_level=5,n
 
 Den *Outbound Anomaly Score* scheren wir über denselben Kamm. In der Praxis wird man meist etwas differenzierter vorgehen müssen.
 
-###Schritt 9 (Bonus): Ein Bier
+###Schritt 9: Zusammenfassung der Varianten bei der Bekämpfung von False Positives
 
-FIXME Arten der Unterdrückung von False Positives nochmals zusammenfassen
-FIXME Bemerkungen zur Positionierung der einzelnen Arten der Unterdrückung im Regel-File
+Wir haben damit vier verschiedene Arten kennengelernt, wie man einen Fehlalarm unterdrücken kann. Ich stelle sie hier nochmals nebeneinander mit jeweils einem konkreten Beispiel vor:
 
-FIXME: include this paragraph
-Es ist dabei auch sinnvoll, eine bewusste Entscheidug zu treffen, mit welchem Rezept man arbeiten möchte. Technisch gesehen ist die Variante über die Manipulation des *Anomaly Scores* die bevorzugte Vorgehensweise. Allerdings ist sie nur schwer zu lesen und auch der Schreib- und Testaufwand überwiegt gegenüber den einfacheren Varianten, obschon diese wiederum den beschriebenen Nachteil mit sich bringen, dass man sämtliche Meldungen zur Regel unterdrückt.
+**Fall 1 : Regel für bestimmten Pfad deaktivieren** </br>
+```bash
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:1,nolog,pass,t:none,id:10001,ctl:ruleRemoveById=950005"
+```
+Position in der Konfiguration: Am Besten generell vor dem *Core Rule Include* platzieren, kann aber bei *phase:1* auch nach *Include* platziert werden. </br>
+Phase: Mit Vorteil in Phase 1, da der Pfad in diesem Moment bekannt ist.</br>
+
+
+**Fall 2 : Regel für bestimmten Parameter deaktivieren** </br>
+```bash
+SecRuleUpdateTargetById 950005 "!ARGS:contact_form_name"
+```
+Position in der Konfiguration: Generell nach dem *Core Rule Include* platzieren. </br>
+
+
+**Fall 3 : Regel für bestimmten Parameter auf einem bestimmten Pfad deaktivieren** </br>
+```bash
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:2,nolog,pass,t:none,id:10002,ctl:ruleRemoveTargetById=950005;ARGS:contact_form_name"
+```
+Position in der Konfiguration:: Am Besten generell vor dem *Core Rule Include* platzieren. </br>
+Phase: Für *Post-Parameter* zwingend in Phase 2, ansonsten auch Phase 1 denkbar.</br>
+
+
+**Fall 4 : Regel aktiv lassen, aber Scoring für bestimmten Parameter auf bestimmten Pfad deaktiveren** </br>
+```bash   
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "chain,phase:2,log,pass,t:none,id:10003,msg:'Adjusting inbound anomaly score for rule 950005'"
+SecRule "&TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_name" "@ge 1" "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
+```
+Position in der Konfiguration:: Am Besten generell vor dem *Core Rule Include* platzieren. </br>
+Phase: Für *Post-Parameter* zwingend in Phase 2, ansonsten auch Phase 1 denkbar.</br>
+
+In der Praxis ist es wichtig, systematisch vorzugehen. *ModSecurity* und die *Core Rules* sind bereits sehr komplex. Wenn wir nicht gut aufpassen resultiert von all unseren Tuning-Bemühungen zu guter Letzt nur noch ein grosses Chaos. Besser ist es, sich zu überlegen mit welchen Tuning-Regel-Ansätzen man arbeiten möchte. Technisch gesehen ist die Variante über die Manipulation des *Anomaly Scores* die bevorzugte Vorgehensweise. Allerdings ist sie nur schwer zu lesen und auch der Schreib- und Testaufwand überwiegt gegenüber den einfacheren Varianten, obschon diese wiederum den beschriebenen Nachteil mit sich bringen, dass man sämtliche Meldungen zur Regel unterdrückt.
+
+In der nächsten Anleitung werden wir uns der Praxis zuwenden und aus den Logfiles einer ungetunten Applikation Tuning-Regeln ableiten.
+
+###Schritt 10 (Bonus): Ein Bier
 
 Diese Anleitung war ein hartes Stück Arbeit. Für einmal brechen wir also hier ab und genehmigen uns ein Bier. In der nächsten Anleitung geht es um die Praxis beim Tuning. Die prinzipiellen Techniken haben wir in dieser Anleitung kennengelernt, aber wie wendet man diese Techniken gezielt an, wenn man in einer Vielzahl von False Positives versinkt?
 
 
 ###Verweise
-- <a href="http://blog.spiderlabs.com/2011/08/modsecurity-advanced-topic-of-the-week-exception-handling.html">Spider Labs Blog Post: Exception Handling
-
+- [Spider Labs Blog Post: Exception Handling](http://blog.spiderlabs.com/2011/08/modsecurity-advanced-topic-of-the-week-exception-handling.html)
+- [ModSecurity Referenzhandbuch](https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual)
