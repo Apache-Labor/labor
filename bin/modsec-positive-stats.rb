@@ -231,6 +231,11 @@ def check_parameters()
      exit 1
   end
 
+  unless $params[:baseline].to_s.to_i == $params[:baseline]
+     puts_error("Baseline parameter is not integer. This is fatal. Aborting.", nil)
+     exit 1
+  end
+
   return err_status
 
 end
@@ -338,6 +343,12 @@ of the average, the median and the standard deviation.
 
 You get this stream of scores by defining the webserver's access log
 accordingly and then extract the data out of that format.
+
+Note that you can add an additional baseline of STR requests to the
+statistics. This makes sense if your STDIN comes without the requests
+which did not trigger any rules, but you want to include them in
+the calculation.
+
 
 Example:
 LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" \\
