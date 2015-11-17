@@ -10,3 +10,5 @@ fi
 export GDFONTPATH=/usr/share/fonts/truetype/ttf-bitstream-vera
 
 gnuplot ./gnuplot-xkcd-raw-linscale.gp
+
+cp ./incoming-anomaly-scores-distribution.png ../incoming-anomaly-scores-distribution.png
