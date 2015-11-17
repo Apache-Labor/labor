@@ -23,14 +23,16 @@ cd labor
 - [labor-03](labor-03) Konfigurieren eines SSL Servers
 - [labor-04](labor-04) Das Zugriffslog ausbauen und Auswerten
 - [labor-05](labor-05) ModSecurity einbinden
-- [labor-06](labor-06) OWASP ModSecurity Core Rules einbinden
-- labor-07: ModSecurity Core Rules Tunen TODO
-- labor-08: Effizient in der Shell an einer Apache Konfiguration arbeiten TODO
+- [labor-06](labor-06) OWASP ModSecurity Core Rules Einbinden
+- [labor-07](labor-07) OWASP ModSecurity Core Rules Tunen
 
 ##Beitragen
 
-Vielen Dank allen, die zu diesem Labor beigetragen haben oder dies noch tun werden.
-Wir sind dankbar für Kommentare, Korrekturen und Anregungen.
+Vielen Dank allen, die zu den verschiedenen Anleitungen Labor beigetragen haben.
+Wir sind dankbar für Kommentare, Korrekturen und Anregungen. Am Liebsten als
+Pull-Request, aber auch Emails sind wollkommen.
+
+Kontakt : christian . folini bei netnea.com.
 
 ##Alternativer Standort
 
