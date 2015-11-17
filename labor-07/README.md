@@ -503,7 +503,7 @@ ursprüngliche Sample zu wenig gross war, um wirklich alles abzudecken. Das bede
 
 Erfolgreiches Tuning der *ModSecurity Core Rules* besteht im itertativen Wiederholen der Schritte: Eine Gruppe von legitimen Requests untersuchen, daraus *Ignore-Rules* ableiten, in die Produktion bringen, beobachten und gegebenenfalls die Anomalie-Limite absenken. Wichtig ist ein systematisches Vorgehen und ein fester Rhythmus, zum Beispiel alle zwei Wochen eine neue Gruppe von *Ignore-Rules* einspielen, einige Tage lang beobachten, dann neue *Ignore-Rules* ableiten und zusammen mit einer tieferen Limite einspielen.
 
-###Schritt 7: Weitere Ignore-Rules ableiten
+###Schritt 7: Weitere Ignore-Rules ableiten (Scores 50-89)
 
 Weil wir diese Anleitung aber zu Übungszwecken abarbeiten und keine produktive Umgebung vor uns haben, bringen wir die verfertigten *Ignore-Rules* nicht auf den Server, sondern üben uns noch etwas beim Schreiben dieser Regeln. In dieser zweiten Runde nehmen wir uns diejenigen Anfragen vor, die einen Score in den 50er bis 80ern ereichten. Das waren in der urspünglichen Statistik sehr viele, aber es wird sich zeigen, dass nicht mehr viel zu unseren bestehenden Regelverletzungen hinzukommt. Um nicht dieselben Regelverletzungen erneut zu behandeln, unterdrücken wir die bereits behandelten Kombinationen mit einem etwas anspruchsvollen *One-Liner*:
 
@@ -583,31 +583,133 @@ Und hier die Zusammenfassung:
 
 ```
 
+Damit verbleiben noch drei einzelne zu behandelnde Regelverletzungen in unserer Gruppe:
+
+```bash
+$> grep -F -f ids labor-07-example-error.log | grep -v -E "ARGS:message.*(950911|960024|973300|973304|973306|973314|973316|973332|973333|973335|973338|981231|981243|981244|981245|981246|981248|981257)" | grep -v -E "REQUEST_COOKIES:X0_org.*981172" | grep -E "ARGS:(message|subject)" | modsec-rulereport.rb -m combined
+1 x 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters (severity:  NONE/UNKOWN)
+-----------------------------------------------------------------------------------------------------------
+      # ModSec Rule Exclusion: 960024 : Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters (severity:  NONE/UNKOWN)
+      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=960024;ARGS:subject"
+
+1 x 981249 Detects chained SQL injection attempts 2/2 (severity:  NONE/UNKOWN)
+------------------------------------------------------------------------------
+      # ModSec Rule Exclusion: 981249 : Detects chained SQL injection attempts 2/2 (severity:  NONE/UNKOWN)
+      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=981249;ARGS:message"
+```
+Damit rückt das Freitextfeld *subject*, das man ebenfalls beim Schreiben einer Email füllt, in den Fokus. Es wurde da nur eine Regelverletzung entdeckt. Wir können aber Annehmen, dass auf diesem Freitextfeld generell dieselben Regeln verletzt werden wie auf *message* und dass es bis dato noch nicht vorgekommen ist, zeigt nur dass unser Logfile noch nicht alle Möglichkeiten abdeckt. Wenn wir *subject* ähnlich behandeln möchten wie *message*, dann können wir dazu einen Block von *Ignore-Rules* aus den *message-Ignore-Rules* ableiten. Bevor wir das tun erweitern wir letzteren aber noch um die neue Unterdrückungs-Regel für id `981249`:
+
+```bash
+      # Ignore-Rules for ARGS:subject
+      # -----------------------------
+      # ModSec Rule Exclusion: 950911 : HTTP Response Splitting Attack (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 960024 : Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 973300 : Possible XSS Attack Detected - HTML Tag Handler (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 973304 : XSS Attack Detected (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 973306 : XSS Attack Detected (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 973314 : XSS Attack Detected (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 973316 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 973332 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 973333 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 973335 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 973338 : XSS Filter - Category 3: Javascript URI Vector (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 981231 : SQL Comment Sequence Detected. (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 981243 : Detects classic SQL injection probings 2/2 (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 981244 : Detects basic SQL authentication bypass attempts 1/3 (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 981245 : Detects basic SQL authentication bypass attempts 2/3 (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 981246 : Detects basic SQL authentication bypass attempts 3/3 (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 981248 : Detects chained SQL injection attempts 1/2 (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 981249 : Detects chained SQL injection attempts 2/2 (severity:  NONE/UNKOWN)
+      # ModSec Rule Exclusion: 981257 : Detects MySQL comment-/space-obfuscated injections and backtick termination (severity:  NONE/UNKOWN)
+      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=950911;ARGS:subject,ctl:ruleRemoveTargetById=960024;ARGS:subject,ctl:ruleRemoveTargetById=973300;ARGS:subject,ctl:ruleRemoveTargetById=973304;ARGS:subject,ctl:ruleRemoveTargetById=973306;ARGS:subject,ctl:ruleRemoveTargetById=973314;ARGS:subject,ctl:ruleRemoveTargetById=973316;ARGS:subject,ctl:ruleRemoveTargetById=973332;ARGS:subject,ctl:ruleRemoveTargetById=973333;ARGS:subject,ctl:ruleRemoveTargetById=973335;ARGS:subject,ctl:ruleRemoveTargetById=973338;ARGS:subject,ctl:ruleRemoveTargetById=981231;ARGS:subject,ctl:ruleRemoveTargetById=981243;ARGS:subject,ctl:ruleRemoveTargetById=981244;ARGS:subject,ctl:ruleRemoveTargetById=981245;ARGS:subject,ctl:ruleRemoveTargetById=981246;ARGS:subject,ctl:ruleRemoveTargetById=981248;ARGS:subject,ctl:ruleRemoveTargetById=981249;ARGS:subject,ctl:ruleRemoveTargetById=981257;ARGS:subject"
+```
+	
+	FIXME: ruleid
+
+Dabei halten wir *message* und *subject* weiterhin separat. Die Lesbarkeit würde leiden, wenn wir in den Blöcken die Parameter mischen würden.
+
+In unserer Gruppe von Fehl-Alarmen bleibt das kryptische Argument *TX:sqli_select_statement_count*. Die komplette Fehlermeldung sieht so aus:
+
+```bash
+[2015-05-26 22:13:36.867916] [-:error] - - [client 192.168.146.78] ModSecurity: Warning. Operator GE matched 3 at TX:sqli_select_statement_count. [file "/opt/modsecurity-rules/latest/base_rules/modsecurity_crs_41_sql_injection_attacks.conf"] [line "108"] [id "981317"] [rev "2"] [msg "SQL SELECT Statement Anomaly Detection Alert"] [data "..."] [hostname "www.example.com"] [uri "/EMail/MailHandler"] [unique_id "Vi6XgKwxQzZrjFreMRsAAAB3"]
+```
+
+Die Engine zählt also die *SQL Statements* aus, speichert sie in einer internen Transaktionsvariable ab und wenn Sie zu drei oder mehr gelangt, dann gibt das einen Alarm. Erneut sehen wir uns mit dem Pfad */EMail/MailHandler* konfrontiert. Ich schlage vor, die interne Variable wie jedes andere Argument zu behandeln und diesen Zähler - der übrigens sehr selten anschlägt - beim Abfassen von Emails auszuschalten:
+
+```bash
+      # Ignore-Rules for TX:sqli_select_statement_count (SQL Statement counter)
+      # -----------------------------------------------------------------------
+      # ModSec Rule Exclusion: 981317 : SQL SELECT Statement Anomaly Detection Alert (severity:  NONE/UNKOWN)
+      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=981317;TX:sqli_select_statement_count"
+```
+	FIXME: ruleid
 
 
-###Schritt 5: Verletzte Core Rules punktuell unterdrücken: Für bestimmte Pfad-Parameter Kombinationen
+###Schritt 8: Weitere Ignore-Rules ableiten (Scores 10-49)
 
-###Schritt 6: Repetieren
+In diese Gruppe fallen 21 Requests, aber nur sehr wenige uns unbekannte Regelverletzungen:
 
-Wiederholen für nächste Gruppe von relevanten false Positives
+```bash
+$> cat labor-07-example-access.log | grep -E "[1-4][0-9] [0-9-]$" | alreqid > ids
+$> wc -l ids
+21
+$> grep -F -f ids labor-07-example-error.log | grep -v -E "ARGS:(message|subject).*(950911|960024|973300|973304|973306|973314|973316|973332|973333|973335|973338|981231|981243|981244|981245|981246|981248|981249|981257)" | grep -v -E "REQUEST_COOKIES:X0_org.*981172" | grep -v -E "ARGS:attachInfo.*(960024|973300|973304|973338|981245)" | grep -v -E "TX:sqli_select_statement_count.*981317" | melidmsg
+960000 Attempted multipart/form-data bypass
+981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+$> grep -F -f ids labor-07-example-error.log | grep -v -E "ARGS:(message|subject).*(950911|960024|973300|973304|973306|973314|973316|973332|973333|973335|973338|981231|981243|981244|981245|981246|981248|981249|981257)" | grep -v -E "REQUEST_COOKIES:X0_org.*981172" | grep -v -E "ARGS:attachInfo.*(960024|973300|973304|973338|981245)" | grep -v -E "TX:sqli_select_statement_count.*981317" | melmatch 
+FILES:upFile
+REQUEST_COOKIES:utag_main
+REQUEST_COOKIES:utag_main
+```
 
-###Schritt 7: Anomalie-Limite tiefer setzen
+Es schleicht sich nun der Eindruck ein, dass je weiter wir nach unten kommen, desto leichter wird die Arbeit beim Tunen: Wir haben in diesem ansehnlich grossen Block von Regelverletzungen tatsächlich nur zwei neue Fehlalarme zu behandeln. Einmal eine Verletzung beim File-Upload und einmal ein neues Cookie. Sie lassen sich leicht mit unserem Skript ableiten.
 
-Die getunten Regeln einige Tage beobachten
-Wenn die Scores sich wie gewünscht bewegen, dann Limite reduzieren
+```bash
+      # Ignore-Rules for FILES:upFile
+      # -----------------------------
+      # ModSec Rule Exclusion: 960000 : Attempted multipart/form-data bypass (severity:  NONE/UNKOWN)
+      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=960000;FILES:upFile"
 
-Faustregel: Maximal einer von 10'000 Requests darf als false positive blockiert werden.
+      ...
 
-###Schritt 8: Repetieren
+      # ModSec Rule Exclusion: 981172 : Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded (severity:  NONE/UNKOWN)
+      SecRuleUpdateTargetById 981172 "!REQUEST_COOKIES:utag_main"
 
-Tuning-Prozess in meheren Iterationen durchführen.
-Limite Schritt um Schritt reduzieren.
-10 scheint für einen Standard-Service eine gute Limite
-Wenn sensible Daten mit besonderem Schutzbedarf betroffen sind, dann sollte die Limite maximal 5 betragen
+```
 
-Normalerweise kann man einen Service in 3-4 Iterationen auf eine Limite von 10 und mit zwei weiteren Iterationen recht bequem auf eine Limite von 5 bringen.
+###Schritt 9: Weitere Ignore-Rules ableiten (1-9)
 
-Für eine mittelgrosse Applikation werden typischerweise 20-30 Ignore-Rules nötig.
+Im letzten Block der *Ignore Rules* haben wir nun zahlenmässig sehr viele Regelverletzungen vor uns. Aber handelt es sich wirklich um neue Fehlalarme oder kommen wir ähnlich gimpflich davon wie bei den Scores 10-49?
+
+
+```bash
+$> cat labor-07-example-access.log | grep -E " [1-9] [0-9-]$" | alreqid > ids
+$> wc -l ids
+2319 ids
+$> grep -F -f ids labor-07-example-error.log | grep -v -E "ARGS:(message|subject).*(950911|960024|973300|973304|973306|973314|973316|973332|973333|973335|973338|981231|981243|981244|981245|981246|981248|981249|981257)" | grep -v -E "REQUEST_COOKIES:X0_org.*981172" | grep -v -E "ARGS:attachInfo.*(960024|973300|973304|973338|981245)" | grep -v -E "TX:sqli_select_statement_count.*981317" | grep -v -E "FILES:upFile.*960000" | grep -v -E "REQUEST_COOKIES:utag_main.*981172" | melidmsg | sucs
+    114 981000 Possibly malicious iframe tag in output
+```
+
+Wir kommen tatsächlich sehr glimpflich davon. Nur noch ein einziges Problem ist zurückgeblieben, zudem scheint es nicht mehr den Input, sondern den Output zu betreffen. Wir verwahren wie bis dato bekannt:
+
+
+```bash
+      # Ignore-Rules for RESPONSE_BODY
+      # ------------------------------
+      # ModSec Rule Exclusion: 981000 : Possibly malicious iframe tag in output (severity:  NONE/UNKOWN)
+      SecRule REQUEST_FILENAME "@beginsWith /EMail/newMessage.aspx" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=981000;RESPONSE_BODY"
+```
+
+Und damit sind wir am Ende angekommen. Damit haben wir unseren Bestand von 10000 Anfragen und über 5000 Fehlalarmen abschliessend behandelt. Wenn wir diese Regeln in die Produktion bringen, dann müssen wir trotzdem mit einzelnen neuen False-Positives rechnen. Aber wir können sicher sein, dass sie nur noch vereinzelt auftreten werden. Es wäre also verfrüht nun sogleich eine ganz tiefe Anomalie-Limite einzustellen. Aber ein Wert von 5 oder 10, den ich auf produktiven Systemen empfehle, kann in einigen Absenkungsschritten und kleineren dazwischen geschobenen Tuning-Runden gut erreicht werden.
+
+###Schritt 9: Sämtliche Ignore-Rules zusammengefasst
+
+```bash
+FIXME
+```
+
+
 
 ###Bonus: Rascher einen Überblick gewinnen
 
