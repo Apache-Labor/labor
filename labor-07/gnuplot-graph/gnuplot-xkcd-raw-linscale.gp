@@ -1,5 +1,5 @@
 set boxwidth 0.5
-set terminal png size 1200,800 truecolor nocrop enhanced font VeraBd 12
+set terminal png size 950,550 truecolor nocrop enhanced font VeraBd 12
 
 
 set output 'incoming-anomaly-scores-distribution.png'
@@ -15,8 +15,8 @@ set ytics axis nomirror
 set ytics scale 0
 
 # Axis Labels
-set xlabel 'Incoming Anomaly Score'
-set ylabel 'Number of Requests'
+set xlabel 'Anomalie Werte der Requests'
+set ylabel 'Anzahl der Anfragen pro Anomalie Wert (log. Skala)'
 
 
 # bar will be filled

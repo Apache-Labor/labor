@@ -214,7 +214,7 @@ ist ein Plan, der das Problem bewältigbar macht. Fangen wir mit einer grafische
 Umsetzung er obenstehenden Statistik an. Das ist nicht wirklich nötig, hilft
 aber bei der folgenden konzeptionellen Überlegung:
 
-FIXME: Grafik
+![Verteilung der Anomaly Scores](./incoming-anomaly-scores-distribution.png)
 
 Ich habe eine logarithmische Skala benützt, um die zum Teil kleinen Werte neben
 den Anfragen ohne Regelverletzung nicht verschwinden zu lassen. Auf der X-Achse
