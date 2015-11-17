@@ -769,7 +769,7 @@ Nun haben wir also eine Regel ausgeschaltet. Sei es für den kompletten Service 
 setvar:tx.inbound_anomaly_score=+%{tx.notice_anomaly_score}"
 ```
 
-Hier wird also zur Transaktionsvariablen *bound_anomaly_score* der Wert *tx.notice_anomaly_score* addiert. Wir haben die Möglichkeit, diese Regel konfigurativ zu verändern, ohne das Regelfile zu berühren. Die Addition können wir nicht unterdrücken, aber wir können sie mit einer Subtraktion neutralisieren. Dies bedeutet aber ein anderes Regelmuster in Form einer Regel, die nach der Einbindung der *Core Rules* konfiguriert wird.
+Hier wird also zur Transaktionsvariablen *inbound_anomaly_score* der Wert *tx.notice_anomaly_score* addiert. Wir haben die Möglichkeit, diese Regel konfigurativ zu verändern, ohne das Regelfile zu berühren. Die Addition können wir nicht unterdrücken, aber wir können sie mit einer Subtraktion neutralisieren. Dies bedeutet aber ein anderes Regelmuster in Form einer Regel, die nach der Einbindung der *Core Rules* konfiguriert wird.
 
 ```
 ...
