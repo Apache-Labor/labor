@@ -474,18 +474,19 @@ Mit der im Schritt 7 beschriebenen Regel konnten wir den Zugriff auf eine bestim
 
 SecMarker "BEGIN_LOGIN_WHITELIST"
 
-SecRule REQUEST_FILENAME "!@beginsWith /login" "id:10001,phase:1,pass,t:lowercase,t:normalisePath,nolog,msg:'Skipping',skipAfter:LOGIN_WHITELIST_END"
+SecRule REQUEST_FILENAME     "!@beginsWith /login" "id:10001,phase:1,pass,t:lowercase,t:normalisePath,nolog,msg:'Skipping',skipAfter:END_LOGIN_WHITELIST"
+SecRule REQUEST_FILENAME     "!@beginsWith /login" "id:10002,phase:2,pass,t:lowercase,t:normalisePath,nolog,msg:'Skipping',skipAfter:END_LOGIN_WHITELIST"
 
-SecRule REQUEST_FILENAME "!^/login/(index.html|login.do)$" "id:10002,phase:1,deny,log,msg:'Unknown Login URL',tag:'Whitelist Login'"
+SecRule REQUEST_FILENAME     "!^/login/(index.html|login.do)$" "id:10003,phase:1,deny,log,msg:'Unknown Login URL',tag:'Whitelist Login'"
 
-SecRule ARGS_GET_NAMES     "!^()$" "id:10003,phase:1,deny,log,msg:'Unknown Query-String Parameter',tag:'Whitelist Login'"
-SecRule ARGS_POST_NAMES    "!^(username|password)$" "id:10004,phase:2,deny,log,msg:'Unknown Post Parameter',tag:'Whitelist Login'"
+SecRule ARGS_GET_NAMES       "!^()$" "id:10004,phase:1,deny,log,msg:'Unknown Query-String Parameter',tag:'Whitelist Login'"
+SecRule ARGS_POST_NAMES      "!^(username|password)$" "id:10005,phase:2,deny,log,msg:'Unknown Post Parameter',tag:'Whitelist Login'"
 
-SecRule &ARGS_POST:username "@gt 1" "id:10005,phase:2,deny,log,msg:'%{MATCHED_VAR_NAME} occurring more than once',tag:'Whitelist Login'"
-SecRule &ARGS_POST:password "@gt 1" "id:10006,phase:2,deny,log,msg:'%{MATCHED_VAR_NAME} occurring more than once',tag:'Whitelist Login'"
+SecRule &ARGS_POST:username  "@gt 1" "id:10006,phase:2,deny,log,msg:'%{MATCHED_VAR_NAME} occurring more than once',tag:'Whitelist Login'"
+SecRule &ARGS_POST:password  "@gt 1" "id:10007,phase:2,deny,log,msg:'%{MATCHED_VAR_NAME} occurring more than once',tag:'Whitelist Login'"
 
-SecRule ARGS_POST:username "!^[a-zA-Z0-9_-]{1,16}$" "id:10007,phase:2,deny,log,msg:'%{MATCHED_VAR_NAME} parameter does not meet value domain',tag:'Whitelist Login'"
-SecRule ARGS_POST:password "!^[a-zA-Z0-9@#+<>_-]{1,16}$" "id:10008,phase:2,deny,log,msg:'%{MATCHED_VAR_NAME} parameter does not meet value domain',tag:'Whitelist Login'"
+SecRule ARGS_POST:username   "!^[a-zA-Z0-9_-]{1,16}$" "id:10008,phase:2,deny,log,msg:'%{MATCHED_VAR_NAME} parameter does not meet value domain',tag:'Whitelist Login'"
+SecRule ARGS_POST:password   "!^[a-zA-Z0-9@#+<>_-]{1,16}$" "id:10009,phase:2,deny,log,msg:'%{MATCHED_VAR_NAME} parameter does not meet value domain',tag:'Whitelist Login'"
 
 SecMarker "END_LOGIN_WHITELIST"
 
