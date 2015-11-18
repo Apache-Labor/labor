@@ -504,13 +504,11 @@ Erfolgreiches Tuning der *ModSecurity Core Rules* besteht im itertativen Wiederh
 
 ###Schritt 7: Weitere Ignore-Rules ableiten (Scores 50-89)
 
-Weil wir diese Anleitung aber zu Übungszwecken abarbeiten und keine produktive Umgebung vor uns haben, bringen wir die verfertigten *Ignore-Rules* nicht auf den Server, sondern üben uns noch etwas beim Schreiben dieser Regeln. In dieser zweiten Runde nehmen wir uns diejenigen Anfragen vor, die einen Score in den 50er bis 80ern ereichten. Das waren in der urspünglichen Statistik sehr viele, aber es wird sich zeigen, dass nicht mehr viel zu unseren bestehenden Regelverletzungen hinzukommt. Um nicht dieselben Regelverletzungen erneut zu behandeln, unterdrücken wir die bereits behandelten Kombinationen mit einem etwas anspruchsvollen *One-Liner*:
-
-FIXME: Vielleicht besser mit einem Error-Log "2nd Round" arbeiten? So sind die eingeschobenen "grep -v" nur schwer verständlich und müssten auch besser erklärt werden.
+Weil wir diese Anleitung aber zu Übungszwecken abarbeiten und keine produktive Umgebung vor uns haben, bringen wir die verfertigten *Ignore-Rules* nicht auf den Server, sondern üben uns noch etwas beim Schreiben dieser Regeln. In dieser zweiten Runde nehmen wir uns diejenigen Anfragen vor, die einen Score in den 50er bis 80ern ereichten. Als Basis dient uns ein Beispiel-Logfile aus dem die oben unterdrückten Regeln herausgefiltert wurden ([labor-07-example-error.log-step-7](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-04-example-error.log-step-7)). Regelverletzungen von 50 bis 89 waren in der urspünglichen Statistik sehr viele, aber es wird sich zeigen, dass nicht mehr viel zu unseren bestehenden Regelverletzungen hinzukommt. Um nicht dieselben Regelverletzungen erneut zu behandeln, unterdrücken wir die bereits behandelten Kombinationen mit einem etwas anspruchsvollen *One-Liner*:
 
 ```bash
 $> cat labor-07-example-access.log | grep -E "[5-8][0-9] [0-9-]$" | alreqid > ids
-$> grep -F -f ids labor-07-example-error.log | grep -v -E "ARGS:message.*(950911|960024|973300|973304|973306|973314|973316|973332|973333|973335|973338|981231|981243|981244|981245|981246|981248|981257)" | grep -v -E "REQUEST_COOKIES:X0_org.*981172" | melidmsg | sucs
+$> grep -F -f ids labor-07-example-error.log-step-7 | melidmsg | sucs
       1 973300 Possible XSS Attack Detected - HTML Tag Handler
       1 973304 XSS Attack Detected
       1 973338 XSS Filter - Category 3: Javascript URI Vector
@@ -519,7 +517,7 @@ $> grep -F -f ids labor-07-example-error.log | grep -v -E "ARGS:message.*(950911
       1 981317 SQL SELECT Statement Anomaly Detection Alert
       2 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
       5 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-$> grep -F -f ids labor-07-example-error.log | grep -v -E "ARGS:message.*(950911|960024|973300|973304|973306|973314|973316|973332|973333|973335|973338|981231|981243|981244|981245|981246|981248|981257)" | grep -v -E "REQUEST_COOKIES:X0_org.*981172" | melmatch | sucs
+$> grep -F -f ids labor-07-example-error.log | melmatch | sucs
       1 ARGS:message
       1 ARGS:subject
       1 TX:sqli_select_statement_count
@@ -645,18 +643,18 @@ Die Engine zählt also die *SQL Statements* aus, speichert sie in einer internen
 
 ###Schritt 8: Weitere Ignore-Rules ableiten (Scores 10-49)
 
-In diese Gruppe fallen 21 Requests, aber nur eine einzige uns unbekannte Regelverletzungen:
+In diese Gruppe fallen 21 Requests, aber nur eine einzige uns unbekannte Regelverletzungen. Ich habe als Basis
+([labor-07-example-error.log-step-8](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-04-example-error.log-step-8)) vorbereitet. Es handelt sich um das ursprüngliche Logfile aus dem sämtliche oben unterdrückten Regelverletzungen herausgefiltert wurden:
 
 ```bash
 $> cat labor-07-example-access.log | grep -E "[1-4][0-9] [0-9-]$" | alreqid > ids
 $> wc -l ids
 21
-$> grep -F -f ids labor-07-example-error.log | grep -v -E "ARGS:(message|subject).*(950911|960024|973300|973304|973306|973314|973316|973332|973333|973335|973338|981231|981243|981244|981245|981246|981248|981249|981257)" | grep -v -E "REQUEST_COOKIES:(X0_org|utag_main).*981172" | grep -v -E "ARGS:attachInfo.*(960024|973300|973304|973338|981245)" | grep -v -E "TX:sqli_select_statement_count.*981317" | melidmsg
+$> grep -F -f ids labor-07-example-error.log-step-8 | melidmsg
 960000 Attempted multipart/form-data bypass
-$> grep -F -f ids labor-07-example-error.log | grep -v -E "ARGS:(message|subject).*(950911|960024|973300|973304|973306|973314|973316|973332|973333|973335|973338|981231|981243|981244|981245|981246|981248|981249|981257)" | grep -v -E "REQUEST_COOKIES:(X0_org|utag_main).*981172" | grep -v -E "ARGS:attachInfo.*(960024|973300|973304|973338|981245)" | grep -v -E "TX:sqli_select_statement_count.*981317" | melmatch 
+$> grep -F -f ids labor-07-example-error.log-step-8 | melmatch 
 FILES:upFile
 ```
-
 Es schleicht sich nun der Eindruck ein, dass je weiter wir nach unten kommen, desto leichter wird die Arbeit beim Tunen: Wir haben in diesem ansehnlich grossen Block von Regelverletzungen tatsächlich nur einen neuen Fehlalarm zu behandeln: Eine Verletzung beim File-Upload. Sie lässt sich leicht mit unserem Skript ableiten.
 
 ```bash
@@ -667,16 +665,15 @@ Es schleicht sich nun der Eindruck ein, dass je weiter wir nach unten kommen, de
 
 ```
 
-###Schritt 9: Weitere Ignore-Rules ableiten (1-9)
+###Schritt 9: Weitere Ignore-Rules ableiten (Scores 1-9)
 
-Im letzten Block der *Ignore Rules* haben wir nun zahlenmässig sehr viele Regelverletzungen vor uns. Aber handelt es sich wirklich um neue Fehlalarme oder kommen wir ähnlich gimpflich davon wie bei den Scores 10-49?
-
+Im letzten Block der *Ignore Rules* (die Werte von 1 bis und mit 9) haben wir nun zahlenmässig sehr viele Regelverletzungen vor uns. Aber handelt es sich wirklich um neue Fehlalarme oder kommen wir ähnlich gimpflich davon wie bei den Scores 10-49? Als Basis dient ([labor-07-example-error.log-step-9](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-04-example-error.log-step-9)), das auf den vorangegangenen Schritten aufbaut.
 
 ```bash
 $> cat labor-07-example-access.log | grep -E " [1-9] [0-9-]$" | alreqid > ids
 $> wc -l ids
 2319 ids
-$> grep -F -f ids labor-07-example-error.log | grep -v -E "ARGS:(message|subject).*(950911|960024|973300|973304|973306|973314|973316|973332|973333|973335|973338|981231|981243|981244|981245|981246|981248|981249|981257)" | grep -v -E "REQUEST_COOKIES:X0_org.*981172" | grep -v -E "ARGS:attachInfo.*(960024|973300|973304|973338|981245)" | grep -v -E "TX:sqli_select_statement_count.*981317" | grep -v -E "FILES:upFile.*960000" | grep -v -E "REQUEST_COOKIES:utag_main.*981172" | melidmsg | sucs
+$> grep -F -f ids labor-07-example-error.log-step-9 | melidmsg | sucs
     114 981000 Possibly malicious iframe tag in output
 ```
 
@@ -694,8 +691,10 @@ Und damit sind wir am Ende angekommen. Damit haben wir unseren Bestand von 10000
 
 ###Schritt 9: Sämtliche Ignore-Rules zusammengefasst
 
+Fassen wir die verschiedenen Regeln zur Unterdrückung der Fehlalarme nochmals zusammen. Die Regeln gliedern sich in der Konfiguration in zwei Blöcke: *Ignore-Rules* vor dem *Include* der *Core-Rules* sowie Regeln nach dem *Include* der *Core-Rules*. Zwischen den beiden Blöcken eingeschoben das *Include-Statement* selbst. Die Regeln und die Zwischentitel sind nun so formatiert, dass sie einfach in eine Konfiguration wie in Anleitung 6 oder 7 eingefügt werden können.
+
 ```bash
-FIXME: Blöcke richtig beschriften
+      # === ModSecurity Ignore Rules Before Core Rules Inclusion; order by id of ignored rule (ids: 10000-49999)
 
       # Ignore-Rules for ARGS:message 
       # -----------------------------
@@ -767,20 +766,346 @@ FIXME: Blöcke richtig beschriften
       # ModSec Rule Exclusion: 981000 : Possibly malicious iframe tag in output (severity:  NONE/UNKOWN)
       SecRule REQUEST_FILENAME "@beginsWith /EMail/newMessage.aspx" "phase:2,nolog,pass,id:10005,ctl:ruleRemoveTargetById=981000;RESPONSE_BODY"
 
-      ...
+      # === ModSecurity Core Rules Inclusion
+
+      Include    /modsecurity-core-rules/*.conf
+
+      # === ModSecurity Ignore Rules After Core Rules Inclusion; order by id of ignored rule (ids: 50000-59999)
 
       # ModSec Rule Exclusion: 981172 : Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded (severity:  NONE/UNKOWN)
       SecRuleUpdateTargetById 981172 "!REQUEST_COOKIES:X0_org"
 
       # ModSec Rule Exclusion: 981172 : Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded (severity:  NONE/UNKOWN)
       SecRuleUpdateTargetById 981172 "!REQUEST_COOKIES:utag_main"
+
 ```
-
-
 
 ###Bonus: Rascher einen Überblick gewinnen
 
-FIXME: Extraction loop über modsec-positive-rulereport.txt
+Wenn man neu an einen ungetunten Service herantritt, dann will man sich rasch einen Überblick verschaffen. Da ist es sinnvoll die Verteilung der Scores wie oben beschrieben anzusehen. Ein guter nächster Schritt ist eine Auswertung, wie die einzelnen *Anomaly Scores* genau zu Stande gekommen sind; gleichsam ein Überblick der Regelverletzungen pro Anomalie-Wert. So einen Report generiert das folgende Konstrukt. Auf der ersten Zeile extrahieren wir eine Liste mit Anomalie Werten der eingehenden Requests, die im Logfile tatsächlich vorkommen. Dann bauen wir eine Schleife über diese *Scores*, lesen für jeden *Score* die *Request-ID* aus, speichern sie im File `ids` und machen eine kurze Auswertung auf dem *Error-Log* für diese *IDs*.
+
+```bash
+$> SCORES=$(cat labor-07-example-access.log | alscorein | sort -n | uniq | egrep -v -E "^0" | xargs)
+$> echo $SCORES
+3 6 9 11 18 21 23 26 33 34 43 59 66 69 71 73 76 79 81 83 84 86 89 91
+$> for S in $SCORES; do echo "INCOMING SCORE $S"; grep -E " $S [0-9-]+$" labor-07-example-access.log | alreqid > ids; grep -F -f ids labor-07-example-error.log | melidmsg | sucs; echo ; done 
+INCOMING SCORE 3
+     40 981000 Possibly malicious iframe tag in output
+   1598 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+
+INCOMING SCORE 6
+     69 981000 Possibly malicious iframe tag in output
+   1283 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+
+INCOMING SCORE 9
+      5 981000 Possibly malicious iframe tag in output
+     10 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+
+INCOMING SCORE 11
+      1 960000 Attempted multipart/form-data bypass
+      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+
+INCOMING SCORE 18
+      7 950911 HTTP Response Splitting Attack
+      7 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      7 973300 Possible XSS Attack Detected - HTML Tag Handler
+      7 973314 XSS Attack Detected
+
+INCOMING SCORE 21
+      2 950911 HTTP Response Splitting Attack
+      2 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      2 973300 Possible XSS Attack Detected - HTML Tag Handler
+      2 973314 XSS Attack Detected
+      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+
+INCOMING SCORE 23
+      1 981245 Detects basic SQL authentication bypass attempts 2/3
+      3 981231 SQL Comment Sequence Detected.
+      4 950911 HTTP Response Splitting Attack
+      4 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      4 973300 Possible XSS Attack Detected - HTML Tag Handler
+      4 973314 XSS Attack Detected
+
+INCOMING SCORE 26
+      1 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+      2 950911 HTTP Response Splitting Attack
+      2 973300 Possible XSS Attack Detected - HTML Tag Handler
+      2 973314 XSS Attack Detected
+      2 981245 Detects basic SQL authentication bypass attempts 2/3
+      3 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+
+INCOMING SCORE 33
+      3 950911 HTTP Response Splitting Attack
+      3 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      3 973300 Possible XSS Attack Detected - HTML Tag Handler
+      3 973314 XSS Attack Detected
+      3 981243 Detects classic SQL injection probings 2/2
+      3 981245 Detects basic SQL authentication bypass attempts 2/3
+      3 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+
+INCOMING SCORE 34
+      1 950911 HTTP Response Splitting Attack
+      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      1 973300 Possible XSS Attack Detected - HTML Tag Handler
+      1 973333 IE XSS Filters - Attack Detected.
+      1 981243 Detects classic SQL injection probings 2/2
+      1 981245 Detects basic SQL authentication bypass attempts 2/3
+      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+
+INCOMING SCORE 43
+      1 950911 HTTP Response Splitting Attack
+      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      1 973300 Possible XSS Attack Detected - HTML Tag Handler
+      1 973304 XSS Attack Detected
+      1 973314 XSS Attack Detected
+      1 973333 IE XSS Filters - Attack Detected.
+      1 981243 Detects classic SQL injection probings 2/2
+      1 981245 Detects basic SQL authentication bypass attempts 2/3
+      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+
+INCOMING SCORE 59
+      1 950911 HTTP Response Splitting Attack
+      1 973333 IE XSS Filters - Attack Detected.
+      1 973338 XSS Filter - Category 3: Javascript URI Vector
+      1 981243 Detects classic SQL injection probings 2/2
+      2 973300 Possible XSS Attack Detected - HTML Tag Handler
+      2 973304 XSS Attack Detected
+      2 981245 Detects basic SQL authentication bypass attempts 2/3
+      3 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+
+INCOMING SCORE 66
+      1 950911 HTTP Response Splitting Attack
+      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      1 973300 Possible XSS Attack Detected - HTML Tag Handler
+      1 973304 XSS Attack Detected
+      1 973306 XSS Attack Detected
+      1 973314 XSS Attack Detected
+      1 973333 IE XSS Filters - Attack Detected.
+      1 973338 XSS Filter - Category 3: Javascript URI Vector
+      1 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+      1 981231 SQL Comment Sequence Detected.
+      1 981243 Detects classic SQL injection probings 2/2
+      1 981244 Detects basic SQL authentication bypass attempts 1/3
+      1 981245 Detects basic SQL authentication bypass attempts 2/3
+      1 981248 Detects chained SQL injection attempts 1/2
+
+INCOMING SCORE 69
+      1 950911 HTTP Response Splitting Attack
+      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      1 973300 Possible XSS Attack Detected - HTML Tag Handler
+      1 973306 XSS Attack Detected
+      1 973333 IE XSS Filters - Attack Detected.
+      1 973338 XSS Filter - Category 3: Javascript URI Vector
+      1 981231 SQL Comment Sequence Detected.
+      1 981243 Detects classic SQL injection probings 2/2
+      1 981244 Detects basic SQL authentication bypass attempts 1/3
+      1 981245 Detects basic SQL authentication bypass attempts 2/3
+      1 981246 Detects basic SQL authentication bypass attempts 3/3
+      1 981248 Detects chained SQL injection attempts 1/2
+      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+
+INCOMING SCORE 71
+      1 981246 Detects basic SQL authentication bypass attempts 3/3
+      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+      2 950911 HTTP Response Splitting Attack
+      2 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      2 973300 Possible XSS Attack Detected - HTML Tag Handler
+      2 973304 XSS Attack Detected
+      2 973306 XSS Attack Detected
+      2 973314 XSS Attack Detected
+      2 973333 IE XSS Filters - Attack Detected.
+      2 973338 XSS Filter - Category 3: Javascript URI Vector
+      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+      2 981231 SQL Comment Sequence Detected.
+      2 981243 Detects classic SQL injection probings 2/2
+      2 981244 Detects basic SQL authentication bypass attempts 1/3
+      2 981245 Detects basic SQL authentication bypass attempts 2/3
+      2 981248 Detects chained SQL injection attempts 1/2
+
+INCOMING SCORE 73
+      1 950911 HTTP Response Splitting Attack
+      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      1 973300 Possible XSS Attack Detected - HTML Tag Handler
+      1 973304 XSS Attack Detected
+      1 973306 XSS Attack Detected
+      1 973314 XSS Attack Detected
+      1 973333 IE XSS Filters - Attack Detected.
+      1 973338 XSS Filter - Category 3: Javascript URI Vector
+      1 981231 SQL Comment Sequence Detected.
+      1 981243 Detects classic SQL injection probings 2/2
+      1 981244 Detects basic SQL authentication bypass attempts 1/3
+      1 981245 Detects basic SQL authentication bypass attempts 2/3
+      1 981246 Detects basic SQL authentication bypass attempts 3/3
+      1 981248 Detects chained SQL injection attempts 1/2
+      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+
+INCOMING SCORE 76
+      1 981246 Detects basic SQL authentication bypass attempts 3/3
+      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+      3 973316 IE XSS Filters - Attack Detected.
+      3 973335 IE XSS Filters - Attack Detected.
+      4 950911 HTTP Response Splitting Attack
+      4 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      4 973300 Possible XSS Attack Detected - HTML Tag Handler
+      4 973304 XSS Attack Detected
+      4 973306 XSS Attack Detected
+      4 973314 XSS Attack Detected
+      4 973333 IE XSS Filters - Attack Detected.
+      4 973338 XSS Filter - Category 3: Javascript URI Vector
+      4 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+      4 981231 SQL Comment Sequence Detected.
+      4 981243 Detects classic SQL injection probings 2/2
+      4 981244 Detects basic SQL authentication bypass attempts 1/3
+      4 981245 Detects basic SQL authentication bypass attempts 2/3
+      4 981248 Detects chained SQL injection attempts 1/2
+
+INCOMING SCORE 79
+      1 950911 HTTP Response Splitting Attack
+      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      1 973300 Possible XSS Attack Detected - HTML Tag Handler
+      1 973304 XSS Attack Detected
+      1 973306 XSS Attack Detected
+      1 973314 XSS Attack Detected
+      1 973333 IE XSS Filters - Attack Detected.
+      1 973338 XSS Filter - Category 3: Javascript URI Vector
+      1 981231 SQL Comment Sequence Detected.
+      1 981243 Detects classic SQL injection probings 2/2
+      1 981244 Detects basic SQL authentication bypass attempts 1/3
+      1 981245 Detects basic SQL authentication bypass attempts 2/3
+      1 981246 Detects basic SQL authentication bypass attempts 3/3
+      1 981248 Detects chained SQL injection attempts 1/2
+      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+
+INCOMING SCORE 81
+      1 973332 IE XSS Filters - Attack Detected.
+      7 981246 Detects basic SQL authentication bypass attempts 3/3
+     19 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+     24 973316 IE XSS Filters - Attack Detected.
+     24 973335 IE XSS Filters - Attack Detected.
+     25 950911 HTTP Response Splitting Attack
+     25 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+     25 973300 Possible XSS Attack Detected - HTML Tag Handler
+     25 973304 XSS Attack Detected
+     25 973306 XSS Attack Detected
+     25 973314 XSS Attack Detected
+     25 973333 IE XSS Filters - Attack Detected.
+     25 973338 XSS Filter - Category 3: Javascript URI Vector
+     25 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+     25 981231 SQL Comment Sequence Detected.
+     25 981243 Detects classic SQL injection probings 2/2
+     25 981244 Detects basic SQL authentication bypass attempts 1/3
+     25 981245 Detects basic SQL authentication bypass attempts 2/3
+     25 981248 Detects chained SQL injection attempts 1/2
+
+INCOMING SCORE 83
+      3 950911 HTTP Response Splitting Attack
+      3 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      3 973300 Possible XSS Attack Detected - HTML Tag Handler
+      3 973304 XSS Attack Detected
+      3 973306 XSS Attack Detected
+      3 973314 XSS Attack Detected
+      3 973316 IE XSS Filters - Attack Detected.
+      3 973333 IE XSS Filters - Attack Detected.
+      3 973335 IE XSS Filters - Attack Detected.
+      3 973338 XSS Filter - Category 3: Javascript URI Vector
+      3 981231 SQL Comment Sequence Detected.
+      3 981243 Detects classic SQL injection probings 2/2
+      3 981244 Detects basic SQL authentication bypass attempts 1/3
+      3 981245 Detects basic SQL authentication bypass attempts 2/3
+      3 981246 Detects basic SQL authentication bypass attempts 3/3
+      3 981248 Detects chained SQL injection attempts 1/2
+      3 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+
+INCOMING SCORE 84
+      1 950911 HTTP Response Splitting Attack
+      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      1 973300 Possible XSS Attack Detected - HTML Tag Handler
+      1 973304 XSS Attack Detected
+      1 973306 XSS Attack Detected
+      1 973314 XSS Attack Detected
+      1 973332 IE XSS Filters - Attack Detected.
+      1 973333 IE XSS Filters - Attack Detected.
+      1 973338 XSS Filter - Category 3: Javascript URI Vector
+      1 981231 SQL Comment Sequence Detected.
+      1 981243 Detects classic SQL injection probings 2/2
+      1 981244 Detects basic SQL authentication bypass attempts 1/3
+      1 981245 Detects basic SQL authentication bypass attempts 2/3
+      1 981246 Detects basic SQL authentication bypass attempts 3/3
+      1 981248 Detects chained SQL injection attempts 1/2
+      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+
+INCOMING SCORE 86
+      1 981249 Detects chained SQL injection attempts 2/2
+      1 981317 SQL SELECT Statement Anomaly Detection Alert
+      2 973332 IE XSS Filters - Attack Detected.
+     26 981246 Detects basic SQL authentication bypass attempts 3/3
+     27 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+     27 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+     28 950911 HTTP Response Splitting Attack
+     28 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+     28 973300 Possible XSS Attack Detected - HTML Tag Handler
+     28 973304 XSS Attack Detected
+     28 973306 XSS Attack Detected
+     28 973314 XSS Attack Detected
+     28 973316 IE XSS Filters - Attack Detected.
+     28 973333 IE XSS Filters - Attack Detected.
+     28 973335 IE XSS Filters - Attack Detected.
+     28 973338 XSS Filter - Category 3: Javascript URI Vector
+     28 981231 SQL Comment Sequence Detected.
+     28 981243 Detects classic SQL injection probings 2/2
+     28 981244 Detects basic SQL authentication bypass attempts 1/3
+     28 981245 Detects basic SQL authentication bypass attempts 2/3
+     28 981248 Detects chained SQL injection attempts 1/2
+
+INCOMING SCORE 89
+      1 950911 HTTP Response Splitting Attack
+      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      1 973300 Possible XSS Attack Detected - HTML Tag Handler
+      1 973304 XSS Attack Detected
+      1 973306 XSS Attack Detected
+      1 973314 XSS Attack Detected
+      1 973316 IE XSS Filters - Attack Detected.
+      1 973333 IE XSS Filters - Attack Detected.
+      1 973335 IE XSS Filters - Attack Detected.
+      1 973338 XSS Filter - Category 3: Javascript URI Vector
+      1 981231 SQL Comment Sequence Detected.
+      1 981243 Detects classic SQL injection probings 2/2
+      1 981244 Detects basic SQL authentication bypass attempts 1/3
+      1 981245 Detects basic SQL authentication bypass attempts 2/3
+      1 981246 Detects basic SQL authentication bypass attempts 3/3
+      1 981248 Detects chained SQL injection attempts 1/2
+      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+
+INCOMING SCORE 91
+      5 950911 HTTP Response Splitting Attack
+      5 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
+      5 973300 Possible XSS Attack Detected - HTML Tag Handler
+      5 973304 XSS Attack Detected
+      5 973306 XSS Attack Detected
+      5 973314 XSS Attack Detected
+      5 973316 IE XSS Filters - Attack Detected.
+      5 973332 IE XSS Filters - Attack Detected.
+      5 973333 IE XSS Filters - Attack Detected.
+      5 973335 IE XSS Filters - Attack Detected.
+      5 973338 XSS Filter - Category 3: Javascript URI Vector
+      5 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+      5 981231 SQL Comment Sequence Detected.
+      5 981243 Detects classic SQL injection probings 2/2
+      5 981244 Detects basic SQL authentication bypass attempts 1/3
+      5 981245 Detects basic SQL authentication bypass attempts 2/3
+      5 981246 Detects basic SQL authentication bypass attempts 3/3
+      5 981248 Detects chained SQL injection attempts 1/2
+      5 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+```
+
+Genau genommen sind für die tiefen *Scores* auch die Fehlermeldungen der Antworten der Anfragen gelistet; in Fällen, wo sie auf Requests ausgelöst wurden, welche auch bei den Anfragen selbst Regelverletzungen mit sich brachten. Dieses Detail tut der Nützlichkeit obenstehenden Konstrukts aber keinen Abbruch. Ein ähnliches, noch etwas ausgebautes Skript gehört zu meinen täglichen Werkzeugen.
+
+Damit sind wir zum Ende des Blockes aus drei *ModSecurity-Anleitungen* gekommen. Als nächstes werden wir uns dem Bau eines *Reverse Proxys* zuwenden.
+
 
 ###Verweise
 - <a href="http://blog.spiderlabs.com/2011/08/modsecurity-advanced-topic-of-the-week-exception-handling.html">Spider Labs Blog Post: Exception Handling
