@@ -1,5 +1,6 @@
 ##### Changelog
 
+* 21\. November 2015: Hinweis auf gawk
 * 5\. Oktober 2015: Aliase ersetzt, awk Skripts erweitert
 * 4\. Oktober 2015: html -> markdown, auf github eingecheckt, überarbeitet
 * 9\. Juli 2013: Umbenennen des Logfile Formats auf extended (vs. extended2011); Anpassen der Logfile-Namen; Aktualisieren des User-Agent Eintrages im Logfile.
