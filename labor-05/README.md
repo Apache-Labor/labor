@@ -41,7 +41,7 @@ modsecurity-2.9.0.tar.gz: OK
 
 ###Schritt 2: Entpacken und Compiler konfigurieren
 
-Wir entpacken nun den Sourcecode und leiten die Konfiguration ein. Noch vorher gilt es aber zwei Pakete zu installieren, die eine Voraussetzung für das Kompilieren von _ModSecurity_ bilden. Eine Library zum Parsen von XML-Strukturen und die Grundlagen-/Header-Dateien der systemeigenen Regular Expression Library: *libxml2-dev*, libexpat1-dev_ und _libpcre3-dev_.
+Wir entpacken nun den Sourcecode und leiten die Konfiguration ein. Noch vorher gilt es aber zwei Pakete zu installieren, die eine Voraussetzung für das Kompilieren von _ModSecurity_ bilden. Eine Library zum Parsen von XML-Strukturen und die Grundlagen-/Header-Dateien der systemeigenen Regular Expression Library: _libxml2-dev_, _libexpat1-dev_ und _libpcre3-dev_.
 
 Damit sind die Voraussetzungen geschaffen und wir sind bereit für ModSecurity.
 
