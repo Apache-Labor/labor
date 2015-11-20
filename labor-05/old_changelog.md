@@ -1,5 +1,6 @@
 ##### Changelog
 
+* 21\. November 2015: Typos und Korrektor eines Kommandos
 * 18\. November 2015: Bugfix im Whitelisting Example
 * 12\. November 2015: Rechtschreibung (Benjamin Affolter)
 * 1\. November 2015: Generelle Überarbeitung, auf Apache 2.4 konvertiert

@@ -341,7 +341,7 @@ Die beschriebenen Teile gliedern das File in Abschnitte. Es folgt der Teil _--5a
 
 ```bash
 $> sudo mkdir /apache/logs/audit
-$> sudo chown www-data:www-data
+$> sudo chown www-data:www-data /apache/logs/audit
 ```
 
 Wir kommen damit zur Direktiven _SecDefaultAction_. Sie bezeichnet die Grundeinstellung einer Sicherheits-Regel. Wir können diese Werte zwar pro Regel festlegen, es ist aber üblich mit einem Default-Wert zu arbeiten, der dann an alle Regeln vererbt wird. ModSecurity kennt fünf Phasen. Die hier aufgeführte Phase 1 läuft an, sobald die Request-Header auf dem Server eingetroffen sind. Bei der Kompilation des Moduls haben wir mit _--enable-request-early_ festgelegt, dass das wirklich so ist, denn aus technischen Gründen wurde dieses Verhalten verändert und die Phase 1 mit der folgenden Phase zusammengelegt. Mit dem besagten Flag machen wir diese Verhaltensänderung rückgängig. Die übrigen Phasen sind _Request-Body-Phase (Phase 2)_, _Response-Header-Phase (Phase 3)_, _Response-Body-Phase (Phase 4)_ und _Logging-Phase (Phase 5)_. Dann sagen wir, dass wir beim Anschlagen einer Regel den Request im Normalfall passieren lassen möchten. Blockierungs-Massnahmen werden wir separat definieren. Wir möchten loggen; das heisst, wir möchten einen Hinweis auf die ausgelöste Regel im _Error-Log_ des Apache Servers sehen und schliesslich vergeben wir jedem dieser Logeinträge ein *Tag*. Das gesetzte Tag _Local Lab Service_ ist nur ein Beispiel dafür, dass hier beliebige Zeichenketten, auch mehrere, gesetzt werden können. In einem grösseren Unternehmen kann es zum Beispiel sinnvoll sein, Zusatzinformationen zu einem Service (Vertragsnummer, Kontaktdaten des Kunden, Hinweise zur Dokumentation etc.) abzubilden. Diese Informationen werden dann bei jedem Logeintrag mitgegeben. Das klingt zunächst nach Ressourcen-Verschwendung, tatsächlich kann ein Mitarbeiter im Betriebssicherheits-Team aber für mehrere hundert Services zuständig sein, und die URL alleine reicht ihm bei unbekannten Services in diesem Moment nicht. Diese Service-Metadaten, die sich über Tags hinzufügen lassen, erlauben eine rasche und adäquate Reaktion auf Angriffe.
@@ -451,7 +451,7 @@ Wir erwarten folgende Antwort:
 <title>403 Forbidden</title>
 </head><body>
 <h1>Forbidden</h1>
-<p>You don't have permission to access /phpMyAdmin/index.php
+<p>You don't have permission to access /phpmyadmin
 on this server.</p>
 </body></html>
 ```
