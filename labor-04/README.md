@@ -534,7 +534,7 @@ Schauen wir das Logfile noch etwas genauer an.
 Weiter oben war die Rede von Verschlüsselungsprotokollen und wie ihre Auswertung eine Grundlage für einen Entscheid der adäquaten Reaktion auf die _POODLE_-Schwachstelle war. Welche Verschlüsselungsprotokolle kommen seither eigentlich auf dem Server in der Praxis vor:
 
 ```bash
-$> cat labor-04-example-access.log | cut -d\" -f9 | cut -d\  -f4 | sort | uniq -c | sort -n
+$> cat labor-04-example-access.log | cut -d\" -f9 | cut -d\  -f3 | sort | uniq -c | sort -n
      21 -
      65 TLSv1.1
    1764 TLSv1
