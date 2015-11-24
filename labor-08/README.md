@@ -76,15 +76,31 @@ Hello world!
 * Connection #0 to host localhost left intact
 ```
 
-
 FIXME: Das funktioniert noch nicht so ganz.
 
+Damit haben wir ein Backend-System mit einfachsten Mitteln aufgesetzt. So einfach, dass wir zukünftig vielleicht einmal froh sein werden, diese Technik zu kennen.
 
 ###Schritt 2: Das Proxy-Modul laden
 
-LoadModule und FwdProxy Off
+Um Apache als *Proxy Server* einsetzen zu können sind mehrere Module nötig. Wir haben sie in der ersten Anleitung mitcompiliert und können Sie nun einfach dazuladen.
+
+```bash
+FIXME
+```
+
+Die *Proxying* Funktionalität wird also über ein Basis-Modul ein Proxy-HTTP Modul bereit gestellt. Proxying bedeutet ja eigentlich, einen Request entgegenzunehmen und ihn an einen weiteren Server weiterzuleiten. In unserem Fall legen wir das Backendsystem zum Vorneherein fest und nehmen dann Anfragen von verschiedenen Clients für dieses Backend-Service entgegen. Ein anderer Fall ist es dann, wenn man einen Proxy Server aufstellt, der Anfragen von einer Gruppe von Client entgegennimmt und sie an beliebige Server im Internet weitergibt. In diesem Fall spricht von von einem Forward Proxy (FIXME?). Das ist dann sinnvoll, wenn man etwa Clients aus einem Firmennetz nicht direkt im Internet exponieren möchte, denn so tritt der Proxy Server gegenüber den Servern im Internet als Client auf. 
+
+Dieser Modus ist auch bei Apache möglich, wenn auch eher historisch. Es haben sich alternative Software-Pakete etabliert, welche diese Funktionalität anbieten; etwas Squid. Der Fall ist insofern relevant als eine Fehlkonfiguration fatale Folgen haben kann, wenn nämlich der Forward Proxy Anfragen von beliebigen Clients entgegenimmt und sie dann quasi anonym an das Internet weiterleitet. Man spricht in diesem Fall von einem offenen Proxy. Dies gilt es zu verhindern, denn wir möchten Apache nicht in diesem Fall Modus betreiben. Dazu ist eine Direktive nötig, die früher den falschen Defaultwert aufwies, inzwischen aber korrekt auf `off` lautet:
+
+```bash
+ProxyRequests Off
+```
+
+Diese Direktive meint tatsächlich nur das weiterleiten von Requests an Server im Internet, auch wenn der Name auf eine generellere Einstellung hindeutet. Wie erwähnt ist die Direktive auf Apache 2.4 aber korrekt voreingestellt und sie wird hier nur deshalb erwähnt, damit keine Fragen aufkommen oder um zukünftigen Fehleinstellungen vorzubeugen.
 
 ### Schritt 3: ProxyPass
+
+Wir kommen damit zu den eigentlichen *Proxying* Einstellungen. Es gibt mehrere Arten, wie wir Apache instruieren können, einen Request an eine Backend-Applikation weiterzureichen. Wir schauen die Varianten nacheinander an.
 
 Symmetrisch proxen!!!
 
@@ -101,6 +117,8 @@ Symmetrisch proxen!!!
 ### Schritt 9: Blabla
 
 mod_sed
+
+ProxyPassReverse
 
 
 
