@@ -37,13 +37,14 @@ $params[:debug]   = false
 
 RULEID_DEFAULT = 10000
 
-MODE_SIMPLE=1
-MODE_PARAMETER=2
-MODE_PATH=3
-MODE_COMBINED=4
+MODE_SUPERSIMPLE=1
+MODE_SIMPLE=2
+MODE_PARAMETER=3
+MODE_PATH=4
+MODE_COMBINED=5
 MODE_ALL=16
 
-$params[:mode]   = MODE_SIMPLE
+$params[:mode]   = MODE_SUPERSIMPLE
 
 $params[:filenames] = Array.new
 $params[:ruleid] = RULEID_DEFAULT
@@ -320,16 +321,29 @@ def display_report(events)
   end
   ids.sort!{|a,b| a <=> b }
   
-  if $params[:mode] != MODE_SIMPLE
+  if $params[:mode] != MODE_SIMPLE and $params[:mode] != MODE_SUPERSIMPLE
 	puts
   end
 
   ids.each do |id|
 	event = events.find {|e| e.id == id }
 	len = events.select{|e| e.id == id }.length
-	out = len.to_s + " x " + id.to_s + " " + event.msg + " (severity: " + Severities[event.severity].to_s + " " + event.severity + ")"
+	case $params[:mode]
+		when MODE_SIMPLE
+			out = len.to_s + " x " + id.to_s + " " + event.msg + " (severity: " + Severities[event.severity].to_s + " " + event.severity + ") : " 
+			n = 0
+			events.select{|e| e.id == id }.each do |e|
+				out = out + ", " unless n == 0 
+				out = out + e.parameter
+				n = n + 1
+			end
+		when MODE_SUPERSIMPLE
+			out = len.to_s + " x " + id.to_s + " " + event.msg
+		else
+			out = len.to_s + " x " + id.to_s + " " + event.msg + " (severity: " + Severities[event.severity].to_s + " " + event.severity + ")"
+	end
 	print out + "\n"
-	if $params[:mode] != MODE_SIMPLE
+	if $params[:mode] != MODE_SIMPLE and $params[:mode] != MODE_SUPERSIMPLE
 		0.upto(out.length-1) do |i| print "-"; end; print "\n" # breakline
 	end
 	case $params[:mode]
@@ -346,7 +360,7 @@ def display_report(events)
 			puts
 			display_ignore_rule_mode_path_and_parameter(id, event, events)
 	end
-	if $params[:mode] != MODE_SIMPLE
+	if $params[:mode] != MODE_SIMPLE and $params[:mode] != MODE_SUPERSIMPLE
 		puts
 	end
 		
@@ -488,10 +502,13 @@ EOF
   end
 
   opts.on('-m', '--mode MAN', 'Ignore-Rule suggestion mode:
-                                     One of "simple", "parameter" or "path"') do |mode|
+                                     One of "simple", "supersimple", "parameter", "path"
+                                      or "combined". Default is "supersimple"') do |mode|
 	  case mode
 	  when "simple"
     		$params[:mode] = MODE_SIMPLE;
+	  when "supersimple"
+    		$params[:mode] = MODE_SUPERSIMPLE;
 	  when "parameter"
     		$params[:mode] = MODE_PARAMETER;
 	  when "path"
