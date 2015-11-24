@@ -100,7 +100,24 @@ Diese Direktive meint tatsächlich nur das weiterleiten von Requests an Server i
 
 ### Schritt 3: ProxyPass
 
-Wir kommen damit zu den eigentlichen *Proxying* Einstellungen. Es gibt mehrere Arten, wie wir Apache instruieren können, einen Request an eine Backend-Applikation weiterzureichen. Wir schauen die Varianten nacheinander an.
+Wir kommen damit zu den eigentlichen *Proxying* Einstellungen. Es gibt mehrere Arten, wie wir Apache instruieren können, einen Request an eine Backend-Applikation weiterzureichen. Wir schauen die Varianten nacheinander an. Die gängige Variante um Anfragen zu proxen basiert auf der Direktive *ProxyPass*. Sie wird wie folgt verwendet.
+
+```bash
+ProxyPass		/service1	http://localhost:8000/service1
+ProxyPassReverse	/service1	http://localhost:8000/service1
+
+<Proxy http://localhost:8000/service1>
+
+	Require all granted
+
+	AllowOverride none
+	Options none
+
+</Proxy>
+```
+
+Der wichtigste Befehl ist hier *ProxyPass*. Es definiert einen Pfad `/service1` und gibt an, wie er auf das Backend gemappt wird: Auf den oben definierten Service, der auf unserem eigenen Host, localhost, Port 8000, läuft. Der Pfad auf dem Applikationsserver lautet wieder auf `service1`. Wir proxen also symmetrisch, die Pfade verändern sich nicht. Allerdings ist dieses Mapping nicht zwingend. Es wäre technisch gut möglich von `service1` auf `/` zu proxen, allerdings führt dies zu administrativen Schwierigkeiten und Missverständnissen, wenn ein Pfad im Logfile auf dem Backend nicht mehr dem Pfad auf dem *Reverse Proxy* mappt und man die Anfragen nicht mehr korrelieren kann.
+
 
 Symmetrisch proxen!!!
 
@@ -120,5 +137,6 @@ mod_sed
 
 ProxyPassReverse
 
+Unique-ID forwarden
 
 
