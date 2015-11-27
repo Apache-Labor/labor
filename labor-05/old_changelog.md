@@ -1,5 +1,6 @@
 ##### Changelog
 
+* 27\. November 2015: BugFix in LogFormat
 * 21\. November 2015: Typos und Korrektor eines Kommandos
 * 18\. November 2015: Bugfix im Whitelisting Example
 * 12\. November 2015: Rechtschreibung (Benjamin Affolter)
