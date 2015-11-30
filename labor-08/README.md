@@ -116,12 +116,19 @@ ProxyPassReverse	/service1	http://localhost:8000/service1
 </Proxy>
 ```
 
-Der wichtigste Befehl ist hier *ProxyPass*. Es definiert einen Pfad `/service1` und gibt an, wie er auf das Backend gemappt wird: Auf den oben definierten Service, der auf unserem eigenen Host, localhost, Port 8000, läuft. Der Pfad auf dem Applikationsserver lautet wieder auf `service1`. Wir proxen also symmetrisch, die Pfade verändern sich nicht. Allerdings ist dieses Mapping nicht zwingend. Es wäre technisch gut möglich von `service1` auf `/` zu proxen, allerdings führt dies zu administrativen Schwierigkeiten und Missverständnissen, wenn ein Pfad im Logfile auf dem Backend nicht mehr dem Pfad auf dem *Reverse Proxy* mappt und man die Anfragen nicht mehr korrelieren kann.
+Der wichtigste Befehl ist hier *ProxyPass*. Es definiert einen Pfad `/service1` und gibt an, wie er auf das Backend gemappt wird: Auf den oben definierten Service, der auf unserem eigenen Host, localhost, Port 8000, läuft. Der Pfad auf dem Applikationsserver lautet wieder auf `service1`. Wir proxen also symmetrisch, die Pfade verändern sich nicht. Allerdings ist dieses Mapping nicht zwingend. Es wäre technisch gut möglich von `service1` auf `/` zu proxen, allerdings führt dies zu administrativen Schwierigkeiten und Missverständnissen, wenn ein Pfad im Logfile auf dem Backend nicht mehr dem Pfad auf dem *Reverse Proxy* mappt und man die Anfragen nicht mehr korrelieren kann. 
 
-
-Symmetrisch proxen!!!
+Auf der nächsten Zeile kommt eine verwandte Direktive, die trotz ähnlichem Namen nur eine kleine Hilfsfunktion übernimmt. *Redirect-Responses* vom Backend sind in *HTTP-konformer* ausprägung voll-qualifiziert. Also etwa `https://backend.example.com/service1`. Für den Client ist diese Adresse aber nicht erreichbar, aus diesem Grund muss der *Reverse Proxy* den sogenannten *Location-Header* des Backends umschreiben, `backend.example.com` durch seinen eigenen Namen ersetzen und damit in seinen eigenen *Namespace* zurückmappen. *ProxyPassReverse*, das so einen vollmundigen Namen besitzt, hat in Wahrheit also nur eine einfache Suchen-Ersetzen Funktion, die auf *Location-Header* greift. Wie schon bei der *Proxy-Pass* Direktive zeigt sich das symmetrische *Proxying*: Die Pfade werden 1:1 übersetzt. Wir sind frei, uns nicht an diese Regel zu halten, aber ich rate dringend dazu diese Regel einzuhalten. Jenseits davon lauern Missverständnisse und Verwirrung.
 
 ### Schritt 4: Proxy Stanza
+
+Weiter in der Konfiguration: Nun folgt der *Proxy-Block*, wo die Verbindung zum Backend genauer definiert wird. Namentlich die Authentisierung und Authorisierung eines Requests findet hier statt. Weiter unten in der Anleitung werden wir aber auch einen *Load-Balancer* in diesem Block unterbringen.
+
+Der *Proxy-Block* entspricht dem *Location-* und dem *Directory-Block*, die wir in unserer Konfiguration bereits früher kennengelernt haben. Es handelt sich dabei um sogenannte *Container*. *Container* geben dem Webserver an, wie er die Arbeit strukturieren soll. Sobald er in der Konfiguration einen *Container* antrifft, bereitet er dafür eine Verarbeitungsstruktur vor. Im Fall von *mod_proxy* kann das Backend auf ohne *Proxy-Container* erreicht werden, aber der Verkehr bleibt am verarbeitenden Thread hängen, der sich selbst um die Verbindung zum Backend kümmern muss. Dies ist ineffizient und mittels *ab* auch gut messbar. FIXME: really?
+
+Neben der Performance ist es aber auch im Hinblick auf die Authentisierung sinnvoll, für jedes *Proxy-Backend* einen *Proxy-Block* zu eröffnen. Nur so sind wir ganz sicher, welche Authentisierung genau greift und welche Eigenschaften die Verbindung zum Backend hat. Mittels der Direktive *ProxyOptions* können wir hier noch weiter eingreifen, das Verbindungsverhalten vorgeben FIXME: weitere Beispiele. Weitere Informationen dazu finden sich in der Dokumentation des Apache Projektes.
+
+Eine wesentliche Direktive, die in den *Proxy-Block* gehört betrifft den Timeout. Wir haben für unseren Server einen eigenen Timeout definiert (FIXME: really?). Dieser *Timeout* wird vom Server auch für die Verbindung zum Backend herangezogen. Das ist aber nicht immer sinnvoll, denn während wir vom Client erwarten dürfen, dass er seine Anfragen rasch übermittelt und nicht herumtrödelt, kann es je nach Backend-Applikation dauern, bis eine Anfrage verarbeitet ist. Bei einem kurzen generellen *Timeout*, das aus Verteidigungsgründen gegenüber dem Client sinnvoll ist, würde der Reverse Proxy den Zugriff auf das Backend zu rasch unterbrechen. Aus diesem Grund gibt es die Direktive *ProxyTimeout*, welche einzig die Verbindung zum Backend betrifft. Die Zeitmessung meint dabei übrigens nicht die totale Verarbeitungsdauer auf dem Backend, sondern die Zeitdauer zwischen den IP Paketen: Sobald das Backend einen Teil der Antwort zurückschickt, wird die Uhr wieder zurückgestellt.
 
 ### Schritt 5: Proxy Request verstehen
 
@@ -132,6 +139,8 @@ Symmetrisch proxen!!!
 ### Schritt 8: Balancer [proxy]
 
 ### Schritt 9: Blabla
+
+### Schritt Bonus: Balancer mit 2 Proxy Stanzas
 
 mod_sed
 
