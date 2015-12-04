@@ -21,8 +21,8 @@ Ferner macht das natürlich nur Sinn, wenn wir auch eine richtige Applikation ha
 
 Wo das nicht vorhanden ist, oder wo zu Übungszwecken ein funktionierendes Beispiel gesucht wird, bietet es sich an, mit bestehenden Übungsdaten zu arbeiten. Ich habe dazu zwei *Logfiles* als Übungsdateien zusammengestellt. Zusammengestellt deshalb, weil sie von einem ungetunten, produktiven System stammen, aber für den Einsatz in einer Übung erst anonymisiert werden mussten, indem sämtliche Daten, welche auf das Ursprungssystem hindeuteten, entfernt werden mussten. Ferner musste sicher gestellt werden, dass keine richtigen Angriffe mehr im Logfile vorhanden sind, denn wir möchten ja nur Fehlalarme entfernen und nicht die nötigen, richtigen Alarme unterdrücken.
 
-* [labor-07-example-access.log](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-04-example-access.log)
-* [labor-07-example-error.log](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-04-example-error.log)
+* [labor-07-example-access.log](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-07-example-access.log)
+* [labor-07-example-error.log](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-07-example-error.log)
 
 Die Logfiles basieren auf 10'000 Requests. Das scheint mir das Minimum, um wirklich tunen zu können. Tatsächlich sind kleinere Logfiles zu zufällig und geben nur einen Teilaspekt eines Services wieder. Je grösser die Basis zum tunen, desto besser, aber gerade für die ersten Tuning-Schritte reicht es, mit dieser Grösse einzusteigen. Später mag es angezeigt sein, sich grössere Logfiles vorzunehmen um auch noch seltenere Fehlalarme ausmerzen zu können.
 
