@@ -137,23 +137,213 @@ Die von uns verwendete _ProxyPass_ Direktive hat die Gesamtheit der Requests fü
 ```bash
 FIXME
 ```
-Oft sieht man Konfigurationen, die den gesamten Namespace unter `/` an das Backend weitergeben. Dazu werden dann oft eine Vielzahl von Ausnahmen nach obenstehendem Muster definiert. Ich halte das für den falschen Ansatz und ziehe es vor, nur das weiterzureichen, was auch tatsächlich verarbeitet werden wird. Der Vorteil liegt auf der Hand: Scanner und automatisierte Angriffe, die sich aus dem Pool der IP Adressen des Internets ihre Opfer suchen, stellen Requests mit einer Vielzahl nicht-existierender Pfade an unseren Server. Wir können die nun auf das Backend weiterreichen und je nach dem das Backend belasten oder sogar gefährden. Oder aber wir blockieren diese Anfragen bereits auf dem Reverse Proxy Server.
+Oft sieht man Konfigurationen, die den gesamten Namespace unter `/` an das Backend weitergeben. Dazu werden dann oft eine Vielzahl von Ausnahmen nach obenstehendem Muster definiert. Ich halte das für den falschen Ansatz und ziehe es vor, nur das weiterzureichen, was auch tatsächlich verarbeitet werden wird. Der Vorteil liegt auf der Hand: Scanner und automatisierte Angriffe, die sich aus dem Pool der IP Adressen des Internets ihre Opfer suchen, stellen Requests mit einer Vielzahl nicht-existierender Pfade an unseren Server. Wir können die nun auf das Backend weiterreichen und je nach dem das Backend belasten oder sogar gefährden. Oder aber wir blockieren diese Anfragen bereits auf dem Reverse Proxy Server. Letzteres ist aus Gründen der Sicherheit klar vorzuziehen.
 
 
+### Schritt 6: ModRewrite
 
+Neben der Direktive _ProxyPass_ kann auch das Rewrite-Modul eingesetzt werden, um die Reverse Proxy Funktionalität auszulösen. Gegenüber dem *ProxyPass* erlaubt dies eine flexiblere Konfiguration. Wir haben *ModRewrite* bis dato nicht gesehen. Da es sich dabei um ein sehr wichtiges Modul handelt sollten wir es gründlich studieren.
 
-ProxyPass		/service1	http://localhost:8000/service1
+*ModRewrite* definiert eine eigene *RewriteEngine*, welche dazu benutzt wird, um einen HTTP Request zu manipulieren; eben umzuschreiben. Diese RewriteEngine kann im Server-Kontext laufen, aber auch im VirtualHost-Kontext. Genau genommen verwenden wir zwei separate RewriteEngines. Die RewriteEngine im VirtualHost-Kontext kann dabei auch as dem Proxy-Container, den wir oben kennengelernt haben, konfiguriert werden. Wenn wir im Server-Kontext eine RewriteEngine definieren, dann kann es passieren, dass diese umgangen wird, wenn eine VirtualEngine im VirtualHost Kontext existiert. Wir müssen in diesem Fall von Hand dafür sorgen, dass die sogenannten Rewrite-Rules vererbt werden. Setzen wir also eine Server-Kontext RewriteEngine auf, konfigurieren wir eine Beispiel-Regel und initiieren wird die Vererbung:
 
+```bash
+RewriteEngine           On
+RewriteOptions          InheritDownBefore
 
-### Schritt 6: ModRewrite [proxy]
+RewriteRule   		^/$	%{REQUEST_SCHEME}://%{HTTP_HOST}/index.html  [redirect,last]
+```
 
-### Schritt 7: RewriteMap [proxy]
+Wir initialisieren also die Engine auf Stufe Server. Dann instruieren wir die Engine, die eigenen Regeln an weitere Rewrite Engines zu vererben. Und zwar so, dass die eigenen Regeln vor den nachgeordneten Regeln ausgeführt werden. Danach folgt die eigentliche Regel. Wir instruieren den Server, bei einem Request ohne Pfad, also einem Request auf "/", den Client zu instruieren, doch eine neue Anfrage an _/index.html_ abzusetzen. Man spricht von einem _Redirect_. Wichtig ist, dass ein *Redirect* sowohl das Schema des Requests, also *http* oder *https*, sowie den Hostnamen aufweisen muss. Relative Pfade funktionieren also nicht.Da wir ausserhalb des VirtualHosts stehen, kennen wir das Schema aber nicht. Und den Hostnamen möchten wir auch nicht hart codieren, sondern lieber den Hostnamen aus dem Request des Clients übernehmen. Diese beiden Werte stehen als Variablen zur Verfügung, wie man im obenstehenden Beispiel sehen kann.
+
+In eckigen Klammern kommen dann Flags zu stehen, welche das Verhalten der RewriteRule beeinflussen. Wir wünschen wir erwähnt einen *Redirect* und teilen der Engine dann mit, dass dies die letzte zu verarbeitende Regel sein soll (*last*).
+
+Schauen wir uns einen entsprechenden Request und den retournierten Redirect einmal an.
+
+FIXME
+
+Nun kann man sich fragen, weshalb wir im Server-Kontext überhaupt eine RewriteEngine eröffnen und nicht alles auf Stufe VirtualHost behandeln. Im von mir gewählten Beispiel sieht man, dass dies zu Redundanz führen würde, denn der Redirect von "/" nach "index.html" soll ja auf Port 80, wie auch auf dem verschlüsselten Port 443 zur Anwendung gelangen. Das ist auch inetwa die Faustregel: Was auf sämtlichen VirtualHosts angewendet werden soll, das legen wir mit Vorteil im Server Kontext fest und vererben es. Individuelle Regeln eines einzigen VirtualHosts behandeln wir auch auf dieser Stufe. Typisch ist etwa die folgende Regel, mit der wir sämtliche Anfragen von Port 80 auf Port 443 redirecten können:
+
+```bash
+<VirtualHost 127.0.0.1:80>
+      
+	RewriteEngine	On
+
+	RewriteRule	^/(.*)$	https://%{HTTP_HOST}/$1	[redirect,last]
+
+	...
+
+</VirtualHost>
+```
+
+Das gewünschte Schema ist nun klar. Aber links davon ist ein neues Element hinzugekommen. Den Pfad klemmen
+wir nicht mehr so rasch wie oben ab. Vielmehr fassen wir ihn in eine Klammer und referenzieren den Inhalt
+der Klammer dahinter wieder im *Redirect* mit "$1". Das bedeutet, dass wir einen Request auf Port 80
+mit derselben URL sogleich an Port 443 weiterleiten.
+
+Damit ist ModRewrite eingeführt. Für weitere Beispiele sei hier auf die Dokumentation verwiesen oder
+die nachfolgenden Kapitel dieser Anleitung, wo wir noch weitere Rezepte kennenlernen werden.
+
+### Schritt 6: ModRewrite [Proxy]
+
+Wir haben gesehen wie eine RewriteEngine initialisiert wird und wie man einfache und ewas komplexere Redirects auslösen kann. Nun werden wir einen Reverse Proxy konfigurieren. Das machen wir wie folgt:
+
+```bash
+
+<VirtualHost 127.0.0.1:443>
+
+    ...
+
+    RewriteEngine	On
+
+    RewriteRule             ^/service1/(.*)     http://localhost:8000/service1/$1 [proxy,last]
+    ProxyPassReverse        /               	http://localhost:8000/
+
+    <Proxy http://localhost:8000/service1>
+
+	Require all granted
+
+	AllowOverride none
+	Options none
+
+    </Proxy>
+
+```
+
+Die Instruktion folgt einem ähnlichen Muster wie die Variante mit ProxyPass. Allerdings wird hier der
+hintere Teil des Pfades explizit mittels einer Klammer eingefangen und wie oben bereits gesehen durch "$1" wieder
+ausgedrückt. Anstatt dem vorangegangenen *Redirect-Flag*, kommt nun *proxy* zur Anwendung. *ProxyPassReverse* und 
+die Proxy-Stanza bleiben dann identisch zum Setup via *ProxyPass*.
+
+Soweit die einfache Konfiguration mittels einer RewriteRule. Sie bringt noch keinen wirklichen Vorteil
+über die *ProxyPass* Syntax. Die Referenzierung von Pfadteilen mittels *$1*, *$2* etc. bringt etwas an
+Flexibilität. Aber wenn wir ohnehin mit RewriteRules arbeiten, dann stellen wir durch das RewriteRule-Proxying
+sicher, dass sich RewriteRule und ProxyPass nicht in die Quere kommen, indem sie denselben Request
+berühren und sich gegenseitig beeinflussen.
+
+Nun kann es aber sein, dass wir mit einem einzelnen
+Reverse Proxy mehrere Backends zusammenfassen möchten, oder die Last auf mehrere Server verteilen möchten. Ein eigentlicher
+LoadBalancer ist dazu gefragt. Das sehen wir uns im nächsten Abschnitt an:
+
 
 ### Schritt 8: Balancer [proxy]
 
-### Schritt 9: Blabla
+Den Apache Loadbalancer müssen wir zunächst als Modul laden:
 
-### Schritt Bonus: Balancer mit 2 Proxy Stanzas
+```bash
+LoadModule              proxy_balancer_module        modules/mod_proxy_balancer.so
+LoadModule              lbmethod_byrequests_module   modules/mod_lbmethod_byrequests.so
+```
+
+Neben dem Loadbalancer-Modul selbst benötigen wir auch ein Modul, welches uns dabei hilft, die Anfragen auf die
+verschiedenen Backends zu verteilen. Wir gehen den einfachsten Weg und laden das Modul *lbmethod_byrequests*.
+Es ist das älteste Modul aus einer Reihe von vier Modulen und verteilt die Anfragen gleichmässig auf die
+Backends, indem es diese nacheinander abzählt. Bei zwei Backends also einmal nach links und einmal nach rechts.
+
+Hier die Liste der zur Verfügung stehenden Algorithmen:
+
+* mod_lbmethod_byrequests (Abzählen der Requests)
+* mod_lbmethod_bytraffic (Aufsummieren der Grösse der Anfragen und der Antworten)
+* mod_lbmethod_bybusyness (Loadbalancing aufgrund der aktiven Threads in einer stehenden Verbindung mit den Backends. Das Backend mit der kleinsten Anzahl Threads erhält den nähsten Request.)
+* mod_lbmethod_heartbeat (Hier kann das Backend einen sogenannten Heartbeat im Netz kommunizieren und dem Reverse Proxy dadurch mitteilen, ob es noch Kapazität frei hat).
+
+Die verschiedenen Module sind online gut dokumentiert, so dass diese knappen Beschreibungen hier für den Moment reichen. Damit sind wir bereit für die Konfiguration des Loadbalancers. Wir können ihn jetzt über die inzwischen bekannte RewriteRule einführen. Diese Anpassung der RewriteRule wirkt sich auch auf die Proxy-Stanza aus, wo der eben definierte Balancer referenziert auf aufgelöst werden muss:
+
+
+```bash
+
+    RewriteRule 	^/service1/(.*)		balancer://backend/service/$1   [proxy,last]
+    ProxyPassReverse    /         		balancer://backend/
+
+    <Proxy balancer://backend>
+        BalancerMember http://localhost:8000 route=backend-port-8000
+        BalancerMember http://localhost:8001 route=backend-port-8001
+
+	...
+
+    </Proxy>
+
+```
+
+Hier definieren wir also zwei Backends. Einen auf dem bereits konfigurierten Port 8000 und einen zweiten Service auf Port 8001. Ich schlage vor, diesen Service rasch au dem zweiten Port einzurichten und dann auszuprobieren. Ich habe zwei unterschiedliche Dokumente hinterlegt, so dass wir Anhand der HTTP Response erkennen können, welches Backend, den Request bearbeitet hat. Die sieht dann so aus:
+
+
+```bash
+
+FIXME: curl with two calls
+
+```
+
+In diesem etwas ungewohnten Aufruf werden zwei Requests mit einem einzigen Curl-Befehl initiiert. Interessant ist unter anderem der Umstand, dass mit dieser Methode HTTP Keep-Alive von curl angewendet wird. Beim ersten Request landete der Request auf dem ersten Backend, beim zweiten Request auf dem zweiten Backend. Schauen wir uns die zugehörigen Einträge im Access-Log des Servers an:
+
+```bash
+
+Access-Log
+
+```
+
+Neben dem erwähnten Keep-Alive ist der Request-Handler von Interesse. Der Request wurde also vom _proxy-handler_ bearbeitet. Auch bei der Route sehen wir Einträge, nämlich die oben definierten Werte _backend-port-8000_ und _backend-port-8001_.
+
+In einer späteren Anleitung werden wir sehen, dass sich der Proxy-Balancer auch in anderen Situationen anwenden lässt. Für den Moment begnügen wir uns damit und wenden uns den RewriteMaps zu. Bei RewriteMaps handelt es sich um eine Hilfskonstruktion, welche die Mächtigkeit von ModRewrite nochmals erhöht. Wenn wir es mit dem Proxy-Server kombinieren, dann erhöht sich die Flexibilität massiv.
+
+### Schritt 7: RewriteMap [proxy]
+
+RewriteMaps kommen in verschiedenen Ausprägungen vor. Ihr Funktion besteht darin, auf Basis eines Schlüssels einen Wert zu retournieren. Eine Hashtabelle ist ein einfaches Beispiel. Dann ist es aber auch möglich, externe Skripte als programmierbare RewriteMap zu konfigurieren. Hier die verschiedenen Typen nebeneinander:
+
+* txt : Hier wird in einem Text-File nach Schlüssel-Wert-Paaren gesucht.
+* rnd : Hier können pro Schlüssel mehrere Werte vorgegeben werden. Sie werden dann zufällig ausgewählt.
+* dbm : Diese Variante funktioniert wie die txt-Variante, hat aber als binäre Hashtabelle, einen grossen Geschwindigkeitsvorteil.
+* int : Dieses Kürzel steht für *internal function* und meint eine Funktion aus folgender Liste: *toupper*, *tolower*, *escape* und *unescape*.
+* prg : In dieser Variante wird ein externes Skript aufgerufen. Das Skript wird beim Start des Servers gestartet und erhält bei jedem Aufruf der RewriteMap neuen Input via STDIN.
+* dbd und fastdbd : Hier wird der Rückgabewert über eine Datenbank-Anfrage gesucht.
+
+Diese Liste macht deutlich, dass RewriteMaps äusserst flexibel sind und in verschiedensten Situationen zur Anwendung kommen können. Die Bestimmung eines Backends für das Proxying ist nur eine von vielen Anwendungsmöglichkeiten. In unserem Beispiel möchten wir sicherstellen, dass ein bestimmter Client mit seinen Anfragen immer auf dasselbe Backend gelangt. Es gibt verschiedene Arten das zu erreichen, wobei namentlich das Setzen eines Cookies genannt werden soll. Wir möchten aber nicht in die Requests eingreifen und gleichzeitig vermeiden, dass eine grosse Gruppe von Clients aus einem bestimmten Netzwerkbereich alle auf dasselbe Backend gelangen. Eine gewisse Verteilung soll also stattfinden. Dazu kombinieren wir ModSecurity mit ModRewrite und einer RewriteMap. Sehen wir uns das nach und nach an.
+
+Zunächst bilden wir aus der IP Adresse des Clients einen Hashwert. Das heisst, wir verwandeln die IP-Adresse in eine zufällige hexadezimale Zeichenfolge:
+
+```bash
+
+SecRule REMOTE_ADDR "..."	"phase:1,t:sha1...,setenv:"
+
+```
+
+Den mittels der SHA1-Funktion generierten Hash-Wert haben wir damit in die Environment-Variable IPHash abgelegt. Nun separieren wir das erste Zeichen aus diesem Hash-Wert und rufen damit die noch zu definierende Hash-Tabelle auf. Dies geschieht wie folgt und demonstriert uns zusätzlich noch, wie wir der RewriteRule eine Rewrite-Bedingung in Form der Direktive RewriteCond voranstellen können.
+
+```bash
+RewriteMap hashchar2backend "txt:/apache/conf/hashchar2backend.txt"
+
+RewriteCond ENV:...
+RewriteRule ...
+
+```
+
+Jetzt fehlt uns natürlich noch die RewriteMap. Im Codebeispiel habe wir ein Text-File vorgegeben. Performanter ist natürlich ein dbm-Hash, aber das steht für den Moment nicht im Zentrum. Hier das Map-File /apache/conf/hashchar2backend.txt:
+
+```bash
+##
+## productmap.txt - Product to ID map file
+##
+
+1	localhost:8000
+2	localhost:8000
+3	localhost:8000
+4	localhost:8000
+5	localhost:8000
+6	localhost:8000
+7	localhost:8000
+8	localhost:8000
+9	localhost:8001
+0	localhost:8001
+a	localhost:8001
+b	localhost:8001
+c	localhost:8001
+d	localhost:8001
+e	localhost:8001
+f	localhost:8001
+```
+
+Gemeinsam bedeutet dies nun, dass wir aus der jeweiligen IP-Adresse einen Hash bilden und daraus das erste Zeichen benützen, um in der eben beschriebenen Hash-Tabelle auf eines von zwei Backends zu schliessen. Solange die IP-Adresse des Clients konstant bleibt (was in der Praxis durchaus nicht immer der Fall sein muss), wird das Resultat dieses Lookups immer dasselbe sein. Das heisst, der Client wird immer auf demselben Backend landen. Da es sich aber nicht um einen IP-Adressen-Lookup handelt, wird ein Client aus demselben Netz und damit mit einer ähnlichen IP-Adresse ein gänzlich anderes Start-Zeichen besitzen. Wir gewinnen damit eine einigermassen flache Verteilung der Requests und sind dennoch sicher, dass bestimmte Clients bis zu einem Wechsel der IP-Adresse immer auf demselben Backend landen werden.
+
+### Schritt Bonus: Weitergabe von Informationen zum Request 
 
 mod_sed
 
@@ -161,4 +351,6 @@ ProxyPassReverse
 
 Unique-ID forwarden
 
+ProxyErrorOverride
 
+###Verweise
