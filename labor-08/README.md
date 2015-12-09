@@ -78,7 +78,7 @@ Hello world!
 
 FIXME: Das funktioniert noch nicht so ganz.
 
-Damit haben wir ein Backend-System mit einfachsten Mitteln aufgesetzt. So einfach, dass wir zukünftig vielleicht einmal froh sein werden, diese Technik zu kennen.
+Damit haben wir ein Backend-System mit einfachsten Mitteln aufgesetzt. So einfach, dass wir zukünftig vielleicht einmal froh sein werden, diese Technik zu kennen, wenn rasch das Funktionieren eines Proxy Servers belegen möchten, bevor das Backend bereits läuft.
 
 ###Schritt 2: Das Proxy-Modul laden
 
@@ -88,19 +88,19 @@ Um Apache als *Proxy Server* einsetzen zu können sind mehrere Module nötig. Wi
 FIXME
 ```
 
-Die *Proxying* Funktionalität wird also über ein Basis-Modul ein Proxy-HTTP Modul bereit gestellt. Proxying bedeutet ja eigentlich, einen Request entgegenzunehmen und ihn an einen weiteren Server weiterzuleiten. In unserem Fall legen wir das Backendsystem zum Vorneherein fest und nehmen dann Anfragen von verschiedenen Clients für dieses Backend-Service entgegen. Ein anderer Fall ist es dann, wenn man einen Proxy Server aufstellt, der Anfragen von einer Gruppe von Client entgegennimmt und sie an beliebige Server im Internet weitergibt. In diesem Fall spricht von von einem Forward Proxy (FIXME?). Das ist dann sinnvoll, wenn man etwa Clients aus einem Firmennetz nicht direkt im Internet exponieren möchte, denn so tritt der Proxy Server gegenüber den Servern im Internet als Client auf. 
+Die *Proxying* Funktionalität wird also über ein Proxy-Basis-Modul sowie ein Proxy-HTTP Modul bereit gestellt. Proxying bedeutet ja eigentlich, einen Request entgegenzunehmen und ihn an einen weiteren Server weiterzuleiten. In unserem Fall legen wir das Backendsystem zum Vorneherein fest und nehmen dann Anfragen von verschiedenen Clients für dieses Backend-Service entgegen. Ein anderer Fall ist es dann, wenn man einen Proxy Server aufstellt, der Anfragen von einer Gruppe von Client entgegennimmt und sie an beliebige Server im Internet weitergibt. In diesem Fall spricht von von einem Forward Proxy (FIXME?). Das ist dann sinnvoll, wenn man etwa Clients aus einem Firmennetz nicht direkt im Internet exponieren möchte, denn so tritt der Proxy Server gegenüber den Servern im Internet als Client auf. 
 
-Dieser Modus ist auch bei Apache möglich, wenn auch eher historisch. Es haben sich alternative Software-Pakete etabliert, welche diese Funktionalität anbieten; etwas Squid. Der Fall ist insofern relevant als eine Fehlkonfiguration fatale Folgen haben kann, wenn nämlich der Forward Proxy Anfragen von beliebigen Clients entgegenimmt und sie dann quasi anonym an das Internet weiterleitet. Man spricht in diesem Fall von einem offenen Proxy. Dies gilt es zu verhindern, denn wir möchten Apache nicht in diesem Fall Modus betreiben. Dazu ist eine Direktive nötig, die früher den falschen Defaultwert aufwies, inzwischen aber korrekt auf `off` lautet:
+Dieser Modus ist auch bei Apache möglich, wenn auch eher historisch. Es haben sich alternative Software-Pakete etabliert, welche diese Funktionalität anbieten; etwas Squid. Der Fall ist insofern relevant als eine Fehlkonfiguration fatale Folgen haben kann, wenn nämlich der Forward Proxy Anfragen von beliebigen Clients entgegenimmt und sie dann quasi anonym an das Internet weiterleitet. Man spricht in diesem Fall von einem offenen Proxy. Dies gilt es zu verhindern, denn wir möchten Apache nicht in diesem Fall Modus betreiben. Dazu ist eine Direktive nötig, die früher den gefährlichen Defaultwert `on` aufwies, inzwischen aber korrekt auf `off` voreingestellt ist:
 
 ```bash
 ProxyRequests Off
 ```
 
-Diese Direktive meint tatsächlich nur das weiterleiten von Requests an Server im Internet, auch wenn der Name auf eine generellere Einstellung hindeutet. Wie erwähnt ist die Direktive auf Apache 2.4 aber korrekt voreingestellt und sie wird hier nur deshalb erwähnt, damit keine Fragen aufkommen oder um zukünftigen Fehleinstellungen vorzubeugen.
+Diese Direktive meint tatsächlich nur das Weiterleiten von Requests an Server im Internet, auch wenn der Name auf eine generellere Einstellung hindeutet. Wie erwähnt ist die Direktive auf Apache 2.4 aber korrekt voreingestellt und sie wird hier nur deshalb erwähnt, damit keine Fragen aufkommen oder um zukünftigen Fehleinstellungen vorzubeugen.
 
 ### Schritt 3: ProxyPass
 
-Wir kommen damit zu den eigentlichen *Proxying* Einstellungen. Es gibt mehrere Arten, wie wir Apache instruieren können, einen Request an eine Backend-Applikation weiterzureichen. Wir schauen die Varianten nacheinander an. Die gängige Variante um Anfragen zu proxen basiert auf der Direktive *ProxyPass*. Sie wird wie folgt verwendet.
+Wir kommen damit zu den eigentlichen *Proxying* Einstellungen: Es gibt mehrere Arten, wie wir Apache instruieren können, einen Request an eine Backend-Applikation weiterzureichen. Wir schauen die Varianten nacheinander an. Die gängige Variante um Anfragen zu proxen basiert auf der Direktive *ProxyPass*. Sie wird wie folgt verwendet:
 
 ```bash
 ProxyPass		/service1	http://localhost:8000/service1
@@ -118,19 +118,32 @@ ProxyPassReverse	/service1	http://localhost:8000/service1
 
 Der wichtigste Befehl ist hier *ProxyPass*. Es definiert einen Pfad `/service1` und gibt an, wie er auf das Backend gemappt wird: Auf den oben definierten Service, der auf unserem eigenen Host, localhost, Port 8000, läuft. Der Pfad auf dem Applikationsserver lautet wieder auf `service1`. Wir proxen also symmetrisch, die Pfade verändern sich nicht. Allerdings ist dieses Mapping nicht zwingend. Es wäre technisch gut möglich von `service1` auf `/` zu proxen, allerdings führt dies zu administrativen Schwierigkeiten und Missverständnissen, wenn ein Pfad im Logfile auf dem Backend nicht mehr dem Pfad auf dem *Reverse Proxy* mappt und man die Anfragen nicht mehr korrelieren kann. 
 
-Auf der nächsten Zeile kommt eine verwandte Direktive, die trotz ähnlichem Namen nur eine kleine Hilfsfunktion übernimmt. *Redirect-Responses* vom Backend sind in *HTTP-konformer* ausprägung voll-qualifiziert. Also etwa `https://backend.example.com/service1`. Für den Client ist diese Adresse aber nicht erreichbar, aus diesem Grund muss der *Reverse Proxy* den sogenannten *Location-Header* des Backends umschreiben, `backend.example.com` durch seinen eigenen Namen ersetzen und damit in seinen eigenen *Namespace* zurückmappen. *ProxyPassReverse*, das so einen vollmundigen Namen besitzt, hat in Wahrheit also nur eine einfache Suchen-Ersetzen Funktion, die auf *Location-Header* greift. Wie schon bei der *Proxy-Pass* Direktive zeigt sich das symmetrische *Proxying*: Die Pfade werden 1:1 übersetzt. Wir sind frei, uns nicht an diese Regel zu halten, aber ich rate dringend dazu diese Regel einzuhalten. Jenseits davon lauern Missverständnisse und Verwirrung.
+Auf der nächsten Zeile kommt eine verwandte Direktive, die trotz ähnlichem Namen nur eine kleine Hilfsfunktion übernimmt. *Redirect-Responses* vom Backend sind in *http-konformer* Ausprägung voll-qualifiziert. Also etwa `https://backend.example.com/service1`. Für den Client ist diese Adresse aber nicht erreichbar. Aus diesem Grund muss der *Reverse Proxy* den sogenannten *Location-Header* des Backends umschreiben, `backend.example.com` durch seinen eigenen Namen ersetzen und damit in seinen eigenen *Namespace* zurückmappen. *ProxyPassReverse*, das so einen vollmundigen Namen besitzt, hat in Wahrheit also nur eine einfache Suchen-Ersetzen Funktion, die auf *Location-Header* greift. Wie schon bei der *Proxy-Pass* Direktive zeigt sich das symmetrische *Proxying*: Die Pfade werden 1:1 übersetzt. Wir sind frei, uns nicht an diese Regel zu halten, aber ich rate dringend dazu diese Regel einzuhalten, denn jenseits davon lauern Missverständnisse und Verwirrung.
 
 ### Schritt 4: Proxy Stanza
 
 Weiter in der Konfiguration: Nun folgt der *Proxy-Block*, wo die Verbindung zum Backend genauer definiert wird. Namentlich die Authentisierung und Authorisierung eines Requests findet hier statt. Weiter unten in der Anleitung werden wir aber auch einen *Load-Balancer* in diesem Block unterbringen.
 
-Der *Proxy-Block* entspricht dem *Location-* und dem *Directory-Block*, die wir in unserer Konfiguration bereits früher kennengelernt haben. Es handelt sich dabei um sogenannte *Container*. *Container* geben dem Webserver an, wie er die Arbeit strukturieren soll. Sobald er in der Konfiguration einen *Container* antrifft, bereitet er dafür eine Verarbeitungsstruktur vor. Im Fall von *mod_proxy* kann das Backend auf ohne *Proxy-Container* erreicht werden, aber der Verkehr bleibt am verarbeitenden Thread hängen, der sich selbst um die Verbindung zum Backend kümmern muss. Dies ist ineffizient und mittels *ab* auch gut messbar. FIXME: really?
+Der *Proxy-Block* entspricht dem *Location-* und dem *Directory-Block*, die wir in unserer Konfiguration bereits früher kennengelernt haben. Es handelt sich dabei um sogenannte *Container*. *Container* geben dem Webserver an, wie er die Arbeit strukturieren soll. Sobald er in der Konfiguration einen *Container* antrifft, bereitet er dafür eine Verarbeitungsstruktur vor. Im Fall von *mod_proxy* kann das Backend auch ohne *Proxy-Container* erreicht werden, aber der Verkehr bleibt am verarbeitenden Thread hängen, der sich selbst um die Verbindung zum Backend kümmern muss. Dies ist ineffizient und mittels *ab* auch gut messbar. FIXME: really?
 
 Neben der Performance ist es aber auch im Hinblick auf die Authentisierung sinnvoll, für jedes *Proxy-Backend* einen *Proxy-Block* zu eröffnen. Nur so sind wir ganz sicher, welche Authentisierung genau greift und welche Eigenschaften die Verbindung zum Backend hat. Mittels der Direktive *ProxyOptions* können wir hier noch weiter eingreifen, das Verbindungsverhalten vorgeben FIXME: weitere Beispiele. Weitere Informationen dazu finden sich in der Dokumentation des Apache Projektes.
 
 Eine wesentliche Direktive, die in den *Proxy-Block* gehört betrifft den Timeout. Wir haben für unseren Server einen eigenen Timeout definiert (FIXME: really?). Dieser *Timeout* wird vom Server auch für die Verbindung zum Backend herangezogen. Das ist aber nicht immer sinnvoll, denn während wir vom Client erwarten dürfen, dass er seine Anfragen rasch übermittelt und nicht herumtrödelt, kann es je nach Backend-Applikation dauern, bis eine Anfrage verarbeitet ist. Bei einem kurzen generellen *Timeout*, das aus Verteidigungsgründen gegenüber dem Client sinnvoll ist, würde der Reverse Proxy den Zugriff auf das Backend zu rasch unterbrechen. Aus diesem Grund gibt es die Direktive *ProxyTimeout*, welche einzig die Verbindung zum Backend betrifft. Die Zeitmessung meint dabei übrigens nicht die totale Verarbeitungsdauer auf dem Backend, sondern die Zeitdauer zwischen den IP Paketen: Sobald das Backend einen Teil der Antwort zurückschickt, wird die Uhr wieder zurückgestellt.
 
-### Schritt 5: Proxy Request verstehen
+### Schritt 5: Ausnahmen beim Proxying definieren
+
+Die von uns verwendete _ProxyPass_ Direktive hat die Gesamtheit der Requests für `/service1` an das Backend weitergegeben. In der Praxis kommt es aber oft vor, dass man nicht ganz alles weitergeben möchte. Stellen wir uns vor, dass es den Pfad `/service1/admin` gibt, den wir nicht im Internet exponieren möchten. Dies lässt sich ebenfalls mit Hilfe der richtigen _ProxyPass_ Einstellung verhindern:
+
+```bash
+FIXME
+```
+Oft sieht man Konfigurationen, die den gesamten Namespace unter `/` an das Backend weitergeben. Dazu werden dann oft eine Vielzahl von Ausnahmen nach obenstehendem Muster definiert. Ich halte das für den falschen Ansatz und ziehe es vor, nur das weiterzureichen, was auch tatsächlich verarbeitet werden wird. Der Vorteil liegt auf der Hand: Scanner und automatisierte Angriffe, die sich aus dem Pool der IP Adressen des Internets ihre Opfer suchen, stellen Requests mit einer Vielzahl nicht-existierender Pfade an unseren Server. Wir können die nun auf das Backend weiterreichen und je nach dem das Backend belasten oder sogar gefährden. Oder aber wir blockieren diese Anfragen bereits auf dem Reverse Proxy Server.
+
+
+
+
+ProxyPass		/service1	http://localhost:8000/service1
+
 
 ### Schritt 6: ModRewrite [proxy]
 
