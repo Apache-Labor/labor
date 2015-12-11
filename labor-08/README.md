@@ -117,7 +117,7 @@ ProxyTimeout	60
 Daneben bietet es sich an auch den *Host-Header* zu fixieren. Mittels des HTTP Request Host Headers gibt der Client bekannt, welche *VirtualHost* eines Servers, die Anfrage bedienen soll. Wenn mehrere *VirtualHosts* unter derselben IP-Adresse betrieben werden, ist dieser Wert entscheidend. Beim Weiterleiten setzt der *Reverse Proxy* aber normalerweise einen neuen Host-Header; nämlich denjenigen des Backend-Systems. Dies ist aber oft nicht gewünscht, denn das Backend-System wird in vielen Fällen basierend auf diesem Host-Header seine Links setzen. Das voll qualifizierte Links sind zwar für Backend-Applikationen eine schlechte Praxis, aber wir vermeiden Konflikte, wenn wir von Beginn weg klarstellen, dass der Host-Header erhalten bleiben und 1:1 an das Backend weitergegeben werden soll. 
 
 ```bash
-ProxyPreserverHost	On
+ProxyPreserveHost	On
 ```
 
 Backend Systeme achten oft weniger auf die Sicherheit als ein Reverse Proxy. Ein Bereich, wo das sichtbar wird, sind Fehlermeldungen. Oft sind detaillierte Fehlermeldungen sogar gewünscht, denn sie erlauben dem Entwickler oder Backend Administrator einem Fehler überhaupt erst auf die Schliche zu kommen. Über das Internet möchten wir sie aber nicht verteilen, denn ohne Authentifizierung auf dem *Reverse Proxy* könnte sich hinter dem Client ja immer ein Angreifer verstecken. Besser ist es also, die Fehlermeldungen der Backend Applikation zu verbergen, respektive durch eine Fehlermeldung des *Reverse Proxies* zu ersetzen. Die Direktive *ProxyErrorOverride* greift also in den HTTP Response Body ein und ersetzt ihn, wenn eine Status Code grösser gleich 400 vorliegt. Die Anfragen mit normalen Stati unter 400 sind von dieser Direktive nicht betroffen.
@@ -134,6 +134,7 @@ Neben der Direktive _ProxyPass_ kann auch das *Rewrite-Modul* eingesetzt werden,
 
 ```bash
 LoadModule              rewrite_module          modules/mod_rewrite.so
+LoadModule              headers_module          modules/mod_headers.so
 
 ...
 
@@ -251,7 +252,8 @@ LoadBalancer ist dazu gefragt. Das sehen wir uns im nächsten Abschnitt an:
 Den Apache Loadbalancer müssen wir zunächst als Modul laden:
 
 ```bash
-LoadModule              proxy_balancer_module        modules/mod_proxy_balancer.so
+LoadModule        proxy_balancer_module           modules/mod_proxy_balancer.so
+LoadModule        lbmethod_byrequests_module      modules/mod_lbmethod_byrequests.so
 ```
 
 Neben dem Loadbalancer-Modul selbst benötigen wir auch ein Modul, welches uns dabei hilft, die Anfragen auf die
@@ -478,6 +480,315 @@ Connection: close
 
 Die verschiedenen erweiterten Header-Zeilen werden also nacheinander aufgeführt und wo vorhanden mit Werten gefüllt.
 
+### Schritt 9 (Bonus): Die Konfigurtion des kompletten Reverse Proxy Servers inklusive der vorangegangenen Lektionen
+
+
 Mit dieser kleinen Erweiterung kommen wir zum Abschluss dieser Anleitung und auch zum Ende des Basis-Blockes der verschiedenen Anleitungen. Wir haben in mehreren Lektionen den Aufbau eines Apache Webservers von der Kompilierung über die Grundkonfiguration, das Tuning von ModSecurity bis zur Konfiguration eine Reverse Proxies gesehen und so einen vertieften Einblick in die Funktionsweise des Servers und seiner wichtigsten Module erhalten.
 
+Hier nun die komplette Konfiguration des *Reverse Proxy* Servers, wie wir sie in den letzten Lektionen erarbeitet haben.
 
+```bash
+ServerName        localhost
+ServerAdmin       root@localhost
+ServerRoot        /apache
+User              www-data
+Group             www-data
+PidFile           logs/httpd.pid
+
+ServerTokens      Prod
+UseCanonicalName  On
+TraceEnable       Off
+
+Timeout           10
+MaxClients        100
+
+Listen            127.0.0.1:80
+Listen            127.0.0.1:443
+
+LoadModule        mpm_event_module        modules/mod_mpm_event.so
+LoadModule        unixd_module            modules/mod_unixd.so
+
+LoadModule        log_config_module       modules/mod_log_config.so
+LoadModule        logio_module            modules/mod_logio.so
+LoadModule        rewrite_module          modules/mod_rewrite.so
+LoadModule        headers_module          modules/mod_headers.so
+
+LoadModule        authn_core_module       modules/mod_authn_core.so
+LoadModule        authz_core_module       modules/mod_authz_core.so
+
+LoadModule        ssl_module              modules/mod_ssl.so
+
+LoadModule        unique_id_module        modules/mod_unique_id.so
+LoadModule        security2_module        modules/mod_security2.so
+
+LoadModule        proxy_module            modules/mod_proxy.so
+LoadModule        proxy_http_module       modules/mod_proxy_http.so
+LoadModule        proxy_balancer_module   modules/mod_proxy_balancer.so
+LoadModule        lbmethod_byrequests_module modules/mod_lbmethod_byrequests.so
+
+ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
+LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" %{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% %D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e %{ModSecAnomalyScoreIn}e %{ModSecAnomalyScoreOut}e" extended
+
+LogFormat "[%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] %{UNIQUE_ID}e %D \
+PerfModSecInbound: %{TX.perf_modsecinbound}M \
+PerfAppl: %{TX.perf_application}M \
+PerfModSecOutbound: %{TX.perf_modsecoutbound}M \
+TS-Phase1: %{TX.ModSecTimestamp1start}M-%{TX.ModSecTimestamp1end}M \
+TS-Phase2: %{TX.ModSecTimestamp2start}M-%{TX.ModSecTimestamp2end}M \
+TS-Phase3: %{TX.ModSecTimestamp3start}M-%{TX.ModSecTimestamp3end}M \
+TS-Phase4: %{TX.ModSecTimestamp4start}M-%{TX.ModSecTimestamp4end}M \
+TS-Phase5: %{TX.ModSecTimestamp5start}M-%{TX.ModSecTimestamp5end}M \
+Perf-Phase1: %{PERF_PHASE1}M \
+Perf-Phase2: %{PERF_PHASE2}M \
+Perf-Phase3: %{PERF_PHASE3}M \
+Perf-Phase4: %{PERF_PHASE4}M \
+Perf-Phase5: %{PERF_PHASE5}M \
+Perf-ReadingStorage: %{PERF_SREAD}M \
+Perf-WritingStorage: %{PERF_SWRITE}M \
+Perf-GarbageCollection: %{PERF_GC}M \
+Perf-ModSecLogging: %{PERF_LOGGING}M \
+Perf-ModSecCombined: %{PERF_COMBINED}M" perflog
+
+LogLevel                      debug
+ErrorLog                      logs/error.log
+CustomLog                     logs/access.log extended
+CustomLog                     logs/modsec-perf.log perflog env=write_perflog
+
+# == ModSec Base Configuration
+
+SecRuleEngine                 On
+
+SecRequestBodyAccess          On
+SecRequestBodyLimit           10000000
+SecRequestBodyNoFilesLimit    64000
+
+SecResponseBodyAccess         On
+SecResponseBodyLimit          10000000
+
+SecPcreMatchLimit             15000
+SecPcreMatchLimitRecursion    15000
+
+SecTmpDir                     /tmp/
+SecDataDir                    /tmp/
+SecUploadDir                  /tmp/
+
+SecDebugLog                   /apache/logs/modsec_debug.log
+SecDebugLogLevel              0
+
+SecAuditEngine                RelevantOnly
+SecAuditLogRelevantStatus     "^(?:5|4(?!04))"
+SecAuditLogParts              ABIJEFHKZ
+
+SecAuditLogType               Concurrent
+SecAuditLog                   /apache/logs/modsec_audit.log
+SecAuditLogStorageDir         /apache/logs/audit/
+
+SecDefaultAction              "phase:1,pass,log,tag:'Local Lab Service'"
+
+
+
+# == ModSec Rule ID Namespace Definition
+# Service-specific before Core-Rules:    10000 -  49999
+# Service-specific after Core-Rules:     50000 -  79999
+# Locally shared rules:                  80000 -  99999
+#  - Performance:                        90000 -  90199
+# Recommended ModSec Rules (few):       200000 - 200010
+# OWASP Core-Rules:                     900000 - 999999
+
+
+# === ModSec timestamps at the start of each phase (ids: 90000 - 90009)
+
+SecAction "id:'90000',phase:1,nolog,pass,setvar:TX.ModSecTimestamp1start=%{DURATION}"
+SecAction "id:'90001',phase:2,nolog,pass,setvar:TX.ModSecTimestamp2start=%{DURATION}"
+SecAction "id:'90002',phase:3,nolog,pass,setvar:TX.ModSecTimestamp3start=%{DURATION}"
+SecAction "id:'90003',phase:4,nolog,pass,setvar:TX.ModSecTimestamp4start=%{DURATION}"
+SecAction "id:'90004',phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURATION}"
+                      
+# SecRule REQUEST_FILENAME "@beginsWith /" "id:'90005',phase:5,t:none,nolog,noauditlog,pass,setenv:write_perflog"
+
+
+
+# === ModSec Recommended Rules (in modsec src package) (ids: 200000-200010)
+
+SecRule REQUEST_HEADERS:Content-Type "text/xml" "id:'200000',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
+
+SecRule REQBODY_ERROR "!@eq 0" "id:'200001',phase:2,t:none,deny,status:400,log,msg:'Failed to parse request body.',\
+logdata:'%{reqbody_error_msg}',severity:2"
+
+SecRule MULTIPART_STRICT_ERROR "!@eq 0" \
+"id:'200002',phase:2,t:none,log,deny,status:403, \
+msg:'Multipart request body failed strict validation: \
+PE %{REQBODY_PROCESSOR_ERROR}, \
+BQ %{MULTIPART_BOUNDARY_QUOTED}, \
+BW %{MULTIPART_BOUNDARY_WHITESPACE}, \
+DB %{MULTIPART_DATA_BEFORE}, \
+DA %{MULTIPART_DATA_AFTER}, \
+HF %{MULTIPART_HEADER_FOLDING}, \
+LF %{MULTIPART_LF_LINE}, \
+SM %{MULTIPART_MISSING_SEMICOLON}, \
+IQ %{MULTIPART_INVALID_QUOTING}, \
+IP %{MULTIPART_INVALID_PART}, \
+IH %{MULTIPART_INVALID_HEADER_FOLDING}, \
+FL %{MULTIPART_FILE_LIMIT_EXCEEDED}'"
+
+SecRule TX:/^MSC_/ "!@streq 0" "id:'200004',phase:2,t:none,deny,status:500,msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
+
+
+# === ModSecurity Rules (ids: 900000-999999)
+                
+# === ModSec Core Rules Base Configuration (ids: 900001-900021)
+
+SecAction "id:'900001',phase:1,t:none, \
+   setvar:tx.critical_anomaly_score=5, \
+   setvar:tx.error_anomaly_score=4, \
+   setvar:tx.warning_anomaly_score=3, \
+   setvar:tx.notice_anomaly_score=2, \
+   nolog, pass"
+SecAction "id:'900002',phase:1,t:none,setvar:tx.inbound_anomaly_score_level=10000,setvar:tx.inbound_anomaly_score=0,nolog,pass"
+SecAction "id:'900003',phase:1,t:none,setvar:tx.outbound_anomaly_score_level=10000,setvar:tx.outbound_anomaly_score=0,nolog,pass"
+SecAction "id:'900004',phase:1,t:none,setvar:tx.anomaly_score_blocking=on,nolog,pass"
+
+SecAction "id:'900006',phase:1,t:none,setvar:tx.max_num_args=255,nolog,pass"
+SecAction "id:'900007',phase:1,t:none,setvar:tx.arg_name_length=100,nolog,pass"
+SecAction "id:'900008',phase:1,t:none,setvar:tx.arg_length=400,nolog,pass"
+SecAction "id:'900009',phase:1,t:none,setvar:tx.total_arg_length=64000,nolog,pass"
+SecAction "id:'900010',phase:1,t:none,setvar:tx.max_file_size=10000000,nolog,pass"
+SecAction "id:'900011',phase:1,t:none,setvar:tx.combined_file_sizes=10000000,nolog,pass"
+SecAction "id:'900012',phase:1,t:none, \
+  setvar:'tx.allowed_methods=GET HEAD POST OPTIONS', \
+  setvar:'tx.allowed_request_content_type=application/x-www-form-urlencoded|multipart/form-data|text/xml|application/xml|application/x-amf|application/json', \
+  setvar:'tx.allowed_http_versions=HTTP/0.9 HTTP/1.0 HTTP/1.1', \
+  setvar:'tx.restricted_extensions=.asa/ .asax/ .ascx/ .axd/ .backup/ .bak/ .bat/ .cdx/ .cer/ .cfg/ .cmd/ .com/ .config/ .conf/ .cs/ .csproj/ .csr/ .dat/ .db/ .dbf/ .dll/ .dos/ .htr/ .htw/ .ida/ .idc/ .idq/ .inc/ .ini/ .key/ .licx/ .lnk/ .log/ .mdb/ .old/ .pass/ .pdb/ .pol/ .printer/ .pwd/ .resources/ .resx/ .sql/ .sys/ .vb/ .vbs/ .vbproj/ .vsdisco/ .webinfo/ .xsd/ .xsx/', \
+  setvar:'tx.restricted_headers=/Proxy-Connection/ /Lock-Token/ /Content-Range/ /Translate/ /via/ /if/', \
+  nolog,pass"
+
+SecRule REQUEST_HEADERS:User-Agent "^(.*)$" "id:'900018',phase:1,t:none,t:sha1,t:hexEncode,setvar:tx.ua_hash=%{matched_var}, \
+  nolog,pass"
+SecRule REQUEST_HEADERS:x-forwarded-for "^\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b" \
+  "id:'900019',phase:1,t:none,capture,setvar:tx.real_ip=%{tx.1},nolog,pass"
+SecRule &TX:REAL_IP "!@eq 0" "id:'900020',phase:1,t:none,initcol:global=global,initcol:ip=%{tx.real_ip}_%{tx.ua_hash}, \
+  nolog,pass"
+SecRule &TX:REAL_IP "@eq 0" "id:'900021',phase:1,t:none,initcol:global=global,initcol:ip=%{remote_addr}_%{tx.ua_hash},setvar:tx.real_ip=%{remote_addr}, \
+  nolog,pass"
+
+# === ModSecurity Ignore Rules Before Core Rules Inclusion; order by id of ignored rule (ids: 10000-49999)
+
+# ...
+
+# === ModSecurity Core Rules Inclusion
+
+Include    /modsecurity-core-rules/*.conf
+
+# === ModSecurity Ignore Rules After Core Rules Inclusion; order by id of ignored rule (ids: 50000-59999)
+
+# ...
+
+# === ModSec Timestamps at the End of Each Phase (ids: 90010 - 90019)
+
+SecAction "id:'90010',phase:1,pass,nolog,setvar:TX.ModSecTimestamp1end=%{DURATION}"
+SecAction "id:'90011',phase:2,pass,nolog,setvar:TX.ModSecTimestamp2end=%{DURATION}"
+SecAction "id:'90012',phase:3,pass,nolog,setvar:TX.ModSecTimestamp3end=%{DURATION}"
+SecAction "id:'90013',phase:4,pass,nolog,setvar:TX.ModSecTimestamp4end=%{DURATION}"
+SecAction "id:'90014',phase:5,pass,nolog,setvar:TX.ModSecTimestamp5end=%{DURATION}"
+
+
+# === ModSec performance calculations and variable export (ids: 90100 - 90199)
+
+SecAction "id:'90100',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=%{PERF_PHASE1}"
+SecAction "id:'90101',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=+%{PERF_PHASE2}"
+SecAction "id:'90102',phase:5,pass,nolog,setvar:TX.perf_application=%{TX.ModSecTimestamp3start}"
+SecAction "id:'90103',phase:5,pass,nolog,setvar:TX.perf_application=-%{TX.ModSecTimestamp2end}"
+SecAction "id:'90104',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=%{PERF_PHASE3}"
+SecAction "id:'90105',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=+%{PERF_PHASE4}"
+SecAction "id:'90106',phase:5,pass,nolog,setenv:ModSecTimeIn=%{TX.perf_modsecinbound}"
+SecAction "id:'90107',phase:5,pass,nolog,setenv:ApplicationTime=%{TX.perf_application}"
+SecAction "id:'90108',phase:5,pass,nolog,setenv:ModSecTimeOut=%{TX.perf_modsecoutbound}"
+SecAction "id:'90109',phase:5,pass,nolog,setenv:ModSecAnomalyScoreIn=%{TX.inbound_anomaly_score}"
+SecAction "id:'90110',phase:5,pass,nolog,setenv:ModSecAnomalyScoreOut=%{TX.outbound_anomaly_score}"
+
+
+# === ModSec finished
+
+RewriteEngine           On
+RewriteOptions          InheritDownBefore
+
+RewriteRule   		^/$	%{REQUEST_SCHEME}://%{HTTP_HOST}/index.html  [redirect,last]
+
+
+
+SSLCertificateKeyFile   /etc/ssl/private/ssl-cert-snakeoil.key
+SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
+
+SSLProtocol             All -SSLv2 -SSLv3
+SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM !MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
+SSLHonorCipherOrder     On
+
+SSLRandomSeed           startup file:/dev/urandom 2048
+SSLRandomSeed           connect builtin
+
+DocumentRoot            /apache/htdocs
+
+<Directory />
+      
+      Require all denied
+
+      Options SymLinksIfOwnerMatch
+      AllowOverride None
+
+</Directory>
+
+<VirtualHost 127.0.0.1:80>
+
+      RewriteEngine     On
+
+      RewriteRule       ^/(.*)$  https://%{HTTP_HOST}/$1  [redirect,last]
+      
+      <Directory /apache/htdocs>
+
+        Require all granted
+
+        Options None
+        AllowOverride None
+
+      </Directory>
+
+</VirtualHost>
+
+<VirtualHost 127.0.0.1:443>
+    
+      SSLEngine On
+
+      ProxyTimeout              60
+      ProxyErrorOverride        On
+
+      RewriteEngine             On
+
+      RewriteRule               ^/service1/(.*)	  http://localhost:8000/service1/$1 [proxy,last]
+      ProxyPassReverse          /                 http://localhost:8000/
+
+
+      <Proxy http://localhost:8000/service1>
+
+        Require all granted
+
+        AllowOverride none
+        Options none
+
+      </Proxy>
+
+      <Directory /apache/htdocs>
+
+              Require all granted
+
+              Options None
+              AllowOverride None
+
+      </Directory>
+
+</VirtualHost>
+```
+
+### Verweise
+
+* Apache mod_proxy [https://httpd.apache.org/docs/2.4/mod/mod_proxy.html)](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html)
+* Apache mod_rewrite [https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)](https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)
