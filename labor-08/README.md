@@ -83,8 +83,6 @@ ProxyPassReverse	/service1	http://localhost:8000/service1
 	AllowOverride none
 	Options none
 
-	FIXME Weiterleiten von Infos
-
 </Proxy>
 ```
 
@@ -97,8 +95,6 @@ Auf der nächsten Zeile kommt eine verwandte Direktive, die trotz ähnlichem Nam
 Weiter in der Konfiguration: Nun folgt der *Proxy-Block*, wo die Verbindung zum Backend genauer definiert wird. Namentlich die Authentisierung und Authorisierung eines Requests findet hier statt. Weiter unten in der Anleitung werden wir aber auch einen *Load-Balancer* in diesem Block unterbringen.
 
 Der *Proxy-Block* entspricht dem *Location-* und dem *Directory-Block*, die wir in unserer Konfiguration bereits früher kennengelernt haben. Es handelt sich dabei um sogenannte *Container*. *Container* geben dem Webserver an, wie er die Arbeit strukturieren soll. Sobald er in der Konfiguration einen *Container* antrifft, bereitet er dafür eine Verarbeitungsstruktur vor. Im Fall von *mod_proxy* kann das Backend auch ohne *Proxy-Container* erreicht werden. Der Zugriffsschutz bleibt dabei aber unberücksichtigt und auch weitere Direktiven besitzen damit keinen Ort mehr in den sie eingebracht werden können. Ohne *Proxy-Block* bleibt die Verarbeitung bei komplexeren Servern immer etwas zufällig und wir tun gut daran, diesen Teil mitzukonfigurieren. Mittels der Direktive *ProxySet* können wir dann hier noch weiter eingreifen und etwa das Verbindungsverhalten vorgeben. Mit *min*, *max* und *smax* können die Anzahl Threads, die dem Proxy Connection Pool zugewiesen werden, spezifiziert werden. Dies kann fallweise die Performance beeinflussen. Das *Keepalive Verhalten* der Proxy-Verbindung lässt sich beeinflussen und auch verschiedene *Timeout*-Werte sind so zu definieren. Weitere Informationen dazu finden sich in der Dokumentation des Apache Projektes.
-
-FIXME: Weiterleiten von Infos
 
 ### Schritt 5: Ausnahmen beim Proxying definieren und weitere Einstellungen vornehmen
 
@@ -118,9 +114,17 @@ Eine wesentliche Direktive, die optional zum Proxygehört betrifft den Timeout. 
 ProxyTimeout	60
 ```
 
-Daneben bietet es sich an auch den *Host-Header* zu fixieren. FIXME
+Daneben bietet es sich an auch den *Host-Header* zu fixieren. Mittels des HTTP Request Host Headers gibt der Client bekannt, welche *VirtualHost* eines Servers, die Anfrage bedienen soll. Wenn mehrere *VirtualHosts* unter derselben IP-Adresse betrieben werden, ist dieser Wert entscheidend. Beim Weiterleiten setzt der *Reverse Proxy* aber normalerweise einen neuen Host-Header; nämlich denjenigen des Backend-Systems. Dies ist aber oft nicht gewünscht, denn das Backend-System wird in vielen Fällen basierend auf diesem Host-Header seine Links setzen. Das voll qualifizierte Links sind zwar für Backend-Applikationen eine schlechte Praxis, aber wir vermeiden Konflikte, wenn wir von Beginn weg klarstellen, dass der Host-Header erhalten bleiben und 1:1 an das Backend weitergegeben werden soll. 
 
-Und schliesslich gilt es bisweilen auch, die Fehlermeldungen des Backends abzufangen. Dies liegt daran dass FIXME
+```bash
+ProxyPreserverHost	On
+```
+
+Backend Systeme achten oft weniger auf die Sicherheit als ein Reverse Proxy. Ein Bereich, wo das sichtbar wird, sind Fehlermeldungen. Oft sind detaillierte Fehlermeldungen sogar gewünscht, denn sie erlauben dem Entwickler oder Backend Administrator einem Fehler überhaupt erst auf die Schliche zu kommen. Über das Internet möchten wir sie aber nicht verteilen, denn ohne Authentifizierung auf dem *Reverse Proxy* könnte sich hinter dem Client ja immer ein Angreifer verstecken. Besser ist es also, die Fehlermeldungen der Backend Applikation zu verbergen, respektive durch eine Fehlermeldung des *Reverse Proxies* zu ersetzen. Die Direktive *ProxyErrorOverride* greift also in den HTTP Response Body ein und ersetzt ihn, wenn eine Status Code grösser gleich 400 vorliegt. Die Anfragen mit normalen Stati unter 400 sind von dieser Direktive nicht betroffen.
+
+```bash
+ProxyErrorOverride	On
+```
 
 ### Schritt 6: ModRewrite
 
@@ -436,17 +440,44 @@ f	localhost:8001
 
 Wir unterscheiden zwei Backends und können hier die Verteilung beliebig vornehmen. Gemeinsam bedeutet dieses eher komplexe Rezept nun, dass wir aus der jeweiligen IP-Adresse einen Hash bilden und daraus das erste Zeichen benützen, um in der eben geschriebenen Hash-Tabelle auf eines von zwei Backends zu schliessen. Solange die IP-Adresse des Clients konstant bleibt (was in der Praxis durchaus nicht immer der Fall sein muss), wird das Resultat dieses Lookups immer dasselbe sein. Das heisst, der Client wird immer auf demselben Backend landen. Man nennt dies IP-Stickyness. Da es sich aber um eine Hash-Operation und nicht um einen simplen IP-Adressen-Lookup handelt, werden zwei Clients mit einer ähnlichen IP Adressen, doch einen gänzlich anderen Hash erhalten und nicht zwingend auf demselben Backend landen. Wir gewinnen damit eine einigermassen flache Verteilung der Requests und sind dennoch sicher, dass bestimmte Clients bis zu einem Wechsel der IP-Adresse immer auf demselben Backend landen werden.
 
-### Schritt Bonus: Zusammenfassung der Konfiguration
+### Schritt 8: Weiterleiten von Informationen an die Backend Systeme
 
-Unique-ID forwarden
+Der *Reverse Proxy* Server schirmt den Applikationsserver vom direkten Zugriff durch den Client ab. Dies bedeutet aber auch, dass der Applikationsserver gewisse Informationen zum Client und seiner Verbindung zum *Reverse Proxy* nicht mehr sehen kann. Zur Kompensation dieses Verlustes, setzt das Proxy-Modul drei HTTP Request Header Zeilen, welche den *Reverse Proxy* beschreiben:
 
-ProxyErrorOverride
+* X-Forwarded-For : Die IP Adresse des Reverse Proxies
+* X-Forwarded-Host : Den Originalen HTTP Host-Header in der Anfrage des Clients
+* X-Forwarded-Server : Den Servernamen des *Reverse Proxies*
 
-ProxyPreserveHost
+Sind mehrere Reverse Proxies hintereinander gestaffelt, dann werden die zusätzlichen IP-Adressen und Servernamen durch Komma abgetrennt beigefügt. Neben diesen Daten zur Verbindung ist es aber sinnvoll, auch noch weitere Daten weiterzugeben. In diese Reihe gehört namentlich die Unique-ID, welche den Request eindeutig identifiziert. Ein gut konfigurierter Backend Server wird diesen Schlüsselwert ähnlich wie unser *Reverse Proxy* im Logfile ablegen. Eine zukünftige Fehlersuche wird dadurch erleichtert, dass die verschiedenen Logeinträge einfach korreliert werden können.
 
-RewriteLog via ErrorLog
+Häufig wird der Reverse Proxy auch dazu eingesetzt, eine Authentifizierung durchzuführen. Wir haben das zwar noch nicht eingerichtet, aber es ist dennoch sinnvoll, diesen Wert in eine weiterzuverwendende Grundkonfiguration mit aufzunehmen. Wenn keine Authentifizierung definiert wird, dann bleibt dieser Wert einfach leer. Und schliesslich wollen wir das Backend-System auch noch über die Art der Verschlüsselung informieren, auf die sich Client und *Reverse Proxy* geeinigt haben. Der gesamte Block sieht dann so aus:
 
-###Verweise
+```bash
+RequestHeader set "X-RP-UNIQUE-ID" 	"%{UNIQUE_ID}e"
+RequestHeader set "X-RP-REMOTE-USER" 	"%{REMOTE_USER}e"
+RequestHeader set "X-RP-SSL-PROTOCOL" 	"%{SSL_PROTOCOL}s"
+RequestHeader set "X-RP-SSL-CIPHER" 	"%{SSL_CIPHER}s"
+```
 
-modproxy
-modrewrite
+Sehen wir an, wie sich das auf die Anfrage zwischen *Reverse Proxy* und Backend auswirkt:
+
+```bash
+GET /service1/index.html HTTP/1.1
+Host: localhost
+User-Agent: curl/7.35.0
+Accept: */*
+X-RP-UNIQUE-ID: VmpSwH8AAQEAAG@hXBcAAAAC
+X-RP-REMOTE-USER: (null)
+X-RP-SSL-PROTOCOL: TLSv1.2
+X-RP-SSL-CIPHER: ECDHE-RSA-AES256-GCM-SHA384
+X-Forwarded-For: 127.0.0.1
+X-Forwarded-Host: localhost
+X-Forwarded-Server: localhost
+Connection: close
+```
+
+Die verschiedenen erweiterten Header-Zeilen werden also nacheinander aufgeführt und wo vorhanden mit Werten gefüllt.
+
+Mit dieser kleinen Erweiterung kommen wir zum Abschluss dieser Anleitung und auch zum Ende des Basis-Blockes der verschiedenen Anleitungen. Wir haben in mehreren Lektionen den Aufbau eines Apache Webservers von der Kompilierung über die Grundkonfiguration, das Tuning von ModSecurity bis zur Konfiguration eine Reverse Proxies gesehen und so einen vertieften Einblick in die Funktionsweise des Servers und seiner wichtigsten Module erhalten.
+
+
