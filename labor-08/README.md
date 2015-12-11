@@ -2,7 +2,7 @@
 
 ###Was machen wir?
 
-Wir konfigurieren einen *Reverse Proxy* oder *Gateway Server*, der den Zugriff zur Applikation schützt und den Applikationsserver vom Internet abschirmt. Dabei lernen wir mehrere Arten der Konfiguration kennen und arbeiten auch erstmals mit *ModRewrite*
+Wir konfigurieren einen *Reverse Proxy* oder *Gateway Server*, der den Zugriff zur Applikation schützt und den Applikationsserver vom Internet abschirmt. Dabei lernen wir mehrere Arten der Konfiguration kennen und arbeiten auch erstmals mit *ModRewrite*.
 
 ###Warum tun wir das?
 
@@ -480,7 +480,7 @@ Connection: close
 
 Die verschiedenen erweiterten Header-Zeilen werden also nacheinander aufgeführt und wo vorhanden mit Werten gefüllt.
 
-### Schritt 9 (Bonus): Die Konfigurtion des kompletten Reverse Proxy Servers inklusive der vorangegangenen Lektionen
+### Schritt 9 (Bonus): Die Konfiguration des kompletten Reverse Proxy Servers inklusive der vorangegangenen Lektionen
 
 
 Mit dieser kleinen Erweiterung kommen wir zum Abschluss dieser Anleitung und auch zum Ende des Basis-Blockes der verschiedenen Anleitungen. Wir haben in mehreren Lektionen den Aufbau eines Apache Webservers von der Kompilierung über die Grundkonfiguration, das Tuning von ModSecurity bis zur Konfiguration eine Reverse Proxies gesehen und so einen vertieften Einblick in die Funktionsweise des Servers und seiner wichtigsten Module erhalten.
