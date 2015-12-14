@@ -3,7 +3,7 @@
 #
 # Apache Logfile Scanning Script
 # 
-# Copyright 2007-2012 Christian Folini (folini@netnea.com)
+# Copyright 2007-2015 Christian Folini (folini@netnea.com)
 #
 # This software has been released under the GPL.
 #
@@ -19,7 +19,7 @@ require 'zlib'
 require 'pp'
 include Zlib
 
-LOGFORMAT_EXTENDED2015 = "Remote-IP Country Remote-User [Timestamp] \"Method Path Version\" Status Response-Size \"Referer\" \"User-Agent\" ServerName Local-IP Local-Port RspHandler BalRoute ConnStatus \"Tracking-ID\" Request-ID SSLProtocol Cipher IO-In IO-Out Deflate-Ratio Duration ModSecPerfIn PerfAppl ModSecPerfOut ModSecScoreIn ModSecScoreOut"
+LOGFORMAT_EXTENDED2015 = "Remote-IP Country Remote-User [Timestamp] \"Method Path Version\" Status Response-Size \"Referer\" \"User-Agent\" ServerName Local-IP Local-Port RspHandler BalRoute ConnStatus \"Tracking-ID\" Request-ID SSLProtocol SSLCipher IO-In IO-Out Deflate-Ratio Duration ModSecPerfIn PerfAppl ModSecPerfOut ModSecScoreIn ModSecScoreOut"
 LOGFORMAT_EXTENDED2014 = "Remote-IP Country Remote-User [Timestamp] \"Method Path Version\" Status Response-Size \"Referer\" \"User-Agent\" ServerName Local-IP Local-Port RspHandler BalRoute ConnStatus \"Tracking-ID\" Request-ID SSLProtocol Cipher IO-In IO-Out Deflate-Ratio Duration ModSecPerfIn PerfAppl ModSecPerfOut ModSecScoreIn ModSecScoreOut"
 LOGFORMAT_EXTENDED2012 = "Remote-IP Remote-Logname Remote-User [Timestamp] \"Method Path Version\" Status Response-Size \"Referer\" \"User-Agent\" ServerName Local-IP Local-Port RspHandler BalRoute ConnStatus \"Tracking-ID\" Request-ID IO-In IO-Out Deflate-Ratio Duration ModSecPerfIn PerfAppl ModSecPerfOut ModSecScoreIn ModSecScoreOut"
 LOGFORMAT_EXTENDED2011 = "Remote-IP Remote-Logname Remote-User [Timestamp] \"Method Path Version\" Status Response-Size \"Referer\" \"User-Agent\" ServerName Local-IP Local-Port RspHandler BalRoute ConnStatus \"Tracking-ID\" Request-ID IO-In IO-Out Deflate-Ratio Duration ModSecTime1 ModSecTime2 ModSecTime3 ModSecAnomaly"
@@ -333,7 +333,7 @@ def parse_display_logfile(file, informat_fields, displayfields_prefixes, display
         pattern = /^(\S+) (\S\S?) (\S+) \[([^\]]+)\] "(\S+) (.+?) (\S+)" (\S+) (\S+) "([^"]+)" "([^"]+)" (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) "(\S+)" (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+)$/
         numfields = 30
       when LOGFORMAT_EXTENDED2015
-        pattern = /^(\S+) (\S\S?) (\S+) \[([^\]]+)\] "(\S+) (.+?) (\S+)" (\S+) (\S+) "([^"]+)" "([^"]+)" (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) "(\S+)" (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+)$/
+        pattern = /^(\S+) (\S\S?) (\S+) \[([^\]]+)\] "(\S+) (.+?) (\S+)" (\S+) (\S+) "([^"]+)" "([^"]+)" (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) "([^"]+)" (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+)$/
         numfields = 30
       else
         raise

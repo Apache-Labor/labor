@@ -205,7 +205,7 @@ mit derselben URL sogleich an Port 443 weiterverweisen.
 Damit ist *ModRewrite* eingeführt. Für weitere Beispiele sei hier auf die Dokumentation verwiesen oder
 die nachfolgenden Kapitel dieser Anleitung, wo wir noch weitere Rezepte kennenlernen werden.
 
-### Schritt 6: ModRewrite [Proxy]
+### Schritt 7: ModRewrite [Proxy]
 
 Wir haben gesehen wie eine *RewriteEngine* initialisiert wird und wie man einfache und etwas komplexere Redirects auslösen kann. Nun werden wir mit diesen Mitteln einen *Reverse Proxy* konfigurieren. Das machen wir wie folgt:
 
@@ -361,7 +361,7 @@ Neben dem erwähnten Keep-Alive ist der Request-Handler von Interesse. Der Reque
 
 In einer späteren Anleitung werden wir sehen, dass sich der Proxy-Balancer auch in anderen Situationen anwenden lässt. Für den Moment begnügen wir uns aber mit dem gesehenen und wenden uns den RewriteMaps zu. Bei RewriteMaps handelt es sich um eine Hilfskonstruktion, welche die Mächtigkeit von ModRewrite nochmals erhöht. Wenn wir es mit dem Proxy-Server kombinieren, dann erhöht sich die Flexibilität massiv.
 
-### Schritt 7: RewriteMap [proxy]
+### Schritt 9: RewriteMap [proxy]
 
 RewriteMaps kommen in verschiedenen Ausprägungen vor. Ihr Funktion besteht darin, bei jedem Aufruf einem Schlüssel-Paramter einen Wert zuzuordnen. Eine Hashtabelle ist ein einfaches Beispiel. Dann ist es aber auch möglich, externe Skripte als programmierbare RewriteMap zu konfigurieren. Die folgenden Typen von Maps sind möglich:
 
@@ -442,7 +442,7 @@ f	localhost:8001
 
 Wir unterscheiden zwei Backends und können hier die Verteilung beliebig vornehmen. Gemeinsam bedeutet dieses eher komplexe Rezept nun, dass wir aus der jeweiligen IP-Adresse einen Hash bilden und daraus das erste Zeichen benützen, um in der eben geschriebenen Hash-Tabelle auf eines von zwei Backends zu schliessen. Solange die IP-Adresse des Clients konstant bleibt (was in der Praxis durchaus nicht immer der Fall sein muss), wird das Resultat dieses Lookups immer dasselbe sein. Das heisst, der Client wird immer auf demselben Backend landen. Man nennt dies IP-Stickyness. Da es sich aber um eine Hash-Operation und nicht um einen simplen IP-Adressen-Lookup handelt, werden zwei Clients mit einer ähnlichen IP Adressen, doch einen gänzlich anderen Hash erhalten und nicht zwingend auf demselben Backend landen. Wir gewinnen damit eine einigermassen flache Verteilung der Requests und sind dennoch sicher, dass bestimmte Clients bis zu einem Wechsel der IP-Adresse immer auf demselben Backend landen werden.
 
-### Schritt 8: Weiterleiten von Informationen an die Backend Systeme
+### Schritt 10: Weiterleiten von Informationen an die Backend Systeme
 
 Der *Reverse Proxy* Server schirmt den Applikationsserver vom direkten Zugriff durch den Client ab. Dies bedeutet aber auch, dass der Applikationsserver gewisse Informationen zum Client und seiner Verbindung zum *Reverse Proxy* nicht mehr sehen kann. Zur Kompensation dieses Verlustes, setzt das Proxy-Modul drei HTTP Request Header Zeilen, welche den *Reverse Proxy* beschreiben:
 
@@ -480,7 +480,7 @@ Connection: close
 
 Die verschiedenen erweiterten Header-Zeilen werden also nacheinander aufgeführt und wo vorhanden mit Werten gefüllt.
 
-### Schritt 9 (Bonus): Die Konfiguration des kompletten Reverse Proxy Servers inklusive der vorangegangenen Lektionen
+### Schritt 11 (Bonus): Die Konfiguration des kompletten Reverse Proxy Servers inklusive der vorangegangenen Lektionen
 
 
 Mit dieser kleinen Erweiterung kommen wir zum Abschluss dieser Anleitung und auch zum Ende des Basis-Blockes der verschiedenen Anleitungen. Wir haben in mehreren Lektionen den Aufbau eines Apache Webservers von der Kompilierung über die Grundkonfiguration, das Tuning von ModSecurity bis zur Konfiguration eine Reverse Proxies gesehen und so einen vertieften Einblick in die Funktionsweise des Servers und seiner wichtigsten Module erhalten.
