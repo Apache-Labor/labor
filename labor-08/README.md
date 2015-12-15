@@ -129,7 +129,7 @@ ProxyErrorOverride	On
 
 ### Schritt 6: ModRewrite
 
-Neben der Direktiven _ProxyPass_ kann auch das *Rewrite-Modul* eingesetzt werden, um die *Reverse Proxy*-Funktionalität auszulösen. Gegenüber dem *ProxyPass* erlaubt dies eine flexiblere Konfiguration. Wir haben *ModRewrite* bis dato nicht gesehen. Da es sich dabei um ein sehr wichtiges Modul handelt, sollten wir es gründlich studieren.
+Neben der Direktive _ProxyPass_ kann auch das *Rewrite-Modul* eingesetzt werden, um die *Reverse Proxy*-Funktionalität auszulösen. Gegenüber dem *ProxyPass* erlaubt dies eine flexiblere Konfiguration. Wir haben *ModRewrite* bis dato nicht gesehen. Da es sich dabei um ein sehr wichtiges Modul handelt, sollten wir es gründlich studieren.
 
 *ModRewrite* definiert eine eigene *RewriteEngine*, welche dazu benutzt wird, einen HTTP Request zu manipulieren; eben umzuschreiben. Diese *RewriteEngine* kann im Server-Kontext, aber auch im *VirtualHost-Kontext* laufen. Genau genommen verwenden wir zwei separate *RewriteEngines*. Die *RewriteEngine* im *VirtualHost-Kontext* kann dabei auch aus dem *Proxy-Container*, den wir oben kennengelernt haben, konfiguriert werden. Wenn wir im Server-Kontext eine *RewriteEngine* definieren, dann kann es passieren, dass diese umgangen wird, wenn eine *Engine* im *VirtualHost-Kontext* existiert. Wir müssen in diesem Fall von Hand dafür sorgen, dass die sogenannten Rewrite-Rules vererbt werden. Setzen wir also im Server-Kontext eine *RewriteEngine* auf, konfigurieren eine Beispiel-Regel und initiieren die Vererbung:
 
