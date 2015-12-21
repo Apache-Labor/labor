@@ -1,7 +1,5 @@
 #!/usr/bin/ruby
 #
-# Copyright (c) 2015 netnea, AG. (https://www.netnea.com/)
-#
 # A ruby script which extracts ModSec alerts out of an apache
 # error log and displays them in a terse report.
 #
@@ -44,6 +42,7 @@ MODE_SIMPLE=2
 MODE_PARAMETER=3
 MODE_PATH=4
 MODE_COMBINED=5
+MODE_GRAPHVIZ=6
 MODE_ALL=16
 
 $params[:mode]   = MODE_SUPERSIMPLE
@@ -160,7 +159,7 @@ def read_file(file)
 	    ip = "0.0.0.0"
 	  end
 	  begin
-	    parameter = line.scan(/ at (.*)\. \[file \"/)[0][0]
+	    parameter = line.scan(/ (at|against) "?(.*?)"?( required)?\. \[file \"/)[0][1]
 	  rescue
 	    parameter = ""
 	  end
@@ -365,11 +364,207 @@ def display_report(events)
 	if $params[:mode] != MODE_SIMPLE and $params[:mode] != MODE_SUPERSIMPLE
 		puts
 	end
-		
   end
 
 end
 
+
+			
+
+
+def display_report_graphviz(events)
+  # Purpose: display graphviz report
+  # Input  : events array
+  # Output : report via stdout
+  # Return : none
+  # Remarks: none
+
+  # Prepare ids
+  dprint "Building list of relevant ids:"
+  ids = Array.new
+  events.each do |event|
+		if ids.grep(event.id).length == 0 && 
+			( event.id != "981176" && event.id != "981202" && event.id != "981203" && event.id != "981204" && event.id != "981205" ) # 981203/4/5 are the rules checking anomaly score in the end. Ignoring those
+			dprint "  Adding event id #{event.id}"
+			ids << event.id
+		else
+			# id is already part of id list
+			dprint "  Ignoring event id #{event.id}"
+			# FIXME: Grow number
+		end
+  end
+  ids.sort!{|a,b| a <=> b }
+  
+  
+  # Prepare uris
+  dprint "Building list of relevant uris:"
+  uris = Array.new
+  events.each do |event|
+		if uris.grep(event.uri).length == 0
+			dprint "  Adding event uri #{event.uri}"
+			uris << event.uri
+		else
+			dprint "  Ignoring event uri #{event.uri}"
+		end
+  end
+  uris.sort!{|a,b| a <=> b }
+
+
+  
+  # Prepare parameters
+  dprint "Building list of relevant parameters:"
+  parameters = Array.new
+  events.each do |event|
+		if parameters.grep(event.parameter).length == 0
+			dprint "  Adding event parameter #{event.parameter}"
+			parameters << event.parameter
+		else
+			dprint "  Ignoring event parameter #{event.parameter}"
+		end
+  end
+
+
+  puts "// HEADER"
+  puts "digraph G {"
+  puts "  size = \"24,24\";"
+  puts "  ranksep=\"8\";"
+  puts
+
+  puts "// DEFINING URI NODES"
+  uris.each do |item|
+  	puts "  \"#{item}\" [shape=house,fontname=helvetica];"
+  end
+  puts
+
+  puts "// DEFINING PARAMETER NODES"
+  parameters.each do |item|
+  	puts "  \"#{item}\" [shape=invhouse,fontname=helvetica];"
+  end
+  puts
+
+  puts "// DEFINING ID NODES"
+  ids.each do |item|
+  	puts "  \"#{item}\" [shape=box,fontname=helvetica];"
+  end
+  puts
+
+  puts "// EDGES: URI -> PARAMETER"
+  uris.each do |uri|
+	event = events.find {|e| e.uri == uri }
+   
+  	items = Array.new
+
+	dprint "Building list with parameters for this uri:"
+	events.select{|e| e.uri == uri }.each do |e|
+		if e.parameter != ""
+			num = items.select{|couple| couple[:parameter] == e.parameter && couple[:uri] == e.uri}.length
+			if num == 0
+				couple = Hash.new
+				couple[:parameter] = e.parameter
+				couple[:uri] = e.uri
+				couple[:num] = 1
+				dprint "  Creating new couple with parameter #{couple[:parameter]} and uri #{couple[:uri]}"
+				items << couple
+			else
+				couple = items.select{|couple| couple[:parameter] == e.parameter && couple[:uri] == e.uri}[0]
+				dprint "  Raising number of occurrence of couple with parameter #{couple[:parameter]} and uri #{couple[:uri]} to #{couple[:num] + 1}"
+				couple[:num] = couple[:num] + 1
+			end
+		else
+			dprint "  No argument found in event. Event can thus not be handled in this mode. Passing to next event."
+		end
+	end
+	items.sort!{|x,y| x[:parameter] <=> y[:parameter] }
+	if $params[:debug]
+		puts "Items/couples to be used in this group with uri #{uri}:"
+		pp items
+	end
+
+	if items.length == 0 or ( items.length == 1 and items[0] == "" )
+		puts "  No parameter available to display group."
+	else
+		items.each do |couple|
+				penwidth = 1
+				if couple[:num] >= 10
+					penwidth = 4
+				end
+				if couple[:num] >= 100
+					penwidth = 8
+				end
+				if couple[:num] >= 1000
+					penwidth = 12
+				end
+				printf "  \"%s\"	-> \"%s\" [penwidth=#{penwidth},weight=#{penwidth}];\n", couple[:uri], couple[:parameter]
+
+		end
+	end
+ 
+  end
+
+  puts
+  puts
+  puts "// EDGES: PARAMETER -> ID"
+  parameters.each do |parameter|
+	event = events.find {|e| e.parameter == parameter }
+   
+  	items = Array.new
+
+	dprint "Building list with ids for this parameter:"
+	events.select{|e| e.parameter == parameter }.each do |e|
+		if e.parameter != ""
+			num = items.select{|couple| couple[:parameter] == e.parameter && couple[:id] == e.id}.length
+			if num == 0
+				couple = Hash.new
+				couple[:parameter] = e.parameter
+				couple[:id] = e.id
+				couple[:num] = 1
+				dprint "  Creating new couple with parameter #{couple[:parameter]} and id #{couple[:id]}"
+				items << couple
+			else
+				couple = items.select{|couple| couple[:id] == e.id && couple[:parameter] == e.parameter}[0]
+				dprint "  Raising number of occurrence of couple with parameter #{parameter} and id #{couple[:id]}"
+				dprint "  Raising number of occurrence of couple with parameter #{parameter} and id #{couple[:id]} to #{couple[:num] + 1}"
+				couple[:num] = couple[:num] + 1
+			end
+		else
+			dprint "  No argument found in event. Event can thus not be handled in this mode. Passing to next event."
+		end
+	end
+	items.sort!{|x,y| x[:parameter] <=> y[:parameter] }
+	if $params[:debug]
+		puts "Items/couples to be used in this group with uri #{uri}:"
+		pp items
+	end
+
+	if items.length == 0 or ( items.length == 1 and items[0] == "" )
+		puts "  No parameter available to display group."
+	else
+		items.each do |couple|
+				penwidth = 1
+				if couple[:num] >= 10
+					penwidth = 4
+				end
+				if couple[:num] >= 100
+					penwidth = 8
+				end
+				if couple[:num] >= 1000
+					penwidth = 12
+				end
+				printf "  \"%s\"	-> \"%s\" [penwidth=#{penwidth},weight=#{penwidth}];\n", couple[:parameter], couple[:id]
+
+		end
+	end
+ 
+  end
+
+
+  if $params[:mode] == MODE_GRAPHVIZ
+  	puts "}"
+  end
+
+
+end
+	
 # -----------------------------------------------------------
 # GENERIC SUB-FUNCTIONS (those that come with every script)
 # -----------------------------------------------------------
@@ -504,8 +699,8 @@ EOF
   end
 
   opts.on('-m', '--mode MAN', 'Ignore-Rule suggestion mode:
-                                     One of "simple", "supersimple", "parameter", "path"
-                                      or "combined". Default is "supersimple"') do |mode|
+                                     One of "simple", "supersimple", "parameter", "path",
+                                     "combined" or "graphviz". Default is "supersimple"') do |mode|
 	  case mode
 	  when "simple"
     		$params[:mode] = MODE_SIMPLE;
@@ -517,6 +712,8 @@ EOF
     		$params[:mode] = MODE_PATH;
 	  when "combined"
     		$params[:mode] = MODE_COMBINED;
+	  when "graphviz"
+    		$params[:mode] = MODE_GRAPHVIZ;
 	  when "all"
     		$params[:mode] = MODE_ALL;
 	  else
@@ -583,6 +780,10 @@ vprint "Starting main program"
 
 events = import_files($params[:filenames])
 
-display_report(events)
+unless $params[:mode] == MODE_GRAPHVIZ
+	display_report(events)
+else
+	display_report_graphviz(events)
+end
 
 vprint "Finishing main program. Bailing out."
