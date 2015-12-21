@@ -1,12 +1,14 @@
 #!/usr/bin/ruby
 #
+# Copyright (c) 2015 netnea, AG. (https://www.netnea.com/)
+#
 # A ruby script to analyse modsecurity core rules anomaly scores in 
 # STDIN.
 # The data is then extracted and summarized in a statistical table
 # that gives an overview over the anomaly scores in the data.
 #
-# This script was written by Christian Folini and put into the
-# public domain. Feel free to use it and to adopt it to your needs.
+# This script was written by Christian Folini. Feel free to use it
+# and to adopt it to your needs.
 #
 # Run with --help to get an usage overview.
 #

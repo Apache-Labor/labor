@@ -5,7 +5,7 @@
 # 
 # Copyright 2007-2015 Christian Folini (folini@netnea.com)
 #
-# This software has been released under the GPL.
+# This software has been released under the GPL 3.0.
 #
 # parse-apache-log-extended.rb [OPTIONS] file(s)
 # <STDIN> | parse-apache-log-extended.rb [OPTIONS]
