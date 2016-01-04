@@ -220,7 +220,7 @@ Das heisst, wir brauchen aus dem Wust an Daten fünf Anfragen zu behandeln und k
 Unser Behandlungsziel sind also die fünf Anfragen mit einem Anomalie-Score von 91. Um welche Requests handelt es sich?
 
 ```bash
-$> grep -E " 91 [0-9-]+$" labor-07-example-error.log
+$> grep -E " 91 [0-9-]+$" labor-07-example-access.log
 192.168.186.76 CH - [2015-05-22 09:25:35.064580] "POST /EMail/MailHandler HTTP/1.1" 303 - "https://www.example.com/EMail/newMessage.aspx?action=reply&mailId=3891_32&folderId=947_65&showPics=false" "Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; rv:11.0) like Gecko" www.example.com 192.168.34.16 443 proxy-server - + "b49f5038.522aa9d333675" ViiPb6wxQzZrjBP3RHUAAAAs TLSv1.2 ECDHE-RSA-AES256-SHA384 7969 630 -% 1585494 309159 255001 491 91 0
 192.168.186.76 CH - [2015-05-27 08:43:47.363527] "POST /EMail/MailHandler HTTP/1.1" 303 - "https://www.example.com/EMail/newMessage.aspx?action=reply&mailId=3904_9&folderId=947_65&showPics=false" "Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; rv:11.0) like Gecko" www.example.com 192.168.34.16 443 proxy-server - + "8e2ac2ca.52310227db9e9" Vi8rM6wxQzZrjFeGPFsAAAAl TLSv1.2 ECDHE-RSA-AES256-SHA384 7985 630 -% 1413745 303533 90351 179 91 0
 192.168.186.76 CH - [2015-05-29 15:24:59.946738] "POST /EMail/MailHandler HTTP/1.1" 303 - "https://www.example.com/EMail/newMessage.aspx?action=reply&mailId=3920_9&folderId=947_65&showPics=false" "Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; rv:11.0) like Gecko" www.example.com 192.168.34.16 443 proxy-server - + "f139da27.52338400e3ec8" VjIsO6wxQzZrjAbVVkAAAABs TLSv1.2 ECDHE-RSA-AES256-SHA384 7831 630 -% 3678101 290095 368102 212 91 0
