@@ -36,12 +36,12 @@ Anregungen zu weiteren Labors:
 * ModSecurity: Whitelisting Rules 
 * ModSecurity: Remo
 * ModSecurity: Session Store
-* Apache Patching (to get more infos in the error-log for example)
+* GDB / Apache Patching (to get more infos in the error-log for example)
+* CoreDump Analyse http://httpd.apache.org/dev/debugging.html
 * Cache
 * ProxySniffer
 * LiveHeaders
 * HTTFox
-* CoreDump Analyse http://httpd.apache.org/dev/debugging.html
 * CIS
 * Hardening in General
 * Apache Bibliothek
@@ -51,5 +51,7 @@ Anregungen zu weiteren Labors:
 * Errorlog
 * Customlog / Virtual Logs
 * Serverlimits / Startservers -> Performance
+* Logfile visualisation
+* 
 
 ##Allgemein
