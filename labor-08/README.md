@@ -500,6 +500,9 @@ LoadModule        proxy_http_module       modules/mod_proxy_http.so
 LoadModule        proxy_balancer_module   modules/mod_proxy_balancer.so
 LoadModule        lbmethod_byrequests_module modules/mod_lbmethod_byrequests.so
 
+LoadModule	      slotmem_shm_module      modules/mod_slotmem_shm.so
+
+
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
 LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" %{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% %D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e %{ModSecAnomalyScoreIn}e %{ModSecAnomalyScoreOut}e" extended
 
