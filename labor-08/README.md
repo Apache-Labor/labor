@@ -240,6 +240,7 @@ Den Apache Loadbalancer müssen wir zunächst als Modul laden:
 ```bash
 LoadModule        proxy_balancer_module           modules/mod_proxy_balancer.so
 LoadModule        lbmethod_byrequests_module      modules/mod_lbmethod_byrequests.so
+LoadModule	  slotmem_shm_module              modules/mod_slotmem_shm.so
 ```
 
 Neben dem Loadbalancer-Modul selbst benötigen wir auch ein Modul, welches uns dabei hilft, die Anfragen auf die verschiedenen Backends zu verteilen. Wir gehen den einfachsten Weg und laden das Modul *lbmethod_byrequests*.
@@ -252,7 +253,9 @@ Hier die Liste der zur Verfügung stehenden Algorithmen:
 * mod_lbmethod_bybusyness (Loadbalancing aufgrund der aktiven Threads in einer stehenden Verbindung mit den Backends. Das Backend mit der kleinsten Anzahl Threads erhält den nächsten Request)
 * mod_lbmethod_heartbeat (Hier kann das Backend einen sogenannten Heartbeat im Netz kommunizieren und dem Reverse Proxy dadurch mitteilen, ob es noch Kapazität frei hat).
 
-Die verschiedenen Module sind online gut dokumentiert, so dass diese knappen Beschreibungen hier für den Moment reichen. Damit sind wir bereit für die Konfiguration des Loadbalancers. Wir können ihn jetzt über die inzwischen bekannte RewriteRule einführen. Diese Anpassung der RewriteRule wirkt sich auch auf die Proxy-Stanza aus, wo der eben definierte Balancer referenziert und aufgelöst werden muss:
+Die verschiedenen Module sind online gut dokumentiert, so dass diese knappen Beschreibungen hier für den Moment reichen. Und schliesslich benötigen wir noch ein Modul, das uns bei der Verwaltung von gemeinsam benutzten Speichersegmenten hilft. Diese Funktionalität wird durch das Proxy-Balancer-Modul benötigt und durch `mod_slotmem_shm.so` zur Verfügung gestellt.
+
+Damit sind wir bereit für die Konfiguration des Loadbalancers. Wir können ihn jetzt über die inzwischen bekannte RewriteRule einführen. Diese Anpassung der RewriteRule wirkt sich auch auf die Proxy-Stanza aus, wo der eben definierte Balancer referenziert und aufgelöst werden muss:
 
 ```bash
     RewriteRule 	^/service1/(.*)		balancer://backend/service/$1   [proxy,last]
@@ -499,8 +502,7 @@ LoadModule        proxy_module            modules/mod_proxy.so
 LoadModule        proxy_http_module       modules/mod_proxy_http.so
 LoadModule        proxy_balancer_module   modules/mod_proxy_balancer.so
 LoadModule        lbmethod_byrequests_module modules/mod_lbmethod_byrequests.so
-
-LoadModule	      slotmem_shm_module      modules/mod_slotmem_shm.so
+LoadModule	  slotmem_shm_module      modules/mod_slotmem_shm.so
 
 
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
