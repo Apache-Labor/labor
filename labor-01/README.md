@@ -425,3 +425,8 @@ Soweit zu diesem Tutorial. Damit ist bereits ein tauglicher Webserver vorhanden,
 * HTTP Header: http://en.wikipedia.org/wiki/List_of_HTTP_header_fields (Englisch)
 * RFC 2616 (HTTP Protokoll): http://www.ietf.org/rfc/rfc2616.txt (Englisch)
 
+
+### Lizenz / Kopieren / Weiterverwenden
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/80x15.png" /></a><br />Diese Arbeit ist wie folgt lizenziert / This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+

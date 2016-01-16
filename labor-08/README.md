@@ -774,3 +774,8 @@ DocumentRoot            /apache/htdocs
 
 * Apache mod_proxy [https://httpd.apache.org/docs/2.4/mod/mod_proxy.html)](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html)
 * Apache mod_rewrite [https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)](https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)
+
+### Lizenz / Kopieren / Weiterverwenden
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/80x15.png" /></a><br />Diese Arbeit ist wie folgt lizenziert / This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+

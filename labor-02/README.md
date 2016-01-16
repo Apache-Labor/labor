@@ -314,3 +314,8 @@ Auf meinem Testsystem schlägt jeder _Prefork-Apache-Prozess_ inklusive _PHP_ mi
 * Apache FCGI: http://httpd.apache.org/mod_fcgid
 * How2Forge PHP/FCGI: http://www.howtoforge.com/how-to-set-up-apache2-with-mod_fcgid-and-php5-on-ubuntu-10.04
 
+
+### Lizenz / Kopieren / Weiterverwenden
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/80x15.png" /></a><br />Diese Arbeit ist wie folgt lizenziert / This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+

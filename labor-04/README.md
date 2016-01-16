@@ -760,3 +760,8 @@ Damit kommen wir zum Abschluss dieser Anleitung. Ziel war es ein erweitertes Log
 * [.apache-modsec.alias](https://github.com/Apache-Labor/labor/blob/master/bin/.apache-modsec.alias)
 * [percent.awk](https://github.com/Apache-Labor/labor/blob/master/bin/percent.awk)
 * [basicstats.awk](https://github.com/Apache-Labor/labor/blob/master/bin/basicstats.awk)
+
+### Lizenz / Kopieren / Weiterverwenden
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/80x15.png" /></a><br />Diese Arbeit ist wie folgt lizenziert / This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+
