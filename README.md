@@ -25,6 +25,7 @@ cd labor
 - [labor-05](labor-05) ModSecurity einbinden
 - [labor-06](labor-06) OWASP ModSecurity Core Rules Einbinden
 - [labor-07](labor-07) OWASP ModSecurity Core Rules Tunen
+- [labor-08](labor-08) Einen Reverse Proxy konfigurieren
 
 ##Beitragen
 
@@ -40,3 +41,6 @@ Die Anleitungen wurden mehrheitlich von netnea geschrieben und werden deshalb au
 unter http://www.netnea.com publiziert. Die Masterkopie findet sich allerdings 
 unter https://github.com/Apache-Labor/labor.
 
+##Lizenz / Kopieren / Weiterverwenden
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/80x15.png" /></a><br />Diese Arbeiten sind wie folgt lizenziert / This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
