@@ -5,17 +5,22 @@
 #
 # Script is meant to be called regularly via watch.
 #
-# FIXME: heartbeat
-# FIXME: default $1
-# FIXME: ModSec error messages outside of Rule Triggers are suppressed
 
 ACCESSLOG="$1"
 ERRORLOG="$2"
 
 ACCESS_IGNORE_REGEX="(heartbeat)"
 
+if [ -z "$ACCESSLOG" ]; then 
+	echo "Accesslog not passed via commandline. Please pass path to accesslog as first parameter. This is fatal. Aborting."
+	exit 1
+fi
 if [ ! -f "$ACCESSLOG" ]; then 
 	echo "Accesslog $ACCESSLOG not found. This is fatal. Aborting."
+	exit 1
+fi
+if [ -z "$ERRORLOG" ]; then 
+	echo "Errorlog not passed via commandline. Please pass path to errorlog as first parameter. This is fatal. Aborting."
 	exit 1
 fi
 if [ ! -f "$ERRORLOG" ]; then 
@@ -54,7 +59,7 @@ echo "$MODSEC"
 echo
 
 echo "Apache Error Log:"
-ERRORLINES=$(tail -500 $ERRORLOG | grep $ID | grep -v ModSecurity)
+ERRORLINES=$(tail -500 $ERRORLOG | grep $ID | grep -v -E "ModSecurity.*\b(at|against)\b")
 if [ -z "$ERRORLINES" ]; then
         ERRORLOG="***NONE***"
 fi
