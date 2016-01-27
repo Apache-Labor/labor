@@ -1,0 +1,205 @@
+#!/bin/bash
+#
+# Skript to launch apache repeatedly via httpd -X
+#
+# The script guesses the desired apache config and handles
+# - sudo
+# - pidfile
+# - semaphore cleanup
+#
+
+# -----------------------------------------------------------------------
+# FUNCTIONS
+# -----------------------------------------------------------------------
+
+function usage() {
+
+echo
+echo "$0"
+
+cat <<'EOF'
+
+Skript to launch apache repeatedly via httpd -X.
+
+The script guesses the desired apache config and handles
+ - sudo
+ - pidfile
+ - semaphore cleanup
+
+EOF
+
+}
+
+function wait_pid_exists() {
+	N=0
+	while [ $N -lt 40 ]; do
+		sleep 0.1
+		if [ -f $AP_PID_FILE ]; then
+			echo "ok"
+			break
+		fi
+		N=$((N+1)) 
+	done
+	if [ $N -ge 40 ]; then
+		echo "fail"
+	fi
+}
+
+function wait_process_disappears() {
+	N=0
+	while [ $N -lt 40 ]; do
+		sleep 0.1
+		if [ ! -f $AP_PID_FILE ]; then
+			echo "ok"
+			break
+		fi
+		if [ -f $AP_PID_FILE ]; then
+			ps ax | grep -v " grep " | grep -q $(cat $AP_PID_FILE) 
+			if [ $? -eq 1 ]; then
+				sudo rm $AP_PID_FILE
+				echo "ok"
+				break
+			fi
+		fi
+		N=$((N+1)) 
+	done
+	if [ $N -ge 40 ]; then
+		echo "fail"
+	fi
+}
+
+
+# -----------------------------------------------------------------------
+# INIT
+# -----------------------------------------------------------------------
+
+VERBOSE=0
+
+AP_CONFS_PATTERN="/etc/apache2/apache2.conf /apache/conf/httpd.conf_* /opt/apache*/conf/httpd.conf_*"
+AP_CONF_FILE=$(ls -tr $AP_CONFS_PATTERN 2>/dev/null | tail -1)
+
+if [ ! -f $AP_CONF_FILE ]; then
+	echo "Apache config file can not be determined. This is fatal. Aborting."
+	exit 1
+fi
+
+AP_ROOT=$(grep ServerRoot $AP_CONF_FILE | sed -e "s/.*ServerRoot\s*//" | tr -d "'" | tr -d '"')
+if [ ! -d $AP_ROOT ]; then
+	if [ -d "/usr/local/apache" ]; then
+		AP_ROOT="/usr/local/apache"
+	else
+		echo "Apache server root can not be determined. This is fatal. Aborting."
+		exit 1
+	fi
+fi
+		
+AP_BIN="$AP_ROOT/bin/httpd"
+
+if [ ! -f $AP_BIN ]; then
+	if [ -f "/usr/sbin/apache2" ]; then
+		AP_BIN="/usr/sbin/apache2"
+	else
+		echo "Apache binary can not be determined. This is fatal. Aborting."
+		exit 1
+	fi
+fi
+
+AP_PID_FILE=$(grep PidFile $AP_CONF_FILE | sed -e "s/.*PidFile\s*//" | tr -d "'" | tr -d '"')
+
+if [ -z "AP_PID_FILE" -o "$AP_PID_FILE" == "" ]; then
+	AP_PID_FILE="$AP_ROOT/logs/httpd.pid"
+fi
+
+
+AP_USER=$(egrep "\bUser\s+" $AP_CONF_FILE | sed -e "s/.*User\s*//" | tr -d "'" | tr -d '"')
+
+if [ -z "AP_USER" -o "$AP_USER" == "${APACHE_RUN_USER}" ]; then
+	AP_USER="www-data"
+fi
+
+# param checking loop
+while [ 1 ]
+do
+        if [ -n "$1" ]; then
+                ARG="$1"
+                export FC="`echo $ARG | sed -e 's/^\(.\).*/\1/'`"   # first char of $ARG
+                if [ "-" = $FC ]; then
+                        case $1 in
+                        -h) usage; exit;;
+                        --help) usage; exit;;
+                        -v) export VERBOSE=1;;
+                        --verbose) export VERBOSE=1;;
+                        esac
+                        shift
+                else
+                        break
+                fi
+        else
+                break
+        fi
+done
+
+if [ "$VERBOSE" -eq 1 ]; then
+	echo "Apache Root:    $AP_ROOT"
+	echo "Apache Binary:  $AP_BIN"
+	echo "Apache Config:  $AP_CONF_FILE"
+	echo "Apache PidFile: $AP_PID_FILE"
+	echo "Apache User:    $AP_USER"
+fi
+
+
+# -----------------------------------------------------------------------
+# MAIN LOOP
+# -----------------------------------------------------------------------
+
+while [ 1 ]; do
+	echo
+	if [ -f $AP_PID_FILE ]; then
+		
+		ps ax | grep -v " grep " | grep -q $(cat $AP_PID_FILE) 
+		
+		if [ $? -eq 0 ]; then
+
+			echo -n "Stopping active apache process ... "
+
+			sudo kill -TERM $(cat $AP_PID_FILE)
+
+			wait_process_disappears
+		else
+			sudo rm $AP_PID_FILE
+		fi
+	fi
+
+	# clean up semaphores
+	sudo ipcs -s | grep $AP_USER | awk '{ print $2 }' | xargs -n 1 sudo ipcrm sem 2>/dev/null >/dev/null
+
+	echo -n "Launching apache on config file $AP_CONF_FILE ... "
+
+	sudo $AP_BIN -X -f $AP_CONF_FILE &
+
+	wait_pid_exists
+	
+	echo
+	read -r -p 'Press [enter] to restart apache, enter [q] to stop apache and exit: ' var
+
+	if [ "$var" == "q" ]; then
+		break
+
+	fi
+done
+
+
+# -----------------------------------------------------------------------
+# SHUT-DOWN
+# -----------------------------------------------------------------------
+
+echo
+echo -n "Bailing out ... "
+
+if [ -f $AP_PID_FILE ]; then
+	sudo kill -TERM $(cat $AP_PID_FILE)
+	wait_process_disappears
+fi
+
+echo
+
