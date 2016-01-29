@@ -28,9 +28,9 @@ Curl ist das richtige Werkzeug um HTTP Anfragen auszulösen. Natürlich muss HTT
 Wir haben `curl` in den vorangegangenen Anleitungen verschiedentlich angewendet. Wir sind damit bereits sehr gut aufgestellt. Es lohnt sich aber, noch ein, zwei Features in den eigenen Werkzeugkasten mitaufzunehmen.
 
 ```bash
-$> curl --cookie-jar /tmp/cookies.txt --data "username=test" --data "password=xxxxxxxx" http://localhost/login.action
+$> curl --cookie-jar /tmp/cookies.txt --cookie /tmp/cookies.txt --data "username=test" --data "password=xxxxxxxx" http://localhost/login.action
 ...
-$> curl http://localhost/login.html --next --cookie-jar /tmp/cookies.txt --data "username=test" --data "password=xxxxxxxx" http://localhost/login.action
+$> curl http://localhost/login.html --next --cookie-jar /tmp/cookies.txt --cookie /tmp/cookies.txt --data "username=test" --data "password=xxxxxxxx" http://localhost/login.action
 ...
 ```
 
