@@ -27,9 +27,14 @@ Curl ist das richtige Werkzeug um HTTP Anfragen auszulösen. Natürlich muss HTT
 
 Wir haben `curl` in den vorangegangenen Anleitungen verschiedentlich angewendet. Wir sind damit bereits sehr gut aufgestellt. Es lohnt sich aber, noch ein, zwei Features in den eigenen Werkzeugkasten mitaufzunehmen.
 
-FIXME: Apache example config returning a cookie, a redirect and a 403 if cookie is not sent on 2nd request.
-FIXME: cookie-jar
-FIXME: --next
+```bash
+$> curl --cookie-jar /tmp/cookies.txt --data "username=test" --data "password=xxxxxxxx" http://localhost/login.action
+...
+$> curl http://localhost/login.html --next --cookie-jar /tmp/cookies.txt --data "username=test" --data "password=xxxxxxxx" http://localhost/login.action
+...
+```
+
+Das erste Beispiel arbeitet mit einem Cookie-File, in das empfangene Cookies geschrieben und aus dem Cookies für neue Requests gelesen werden. Im zweiten Beispiel, das nur mit einem relativ neuen `curl` funktioniert, werden mehrere Anfragen auf einer einzigen Zeile zusammengeführt. Interessant ist nun die Option `--next`, welche die Kommandozeilenargumente unterteilt. Die Parameter nach dem `--next` gelten nur nach rechts. Das bedeutet, dass das obenstehende Beispiel zunächst einen GET Requst absetzt, und dann auf derselben TCP Verbindung einen POST Request anschliesst und das Session Cookie danach im Cookie-Jar abspeichert.
 
 
 ###Schritt 2: Single File Apache Konfiguration
@@ -51,7 +56,7 @@ $> vim httpd.conf_problem-of-the-day
 
 Mit `curl` und einem Single-File-Apache haben wir bereits gute Voraussetzungen, um rasch Konfigurationen anpassen und sie ebenso rasch testen zu können. Ein etwas nerviger Schritt steht meistens zwischen diesen beiden oft wiederholten Schritten: Der Neustart des Webservers. In den ersten beiden Anleitungen haben wir den Server jeweils mit dem Kommandozeilen Flag `-X` gestartet. Ich arbeite oft mit `-X`, da es ja den Server nicht in den Daemon-Moder versetzt und ihn stattdessen im Vordergrund als Single-Prozess laufen lässt. Ein Absturz des Servers ist damit unmittelbar in der Shell sichtbar. Wenn wir den Webserver standardgemäss starten und ihn als Daemon betreiben, müssen wir das Error-Log beobachten und sicherstellen, dass wir einen Absturz nicht verpassen, was allerlei merkwürdige Effekte nach sich ziehen kann. Diese Überwachung ist zwar machbar, in meiner Erfahrung aber ein überraschend gravierender Nachteil. Ich arbeite also mit `-X`. 
 
-Der normale Arbeitsablauf mit einem Single-Prozess-Apache ist ein abwechselndes Starten des Binaries mit dem oben konfigurierten Konfigurationsfile und Stoppen mittels `CTRL-C`. Das bringt zwei weitere Nachteile mit sich: Zum einen müssen wir den Namen des Konfigurationsfiles eingeben, respektive ab der zweiten Runde aus der History der Shell abrufen. Unangenehmer noch ist der Verlust von Semaphoren durch den Abbruch des Webservers mittels `CTRL-C`. Bei den Semaphoren handelt es sich um eine durch den Webserver benutzte Kommunikationsstruktur des Linux-Betriebsystems. Die Anzahl der Semaphoren ist endlich und wenn wir den Webserver abbrechen gibt er eine reservierte Semaphore oftmals nicht mehr frei. Irgendwann ist der Vorrat an Semaphoren aufgebraucht und der Server kann nicht mehr länger gestartet werden. Stattdessen wird folgende Fehlermeldung ausgegeben, die nicht ohne weiteres auf das Sempahoren-Problem schliessen lässt:
+Der normale Arbeitsablauf mit einem Single-Prozess-Apache ist ein abwechselndes Starten des Binaries mit dem oben konfigurierten Konfigurationsfile und Stoppen mittels `CTRL-C`. Das bringt zwei weitere Nachteile mit sich: Zum einen müssen wir den Namen des Konfigurationsfiles eingeben, respektive ab der zweiten Runde aus der History der Shell abrufen. Unangenehmer noch ist der Verlust von Semaphoren durch den Abbruch des Webservers mittels `CTRL-C`. Bei den Semaphoren handelt es sich um eine durch den Webserver benutzte Kommunikationsstruktur des Linux-Betriebsystems. Die Anzahl der Semaphoren ist endlich und wenn wir den Webserver abbrechen gibt er eine reservierte Semaphor oftmals nicht mehr frei. Irgendwann ist der Vorrat an Semaphoren aufgebraucht und der Server kann nicht mehr länger gestartet werden. Stattdessen wird folgende Fehlermeldung ausgegeben, die nicht ohne weiteres auf das Semaphor-Problem schliessen lässt:
 
 ```bash
 [emerg] (28)No space left on device: Couldn't create accept lock
@@ -63,9 +68,9 @@ Das Problem ist aber nicht die fehlende Reserve an Speicherplatz, sondern der Ma
 $> sudo ipcs -s | grep www-data | awk '{ print $2 }' | xargs -n 1 sudo ipcrm sem
 ```
 
-Mittels `ipcs -s` lesen wir die Liste von Semaphoren aus, selektieren die richtige Zeile über den Usernamen des Webservers, und benützen dann `awk` um die zweite Spalte des Outputs zu selektieren. Dieser Spalte entnehmen wir die Identifikation der Semaphore, welche wir darauf mittels xargs und `ipcrm sem` löschen.
+Mittels `ipcs -s` lesen wir die Liste von Semaphoren aus, selektieren die richtige Zeile über den Usernamen des Webservers, und benützen dann `awk` um die zweite Spalte des Outputs zu selektieren. Dieser Spalte entnehmen wir die Identifikation der Semaphor, welche wir darauf mittels xargs und `ipcrm sem` löschen.
 
-Damit ist dieses Problem in den Griff zu kriegen, aber die Fehlermeldung ist doch ein Ärgernis und das wiederholte Zurückgehen in der History, um den Namen der Konfigurationsdatei nicht neu tippen zu müssen, unnötig. Besser ist es da, beides durch ein Skript erledigen zu lassen: `apachex`. Dieses Skript ist online abrufbar (FIXME).
+Damit ist dieses Problem in den Griff zu kriegen, aber die Fehlermeldung ist doch ein Ärgernis und das wiederholte Zurückgehen in der History, um den Namen der Konfigurationsdatei nicht neu tippen zu müssen, unnötig. Besser ist es da, beides durch ein Skript erledigen zu lassen: `apachex`. Dieses Skript ist online abrufbar ([apachex](https://github.com/Apache-Labor/labor/blob/master/bin/apachex)).
 
 ```bash
 $> 
@@ -110,7 +115,7 @@ Bailing out ... ok
 
 ###Schritt 4: lastrequestsummary
 
-Nun fehlt uns noch ein gescheiter Zugang zu den Logfiles. Zwar gibt uns `curl -v` bereits Feedback, über die Resultate eines Requests. Aber gerade bei ModSecurity Regeln ist es wichtig, der Verarbeitung auch serverseitig folgen zu können. Und genau ModSecurity ist mit seinem gesprächigen und unübersichtlichen Logfile-Einträgen eine Herausforderungen, zumal ein einzelner Aufruf rasch mehr Protokoll generiert als in einem Fenster platz findet; zumal uns die meisten Informationen nicht interessieren. Was uns fehlt ist eine Zusammenfassung eines Requests über das `Access-Log` und das `Error-Log` hinweg. Das Skript `lastrequestsummary` bringt so eine Auswertung (FIXME Link):
+Nun fehlt uns noch ein gescheiter Zugang zu den Logfiles. Zwar gibt uns `curl -v` bereits Feedback, über die Resultate eines Requests. Aber gerade bei ModSecurity Regeln ist es wichtig, der Verarbeitung auch serverseitig folgen zu können. Und genau ModSecurity ist mit seinem gesprächigen und unübersichtlichen Logfile-Einträgen eine Herausforderungen, zumal ein einzelner Aufruf rasch mehr Protokoll generiert als in einem Fenster platz findet; zumal uns die meisten Informationen nicht interessieren. Was uns fehlt ist eine Zusammenfassung eines Requests über das `Access-Log` und das `Error-Log` hinweg. Das Skript `lastrequestsummary` bringt so eine Auswertung ([lastrequestsummary](https://github.com/Apache-Labor/labor/blob/master/bin/lastrequestsummary)):
 
 ```bash
 $> cat lastrequestsummary
@@ -215,7 +220,7 @@ Full Apache Access Log:
 
 Auf der dritten Zeile sehen wir das Timestamp des Requests, den HTTP Status, den ModSecurity Core Rules Incoming Anomaly Score, den Outgoing Anomaly Score, Method, Pfad und schliesslich in Klammern die eindeutige Request-Identifikation. Die übrigen Zeilen erklären sich von selbst und sind einfach ein illustrierendes Beispiel, wie sich so ein Skript umsetzen lässt.
 
-Der Clou besteht nun darin, dieses Skript mittels `watch` in kurzen Abständen regelmässig aufzurufen. Dazu dient ein eigenes Shortcut-Skript namens `watch-lastrequestsummary` (FIXME LINK):
+Der Clou besteht nun darin, dieses Skript mittels `watch` in kurzen Abständen regelmässig aufzurufen. Dazu dient ein eigenes Shortcut-Skript namens `watch-lastrequestsummary` ([watch-lastrequestsummary](https://github.com/Apache-Labor/labor/blob/master/bin/watch-lastrequestsummary)):
 
 ```bash
 $>cat watch-lastrequestsummary 
@@ -251,12 +256,10 @@ Hier ein Bildschirmschnappschuss von meinem Desktop:
 
 ###Verweise
 
-FIXME: Links
-Link: apachex
-Link: lastrequestsummary
-Link: watch-lastrequestsummary
-Link Semaphoren
-
+* [apachex](https://github.com/Apache-Labor/labor/blob/master/bin/apachex)
+* [lastrequestsummary](https://github.com/Apache-Labor/labor/blob/master/bin/lastrequestsummary)
+* [watch-lastrequestsummary](https://github.com/Apache-Labor/labor/blob/master/bin/watch-lastrequestsummary)
+* [Semaphor](https://de.wikipedia.org/wiki/Semaphor_%28Informatik%29)
 
 ### Lizenz / Kopieren / Weiterverwenden
 
