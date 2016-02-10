@@ -204,7 +204,7 @@ Eine typische Ausgabe des Skript sieht wie folgt aus:
 $> lastrequestsummary /apache/logs/access.log /apache/logs/error.log 
 07:53:20 watching: /apache/logs/access.log  /apache/logs/error.log
 
-07:53:14 200 0 0 GET /index.html?a=..... (VqkfSH8AAQEAAHjqe40AAAAC)
+07:53:14 200 2 0 GET /index.html?a=..... (VqkfSH8AAQEAAHjqe40AAAAC)
 
 ModSecurity Rules Triggered:
 981172 ARGS:a                                           Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded

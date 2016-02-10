@@ -219,7 +219,7 @@ if [ ! -z "$LABEL" ]; then
 fi
 
 if [ "$LOGSCALE" -eq 1 ]; then
-	DOLOGSCALE="set logscale y;"
+	DOLOGSCALE="set logscale y; set logscale y2;"
 	MINY="1"
 else
 	DOLOGSCALE=";"
