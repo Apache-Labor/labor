@@ -264,35 +264,36 @@ $> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; d
 Der Graph lässt sich noch etwas erweitern. Wir können etwa die Zahl der POST-Requests und GET-Requests parallel darstellen. Der Übersichtlichkeit halber verwenden wir nun die kurzen Options-Namen beim Aufruf von `arbigraph`:
 
 ```bash
-$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do echo "`grep  \"$STRING\" labor-07-example-access.log | grep -c POST` `grep  \"$STRING\" labor-07-example-access.log | grep -c GET`  $STRING" ; done | arbigraph -l -2 -c "Num of POST Reqs/h;Num of GET Reqs/h"
+$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do echo "`grep  \"$STRING\" labor-07-example-access.log | grep -c GET` `grep  \"$STRING\" labor-07-example-access.log | grep -c POST`  $STRING" ; done | arbigraph -l -2 -c "Num of GET Reqs/h;Num of POST Reqs/h" -w 130
 
-     +----------------------+-----------------------+-----------------------+-----------------------+-------------------+
-     |                      +                       +                       +                 Num of POST Reqs/h ****** |
-  20 ++                                                                        *               Num of GET Reqs/h ######++
-     |                                                                         *                       *               ++ 200
-     |                                                                         *                    #  *                |
-     |                                                                         *              *     #  *                |
-     |                                                                        #*              *     #  *                |
-     |                                                                        **              *     #  *         *#     |
-  15 ++                          *                                            **              *     #  **        *#    ++
-     |                           *                                            **         #    *     #  **        *# #  ++ 150
-     |                           *                                            **         # *  *     # #**        *# #   |
-     |                  #        *                                            **         # *  *     ###**        *###   |
-     |      *           #       **                                            **         # *# *     ###**        * ##   |
-     |      *        #  #       **                                            **         #**# *     ###**        * ##   |
-  10 ++     *       *# ##       **          *                                 **         #*** *     ###**       ** #*  ++ 100
-     |      *       *# ##       **          *                                 **         ******     #*#**       ** #*   |
-     |      *       ** ##       **         **                                 **         ******     #****       * *#*   |
-     |      **      ** ##       **         **                                 **         ******     *****#      * *#*   |
-     |      **      ** #*       ***#       **                                 **         ******     ***  *      * *#*#  |
-   5 ++     **      **#**       ***#       *** *                              **         ******     ***  *      * *#** ++
-     |      **      **#**      #***#       *** *                             #*#**  #   #**#***     ***  *      *  *** ++ 50
-     |     #**     *#*#**      *# * #     **** *                             #* **# #   *   ***     ***  *      *  * *  |
-     |     #**#    * ****      *  **#     ****#**                      #     #* **# ##  *    ***    ***  *     #*  * *  |
-     |     #*** #  * ****      *  ***##   ** *#** #                    #     *  **# ##  *    ***  # **   **    #*  * *# |
-     |    #*** **  *   *#*  +  *    ***#  **  *** * +      *          #*    +*  ** #**  *    ***  * **   ***   #*    **#|
-   0 ******-*--*****-----*******-----******---*-******************************----*******----*--****+------*****-----**** 0
-                            50                     100                     150                     200
+
+      +----------------------+-----------------------+-----------------------+-----------------------+-------------------+
+      |                      +                       +                       +                  Num of GET Reqs/h ****** |
+      |                                                                         *              Num of POST Reqs/h ######++ 20
+  200 ++                                                                        *                       #               ++
+      |                                                                         *                    *  #                |
+      |                                                                         *              #     *  #                |
+      |                                                                        **              #     *  *                |
+      |                                                                        **              #     *  *         #*     |
+      |                           #                                            **              #     *  **        **    ++ 15
+  150 ++                          #                                            **         *    #     *  **        ** *  ++
+      |                           *                                            **         * #  #     * ***        ** *   |
+      |                  *        *                                            **         * #  #     *****        ****   |
+      |      #           *       **                                            **         * #* #     ***#*        * **   |
+      |      #        *  *       **                                            **         *##* #     ***#*        * **   |
+  100 ++     #       ** **       **          #                                 **         *##* #     ***#*       *# **  ++ 10
+      |      *       ** **       **          #                                 **         **#*#*     ***#*       *# **   |
+      |      *       ** **       **         *#                                 **         ****#*     ***#*       * #**   |
+      |      *#      ** **       **         *#                                 **         ****#*     **###*      * #**   |
+      |      **      ** **       **#*       *#                                 **         ******     **#  *      * #*#*  |
+      |      **      *#***       **#*       *** #                              **         ******     **#  *      * #*#* ++ 5
+   50 ++     **      *#***      ***#*       *** #                             *#*##  *   *#*****     **#  *      *  *#* ++
+      |     ***     #*#***      ** * *     *#** *                             *# *** *   *   ***     **#  *      *  * *  |
+      |     ****    * ##**      *  *#*     *#*#**#                      *     *# *** **  *    ***    **#  *     *#  * *  |
+      |     **#* *  * ##**      *  ##***   *# #*** *                    *     *  *** **  *    ***  * *#   **    *#  * ** |
+      |    ***# **  *   **#  +  *    ****  *#  *** * +      #          **    +*  ## ***  *    ***  * *#   #**   *#    ***|
+    0 ******-*--*****-----*******-----******---*-**#**************************#----#******----#--****+------*****-----**** 0
+                             50                     100                     150                     200
 
 ```
 
@@ -300,48 +301,47 @@ Mittels der Option `-2` teilen wir `arbigraph` mit, dass zwei Datenkolonnen vorh
 
 
 ```bash
-$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do echo "`grep  \"$STRING\" labor-07-example-access.log | grep -c POST` `grep  \"$STRING\" labor-07-example-access.log | grep -c GET`  $STRING" ; done | arbigraph -l -2 -c "Num of POST Reqs/h;Num of GET Reqs/h" --sameaxis
+$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do echo "`grep  \"$STRING\" labor-07-example-access.log | grep -c GET` `grep  \"$STRING\" labor-07-example-access.log | grep -c POST`  $STRING" ; done | arbigraph -l -2 -c "Num of GET Reqs/h;Num of POST Reqs/h" --sameaxis 
 
 
       +----------------------+-----------------------+-----------------------+-----------------------+------------------+
-      |                      +                       +                       +                Num of POST Reqs/h ****** |
-      |                                                                        #               Num of GET Reqs/h ###### |
-  200 ++                                                                       #                                       ++ 200
-      |                                                                        #                     #                  |
-      |                                                                        #                     #                  |
-      |                                                                        #                     # #                |
-      |                                                                        #                     # #          #     |
-      |                                                                        #                     # ##        ##     |
-  150 ++                                                                       #          #          # ##        ## #  ++ 150
-      |                           #                                            ##         #          ####        ## #   |
-      |                  #        #                                            ##         #          ####        ####   |
-      |                  #       ##                                           # #        ## #        ## #        # ##   |
-      |               #  #       ##                                           # #        ## #        ## #        # ##   |
-  100 ++             ## ##       ##                                           # #        ## #       ### #       #  ##  ++ 100
-      |      #       ## ##       ##                                           # #        #### #     ### #       #  ##   |
-      |      #       ## ##       ##         #                                 # #        #### #     ### #       #  ##   |
-      |      #       ## ##       ##         #                                 # #        #### #     ##   #      #  ##   |
-      |      ##      ## ##       ####       #                                 # #        ######     ##   #      #  # #  |
-      |      ##      # ###       ####       ###                               # #        ######     ##   #      #  # #  |
-   50 ++     ##      # ###      #####       ###                               # #   #    ######     ##   #      #  # # ++ 50
-      |     ###      # ###      ## ##      #### #                             # # # #    #  ###     ##   #      #  # #  |
-      |     ####    #   ##      #  ##      ## # #                      #      # # # ##   #   ###    ##   #     #   # #  |
-      |     ## ##   #   ##      # * # ##   #  ### #                    #     ##*### ##   #   #*#  # #  * ##    # * # ## |
-      |    ##*  ##  #** **   +  #*** ###   #**##* ## +                 ##    #***  ###   ****#*#  ###**** ##   # ** *###|
-    0 ***************-***********-*********************************************-***********--**********--********--*-**** 0
+      |                      +                       +                       +                 Num of GET Reqs/h ****** |
+      |                                                                        *              Num of POST Reqs/h ###### |
+  200 ++                                                                       *                                       ++ 200
+      |                                                                        *                     *                  |
+      |                                                                        *                     *                  |
+      |                                                                        *                     * *                |
+      |                                                                        *                     * *          *     |
+      |                                                                        *                     * **        **     |
+  150 ++                                                                       *          *          * **        ** *  ++ 150
+      |                           *                                            **         *          ****        ** *   |
+      |                  *        *                                            **         *          ****        ****   |
+      |                  *       **                                           * *        ** *        ** *        * **   |
+      |               *  *       **                                           * *        ** *        ** *        * **   |
+  100 ++             ** **       **                                           * *        ** *       *** *       *  **  ++ 100
+      |      *       ** **       **                                           * *        **** *     *** *       *  **   |
+      |      *       ** **       **         *                                 * *        **** *     *** *       *  **   |
+      |      *       ** **       **         *                                 * *        **** *     **   *      *  **   |
+      |      **      ** **       ****       *                                 * *        ******     **   *      *  * *  |
+      |      **      * ***       ****       ***                               * *        ******     **   *      *  * *  |
+   50 ++     **      * ***      *****       ***                               * *   *    ******     **   *      *  * * ++ 50
+      |     ***      * ***      ** **      **** *                             * * * *    *  ***     **   *      *  * *  |
+      |     ****    *   **      *  **      ** * *                      *      * * * **   *   ***    **   *     *   * *  |
+      |     ** **   *   **      * # * **   *  *** *                    *     **#*** **   *   ***  * *  # **    * # * ** |
+      |    ***  **  *## **   +  *### ***   *##*** ** +                 **    *###  ***   *###***  ***#### **   * ## #***|
+    0 ******#*##*****-###********-###*******##**#**********************#******#-###*******#--###*****##--##*****#--#-**** 0
                              50                     100                     150                     200
 
 ```
 
 Damit wird es schon viel lesbarer. Wir sehen nun, wie selten die POST Requests im Vergleich zu den GET Requests tatsächlich sind.
 In der grafischen Darstellung sind es nur noch keine Hügel entlang der X-Achse. Wir können die Hügel etwas erhöhen indem
-wir eine logarithmische Y-Skala verwenden:
+wir eine logarithmische Y-Skala verwenden. Dies geschieht mittels der Option `--logscale`.
 
 
 ```bash
 
->for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do echo "`grep  \"$STRING\" labor-07-example-access.log | grep -c GET` `grep  \"$STRING\" labor-07-example-access.log | grep -c POST`  $STRING" ; done | arbigraph -l -2 -c "Num of GET Reqs/h;Num of POST Reqs/h" --sameaxis --logscale
-
+$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do echo "`grep  \"$STRING\" labor-07-example-access.log | grep -c GET` `grep  \"$STRING\" labor-07-example-access.log | grep -c POST`  $STRING" ; done | arbigraph -l -2 -c "Num of GET Reqs/h;Num of POST Reqs/h" --sameaxis --logscale
 
 
       +----------------------+-----------------------+-----------------------+-*---------------------+------------------+
@@ -371,24 +371,237 @@ wir eine logarithmische Y-Skala verwenden:
       |     **#**   *#  #* * +  *   #***    * *** ** +      *          ***   *# ###***   *  ####*** *#   #*     *    ***|
     1 ++----**#**---*#--#*-*-+--*---#***----*-***-**-+--*---*-----**-*-***---*#-###****--*--####***-*#---#*-----*----***+ 1
                              50                     100                     150                     200
-
 ```
 
 Damit ist die Grenze der Fähigkeiten von `arbigraph` erreicht. Für `gnuplot` selbst ist damit noch lange nicht Ende der Fahnenstange, aber das Wrapperskript haben wir ausgeschöpft. Den Sprung von `arbigraph`  Für alles andere müssen wir direkt auf `gnuplot` zurückgreifen. Dabei hilft eine weitere Option von `arbigraph` welche die Gnuplot-Kommandos ausgibt. Diese können wir dann leicht in ein Skript überführen und per STDIN an `gnuplot` übergeben. FIXME
 
+###Schritt 6 : Graphische Darstellung einer Werte-Verteilung in der Shell
+
+Neben Zeitreihen vermag unser Skript `arbigraph` im Verbund mit `gnuplot` aber auch Verteilungen von Werten gut visuell zu übersetzen. Schauen wir uns zum Beispiel die im Wert Duration dokumentierte Dauer der verschiedenen Requests an.
+
+```bash
+$> head -10 labor-07-example-access.log | alduration
+935006
+867783
+991977
+985790
+981818
+1001088
+1000670
+1048915
+1057174
+826016
+825618
+859946
+1304401
+931587
+957446
+1473020
+1719549
+857138
+630606
+1051057
+``` 
+
+Wir finden hier also in der Grössenordnung von 1 Million Mikrosekunden. Wie sieht das statistisch aus (die entsprechenden Routinen kennen wir noch von früheren Anleitungen):
 
 
 ```bash
+$> cat labor-07-example-access.log | alduration | basicstats.awk 
+Num of values:        10000
+      Average:      2531653
+       Median:      1080252
+          Min:          688
+          Max:     72941899
+        Range:     72941211
+Std deviation:      5794915
+``` 
+
+Es handelt sich ganz offensichtlich um eine eher langsame Applikation und auch die Ausreisser gegen oben sind zahlreich. 
+
+Uns liegen im Logfile 10'000 einzelne Datenpunkte vor. Bilden wir diese einfach einmal ab:
+
+```bash
+$> cat labor-07-example-access.log  | grep GET | alduration  | arbigraph -lL 
+
+         +------------+-----------+---------*--+-----------+-------*----+------------+-----------+------------+-----------+---+
+         +            +           +       *** ***** *  *   +     ***    +          ***           +            +  Col 1 ****** +
+         +                                *** ***** *  *         ***               ***                                        +
+   1e+07 ++                               *** ***** *  *     *   ***             *****     *                                 ++
+         +*        **   * *** ** *    *   *** ***** *  *     *   *** *          ******   * *   *    *               *   * *   +
+         **********************************************************************************************************************
+   1e+06 **********************************************************************************************************************
+         ************************************* **************** ************************** ***********************************+
+         *** *   *  ***    **** * ** * ** ***  **** *** ** **   * ***  ****  * *** ******  ****   ***** ** * *  * ****     * *+
+  100000 *** *   *  ***    **** * ** * ** ***  **** *** ** **   * ***  ****  * *** ******  ****   ***** ** * *  * ****     * *+
+         *** *   *  ***    **** * ** * ** ***  **** *** ** **   * ***  ****  * *** ******  ****   ***** ** * *  * ****     * *+
+         *** *   *  ***    **** * ** * ** ***  **** *** *  **   * ***  ****  * *** ******  ****   ***** ** * *  * ****     * *+
+   10000 *** *   *  ***    **** * ** * ** ***  **** *** *  **   * ***  ****  * *** ******  ****   ***** ** * *  * ****     * *+
+         +** *   *  ***    **** * ** * ** ***  **** *** *  **   * ***  ****  * *** ******  ****   ***** ** * *  * ****     * *+
+         |** *   *  **     * ** * ** * ** **   **** *** *   *   * ***  ****  * **  ** ***  ****   *** * **      *  ***     *  |
+         +   *       *            *  *            *   *                 *    *     *        *     * *   *                     +
+    1000 ++  *                                        *                                                                      ++
+         |                                                                                                                    |
+         +                                                                                                                    +
+     100 ++                                                                                                                  ++
+         +                                                                                                                    +
+         +                                                                                                                    +
+      10 ++                                                                                                                  ++
+         +                                                                                                                    +
+         +            +           +            +           +            +            +           +            +           +   +
+       1 ++-----------+----------e-+------------+-----------+------------+------------+-----------+------------+-----------+--++
+         0           1000        2000         3000        4000         5000         6000        7000         8000        9000
+
 ```
 
+Mit dem obenstehenden Befehl haben wir die Block-Darstellung durch Linien ersetzt und von Anfang aufi eine logarhitmische Skala verwendet, da die Ausreisser optisch zu dominant wären. Allerdings ist die Darstellung nicht wirklich befriedigend. Der Grund ist die Überzahl an Datenpunkten. Unser Terminal weisst ja lediglich 80, 120 oder im Extremfall 200 Spalten auf. Das ist natürlich zu wenig für ein Set mit 10'000 Punkten, weshalb `gnuplot` hier selbst die Darstellung in relativ wenige Datenreihen überführt. Ausreisser werden da eingemittet und geglättet. Dazu kommt das bekannte Problem der schlecht beschrifteten X-Achse.
 
-###Schritt 6 : Graphische Darstellung einer Werte-Verteilung in der Shell
+Was uns fehlt ist eine Technik, die in der Statistik `Binning` genannt wird. Der Begriff `Binning` meint die Zusammenfassung von Datenreihen in einer Gruppe. Ein typisches Beispiel ist eine Statistik die besagt, dass von den 20-29 jährigen 45% blabla und von den 30-39 jährigen lediglich 28% blabla. Bei den 40-49 jährigen ...  Die Bins sind hier die Alterskohorten à 10 Jahre. Die Breite des Bins ist frei zu wählen und der Inhalt des Bins ist dann eine Zusammenstellung der Werte.  In Unserem Fall unterteilen wir die Zeitdauer des Requests in einzelne Bins und zählen bei jedem Bin, wie viele Requests in diese Gruppe oder eben in diesen Bin fallen.
+
+Zur Durchführung dieses `Binning`-Prozesses steht wiederum ein Tool zur Verfügung. FIXME Link
+
+```bash
+$> cat labor-07-example-access.log | alduration | do-binning.rb --label
+
+688.0-3647748.55        9221
+3647748.55-7294809.1    180
+7294809.1-10941869.649999999    106
+10941869.649999999-14588930.2   57
+14588930.2-18235990.75  65
+18235990.75-21883051.299999997  51
+21883051.299999997-25530111.849999998   47
+25530111.849999998-29177172.4   32
+29177172.4-32824232.95  175
+32824232.95-36471293.5  20
+36471293.5-40118354.05  22
+40118354.05-43765414.599999994  10
+43765414.599999994-47412475.15  5
+47412475.15-51059535.699999996  2
+51059535.699999996-54706596.25  1
+54706596.25-58353656.8  1
+58353656.8-62000717.349999994   2
+62000717.349999994-65647777.9   2
+65647777.9-69294838.45  0
+69294838.45-infinity    1
+```
+
+In der ersten Spalte sehen wir die Breite des Bins, also das untere und das obere Ende und daneben in der zweiten Spalte die Anzahl Requests in diesem Bin. Die Bins wurden vom Skript selbst definiert und da liegt auch das Problem dieses Resultats. Das ist alles relativ zufällig. Versuchen wir es mit sauber definierten Bins:
+
+
+```bash
+$> cat labor-07-example-access.log | alduration | do-binning.rb --label -n 25 --min 0 --max 2500000.0
+0.0-100000.0    150
+100000.0-200000.0       0
+200000.0-300000.0       0
+300000.0-400000.0       0
+400000.0-500000.0       14
+500000.0-600000.0       54
+600000.0-700000.0       188
+700000.0-800000.0       367
+800000.0-900000.0       1182
+900000.0-1000000.0      1862
+1000000.0-1100000.0     1423
+1100000.0-1200000.0     1024
+1200000.0-1300000.0     706
+1300000.0-1400000.0     525
+1400000.0-1500000.0     371
+1500000.0-1600000.0     306
+1600000.0-1700000.0     238
+1700000.0-1800000.0     168
+1800000.0-1900000.0     136
+1900000.0-2000000.0     82
+2000000.0-2100000.0     72
+2100000.0-2200000.0     68
+2200000.0-2300000.0     54
+2300000.0-2400000.0     40
+2400000.0-2500000.0     39
+```
+
+Das sieht schon viel besser aus. Füttern wir dieses Resultat in das Graphen-Skript:
+
+```bash
+$> cat labor-07-example-access.log | alduration | do-binning.rb --label -n 25 --min 0 --max 2500000.0 | sed -e "s/000\.0/K/g" | arbigraph
+
+
+  2000 +++----+----+----+---+----+----+----+---+----+----+----+----+---+----+----+----+---+----+----+----+---+----+----+----+++
+       | +    +    +    +   +    +    +    +   +    +    +    +    +   +    +    +    +   +    +    +    +   +   Col 1 ****** |
+  1800 ++                                         ******                                                                     ++
+       |                                          *    *                                                                      |
+       |                                          *    *                                                                      |
+  1600 ++                                         *    *                                                                     ++
+       |                                          *    *                                                                      |
+  1400 ++                                         *    *****                                                                 ++
+       |                                          *    *   *                                                                  |
+  1200 ++                                    ******    *   *                                                                 ++
+       |                                     *    *    *   *                                                                  |
+  1000 ++                                    *    *    *   ******                                                            ++
+       |                                     *    *    *   *    *                                                             |
+       |                                     *    *    *   *    *                                                             |
+   800 ++                                    *    *    *   *    *                                                            ++
+       |                                     *    *    *   *    ******                                                        |
+   600 ++                                    *    *    *   *    *    *                                                       ++
+       |                                     *    *    *   *    *    ******                                                   |
+   400 ++                                    *    *    *   *    *    *    *                                                  ++
+       |                                ******    *    *   *    *    *    **********                                          |
+       |                                *    *    *    *   *    *    *    *   *    ******                                     |
+   200 ******                       *****    *    *    *   *    *    *    *   *    *    **********                           ++
+       * +  * +    +    +   +  ****** + *  + * +  * +  * + *  + *  + * +  * + *  + *  + * +  * + ********************  +    + |
+     0 ******-+----+----+-*****************************************************************************************************
+        0.0 100K 200K 300K400K 500K 600K 700K800K 900K 1000K1100K1200K300K1400K1500K1600K700K1800K1900K2000K100K2200K2300K2400K
+         -    -    -    -   -    -    -    -   -    -    -    -    -   -    -    -    -   -    -    -    -   -    -    -    -
+       100K 200K 300K 400K500K 600K 700K 800K900K 1000K1100K1200K1300K400K1500K1600K1700K800K1900K2000K2100K200K2300K2400K2500K
+
+```
+
+Das passt und gibt uns eine gute Sicht auf die Verteilung der Duration der verschiedenen Requests. Können wir GET und POST Requests nebeneinander darstellen und sehen wir einen Unterschied?
+
+```bash
+$> cat labor-07-example-access.log | grep GET | alduration | do-binning.rb --label -n 25 --min 0 --max 2500000.0 > /tmp/tmp.get
+$> cat labor-07-example-access.log | grep POST | alduration | do-binning.rb --label -n 25 --min 0 --max 2500000.0 > /tmp/tmp.post
+$> paste  /tmp/tmp.get /tmp/tmp.post | awk '{ print  $2 " " $4 }'  | arbigraph -l -2 -c "GET;POST"
+
+
+       +-----------------+----------------------+---------------------+----------------------+---------------------+---++ 160
+       |                 +                      +                     +                      +               GET ****** |
+  1800 ++                                       *   #                                                       POST ######++
+       |                                       * * # #                                                                 ++ 140
+  1600 ++                                      * * #  #                                                                ++
+       |                                      *   *    #                                                                |
+       |                                      *   *     #                                                              ++ 120
+  1400 ++                                    *   # *     #                                                             ++
+       |                                    *    # *      #                                                             |
+       |                                    *   #   **    #                                                             |
+  1200 ++                                  *    #     **   #                                                           ++ 100
+       |                                   *   #        *  #                                                            |
+  1000 ++                                 *    #            #                                                          ++
+       |                                  *    #         *  #                                                          ++ 80
+       |                                 *    #           *  #                                                          |
+   800 ++                                *    #            *  #                                                        ++
+       |                                 *    #             *  #                                                       ++ 60
+   600 ++                               *    #               ****                                                      ++
+       |                                *    #                   *                                                      |
+       |                               *    #                     ***                                                  ++ 40
+   400 ++                              *    #                        *       ######                                    ++
+       |                             **     #                         *********    #                                    |
+   200 ++                          **      #                                   *****###                                ++ 20
+       ****                     ***   ######                                        *********                           |
+       |   *             +  ****    ##          +                     +                 #####******************    +    |
+     0 #####****************########------------+---------------------+----------------------+-----------------*****---++ 0
+                         5                      10                    15                     20                    25
+
+```
+
+Die beiden Linien (mit Blöcken funktioniert die Darstellung zweier Zahlenreihen nicht) sind auf unterschiedlichen Skalen
+übereinander gezeichnet. Damit lassen sie sich sehr gut vergleichen. Wenig überraschend dauern POST Anfragen etwas länger. Überraschend ist vielmehr, dass
+sie so wenig länger dauern als die GET Requests. 
+
+
+
 
 ###Schritt 7 : Logarithmische Skala
 
 ###Schritt 8 : Ausgabe als PNG
 
-FIXME: arbigraph -h
 
 ###Bonus: Visualisierung von ModSecurity Rule Alerts
 
