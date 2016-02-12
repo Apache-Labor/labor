@@ -4,6 +4,8 @@
 #
 # A very simple gnuplot grapher of arbitrary numeric data in a single column.
 #
+# FIXME: Bug mit sameaxis zusammen mit labels in file: sameaxis wird ignoriert
+#
 # Example:
 #
 # cat /var/log/syslog | cut -f4 -d" " | cut -d: -f1 | uniq -c | arbigraph
@@ -129,7 +131,7 @@ COL1="Col 1"                      # Name of Column 1
 COL2="Col 2"                      # Name of Column 2
 TITLE=""                          # Title of graph
 CUSTOM_DIRECTIVES=""              # Custom arbitrary gnuplot directives to be passed via CLI
-XAXISMODULO=5			  # Suppress some of the x axis tics labels. Modulo 5 means every 5th label is displayed.
+XAXISMODULO=1			  # Suppress some of the x axis tics labels. Modulo 5 means every 5th label is displayed.
 XAXISMODULOSHIFT=-2		  # When using xaxismodulo to suppress certain x axis tics labels, you can use this
 				  # to shift the first label to the right or to the left. Negative values OK
 

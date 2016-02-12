@@ -11,6 +11,10 @@
 #   
 #
 # FIXME: implement decimalplaces (beginning is here, but not finished)
+#
+# bug: cat labor-07-example-access.log | alduration | do-binning.rb --label -n 25 --min 0 --max 2500000.0
+#       final additional line should be removed
+# 
    
 
 # -----------------------------------------------------------
