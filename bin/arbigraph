@@ -4,7 +4,8 @@
 #
 # A very simple gnuplot grapher of arbitrary numeric data in a single column.
 #
-# FIXME: Bug mit sameaxis zusammen mit labels in file: sameaxis wird ignoriert
+# FIXME: 
+# Bug: mit sameaxis zusammen mit labels in file: sameaxis wird ignoriert
 #
 # Example:
 #
@@ -182,6 +183,11 @@ if [ ! -z $XAXISMODULO_STR ]; then
 	fi
 fi 
 
+if [ $DATACOLUMNS -eq 2 -a "$STYLE" = "boxes" ]; then
+	echo "When working with two data columns, you need to set the option --lines (as boxes and dots do not work). This is fatal. Aborting."
+	exit 1
+fi
+
 # -----------------------------------------------------------------------
 # MAIN
 # -----------------------------------------------------------------------
@@ -189,9 +195,25 @@ fi
 
 N="$MINX"               # add line numbering
 while read line; do     # read STDIN
+	if [ $N -eq $MINX ]; then
+		echo "$line" | grep -P -q "\t"
+
+		if [ $? -eq 0 ]; then
+			LABELS_IN_FILE="$TRUE"
+		else
+			LABELS_IN_FILE="$FALSE"
+		fi
+	fi
         N=$(($N+1))
 	if [ "$(((($N+$XAXISMODULOSHIFT)) % $XAXISMODULO))" -eq 0 ]; then	# we are shifting the modulo a bit. This brings better results with modulo 5
-        	echo  "$N $line" | sed 's/-/\\n-\\n/' >> $DATA
+        	echo -n "$N " >> $DATA
+		if [ "$LABELS_IN_FILE" -eq "$TRUE" ]; then
+			echo -n "$line" | sed -e 's/-/\\n-\\n/' -e "s/\ /_/g" -e "s/\t.*//" >> $DATA
+			echo -n -e "\t" >> $DATA
+			echo "$line" | sed -e "s/.*\t//" >> $DATA
+		else
+			echo "$line" | sed -e 's/-/\\n-\\n/' >> $DATA
+		fi
 	else
         	echo -n "$N " >> $DATA
 		echo "$line" | sed -e 's/.*\t/\\n\t/' >> $DATA
@@ -199,15 +221,8 @@ while read line; do     # read STDIN
 done
 
 
-head -1 $DATA | grep -P -q "\t"
-if [ $? -eq 0 ]; then
-	LABELS_IN_FILE="$TRUE"
-else
-	LABELS_IN_FILE="$FALSE"
-fi
-
 if [ $SAMEAXIS -eq 0 ]; then
-	if [ "$LABELS_IN_FILE" = "$TRUE" ]; then
+	if [ "$LABELS_IN_FILE" -eq "$TRUE" ]; then
         	MAXY=`cat $DATA | tr "\t" " " | cut -d' ' -f3 | sort -n | tail -1`    # maximum y value
 	else
         	MAXY=`cat $DATA | cut -d' ' -f2 | sort -n | tail -1`    # maximum y value
