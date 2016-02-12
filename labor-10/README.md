@@ -1,5 +1,7 @@
 ##Title: Apache und ModSecurity Logfiles visualisieren
 
+FIXME: Bug mit sameaxis zusammen mit labels in file: sameaxis wird ignoriert
+
 ###Was machen wir?
 
 Wir werten Logfiles visuell aus.
@@ -55,7 +57,7 @@ $> grep 2015-05-2 labor-07-example-access.log | altimestamp | cut -f: -f1 | sort
 Das scheint zu funktionieren, obschon sich im Logfile auch Lücken ausmachen lassen. Um diese werden wir uns später kümmern. In der ersten Spalte sehen wir nun die Requests pro Stunde, während die zweite und dritte Spalte den Zeitpunkt, die Stunde eben, beschreibt. Das Resultat füttern wir dann in das angesprochene Skript `arbigraph`, das von sich aus bei der Darstellung nur die erste Spalte berücksichtigt:
 
 ```bash
-$> grep 2015-05-2 labor-07-example-access.log | altimestamp | cut -f: -f1 | sort | uniq -c | arbigraph
+$> grep 2015-05-2 labor-07-example-access.log | altimestamp | cut -d: -f1 | sort | uniq -c | arbigraph
 
   250 ++-----------------+-------------------+-------------------+-------------------+-------------------+-------------------++
       |                  +                   +                   +                   +                   +       Col 1 ******+|
@@ -178,7 +180,10 @@ Nun erscheint eine gewisse Regelmässigkeit. Je 24 Werte machen einen ganzen Tag
 ###Schritt 2 : X-Axis Label
 
 FIXME
+```bash
+for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do echo "`grep -c \"$STRING\" labor-07-example-access.log` $STRING"; done | awk '{ print $2 "_" $3 "\t" $1}' | sed -e "s/-/./g" -e "s/_/-/" | arbigraph -x 24
 
+```
 
 ###Schritt 2 : Weitere Label
 
@@ -592,15 +597,22 @@ $> paste  /tmp/tmp.get /tmp/tmp.post | awk '{ print  $2 " " $4 }'  | arbigraph -
 ```
 
 Die beiden Linien (mit Blöcken funktioniert die Darstellung zweier Zahlenreihen nicht) sind auf unterschiedlichen Skalen
-übereinander gezeichnet. Damit lassen sie sich sehr gut vergleichen. Wenig überraschend dauern POST Anfragen etwas länger. Überraschend ist vielmehr, dass
-sie so wenig länger dauern als die GET Requests. 
+übereinander gezeichnet. Damit lassen sie sich sehr gut vergleichen. Wenig überraschend dauern POST Anfragen etwas länger. Überraschend ist vielmehr, dass sie so wenig länger dauern als die GET Requests. 
 
+###Schritt 8 : Ausgabe in verschiedenen Breiten und als PNG
 
+`Arbigraph` passt sich bei der Ausgabe der Breite des Terminals an. Wenn es schmaler sein soll, dann lässt sich dies mittels der Option `--width` kontrollieren. Auch die Höhe lässt sich mittels `--height` einstellen. Auch eine Ausgabe in ein PNG Bild ist im Skript bereits enthalten. Die Ausgabe ist dabei noch recht rudimentär, lässt sich aber vielleicht bereits in einem Bericht einsetzen. 
 
+```bash
+$> paste  /tmp/tmp.get /tmp/tmp.post | awk '{ print  $2 " " $4 }'  | arbigraph -l -2 -c "GET;POST" -t "Duration of Requests:\n GET vs. POST" --output /tmp/duration-get-vs-post.png
+...
+Plot written to file /tmp/duration-get-vs-post.png.
+```
 
-###Schritt 7 : Logarithmische Skala
+FIXME: LINK graph
 
-###Schritt 8 : Ausgabe als PNG
+Wer gnuplot beherrscht kann mittels der Option `--custom` weitere Kommandos an `arbigraph` übergeben, die vom Skript dann an `gnuplot` weitergegeben werden. Es führt aber zu weit darauf hier noch weiter einzugehen.
+
 
 
 ###Bonus: Visualisierung von ModSecurity Rule Alerts
