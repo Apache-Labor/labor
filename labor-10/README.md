@@ -52,7 +52,7 @@ Hinter jeder dieser Zeilen steht ein Request. Die Anzahl der Requests pro Zeitei
 Hier also die Summe pro Stunde:
 
 ```bash
-$> grep 2015-05-2 labor-07-example-access.log | altimestamp | cut -f: -f1 | sort | uniq -c | head
+$> grep 2015-05-2 labor-07-example-access.log | altimestamp | cut -d: -f1 | sort | uniq -c | head
      37 2015-05-20 12
       6 2015-05-20 13
       1 2015-05-20 14
