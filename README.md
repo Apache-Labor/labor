@@ -21,11 +21,13 @@ cd labor
 - [labor-01](labor-01) Konfigurieren eines minimalen Apache Servers
 - [labor-02](labor-02) Aufsetzen eines Apache/PHP Applikationsservers
 - [labor-03](labor-03) Konfigurieren eines SSL Servers
-- [labor-04](labor-04) Das Zugriffslog ausbauen und Auswerten
+- [labor-04](labor-04) Das Zugriffslog ausbauen und auswerten
 - [labor-05](labor-05) ModSecurity einbinden
-- [labor-06](labor-06) OWASP ModSecurity Core Rules Einbinden
-- [labor-07](labor-07) OWASP ModSecurity Core Rules Tunen
+- [labor-06](labor-06) OWASP ModSecurity Core Rules einbinden
+- [labor-07](labor-07) OWASP ModSecurity Core Rules tunen
 - [labor-08](labor-08) Einen Reverse Proxy konfigurieren
+- [labor-09](labor-09) Apache effizient konfigurieren und debuggen
+- [labor-10](labor-10) Logfiles visualisieren
 
 ##Beitragen
 
