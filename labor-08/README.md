@@ -424,11 +424,11 @@ Wir unterscheiden zwei Backends und können hier die Verteilung beliebig vornehm
 
 Der *Reverse Proxy*-Server schirmt den Applikationsserver vom direkten Zugriff durch den Client ab. Dies bedeutet aber auch, dass der Applikationsserver gewisse Informationen zum Client und seiner Verbindung zum *Reverse Proxy* nicht mehr sehen kann. Zur Kompensation dieses Verlustes setzt das Proxy-Modul drei HTTP Request Header-Zeilen, welche den *Reverse Proxy* beschreiben:
 
-* X-Forwarded-For : Die IP-Adresse des Reverse Proxies
+* X-Forwarded-For : Die IP-Adresse des Clients, gefolgt von der IP Adresse des Reverse Proxies
 * X-Forwarded-Host : Den originalen HTTP Host-Header in der Anfrage des Clients
 * X-Forwarded-Server : Den Servernamen des *Reverse Proxies*
 
-Sind mehrere Reverse Proxies hintereinander gestaffelt, dann werden die zusätzlichen IP-Adressen und Servernamen durch Komma abgetrennt beigefügt. Neben diesen Daten zur Verbindung ist es aber sinnvoll, auch noch weitere Daten weiterzugeben. In diese Reihe gehört namentlich die Unique-ID, welche den Request eindeutig identifiziert. Ein gut konfigurierter Backend-Server wird diesen Schlüsselwert ähnlich wie unser *Reverse Proxy* im Logfile ablegen. Eine zukünftige Fehlersuche wird dadurch erleichtert, dass die verschiedenen Logeinträge einfach korreliert werden können.
+Sind mehrere Proxies hintereinander gestaffelt, dann werden die zusätzlichen IP-Adressen und Servernamen durch Komma abgetrennt beigefügt. Neben diesen Daten zur Verbindung ist es aber sinnvoll, auch noch weitere Daten weiterzugeben. In diese Reihe gehört namentlich die Unique-ID, welche den Request eindeutig identifiziert. Ein gut konfigurierter Backend-Server wird diesen Schlüsselwert ähnlich wie unser *Reverse Proxy* im Logfile ablegen. Eine zukünftige Fehlersuche wird dadurch erleichtert, dass die verschiedenen Logeinträge einfach korreliert werden können.
 
 Häufig wird der Reverse Proxy auch dazu eingesetzt, eine Authentifizierung durchzuführen. Wir haben das zwar noch nicht eingerichtet, aber es ist dennoch sinnvoll, diesen Wert in eine weiterzuverwendende Grundkonfiguration mit aufzunehmen. Wenn keine Authentifizierung definiert wird, dann bleibt dieser Wert einfach leer. Und schliesslich wollen wir das Backend-System auch noch über die Art der Verschlüsselung informieren, auf die sich Client und *Reverse Proxy* geeinigt haben. Der gesamte Block sieht dann so aus:
 
