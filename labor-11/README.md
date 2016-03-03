@@ -27,7 +27,7 @@ Wir haben in der Anleitung 6 gesehen, wie wir ModSecurity konfigurieren können,
 * Teil C: Der HTTP Request Body (inklusive rohe Dateien bei einem File Upload; nur wenn der Body-Zugriff mittels `SecRequestBodyAccess` gesetzt wurde)
 * Teil E: Der HTTP Response Body (nur wenn der Body-Zugriff mittels `SecResponseBodyAccess` aktiviert wurde)
 * Teil F: Die HTTP Response Header (Ohne die beiden Date- und Server-Header, die von Apache selbst kurz vor dem Verlassen des Servers gesetzt werden)
-* Teil H: Zusatzinfos zum Request FIXME
+* Teil H: Weitere Informationen von ModSecurity zur Zusatzinfos zum Request, wie die hier repetierten Einträge des Apache Error-Logs, die ergriffene `Action`, Timinig-Informationen etc. Ein Blick lohnt sich.
 * Teil I: Der HTTP Request Body in einer platzsparenden Version (hochgeladene Files in nicht ihrer vollen Länge einschliesst, sondern nur einzelne Schlüsselparameter dieser Dateien)
 * Teil J: Zusätzliche Informationen über File Uploads
 * Teil K: Liste sämtlicher Regeln, die eine positive Antwort lieferten (Die Regeln selbst werden normalisiert inklusive sämtlicher vererbten Deklarationen)
@@ -45,14 +45,11 @@ Damit haben wir ein sehr umfassendes Protokoll festgelegt. Das ist in einem Labo
 SecAuditLogParts            "ABFHKZ"
 ```
 
-Hier werden die Request- und Response-Bodies nicht mehr mitgeschrieben. Das spart sehr viel Speicherplatz, was gerade bei schlecht getunten Systemen wichtig ist. Diejenigen Teile der Bodies, welche einzelne Regeln verletzten, werden im Error-Log und im K-Teil dennoch notiert werden. Das reicht in vielen Fällen. Fallweise möchte man aber dennoch den gesamten Body mitschreiben. In diesen Fällen bietet sich eine `ctl`-Direktive an:
+Hier werden die Request- und Response-Bodies nicht mehr mitgeschrieben. Das spart sehr viel Speicherplatz, was gerade bei schlecht getunten Systemen wichtig ist. Diejenigen Teile der Bodies, welche einzelne Regeln verletzten, werden im Error-Log und im K-Teil dennoch notiert werden. Das reicht in vielen Fällen. Fallweise möchte man aber dennoch den gesamten Body mitschreiben. In diesen Fällen bietet sich eine `ctl`-Direktive für den Action-Teil der `SecRule` an. Mit `auditLogParts` können mehrere zusätzliche Teile angewählt werden:
 
 ```bash
 SecRule REMOTE_ADDR  "@streq 127.0.0.1"   "id:10000,phase:1,pass,log,auditlog,msg:'Initializing full traffic log',ctl:auditLogParts=+IJE"
 ```
-
-FIXME Check this
-
 
 ###Schritt 2 : ModSecurity Full Traffic Log einer einzigen Session schreiben
 
@@ -61,10 +58,44 @@ das Logging dynamisch für ausgewählte Sessions dauerhaft einschalten und wie i
 
 Ivan Ristić beschreibt in seinem ModSecurity Handbuch ein Beispiel in dem eine ModSecurity Collection herangezogen wird, um eine eigene Session zu erzeugen, welche über einen einzelnen Request hinaus aktiv bleibt. Wir benützen diese Idee als Basis und schreiben ein etwas komplexeres Beispiel.
 
-FIXME Pseudo:
-- Phase:5 Wenn Inbound Anomaly Score > Limit: Session initialisieren und LogParts erweitern
-- Phase:5 Wenn Outbound Anomaly Score > Limit: Session initialisieren und LogParts erweitern
-- Phase:1 Falls Session LogParts erweitern
+```bash
+SecRule TX:INBOUND_ANOMALY_SCORE  "@ge 5" \
+  "phase:5,pass,id:10001,log,msg:'Logging enabled (High incoming anomaly score)', \
+  expirevar:ip.logflag=600"
+
+SecRule TX:OUTBOUND_ANOMALY_SCORE "@ge 5" \
+  "phase:5,pass,id:10002,log,msg:'Logging enabled (High outgoing anomaly score)', \
+  expirevar:ip.logflag=600"
+
+SecRule &IP:LOGFLAG               "@eq 1" \
+  "phase:5,pass,id:10003,log,msg:'Logging is enabled. Enforcing rich auditlog.', \
+  ctl:auditEngine=On,ctl:auditLogParts=+EIJ"
+```
+
+Bei der in den vorangegangenen Anleitungen vorgeschlagenen Integration der Core Rules haben wir bereits
+eine persistente `Collection` auf Basis der IP-Adresse des Anfrage-Stellers eröffnet. Diese über einen einzelnen
+Request hinaus aufbewahrte `Collection` eignet sich, um zwischen verschiedenen Anfragen Daten festzuhalten.
+
+Wir benützen diese Fähigkeit, um in der Logging-Phase des Requests, seinen `Core Rules Anomaly Score` zu überprüfen.
+Liegt der auf 5 oder höher, setzen wir die Variable `ip.logflag` und geben Ihr mittels `expirevar` eine Lebenszeit von 600 Sekunden.
+Dies bedeutet, dass diese Variable in der `IP-Collection` für zehn Minuten vorhanden bleibt und danach von selbst wieder
+verschwindet.  In der darauf folgenden Regel wiederholt sich dieser Mechanismus für den `Outgoing Anomaly Score`.
+
+In der dritten Regel sehen wir nach, ob dieses `Logflag` gesetzt ist. Wir haben die wundersame Verwandlung von
+Variablennamen je nach Verwendungszweck in `ModSecurity` schon früher gesehen. Hier begegnen wir ihr wieder, indem
+`ip.logflag` bei der Verwendung als Variable in einer `SecRule` als `IP:LOGFLAG` geschrieben werden muss. Das
+vorangestellte `&`-Zeichen haben wir auch schon früher kennengelernt. Es bezeichnet die Anzahl der Variable.
+Das heisst, wir können damit auf das Vorhandensein von `ip.logflag` prüfen. Ist das Flag gesetzt, also in
+den beiden Regeln vorher, oder zu einem früheren Zeitpunkt innerhalb der letzten 10 Minuten, dann wird
+die Audit-Engine aktiviert und zusätzlich noch um einige in der Standardkonfiguration nicht immer gesetzt Logteile
+erweitert.
+
+Das Erzwingen des Audit-Logs, das wir so noch nicht kennengelernt haben, ist nötig, denn wir wollen nun ja auch
+Anfragen loggen, welche für sich genommen keine Regeln verletzt haben. Das heisst, das Auditlog ist für den
+Request noch gar nicht aktiviert. Das holen wir mit dieser Regel nach.
+
+Gemeinsam erlauben uns diese drei Regeln einen auffälligen Client über einen einzelnen verdächtigen Request hinaus genau
+zu beobachten und alle den gesamten Verkehr dieses Clients im Audit-Log mitzuprotokollieren.
 
 ###Schritt 3 : Verkehr des Clients mit dem Server / Reverse Proxy mithören
 

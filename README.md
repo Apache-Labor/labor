@@ -2,18 +2,17 @@ Apache Labor
 ============
 
 Dies ist eine Sammlung von Apache Anleitungen, welche von der Compilierung in mehreren
-Kapiteln zu einer vollen Apache-Konfiguration mit einem Schwergewicht auf der
-Sicherheit führt.
+"Labors" zu einer vollen Apache-Konfiguration mit einem Schwergewicht auf der
+Sicherheit führen. Das runde Dutzend Tutorials sind aufeinander aufbauend gestaltet
+und steigern mit jedem Schritt das KnowHow in den Gebieten Webserver, HTTP SSL/TLS, 
+ModSecurity, Logfile Visualisierung.
 
 ## Vorbedingungen
-Für diese Labors benötigt man eine Linux Installation (vorzugsweise aus der Debian-Familie, wie bzw. Ubuntu) und minimale Linux Shell Kenntnisse.
+Für diese Labors benötigt man eine Linux Installation (vorzugsweise aus der
+Debian-Familie, wie bzw. Ubuntu) und minimale Linux Shell Kenntnisse.
+Andere Gnu/Linux Derivate sind ebenfalls geeignet; einzig die Paketnamen dürften von
+den im Text verwendeten Paketnamen abweichen.
 
-## Clonen des Labors
-
-```
-git clone https://github.com/Apache-Labor/labor.git
-cd labor
-```
 
 ##Inhalt
 
@@ -28,20 +27,29 @@ cd labor
 - [labor-08](labor-08) Einen Reverse Proxy konfigurieren
 - [labor-09](labor-09) Apache effizient konfigurieren und debuggen
 - [labor-10](labor-10) Logfiles visualisieren
+- [labor-11](labor-11) Verkehr komplett mitschreiben und entschlüsseln
 
 ##Beitragen
 
-Vielen Dank allen, die zu den verschiedenen Anleitungen Labor beigetragen haben.
+Vielen Dank allen, die zu den verschiedenen Anleitungen beigetragen haben.
+Sei es durch das Beisteuern von Texten, Anregungen oder Hinweise auf Fehler.
 Wir sind dankbar für Kommentare, Korrekturen und Anregungen. Am Liebsten als
-Pull-Request, aber auch Emails sind wollkommen.
+Pull-Request. Sie sind aber in einem Email willkommen.
 
 Kontakt : christian . folini bei netnea.com.
 
+## Clonen des Labors
+
+```
+git clone https://github.com/Apache-Labor/labor.git
+cd labor
+```
+
 ##Alternativer Standort
 
-Die Anleitungen wurden mehrheitlich von netnea geschrieben und werden deshalb auch
-unter http://www.netnea.com publiziert. Die Masterkopie findet sich allerdings 
-unter https://github.com/Apache-Labor/labor.
+Die Anleitungen wurden mehrheitlich von netnea Mitarbeitern geschrieben und werden 
+deshalb auch unter https://www.netnea.com als zweitem Standort publiziert. Die 
+Masterkopie findet sich allerdings unter https://github.com/Apache-Labor/labor.
 
 ##Lizenz / Kopieren / Weiterverwenden
 
