@@ -89,7 +89,7 @@ Neben dem _Suexec-_ und dem _FCGI-Modul_ ist es das _Mime-Modul_, welches uns er
 
 Das Verzeichnis _/apache/htdocs_ benötigt neu die zusätzliche Option _ExecCGI_. Schliesslich der _FCGIWrapper_. Das ist das Verbindungsstück zwischen dem Webserver und dem noch zu konfigurierenden _FCGI-Daemon_. Sobald die erste Anfrage mit der Endung _.php_ an den Webserver gestellt wird, ruft der Server ein _Wrapper-Script_ auf und startet damit den _FCGI-Daemon_, der sich ab diesem Moment um die _PHP-Anfragen_ kümmert.
 
-FastCGI_ ist eine Technik um dynamischen Programmcode aus einem Webserver heraus aufzurufen. Es ist eine sehr schnelle Technik, welche den Server weitgehend unberührt lässt und die Applikation auf einem separaten Daemon ausführt. Um die Geschwindigkeit zu steigern stellt _FastCGI_ mehrere Instanzen dieses Daemons bereit, so dass eine Anfrage ohne Wartepause verarbeitet werden kann. In der Praxis ist dies ein ansprechender Performance-Gewinn und vor allem eine Architektur, welche Speicher spart, wie unten genauer erklärt wird.
+_FastCGI_ ist eine Technik um dynamischen Programmcode aus einem Webserver heraus aufzurufen. Es ist eine sehr schnelle Technik, welche den Server weitgehend unberührt lässt und die Applikation auf einem separaten Daemon ausführt. Um die Geschwindigkeit zu steigern stellt _FastCGI_ mehrere Instanzen dieses Daemons bereit, so dass eine Anfrage ohne Wartepause verarbeitet werden kann. In der Praxis ist dies ein ansprechender Performance-Gewinn und vor allem eine Architektur, welche Speicher spart, wie unten genauer erklärt wird.
 
 ###Schritt 2: Apache mir Suexec-Unterstützung kompilieren
 
