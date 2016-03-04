@@ -6,7 +6,8 @@ Wir schreiben den vollen HTTP Verkehr mit. Dazu entschlüsseln wir wo nötig den
 
 ###Warum tun wir das?
 
-Im Alltag kommt es immer wieder vor, dass beim Betrieb eines Webservers oder eines Reverse Proxies Fehler auftreten, die nur mit Mähe bearbeitet werden können. In zahlreichen Fällen herrscht Uneinigkeit Kommunikationsteilnehmer den Fehler genau verursacht hat, oder es fehlt die Klarheit, was genau durch die Leitung ging. In diesen Fällen ist es wichtig, den gesamten Verkehr mitschreiben zu können, um auf dieser Basis den Fehler zu isolieren.
+
+Im Alltag kommt es immer wieder vor, dass beim Betrieb eines Webservers oder eines Reverse Proxies Fehler auftreten, die nur mit Mühe bearbeitet werden können. In zahlreichen Fällen fehlt die Klarheit, was genau durch die Leitung ging, oder es herrscht Uneinigkeit, welcher Kommunikationsteilnehmer den Fehler genau verursacht hat. In diesen Fällen ist es wichtig, den gesamten Verkehr mitschreiben zu können, um auf dieser Basis den Fehler zu isolieren.
 
 ###Voraussetzungen
 
@@ -18,9 +19,9 @@ Im Alltag kommt es immer wieder vor, dass beim Betrieb eines Webservers oder ein
 * Eine OWASP ModSecurity Core Rules Installation wie in [Anleitung 7 (ModSecurity Core Rules einbinden](https://www.netnea.com/cms/apache-tutorial-7-modsecurity-core-rules-einbinden/)
 * Ein Reverse Proxy wie in [Anleitung 9 (Reverse Proxy einrichten)](https://www.netnea.com/cms/apache-tutorial-9-reverse-proxy-einrichten/)
 
-###Schritt 1 : ModSecurity Full Traffic Log schreiben
+###Schritt 1 : Mit ModSecurity den vollen Verkehr mitschreiben
 
-Wir haben in der Anleitung 6 gesehen, wie wir ModSecurity konfigurieren können, damit es den gesamten Verkehr einer einzigen Client IP Adresse mitschreibt. Je nach Settings der Direktive `SecAuditLogParts` werden aber nicht sämtliche Teile der Anfragen festgehalten. Schauen wir uns die verschiedenen Optionen dieser Direktive an. Die Audit-Engine von ModSecurity bezeichnet verschiedene Teile des Audit-Logs mit verschiedenen Buchstabenkürzeln. Sie lauten wie folgt:
+Wir haben in der Anleitung 6 gesehen, wie wir ModSecurity konfigurieren können, damit es den gesamten Verkehr einer einzigen Client IP Adresse mitschreibt. Je nach Settings der Direktive `SecAuditLogParts` werden aber nicht sämtliche Teile der Anfragen festgehalten. Schauen wir uns die verschiedenen Optionen dieser Direktive an: Die Audit-Engine von ModSecurity bezeichnet verschiedene Teile des Audit-Logs mit verschiedenen Buchstabenkürzeln. Sie lauten wie folgt:
 
 * Teil A: Der Startteil eines einzelnen Eintrages / Requests (zwingend)
 * Teil B: Die HTTP Request Header
@@ -30,7 +31,7 @@ Wir haben in der Anleitung 6 gesehen, wie wir ModSecurity konfigurieren können,
 * Teil H: Weitere Informationen von ModSecurity zur Zusatzinfos zum Request, wie die hier repetierten Einträge des Apache Error-Logs, die ergriffene `Action`, Timinig-Informationen etc. Ein Blick lohnt sich.
 * Teil I: Der HTTP Request Body in einer platzsparenden Version (hochgeladene Files in nicht ihrer vollen Länge einschliesst, sondern nur einzelne Schlüsselparameter dieser Dateien)
 * Teil J: Zusätzliche Informationen über File Uploads
-* Teil K: Liste sämtlicher Regeln, die eine positive Antwort lieferten (Die Regeln selbst werden normalisiert inklusive sämtlicher vererbten Deklarationen)
+* Teil K: Liste sämtlicher Regeln, die eine positive Antwort lieferten (Die Regeln selbst werden normalisiert; inklusive sämtlicher vererbten Deklarationen)
 * Teil Z: Abschluss eines einzelnen Eintrages / Requests (zwingend)
 
 In der Anleitung 6 haben wir die folgende Auswahl für die einzelnen Header getroffen.:
@@ -48,15 +49,15 @@ SecAuditLogParts            "ABFHKZ"
 Hier werden die Request- und Response-Bodies nicht mehr mitgeschrieben. Das spart sehr viel Speicherplatz, was gerade bei schlecht getunten Systemen wichtig ist. Diejenigen Teile der Bodies, welche einzelne Regeln verletzten, werden im Error-Log und im K-Teil dennoch notiert werden. Das reicht in vielen Fällen. Fallweise möchte man aber dennoch den gesamten Body mitschreiben. In diesen Fällen bietet sich eine `ctl`-Direktive für den Action-Teil der `SecRule` an. Mit `auditLogParts` können mehrere zusätzliche Teile angewählt werden:
 
 ```bash
-SecRule REMOTE_ADDR  "@streq 127.0.0.1"   "id:10000,phase:1,pass,log,auditlog,msg:'Initializing full traffic log',ctl:auditLogParts=+IJE"
+SecRule REMOTE_ADDR  "@streq 127.0.0.1"   "id:10000,phase:1,pass,log,auditlog,msg:'Initializing full traffic log',ctl:auditLogParts=+EIJ"
 ```
 
-###Schritt 2 : ModSecurity Full Traffic Log einer einzigen Session schreiben
+###Schritt 2 : Mit ModSecurity den vollen Verkehr einer einzigen Session schreiben
 
 Der erste Schritt erlaubte die dynamische Veränderung der Audit-Log-Teile für eine bekannte IP-Adresse. Was aber, wenn wir
 das Logging dynamisch für ausgewählte Sessions dauerhaft einschalten und wie im obigen Beispiel gezeigt, auf den vollen Request ausdehnen möchten?
 
-Ivan Ristić beschreibt in seinem ModSecurity Handbuch ein Beispiel in dem eine ModSecurity Collection herangezogen wird, um eine eigene Session zu erzeugen, welche über einen einzelnen Request hinaus aktiv bleibt. Wir benützen diese Idee als Basis und schreiben ein etwas komplexeres Beispiel.
+Ivan Ristić beschreibt in seinem ModSecurity Handbuch ein Beispiel in dem eine ModSecurity `Collection` herangezogen wird, um eine eigene Session zu erzeugen, welche über einen einzelnen Request hinaus aktiv bleibt. Wir benützen diese Idee als Basis und schreiben ein etwas komplexeres Beispiel:
 
 ```bash
 SecRule TX:INBOUND_ANOMALY_SCORE  "@ge 5" \
@@ -77,35 +78,37 @@ eine persistente `Collection` auf Basis der IP-Adresse des Anfrage-Stellers erö
 Request hinaus aufbewahrte `Collection` eignet sich, um zwischen verschiedenen Anfragen Daten festzuhalten.
 
 Wir benützen diese Fähigkeit, um in der Logging-Phase des Requests, seinen `Core Rules Anomaly Score` zu überprüfen.
-Liegt der auf 5 oder höher, setzen wir die Variable `ip.logflag` und geben Ihr mittels `expirevar` eine Lebenszeit von 600 Sekunden.
+Liegt der auf 5 oder höher (was einem Alarm der Stufe `critical` entspricht,
+setzen wir die Variable `ip.logflag` und geben Ihr mittels `expirevar` eine Lebenszeit von 600 Sekunden.
 Dies bedeutet, dass diese Variable in der `IP-Collection` für zehn Minuten vorhanden bleibt und danach von selbst wieder
 verschwindet.  In der darauf folgenden Regel wiederholt sich dieser Mechanismus für den `Outgoing Anomaly Score`.
 
 In der dritten Regel sehen wir nach, ob dieses `Logflag` gesetzt ist. Wir haben die wundersame Verwandlung von
 Variablennamen je nach Verwendungszweck in `ModSecurity` schon früher gesehen. Hier begegnen wir ihr wieder, indem
 `ip.logflag` bei der Verwendung als Variable in einer `SecRule` als `IP:LOGFLAG` geschrieben werden muss. Das
-vorangestellte `&`-Zeichen haben wir auch schon früher kennengelernt. Es bezeichnet die Anzahl der Variable.
+vorangestellte `&`-Zeichen haben wir auch schon früher kennengelernt: Es bezeichnet die Anzahl der Variablen dieses 
+Namens (0 oder 1).
 Das heisst, wir können damit auf das Vorhandensein von `ip.logflag` prüfen. Ist das Flag gesetzt, also in
 den beiden Regeln vorher, oder zu einem früheren Zeitpunkt innerhalb der letzten 10 Minuten, dann wird
 die Audit-Engine aktiviert und zusätzlich noch um einige in der Standardkonfiguration nicht immer gesetzt Logteile
 erweitert.
 
-Das Erzwingen des Audit-Logs, das wir so noch nicht kennengelernt haben, ist nötig, denn wir wollen nun ja auch
+Das Erzwingen des Audit-Logs, das wir so noch nicht kennengelernt haben, ist nötig, denn wir wollen nun ja
 Anfragen loggen, welche für sich genommen keine Regeln verletzt haben. Das heisst, das Auditlog ist für den
 Request noch gar nicht aktiviert. Das holen wir mit dieser Regel nach.
 
 Gemeinsam erlauben uns diese drei Regeln einen auffälligen Client über einen einzelnen verdächtigen Request hinaus genau
-zu beobachten und alle den gesamten Verkehr dieses Clients im Audit-Log mitzuprotokollieren.
+zu beobachten und ab dem Einsetzen des Verdachts den gesamten Verkehr dieses Clients im Audit-Log mitzuprotokollieren.
 
 ###Schritt 3 : Verkehr des Clients mit dem Server / Reverse Proxy mithören
 
-Der Verkehr zwischen einem Client und dem Reverse Proxy lässt sich mit den oben geschilderten Techniken in aller Regel gut dokumentieren. Dazu kommen die Möglichkeiten auf dem Client den Verkehr zu dokumentieren. Die modernen Browser bringen dazu verschiedene Möglichkeiten und sie scheinen mir alle adäquat zu sein. Allerdings kommt es in der Praxis vor, dass Komplikationen das Mitschreiben des Verkehrs erschweren oder verunmöglichen. Sei es, dass ein Fat Client ausserhalb eines Browsers verwendet wird, der Client lediglich auf einem mobilen Gerät zum Einsatz kommt, ein zwischengeschalteter Proxy den Verkehr in die eine oder andere Richtung verändert, dass der Verkehr nach dem Verlassen von ModSecurity durch ein weiteres Modul nochmals verändert wird oder aber dass ModSecurity gar keinen Zugriff auf den Verkehr erhält. Letzteres ist ein einzelnen Fällen tatsächlich ein Problem, da ein Apache Modul die weitere Verarbeitung eines Requests abbrechen un damit den Zugriff durch ModSecurity unterdrücken kann.
+Der Verkehr zwischen einem Client und dem Reverse Proxy lässt sich mit den oben geschilderten Techniken in aller Regel gut dokumentieren. Dazu kommen die Möglichkeiten auf dem Client den Verkehr zu dokumentieren. Die modernen Browser bringen dazu verschiedene Möglichkeiten und sie scheinen mir alle adäquat zu sein. Allerdings kommt es in der Praxis vor, dass Komplikationen das Mitschreiben des Verkehrs erschweren oder verunmöglichen. Sei es, dass ein Fat Client ausserhalb eines Browsers verwendet wird, der Client lediglich auf einem mobilen Gerät zum Einsatz kommt, ein zwischengeschalteter Proxy den Verkehr in die eine oder andere Richtung verändert, dass der Verkehr nach dem Verlassen von ModSecurity durch ein weiteres Modul nochmals verändert wird oder aber dass ModSecurity gar keinen Zugriff auf den Verkehr erhält. Letzteres ist ein einzelnen Fällen tatsächlich ein Problem, da ein Apache Modul die weitere Verarbeitung eines Requests abbrechen und damit den Zugriff durch ModSecurity unterdrücken kann.
 
 Aus all diesen Gründen kann es vorkommen, dass die Einträge im Audit-Log nicht demjenigen entspricht, was tatsächlich auf dem Client ankam, oder nicht mehr dem entspricht, was der Client ursprünglich geschickt hatte. In diesen Fällen ist es wünschenswert, punktuell den tatsächlichen Traffic mitzuschreiben und die verschlüsselten Daten zu dechiffrieren. Diesem Ansinnen steht allerdings die starke Verschlüsselung gegenüber, welche wir in der vierten Anleitung konfiguriert haben, um sie abhörsicher zu machen. Die von uns favorisierten Ciphers setzen hiezu auf sogenannte `Forward Secrecy`. Das bedeutet, dass ein Mithörer so ausgeschaltet wird, dass selbst der Besitz des Chiffrierschlüssels ein Mithören nicht mehr erlaubt. Das heisst zwischen dem Client und dem Server ist jedes Mitschreiben des Verkehrs ausgeschlossen. Es sei denn wir postieren einen Prozess dazwischen, welcher die Verbindung terminiert und dem Client ein eigenes Zertifikat vorlegt.
 
-In allen anderen Fällen, in denen wir eine Entschlüsselung erzwingen wollen, aber den Client nicht umkonfigurieren können, müssen wir eine andere, schwächere Verschlüsselsungsart einsetzen, die `Forward Secrecy` nicht beherrscht. Dazu eignet sich etwa der `AES256-SHA` Cipher, den wir auf dem Client als einzigen Cipher definieren und uns damit mit dem Server verbinden. Wenn wir den Cipher clientseitig nicht setzen können, dann müssen wir die Verschlüsselung für den kompletten Server schwächen. Es liegt auf der Hand, dass die nicht erwünscht ist, und höchstens punktuell Sinn macht. Sei es dass wir den Client auf ein separates System binden oder die Umkonfiguration zeitlich beschränken.
+In allen anderen Fällen, in denen wir eine Entschlüsselung erzwingen wollen, aber den Client nicht umkonfigurieren können, müssen wir eine andere, schwächere Verschlüsselsungsart einsetzen, die `Forward Secrecy` nicht beherrscht. Dazu eignet sich etwa der `AES256-SHA` Cipher, den wir auf dem Client als einzigen Cipher definieren und uns damit mit dem Server verbinden. Wenn wir den Cipher clientseitig nicht setzen können, dann müssen wir die Verschlüsselung für den kompletten Server schwächen. Es liegt auf der Hand, dass dies nicht erwünscht ist, und höchstens punktuell Sinn macht. Sei es dass wir den Client auf ein separates System binden oder die Umkonfiguration zeitlich beschränken.
 
-Versuchsweise liess sich Apache mittels der konditionalen `<if>`-Direktive auch so konfigurieren, dass er einem einzelnen Client einen anderen Cipher präsentiert. Allerdings gelingt dies nur via ein `SSL-Renegotiate`. Dies bedeutet, dass ein SSL Handshake mit `Forward Secrecy` durchgeführt wurde, aber dieser danach mit einem schwächeren Cipher wiederholt wurde. Diese Technik vermochten in meinen Tests die gängigen Entschlüsselungshilfsmittel `wireshark` und `ssldump` wiederum nicht zu verarbeiten. Das heisst, für den Moment bleibt nur, den kompletten Server auf eine schwächere Verschlüsselung umzustellen. Im Hinblick auf die Sicherheits rate ich dringend dazu, zunächst alle anderen Mittel auszuschöpfen bevor auf diese Variante zurückgegriffen wird.
+Versuchsweise liess sich Apache mittels der konditionalen `<if>`-Direktive auch so konfigurieren, dass er einem einzelnen Client einen anderen Cipher präsentiert. Allerdings gelingt dies nur via ein `SSL-Renegotiate`. Dies bedeutet, dass ein SSL Handshake mit `Forward Secrecy` durchgeführt wurde, aber dieser danach mit einem schwächeren Cipher wiederholt wurde. Diese Technik vermochten in meinen Tests die gängigen Entschlüsselungshilfsmittel `wireshark` und `ssldump` wiederum nicht zu verarbeiten. Das heisst, für den Moment bleibt nur, den Server auf eine schwächere Verschlüsselung umzustellen. Im Hinblick auf die Sicherheit rate ich dringend dazu, zunächst alle anderen Mittel auszuschöpfen bevor auf diese Variante zurückgegriffen wird.
 
 In der vierten Anleitung haben wir den lokalen Labor-Service mit dem lokal vorhandenen `Snake-Oil`-Schlüssel betrieben. Dieses Zertifikat ziehen wir auch jetzt wieder heran und instruieren den Server, den dechiffrierbaren `AES256-SHA` Cipher zu verwenden:
 
@@ -127,7 +130,7 @@ In der vierten Anleitung haben wir den lokalen Labor-Service mit dem lokal vorha
 ###Schritt 4 : Verschlüsselten Verkehr des Clients mit dem Server / Reverse Proxy mitschreiben
 
 
-Mit den obenstehenden Erklärungen haben wir die Grundlagen geschaffen, um den Verkehr mitzuschreiben und dann zu dechiffrieren. Wir machen das in zwei Schritten, also zunächst das protokollieren des Verkehrs und dann die Entschlüsselung des Protokolls. Das Mitschreiben nennt man auch `ein PCAP ziehen`. Das heisst, wir stellen ein `PCAP`-File, also ein Netwerkverkehrsprotokoll im `PCAP`-Format. `PCAP` steht dabei für `Packet Capture`. Wir benützen dazu entweder das verbreitete Hilfsmittel `tcpdump` oder `tshark` aus der `Wireshark`-Suite. Es ist aber auch möglich, gleich in de grafischen `Wireshark`-Oberfläche zu arbeiten.
+Mit den obenstehenden Erklärungen haben wir die Grundlagen geschaffen, um den Verkehr mitzuschreiben und dann zu dechiffrieren. Wir machen das in zwei Schritten, also zunächst das Protokollieren des Verkehrs und dann die Entschlüsselung des Protokolls. Das Mitschreiben nennt man auch `ein PCAP ziehen`. Das heisst, wir stellen ein `PCAP`-File, also ein Netwerkverkehrsprotokoll im `PCAP`-Format. `PCAP` steht dabei für `Packet Capture`. Wir benützen dazu entweder das verbreitete Hilfsmittel `tcpdump` oder `tshark` aus der `Wireshark`-Suite. Es ist aber auch möglich, gleich in der grafischen `Wireshark`-Oberfläche zu arbeiten.
 
 ```bash
 $> sudo tcpdump -i lo -w /tmp/localhost-port443.pcap -s0 port 443
@@ -207,10 +210,10 @@ Running as user "root" and group "root". This could be dangerous.
  15   0.037417    127.0.0.1 -> 127.0.0.1    TCP 54 33517 > https [RST] Seq=625 Win=0 Len=0
 ```
 
-Hier ist noch nicht viel lesbar. Wenn wir uns aber dem `Debug-File` zuwenden, dann sehen wir nun dort drinnen den Verkehr.
+Hier ist noch nicht viel lesbar. Wenn wir uns aber dem `Debug-File` zuwenden, dann sehen wir dort drinnen den Verkehr.
 
 ```bash
-$> less /tmp/ssl-debug.log
+$> cat /tmp/ssl-debug.log
 
 Wireshark SSL debug log 
 
@@ -288,46 +291,46 @@ Damit ist der HTTP Verkehr lesbar, wenn auch in einem etwas schwierigen Format.
 
 ###Schritt 6 : Verkehr des Reverse Proxies mit dem Applikationsserver mithören
 
-Das Audit-Log von ModSecurity wird nach dem Versand der Antwort eines Requests geschrieben. Das macht bereits deutlich, dass das Audit-Log  sich vor allem für die möglichst finale Version der Antwort interessiert. Auf einem Reverse Proxy wird diese Version der Anfrage und vor allem der Antwort nicht zwingend dem entsprechen, was auch wirklich vom Backend-System geschickt wurde, denn die verschiedenen Apache-Module haben je nachdem bereits in den Verkehr eingegriffen. Um diesen Verkehr mitschreiben zu können benötigen wir andere Mittel. In der Entwicklungsschiene des Apache Webservers liegt das Modul `mod_firehose` vor. Damit lässt sich an beinahe beliebigem Ort im Verkehr ein Protokoll mitschreiben. Allerdings wurde von der Entwickler-Gemeinschaft entschieden, das Modul für Apache 2.4 nicht zur Verfügung zu stellen.
+Das Audit-Log von ModSecurity wird nach dem Versand der Antwort eines Requests geschrieben. Das macht bereits deutlich, dass das Audit-Log sich vor allem für die möglichst finale Version der Antwort interessiert. Auf einem Reverse Proxy wird diese Version der Anfrage und vor allem der Antwort nicht zwingend dem entsprechen, was auch wirklich vom Backend-System geschickt wurde, denn die verschiedenen Apache-Module haben je nachdem bereits in den Verkehr eingegriffen. Um diesen Verkehr mitschreiben zu können benötigen wir andere Mittel. In der Entwicklungsschiene des Apache Webservers liegt das Modul `mod_firehose` vor. Damit lässt sich an beinahe beliebigem Ort im Verkehr ein Protokoll mitschreiben. Allerdings wurde von der Entwickler-Gemeinschaft entschieden, das Modul für Apache 2.4 nicht zur Verfügung zu stellen, sondern einer späteren Version vorzubehalten.
 
-Das bedeutet, dass wir erneut mit dem Problem konfrontiert sind, den Netzwerk-Verkehr dechiffrieren zu müssen. Wir können dabei auf Seite des Reverse Proxies den zu verwendenden Ciphers definieren. Dies geschieht über die Direktive `SSLProxyCipherSuite`. Dies wird aber nur funktionieren, wenn wir das Schlüsselmaterial des Applikationsservers und Diskussionspartners erhalten, um die Verschlüsselung in Klartext zurückzuverwandeln. Ist das gegeben, gestaltet sich der Vorgang wie oben beschrieben.
+Das bedeutet, dass wir erneut mit dem Problem konfrontiert sind, den Netzwerk-Verkehr dechiffrieren zu müssen. Wir können dabei auf Seite des Reverse Proxies den zu verwendenden `Cipher` definieren. Dies geschieht über die Direktive `SSLProxyCipherSuite`. Dies wird aber nur funktionieren, wenn wir das Schlüsselmaterial des Applikationsservers und Diskussionspartners erhalten, um die Verschlüsselung in Klartext zurückzuverwandeln. Ist das gegeben, gestaltet sich der Vorgang wie oben beschrieben.
 
-Der Schlüssel des Applikationsservers ist aber normalerweise nicht greifbar, so dass wir auf eine Alternative setzen müssen. Wir schalten einen kleines Tool `stunnel` zwischen Reverse Proxy und Backend. `Stunnel` übernimmt dabei die Verschlüsselung für uns. Dies erlaubt es dem Reverse Proxy, `stunnel` im Klartext anzusprechen und uns gibt das die Möglichkeit, diese Verbindung 1:1 mitzuschreiben. Um alle anderen Mitleser auszuschalten betreiben wir `stunnel` auf dem Reverse Proxy selbst auf einer lokalen IP Adresse und einem separaten Port. Die Verschlüsselung findet danach zwischen `stunnel` und dem Backend statt. Hierzu Testzwecken auch auf dem Localhost Netzwerk-Interface. In der Praxis aber freilich auf einem entfernten Server.
+Der Schlüssel des Applikationsservers ist aber normalerweise nicht greifbar, so dass wir auf eine Alternative setzen müssen. Wir schalten einen kleines Tool `stunnel` zwischen Reverse Proxy und Backend. `Stunnel` übernimmt dabei die Verschlüsselung zum Backend für uns. Dies erlaubt es dem Reverse Proxy, `stunnel` im Klartext anzusprechen und uns gibt das die Möglichkeit, diese Verbindung 1:1 mitzuschreiben. Um alle anderen Mitleser auszuschalten betreiben wir `stunnel` auf dem Reverse Proxy selbst auf einer lokalen IP Adresse und einem separaten Port. Die Verschlüsselung findet danach zwischen `stunnel` und dem Backend statt. Hier zu Testzwecken auch auf dem Localhost Netzwerk-Interface. In der Praxis aber freilich auf einem entfernten Server.
 
 Zur Illustration eine einfache Skizze des Setups:
 
 ```bash
-			   ____ 
-			  |    |
-			  |____|
-			  /::::/
-			     |
-			     |
-			     v
-	 .---------------------------------------.
-	 |                                       |
-	 |     Reverse Proxy: localhost: 443     |
-	 |                                       |
-	 '---------------------------------------'
-			     |            .-----------------------------------.
-			     | <----------| $> tcpdump -i lo -A -s0 port 8000 |
-			     v            '-----------------------------------'
-	 .---------------------------------------.
-	 |                                       |
-	 |        stunnel: localhost: 8000       |
-	 |                                       |
-	 '---------------------------------------'
-			     |
-			     |
-			     |
-			     |
-			     |
-			     v
-	 .---------------------------------------.
-	 |                                       |
-	 |         Backend: localhost: 8443      |
-	 |                                       |
-	 '---------------------------------------'
+                      ____ 
+                     |    |
+                     |____|
+                     /::::/
+                       |
+                       |
+                       v
+    .---------------------------------------.
+    |                                       |
+    |     Reverse Proxy: localhost: 443     |
+    |                                       |
+    '---------------------------------------'
+                       |            .-----------------------------------.
+                       | <----------| $> tcpdump -i lo -A -s0 port 8000 |
+                       v            '-----------------------------------'
+    .---------------------------------------.
+    |                                       |
+    |        stunnel: localhost: 8000       |
+    |                                       |
+    '---------------------------------------'
+                       |
+                       |
+                       |
+                       |
+                       |
+                       v
+    .---------------------------------------.
+    |                                       |
+    |       Backend: localhost: 8443        |
+    |                                       |
+    '---------------------------------------'
 
 ```
 
@@ -369,7 +372,7 @@ connect = localhost:8443
 TIMEOUTclose = 0
 ```
 
-Das File erklärt sich recht gut selbst, Wichtig ist die `client`-Option. Sie instruiert `stunnel` Klartext-Verbindungen zu akzeptieren und sie gegenüber dem Backend zu verschlüsseln. Der Default-Wert ist hier `no`, was genau das gegenteilige Verhalten mit sich bringt. Die Option `TIMEOUTclose` ist ein Erfahrungswert, der sich verschiedentlich in `stunnel` Anleitungen findet. Bleibt noch die Konfiguration des Backend Servers. Da wir ein Backend mit SSL-/TLS-Unterstützung benötigen können wir uns nicht mehr mit einem `socat`-Backend wie in der Anleitung Nummer 9 behelfen:
+Das File erklärt sich recht gut selbst, Wichtig ist die `client`-Option. Sie instruiert `stunnel` Klartext-Verbindungen zu akzeptieren und sie gegenüber dem Backend zu verschlüsseln. Der Default-Wert ist hier `no`, was genau das gegenteilige Verhalten mit sich bringt. Die Option `TIMEOUTclose` ist ein Erfahrungswert, der sich verschiedentlich in `stunnel` Anleitungen findet. Bleibt noch die Konfiguration des Backend Servers. Da wir ein Backend mit SSL-/TLS-Unterstützung benötigen, können wir uns nicht mehr mit einem `socat`-Backend wie in der Anleitung Nummer 9 behelfen:
 
 ```bash
 
@@ -401,7 +404,7 @@ Listen	127.0.0.1:8443
 
 ```
 
-Da es sich um den zweiten parallel zu startenden Apache Server handelt, ist es wichtig, dass er sich nicht mit dem Reverse Proxy in die Haare gerät. Die Ports haben wir bereits unterschieden. Wichtig ist es, zusätzlich auch die `PidFile`-Datei zu separieren. Das ist in obenstehender Konfiguration geschehen.
+Da es sich um den zweiten parallel zu startenden Apache Server handelt, ist es wichtig, dass er sich nicht mit dem Reverse Proxy in die Haare gerät. Die Ports haben wir bereits unterschieden. Wichtig ist es, zusätzlich auch die `PidFile`-Datei zu separieren. Normalerweise setzen wir das nicht explizit und sind mit dem Default-Wert zufrieden. In unserem Fall müssen wir sie aber von Hand setzen. Das ist in obenstehender Konfiguration geschehen.
 
 Nun starten wir die drei verschiedenen Server nacheinander. Wenn wir die Apaches mit dem Tool `apachex` steuern, dann leiden wir etwas darunter, dass `apachex` jeweils das jüngste Konfigurationsfile zu starten versucht. Ein kurzer `touch`-Befehl auf das jeweilig gewünschte Konfigurationsfile löst dieses Problem. Bei `stunnel` ist es wichtig, die jüngere Version `stunnel4` zu verwenden. Sie ist in `Debian/Ubuntu` in einem Paket gleichen Namens vorhanden. Der Start geht dann sehr leicht:
 
@@ -417,7 +420,7 @@ stunnel4 /tmp/stunnel.conf
 2016.03.02 16:28:08 LOG5[8254:140331683964736]: Configuration successful
 ```
 
-Damit ist der komplette Setup bereit für unseren Curl-Aufruf. Testen wir das nacheinander. Zuerst direkt das Backend, dann den Stunnel und schliesslich via den Reverse Proxy:
+Damit ist der komplette Setup bereit für unseren Curl-Aufruf. Testen wir das nacheinander. Zuerst direkt das Backend, dann via den Stunnel und schliesslich via den Reverse Proxy:
 
 ```bash
 $> curl -v -k https://localhost:8443/index.html
@@ -487,7 +490,7 @@ $> curl -v -k https://localhost:443/proxy/index.html
 * Connection #0 to host localhost left intact
 ```
 
-Das hat also ganz gut funktioniert. Im `stunnel`-Fenster sehen wir interessanten Output:
+Das hat also ganz gut funktioniert. Im `stunnel`-Fenster sehen wir dabei folgenden Output:
 
 ```bash
 2016.03.03 11:03:49 LOG5[5667:140363675346688]: Service [https] accepted connection from 127.0.0.1:47818
@@ -498,7 +501,7 @@ Das hat also ganz gut funktioniert. Im `stunnel`-Fenster sehen wir interessanten
 ```
 
 `Stunnel` rapport hier also die einkommende Verbindung auf dem `Source-Port` 47818 und dass es selbst eine Verbindung zum 
-Backend Host auf Port 8443 mit dem `Source-Port` 54593 aufgebaut hat. Schliesslich noch zwei Zahlen zum Durchsatz.
+Backend Host auf Port 8443 mit dem `Source-Port` 54593 aufgebaut hat; schliesslich noch zwei Zahlen zum Durchsatz.
 Insgesamt können wir damit also schliessen, dass der Setup funktioniert und wir bereit sind für das Sniffen der Verbindung.
 Aktivieren wir `tcpdump` oder `tshark`. Eine Entschlüsselung ist nun nicht mehr nötig, denn die von uns abzuhörende Verbindung 
 zwischen den beiden Localhost `Sockets` ist nun im Klartext mitlesbar. Deshalb ist es beim Aufruf wichtig, dass wir neben 
