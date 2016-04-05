@@ -1,5 +1,6 @@
 ##### Changelog
 
+* 5\. April 2016: 2-3 kleine Korrekturen; Link auf Reference Manual
 * 24\. März 2016: Rechtschreibfehler korrigiert (Darrel Knutson)
 * 16\. Januar 2016: Lizenzhinweis eingefügt
 * 27\. November 2015: BugFix in LogFormat
