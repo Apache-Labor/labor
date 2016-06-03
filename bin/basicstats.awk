@@ -50,13 +50,13 @@ END{
         median = (arr[NR/2]+arr[NR/2+1])/2
     }
     if(N>0) {
-                printf "%14s %12i\n", "Num of values:" ,N
-                printf "%14s %12i\n", "Average:", sum/N
-                printf "%14s %12i\n", "Median:", median
-                printf "%14s %12i\n", "Min:", min
-                printf "%14s %12i\n", "Max:", max
-                printf "%14s %12i\n", "Range:", max-min
-                printf "%14s %12i\n", "Std deviation:", sqrt((sum2 - sum*sum/N)/N)
+                printf "%14s %12f\n", "Num of values:" ,N
+                printf "%14s %12f\n", "Average:", sum/N
+                printf "%14s %12f\n", "Median:", median
+                printf "%14s %12f\n", "Min:", min
+                printf "%14s %12f\n", "Max:", max
+                printf "%14s %12f\n", "Range:", max-min
+                printf "%14s %12f\n", "Std deviation:", sqrt((sum2 - sum*sum/N)/N)
     }
     else {
                 print "ERROR: No non-null values found"
