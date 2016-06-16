@@ -842,7 +842,9 @@ $> grep Vj74@n8AAQEAADydhKkAAAAE logs/error.log
 
 ```
 
-Wir sehen also, wir können *ModSecurity* instruieren, die Core Rules anschlagen zu lassen, ohne den Score hochzuzählen. Man muss aber ehrlicherweise einräumen, dass die damit verbundenen Konstruktionen unheimlich aufwändig und auch fehleranfällig sind. Ich benütze diese Technik in der Praxis deshalb nicht, sondern unterdrücke *False Positives* durch selektives Ausschalten von Regeln und kämpfe aus diesem Grund mit der eingangs beschriebenen Blindheit. Beim Ausschalten der Regeln haben wir eine sehr einfache Methode noch nicht kennengelernt. 
+Wir sehen also, wir können *ModSecurity* instruieren, die Core Rules anschlagen zu lassen, ohne den Score hochzuzählen. Man muss aber ehrlicherweise einräumen, dass die damit verbundenen Konstruktionen unheimlich aufwändig und auch fehleranfällig sind. Ich benütze diese Technik in der Praxis deshalb nicht, sondern unterdrücke *False Positives* durch selektives Ausschalten von Regeln und kämpfe aus diesem Grund mit der eingangs beschriebenen Blindheit.
+
+Beim Ausschalten der Regeln haben wir eine sehr einfache Methode noch nicht kennengelernt:
 
 ###Schritt 7: Fehlalarme unterdrücken: Einzelne Regeln für bestimmte Parameter ausschalten
 

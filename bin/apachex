@@ -41,7 +41,8 @@ function wait_pid_exists() {
 		N=$((N+1)) 
 	done
 	if [ $N -ge 40 ]; then
-		echo "fail"
+		echo "fail ($AP_PID_FILE)"
+		pwd
 	fi
 }
 
@@ -105,6 +106,11 @@ if [ ! -f $AP_BIN ]; then
 fi
 
 AP_PID_FILE=$(grep PidFile $AP_CONF_FILE | sed -e "s/.*PidFile\s*//" | tr -d "'" | tr -d '"')
+
+echo "$AP_PID_FILE" | egrep -q "^\/"
+if [ $? -eq 1 ]; then
+	AP_PID_FILE="$AP_ROOT/$AP_PID_FILE"
+fi
 
 if [ -z "AP_PID_FILE" -o "$AP_PID_FILE" == "" ]; then
 	AP_PID_FILE="$AP_ROOT/logs/httpd.pid"

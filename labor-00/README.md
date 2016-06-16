@@ -194,7 +194,7 @@ Das ist nicht weiter schlimm und wir können die Warnung für den Moment ignorie
 
 Die Maschine läuft jetzt. Aber funktioniert sie auch? Zeit für den Funktionstest: Wir sprechen den Apache mit dem Browser unter folgendem Link an:
 
-[http://127.0.0.1](http://127.0.0.1)
+[http://127.0.0.1/index.html](http://127.0.0.1/index.html)
 
 Da erwarten wir dann Folgendes.
 
