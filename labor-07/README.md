@@ -15,7 +15,9 @@ Eine frische *Core Rules* Installation weist typischerweise viele Fehlalarme auf
 * Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren)
 * Ein Apache Webserver mit erweitertem Zugriffslog wie in [Anleitung 5 (Das Zugriffslog Ausbauen und Auswerten)](https://www.netnea.com/cms/apache-tutorial-5-zugriffslog-ausbauen/)
 * Ein Apache Webserver mit ModSecurity wie in [Anleitung 6 (ModSecurity einbinden)](https://www.netnea.com/cms/apache-tutorial-6-modsecurity-einbinden/)
-* Ein Apache Webserver mit einer Core Rules Installation wie in [Anleitung 7 (Core Rules einbinden)](http://www.netnea.com/cms/modsecurity-core-rules-einbinden/)
+* Ein Apache Webserver mit einer Core Rules Installation wie in [Anleitung 7 (Core Rules einbinden)](https://www.netnea.com/cms/apache-tutorial-7-modsecurity-core-rules-einbinden/)
+
+
 
 Ferner macht das natürlich nur Sinn, wenn wir auch eine richtige Applikation haben, die wir schützen können. In der Anleitung 3 haben wir gesehen, wie man einen PHP Applikationsserver aufsetzen kann. In einer späteren Anleitung werden wir einen Reverse Proxy oder Gateway Server einrichten. Eine solche Installation im produktiven Einsatz im Internet wird dann die gewünschte Menge an *Logfile* Einträgen bringen und mit sehr hoher Wahrscheinlichkeit die grosse Zahl von Fehlalarmen, welche die Voraussetzung für diese Anleitung ist.
 
