@@ -92,7 +92,7 @@ Jetzt laden wir den Programmcode vom Netz herunter. Man kann das mit dem Browser
 
 ```bash
 $> cd /usr/src/apache
-$> wget http://mirror.switch.ch/mirror/apache/dist//httpd/httpd-2.4.30.tar.bz2
+$> wget http://mirror.switch.ch/mirror/apache/dist/httpd/httpd-2.4.23.tar.bz2
 ```
 
 Der gepackte Sourcecode hat etwa eine Grösse von 5MB.
@@ -100,9 +100,9 @@ Der gepackte Sourcecode hat etwa eine Grösse von 5MB.
 Nun laden wir die Checksum der Sourcecodedatei direkt von Apache herunter. Dankenswerterweise steht sie immerhin als _sha1-Checksum_ zur Verfügung. Sicherheitshalber verwenden wir dazu wieder eine gesicherte Verbindung. Ohne https macht diese Überprüfung keinen Sinn.
 
 ```bash
-$> wget https://www.apache.org/dist/httpd/httpd-2.4.30.tar.bz2.sha1
-$> sha1sum --check httpd-2.4.30.tar.bz2.sha1 
-httpd-2.4.30.tar.bz2: OK
+$> wget https://www.apache.org/dist/httpd/httpd-2.4.23.tar.bz2.sha1
+$> sha1sum --check httpd-2.4.23.tar.bz2.sha1 
+httpd-2.4.23.tar.bz2: OK
 ```
 
 ###Schritt 4: Entpacken und Compiler konfigurieren
@@ -110,7 +110,7 @@ httpd-2.4.30.tar.bz2: OK
 Nach der Überprüfung können wir das Paket entpacken.
 
 ```bash
-$> tar xvjf httpd-2.4.30.tar.bz2
+$> tar xvjf httpd-2.4.23.tar.bz2
 ```
 
 Das ergibt etwa 38MB.
@@ -118,8 +118,8 @@ Das ergibt etwa 38MB.
 Wir gehen nun in das Verzeichnis und konfigurieren den Compiler mit unseren Eingaben und mit Informationen zu unserem System. Anders als bei _apr_ sind unsere Eingaben sehr umfangreich.
 
 ```bash
-$> cd httpd-2.4.30
-$> ./configure --prefix=/opt/apache-2.4.30  --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared=event --enable-mods-shared=all --enable-nonportable-atomics=yes
+$> cd httpd-2.4.23
+$> ./configure --prefix=/opt/apache-2.4.23  --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared=event --enable-mods-shared=all --enable-nonportable-atomics=yes
 ```
 
 Hier bestimmen wir das Zielverzeichnis für den zukünftigen Apache Webserver; wieder konform mit dem _FHS_. Darauf folgen zwei Optionen, um die beiden als Vorbedingung installierten Bibliotheken anzubinden. Mittels `--enable-mpms-shared` wählen wir ein sogenanntes Prozessmodell des Servers aus. Das ist – vereinfacht gesagt – so etwas wie der Motorentyp der Maschine: Benzin oder Diesel. In unserem Fall stehen `event`, `worker`, `prefork` und ein paar experimentelle Motoren zur Verfügung. Wir nehmen hier das Modell `event`, das unter 2.4 den neuen Standard darstellt und deutlich performanter ist als die übrigen Architekturen. In den Versionslinien 2.0 und 2.2 gab es bei diesem Entscheid deutlich mehr als nur die Performance zu bedenken, aber seit 2.4 hat sich die Problematik deutlich entschärft und wir fahren nun mit `event` am besten. Mehr Infos zu den verschiedenen Prozessmodellen (_MPMs_) liefert das Apache Projekt.
@@ -159,13 +159,13 @@ $> sudo make install
 Auch die Installation dauert eine Weile.
 
 ```bash
-$> sudo chown -R `whoami` /opt/apache-2.4.30
+$> sudo chown -R `whoami` /opt/apache-2.4.23
 ```
 
 Und jetzt noch ein Kniff: Wenn man professionell mit Apache arbeitet, dann hat man oft mehrere verschiedene Versionen nebeneinander auf der Testmaschine. Verschiedene Versionen, verschiedene Patches, andere Module etc. führen zu recht mühsamen und langen Pfaden mit Versionsnummern und weiteren Beschreibungen. Ich mache es dann jeweils so, dass ich einen Softlink von `/apache` auf den aktuellen Apache Webserver lege. Dabei ist darauf zu achten, dass auch der Softlink uns und nicht dem root-User gehört (dies wird bei der Konfiguration des Servers wichtig).
 
 ```bash
-$> sudo ln -s /opt/apache-2.4.30 /apache
+$> sudo ln -s /opt/apache-2.4.23 /apache
 $> sudo chown `whoami` --no-dereference /apache
 $> cd /apache
 ```
@@ -215,7 +215,7 @@ $> sudo ./bin/httpd -V
 ```
 
 ```bash
-Server version: Apache/2.4.30 (Unix)
+Server version: Apache/2.4.23 (Unix)
 Server built:   Oct 16 2015 21:09:49
 Server's Module Magic Number: 20120211:47
 Server loaded:  APR 1.5.2, APR-UTIL 1.5.4
@@ -234,8 +234,8 @@ Server compiled with....
  -D APR_HAS_OTHER_CHILD
  -D AP_HAVE_RELIABLE_PIPED_LOGS
  -D DYNAMIC_MODULE_LIMIT=256
- -D HTTPD_ROOT="/opt/apache-2.4.30"
- -D SUEXEC_BIN="/opt/apache-2.4.30/bin/suexec"
+ -D HTTPD_ROOT="/opt/apache-2.4.23"
+ -D SUEXEC_BIN="/opt/apache-2.4.23/bin/suexec"
  -D DEFAULT_PIDLOG="logs/httpd.pid"
  -D DEFAULT_SCOREBOARD="logs/apache_runtime_status"
  -D DEFAULT_ERRORLOG="logs/error_log"
