@@ -240,6 +240,7 @@ Den Apache Loadbalancer müssen wir zunächst als Modul laden:
 ```bash
 LoadModule        proxy_balancer_module           modules/mod_proxy_balancer.so
 LoadModule        lbmethod_byrequests_module      modules/mod_lbmethod_byrequests.so
+LoadModule	  slotmem_shm_module              modules/mod_slotmem_shm.so
 ```
 
 Neben dem Loadbalancer-Modul selbst benötigen wir auch ein Modul, welches uns dabei hilft, die Anfragen auf die verschiedenen Backends zu verteilen. Wir gehen den einfachsten Weg und laden das Modul *lbmethod_byrequests*.
@@ -252,7 +253,9 @@ Hier die Liste der zur Verfügung stehenden Algorithmen:
 * mod_lbmethod_bybusyness (Loadbalancing aufgrund der aktiven Threads in einer stehenden Verbindung mit den Backends. Das Backend mit der kleinsten Anzahl Threads erhält den nächsten Request)
 * mod_lbmethod_heartbeat (Hier kann das Backend einen sogenannten Heartbeat im Netz kommunizieren und dem Reverse Proxy dadurch mitteilen, ob es noch Kapazität frei hat).
 
-Die verschiedenen Module sind online gut dokumentiert, so dass diese knappen Beschreibungen hier für den Moment reichen. Damit sind wir bereit für die Konfiguration des Loadbalancers. Wir können ihn jetzt über die inzwischen bekannte RewriteRule einführen. Diese Anpassung der RewriteRule wirkt sich auch auf die Proxy-Stanza aus, wo der eben definierte Balancer referenziert und aufgelöst werden muss:
+Die verschiedenen Module sind online gut dokumentiert, so dass diese knappen Beschreibungen hier für den Moment reichen. Und schliesslich benötigen wir noch ein Modul, das uns bei der Verwaltung von gemeinsam benutzten Speichersegmenten hilft. Diese Funktionalität wird durch das Proxy-Balancer-Modul benötigt und durch `mod_slotmem_shm.so` zur Verfügung gestellt.
+
+Damit sind wir bereit für die Konfiguration des Loadbalancers. Wir können ihn jetzt über die inzwischen bekannte RewriteRule einführen. Diese Anpassung der RewriteRule wirkt sich auch auf die Proxy-Stanza aus, wo der eben definierte Balancer referenziert und aufgelöst werden muss:
 
 ```bash
     RewriteRule 	^/service1/(.*)		balancer://backend/service/$1   [proxy,last]
@@ -389,7 +392,7 @@ RewriteRule 	^/service1/(.*)		http://${hashchar2backend:%1|localhost:8000}/servi
 </Proxy>
 ```
 
-Wir führen die Map mittels des Befehls RewriteMap ein. Wir teilen ihr einen Namen zu, definieren ihren Typ und den Weg zum File. Der Aufruf der RewriteMap passiert in einer RewriteRule. Bevor wir die Map wirklich aufrufen, schalten wir eine Rewrite Bedingung ein. Dies geschieht mittels dem Befehl *RewriteCond*. Dort referenzieren wir die Umgebungsvariable *IPHashChar* und bestimmen das erste Byte der Variablen. Wir wissen, dass nur ein einziges Byte in der Variante enthalten ist, aber das tut unserem Vorhaben keinen Abbruch. Auf der nächsten Zeile dann der übliche Start der Proxy-Direktive. Anstatt jetzt aber direkt das Backend anzugeben, referenzieren wie die RewriteMap mit dem vorhin vergebenen Namen. Nach dem Doppelpunkt folgt der Parameter für den Aufruf. Interessanterweise sprechen wir die in der Rewrite Bedingung in der Klammer gefangenen Variablen mit *%1* ein. Die Variable der RewriteRule ist davon nicht betroffen und weiterhin über *$1* referenzierbar. Hinter dem *%1* folgt durch das Pipe-Zeichen abgetrennt der Defaultwert. Sollte also beim Aufruf der Map etwas schief gehen, dann wird *localhost* über Port 8000 angesprochen.
+Wir führen die Map mittels des Befehls RewriteMap ein. Wir teilen ihr einen Namen zu, definieren ihren Typ und den Weg zum File. Der Aufruf der RewriteMap passiert in einer RewriteRule. Bevor wir die Map wirklich aufrufen, schalten wir eine Rewrite Bedingung ein. Dies geschieht mittels dem Befehl *RewriteCond*. Dort referenzieren wir die Umgebungsvariable *IPHashChar* und bestimmen das erste Byte der Variablen. Wir wissen, dass nur ein einziges Byte in der Variante enthalten ist, aber das tut unserem Vorhaben keinen Abbruch. Auf der nächsten Zeile dann der übliche Start der Proxy-Direktive. Anstatt jetzt aber direkt das Backend anzugeben, referenzieren wir die RewriteMap mit dem vorhin vergebenen Namen. Nach dem Doppelpunkt folgt der Parameter für den Aufruf. Interessanterweise sprechen wir die in der Rewrite Bedingung in der Klammer gefangenen Variablen mit *%1* ein. Die Variable der RewriteRule ist davon nicht betroffen und weiterhin über *$1* referenzierbar. Hinter dem *%1* folgt durch das Pipe-Zeichen abgetrennt der Defaultwert. Sollte also beim Aufruf der Map etwas schief gehen, dann wird *localhost* über Port 8000 angesprochen.
 
 Jetzt fehlt uns natürlich noch die RewriteMap. Im Codebeispiel habe wir ein Text-File vorgegeben. Performanter ist natürlich ein dbm-Hash, aber das steht für den Moment nicht im Zentrum. Hier das Map-File `/apache/conf/hashchar2backend.txt`:
 
@@ -421,11 +424,11 @@ Wir unterscheiden zwei Backends und können hier die Verteilung beliebig vornehm
 
 Der *Reverse Proxy*-Server schirmt den Applikationsserver vom direkten Zugriff durch den Client ab. Dies bedeutet aber auch, dass der Applikationsserver gewisse Informationen zum Client und seiner Verbindung zum *Reverse Proxy* nicht mehr sehen kann. Zur Kompensation dieses Verlustes setzt das Proxy-Modul drei HTTP Request Header-Zeilen, welche den *Reverse Proxy* beschreiben:
 
-* X-Forwarded-For : Die IP-Adresse des Reverse Proxies
+* X-Forwarded-For : Die IP-Adresse des Clients, gefolgt von der IP Adresse des Reverse Proxies
 * X-Forwarded-Host : Den originalen HTTP Host-Header in der Anfrage des Clients
 * X-Forwarded-Server : Den Servernamen des *Reverse Proxies*
 
-Sind mehrere Reverse Proxies hintereinander gestaffelt, dann werden die zusätzlichen IP-Adressen und Servernamen durch Komma abgetrennt beigefügt. Neben diesen Daten zur Verbindung ist es aber sinnvoll, auch noch weitere Daten weiterzugeben. In diese Reihe gehört namentlich die Unique-ID, welche den Request eindeutig identifiziert. Ein gut konfigurierter Backend-Server wird diesen Schlüsselwert ähnlich wie unser *Reverse Proxy* im Logfile ablegen. Eine zukünftige Fehlersuche wird dadurch erleichtert, dass die verschiedenen Logeinträge einfach korreliert werden können.
+Sind mehrere Proxies hintereinander gestaffelt, dann werden die zusätzlichen IP-Adressen und Servernamen durch Komma abgetrennt beigefügt. Neben diesen Daten zur Verbindung ist es aber sinnvoll, auch noch weitere Daten weiterzugeben. In diese Reihe gehört namentlich die Unique-ID, welche den Request eindeutig identifiziert. Ein gut konfigurierter Backend-Server wird diesen Schlüsselwert ähnlich wie unser *Reverse Proxy* im Logfile ablegen. Eine zukünftige Fehlersuche wird dadurch erleichtert, dass die verschiedenen Logeinträge einfach korreliert werden können.
 
 Häufig wird der Reverse Proxy auch dazu eingesetzt, eine Authentifizierung durchzuführen. Wir haben das zwar noch nicht eingerichtet, aber es ist dennoch sinnvoll, diesen Wert in eine weiterzuverwendende Grundkonfiguration mit aufzunehmen. Wenn keine Authentifizierung definiert wird, dann bleibt dieser Wert einfach leer. Und schliesslich wollen wir das Backend-System auch noch über die Art der Verschlüsselung informieren, auf die sich Client und *Reverse Proxy* geeinigt haben. Der gesamte Block sieht dann so aus:
 
@@ -499,8 +502,7 @@ LoadModule        proxy_module            modules/mod_proxy.so
 LoadModule        proxy_http_module       modules/mod_proxy_http.so
 LoadModule        proxy_balancer_module   modules/mod_proxy_balancer.so
 LoadModule        lbmethod_byrequests_module modules/mod_lbmethod_byrequests.so
-
-LoadModule	      slotmem_shm_module      modules/mod_slotmem_shm.so
+LoadModule	  slotmem_shm_module      modules/mod_slotmem_shm.so
 
 
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
@@ -772,3 +774,8 @@ DocumentRoot            /apache/htdocs
 
 * Apache mod_proxy [https://httpd.apache.org/docs/2.4/mod/mod_proxy.html)](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html)
 * Apache mod_rewrite [https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)](https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)
+
+### Lizenz / Kopieren / Weiterverwenden
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/80x15.png" /></a><br />Diese Arbeit ist wie folgt lizenziert / This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+

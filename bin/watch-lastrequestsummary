@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+# Watch lastrequestsummary every second
+#
+# Adopt filenames as see fit
+
+watch --interval 1 --no-title "lastrequestsummary /apache/logs/access.log /apache/logs/error.log"

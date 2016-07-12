@@ -1,5 +1,7 @@
 ##### Changelog
 
+* 04\. März 2016: Rechtschreibefehler korrigiert
+* 16\. Januar 2016: Lizenzhinweis eingefügt
 * 29\. Oktober 2015: Rechtschreibung (Benjamin Affolter)
 * 29\. September 2015: html -> markdown, Update auf Apache 2.4, Option "-l" für ab
 * 9\. Juli 2013: Bemerkung zum Erstellen des PHP-Starter-Skripts durch den Root-Benutzer; "chown" des fgcidsock-Verzeichnisses

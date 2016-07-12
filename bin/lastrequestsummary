@@ -1,0 +1,70 @@
+#!/bin/bash
+#
+# Script that extracts information from the latest request in the access
+# log and enriches this with info from the error-log.
+#
+# Script is meant to be called regularly via watch.
+#
+
+ACCESSLOG="$1"
+ERRORLOG="$2"
+
+ACCESS_IGNORE_REGEX="(heartbeat)"
+
+if [ -z "$ACCESSLOG" ]; then 
+	echo "Accesslog not passed via commandline. Please pass path to accesslog as first parameter. This is fatal. Aborting."
+	exit 1
+fi
+if [ ! -f "$ACCESSLOG" ]; then 
+	echo "Accesslog $ACCESSLOG not found. This is fatal. Aborting."
+	exit 1
+fi
+if [ -z "$ERRORLOG" ]; then 
+	echo "Errorlog not passed via commandline. Please pass path to errorlog as first parameter. This is fatal. Aborting."
+	exit 1
+fi
+if [ ! -f "$ERRORLOG" ]; then 
+	echo "Errorlog $ERRORLOG not found. This is fatal. Aborting."
+	exit 1
+fi
+
+ACCESSLINE=$(tail -200 $ACCESSLOG | grep -E -v "$ACCESS_IGNORE_REGEX" | tail -1)
+ID=$(echo "$ACCESSLINE" | egrep -o " [a-zA-Z0-9@-]{24} " | tr -d " ")
+METHOD_PATH=$(echo "$ACCESSLINE" | cut -d\  -f6,7 | cut -b2-)
+STATUS=$(echo "$ACCESSLINE" | cut -d\  -f9)
+SCORES=$(echo "$ACCESSLINE" | egrep -o "[0-9-]+ [0-9-]+$")
+TIME=$(echo "$ACCESSLINE" | cut -d\  -f5 | cut -d. -f1)
+
+echo "$(date +"%H:%M:%S") watching: $ACCESSLOG  $ERRORLOG"
+echo
+echo "$TIME $STATUS $SCORES $METHOD_PATH ($ID)"
+echo
+
+echo "ModSecurity Rules Triggered:"
+MODSEC=$(tail -500 $ERRORLOG | grep $ID | grep -o -E " (at|against) .*\[file.*\[id \"[0-9]+.*\[msg \"[^\"]+" | tr -d \" | sed -e "s/ at the end of input at/ at/" -e "s/ required. /. /" -e "s/\[rev .*\[msg/[msg/" -e "s/\. / /" -e "s/(Total .*/(Total ...) .../" | tr -d \] | cut -d\  -f3,9,11- |
+sed -e "s/^\([^ ]*\) \([^ ]*\)/\2 \1/" | awk "{ printf \"%+6s %-35s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n\", \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10, \$11, \$12, \$13, \$14, \$15, \$16, \$17, \$18, \$19, \$20 }" | sed -e "s/\ *$//" | sort )
+# This is a crazy oneliner. A description starting with "grep -o -E":
+# We grep for the various ModSec alert messages and take the content from the
+# at/against via the parameter name, the id up and including the message. tr
+# and sed and again tr are then used to strip this down. Now cut is used to
+# extract (1) the parameter, (2) the id and (3) the message. Then we use sed
+# to swap the position of the parameter and the id. Then we used awk to print
+# the three fields in a clean table. This demands the used of a lot of %s
+# fields, which results in a lot of empty spaces at the end of the line, which
+# are finally removed.
+if [ -z "$MODSEC" ]; then
+        MODSEC="***NONE***"
+fi
+echo "$MODSEC"
+echo
+
+echo "Apache Error Log:"
+ERRORLINES=$(tail -500 $ERRORLOG | grep $ID | grep -v -E "ModSecurity.*\b(at|against)\b")
+if [ -z "$ERRORLINES" ]; then
+        ERRORLOG="***NONE***"
+fi
+echo "$ERRORLINES"
+echo
+
+echo "Full Apache Access Log:"
+echo "$ACCESSLINE"

@@ -1,4 +1,6 @@
 ##### Changelog
+* 16\. Juni 2016: Link auf localhost um index.html erweitert
+* 16\. Januar 2016: Lizenzhinweis eingefügt
 * 16\. Oktober 2015: Version von 2.4.16 auf 2.4.17 erhöht
 * 12\. Oktober 2015: Orthographie- und Stilvorschläge von Benjamin Affolter eingearbeitet
 * 10\. Oktober 2015: Paketabhängigkeiten teilweise zu apr geschoben, build-essential hinzugefügt

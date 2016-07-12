@@ -16,6 +16,7 @@
 #   - non-empty username
 #   - method-based
 #   - reduce anomaly score as ignore-rule
+#   - stats mode (number and percentages of rule hits, paths, parameters)
 # - order by number of hits per rule or rule id
 # - option to have anomaly scoring checks be included in the rule
 #     (hidden by default)

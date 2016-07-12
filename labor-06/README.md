@@ -642,7 +642,7 @@ $> egrep -o "[0-9-]+$" labor-04-example-access.log | sucs
 
 Die erste Befehlszeile liest den eingehenden *Anomaly-Score* aus. Er ist auf der *Access-Log-Zeile* der zweithinterste Wert. Wir nehmen die beiden hintersten Werte (*egrep*) und schneiden dann den ersten aus (*cut*). Dann sortieren wir die Resultate mit dem bereits bekannten Alias *sucs*. Der ausgehende *Anomaly-Score* ist der hinterste Wert der *Log-Zeile*. Der *cut-*Befehl entfällt deshalb auf der zweiten Befehlszeile.
 
-Diese Resultate geben uns eine Idee der Situation: Die allermeisten Anfragen passieren das *ModSecurity-Modul* ohne Regelverletzung. Es kommt ein Score von 41 zwei Mal vor, was zahlreichen schweren Regelverletzungen entspricht. Das ist in der Praxis durchaus gängig. Bei den Scores in den Antworten des Servers haben wir in 41 Fällen gar keinen Score erhalten. Dabei handelt es sich um Logeinträge von leeren Requests, wo zwar eine Verbindund mit dem Client zustande kam, aber kein Request abgesetzt wurde. Dieser Möglichkeit haben wir im regulären Ausdruck beim *egrep* jeweils Rechnung getragen und den Default-Wert "-" mitberücksichtigt. Neben diesen leeren Einträgen gab es gar keine anderen Auffälligkeiten. Das ist typisch. Wir werden in aller Regel zahlreiche Verletzungen bei den Anfragen und sehr wenige Alarme bei den Antworten sehen.
+Diese Resultate geben uns eine Idee der Situation: Die allermeisten Anfragen passieren das *ModSecurity-Modul* ohne Regelverletzung. Es kommt ein Score von 41 zwei Mal vor, was zahlreichen schweren Regelverletzungen entspricht. Das ist in der Praxis durchaus gängig. Bei den Scores in den Antworten des Servers haben wir in 41 Fällen gar keinen Score erhalten. Dabei handelt es sich um Logeinträge von leeren Requests, wo zwar eine Verbindung mit dem Client zustande kam, aber kein Request abgesetzt wurde. Dieser Möglichkeit haben wir im regulären Ausdruck beim *egrep* jeweils Rechnung getragen und den Default-Wert "-" mitberücksichtigt. Neben diesen leeren Einträgen gab es gar keine anderen Auffälligkeiten. Das ist typisch. Wir werden in aller Regel zahlreiche Verletzungen bei den Anfragen und sehr wenige Alarme bei den Antworten sehen.
 
 So eine richtige Idee über die nötigen *Tuning-Schritte* gibt uns dies aber noch nicht. Um diese Information in geeigneter Form darzustellen, habe ich ein Skript vorbereitet, das die *Anomaly-Scores* auswertet: [modsec-positive-stats.rb](https://github.com/Apache-Labor/labor/blob/master/bin/modsec-positive-stats.rb). Das Skript auf das Logfile angewendet bringt folgendes Resultat:
 
@@ -778,7 +778,7 @@ SecRule REQUEST_FILENAME "@beginsWith /index.html" "chain,phase:2,log,pass,t:non
 ...
 ```
 
-Wir haben hier zwei Regeln vor uns, die mittels dem Kommando *chain* verbunden werden. Das heisst, dass die erste Regel eine Bedingung formuliert und die zweite Regel nur ausgeführt wird, wenn die erste Bedingung zutrifft. In der zweiten Regl wird eine weitere, etwas kryptische Bedingung formuliert. Konkret sehen wir nach, ob eine bestimmte Variable gesetzt ist, nämlich *TX:960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS*. Diese Transaktionsvariable wurde durch die Regel *960015* gesetzt und weist auf einen Treffer der Regel 960015 hin. Sollten wir diese Variable also vorfinden, dann bedeutet dies, dass die Regel 960015 angeschlagen hat. In diesem Fall reduzieren wir den *Inbound Anomaly Score* wieder um den Wert, um den die Regel ihn erhöht hat. Wir neutralisieren also den Effekt der Regel, ohne die Meldung selbst zu unterdrücken.
+Wir haben hier zwei Regeln vor uns, die mittels dem Kommando *chain* verbunden werden. Das heisst, dass die erste Regel eine Bedingung formuliert und die zweite Regel nur ausgeführt wird, wenn die erste Bedingung zutrifft. In der zweiten Regel wird eine weitere, etwas kryptische Bedingung formuliert. Konkret sehen wir nach, ob eine bestimmte Variable gesetzt ist, nämlich *TX:960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS*. Diese Transaktionsvariable wurde durch die Regel *960015* gesetzt und weist auf einen Treffer der Regel 960015 hin. Sollten wir diese Variable also vorfinden, dann bedeutet dies, dass die Regel 960015 angeschlagen hat. In diesem Fall reduzieren wir den *Inbound Anomaly Score* wieder um den Wert, um den die Regel ihn erhöht hat. Wir neutralisieren also den Effekt der Regel, ohne die Meldung selbst zu unterdrücken.
 
 Im *Error-Log* ergibt das nachher für den oben bereits vorgestellen *curl-*Aufruf folgende zwei Einträge:
 
@@ -842,7 +842,9 @@ $> grep Vj74@n8AAQEAADydhKkAAAAE logs/error.log
 
 ```
 
-Wir sehen also, wir können *ModSecurity* instruieren, die Core Rules anschlagen zu lassen, ohne den Score hochzuzählen. Man muss aber ehrlicherweise einräumen, dass die damit verbundenen Konstruktionen unheimlich aufwändig und auch fehleranfällig sind. Ich benütze diese Technik in der Praxis deshalb nicht, sondern unterdrücke *False Positives* durch selektives Ausschalten von Regeln und kämpfe aus diesem Grund mit der eingangs beschriebenen Blindheit. Beim Ausschalten der Regeln haben wir eine sehr einfache Methode noch nicht kennengelernt. 
+Wir sehen also, wir können *ModSecurity* instruieren, die Core Rules anschlagen zu lassen, ohne den Score hochzuzählen. Man muss aber ehrlicherweise einräumen, dass die damit verbundenen Konstruktionen unheimlich aufwändig und auch fehleranfällig sind. Ich benütze diese Technik in der Praxis deshalb nicht, sondern unterdrücke *False Positives* durch selektives Ausschalten von Regeln und kämpfe aus diesem Grund mit der eingangs beschriebenen Blindheit.
+
+Beim Ausschalten der Regeln haben wir eine sehr einfache Methode noch nicht kennengelernt:
 
 ###Schritt 7: Fehlalarme unterdrücken: Einzelne Regeln für bestimmte Parameter ausschalten
 
@@ -950,3 +952,8 @@ Diese Anleitung war ein hartes Stück Arbeit. Für einmal brechen wir also hier 
 ###Verweise
 - [Spider Labs Blog Post: Exception Handling](http://blog.spiderlabs.com/2011/08/modsecurity-advanced-topic-of-the-week-exception-handling.html)
 - [ModSecurity Referenzhandbuch](https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual)
+
+### Lizenz / Kopieren / Weiterverwenden
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/80x15.png" /></a><br />Diese Arbeit ist wie folgt lizenziert / This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
+

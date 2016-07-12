@@ -1,5 +1,6 @@
 ##### Changelog
 
+* 16\. Januar 2016: Lizenzhinweis eingefügt
 * 21\. November 2015: Hinweis auf gawk, typo
 * 5\. Oktober 2015: Aliase ersetzt, awk Skripts erweitert
 * 4\. Oktober 2015: html -> markdown, auf github eingecheckt, überarbeitet

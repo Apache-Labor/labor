@@ -1,0 +1,334 @@
+#!/bin/bash
+#
+# arbigraph
+#
+# A very simple gnuplot grapher of arbitrary numeric data in a single column.
+#
+# FIXME: 
+# Bug: mit sameaxis zusammen mit labels in file: sameaxis wird ignoriert
+#
+# Example:
+#
+# cat /var/log/syslog | cut -f4 -d" " | cut -d: -f1 | uniq -c | arbigraph
+#
+# <-- START OUTPUT -->
+#
+#     +---------------+---------------+----------------+---------------+---------------+---------------+
+#     +               +               +                +               +               +               +
+#  35 ++                                                         ************                         ++
+#     |                                                          *          *                          |
+#     |                                                          *          *    ************          |
+#     |                                                          *          *    *          *          |
+#  30 ++                                                         *          *    *          *         ++
+#     |                                          ************    *          *    *          *          |
+#     |          ************                    *          *    *          *    *          *          |
+#  25 ++         *          *                    *          *    *          *    *          *         ++
+#     |          *          *    ************    *          *    *          *    *          *          |
+#     |          *          *    *          *    *          *    *          *    *          *          |
+#  20 ++         *          *    *          *    *          *    *          *    *          *         ++
+#     |          *          *    *          *    *          *    *          *    *          *          |
+#     |          *          *    *          *    *          *    *          *    *          *          |
+#     |          *          *    *          *    *          *    *          *    *          *     ******
+#  15 ++         *          *    *          *    *          *    *          *    *          *     *   +*
+#  15 ++         *          *    *          *    *          *    *          *    *          *     *   +*
+#     ******     *          *    *          *    *          *    *          *    *          *     *    *
+#     *    *     *          *    *          *    *          *    *          *    *          *     *    *
+#  10 *+   *     *          *    *          *    *          *    *          *    *          *     *   +*
+#     *    *     *          *    *          *    *          *    *          *    *          *     *    *
+#     *    *     *          *    *          *    *          *    *          *    *          *     *    *
+#     *    *     *          *    *          *    *          *    *          *    *          *     *    *
+#   5 *+   *     *          *    *          *    *          *    *          *    *          *     *   +*
+#     *    *     *          *    *          *    *          *    *          *    *          *     *    *
+#     *    *     *    +     *    *    +     *    *     +    *    *     +    *    *     +    *     *    *
+#   0 ******-----************----************----************----************----************-----******
+#     0               1               2                3               4               5               6
+#
+# THE GNUPLOT SCRIPT
+# ------------------
+# set terminal dumb 105 30;  set boxwidth 0.666666666666667; plot [0:6][0:38.5] "/tmp/fileVdL9wt" using 1:2
+#  title "" with boxes
+#
+# THE DATA
+# --------
+# 0 14 06
+# 1 26 07
+# 2 24 08
+# 3 28 09
+# 4 35 10
+# 5 33 11
+# 6 17 12
+#
+# <-- END OUTPUT -->
+
+
+function usage {
+        echo
+        echo "<STDIN> | `basename $0` [OPTIONS] "
+        echo
+        echo "A script to plot a simple graph"
+        echo
+        echo " -c  --columnnames STR     Name for columns. Seperate by ';'."
+        echo " -C  --custom STR          Custom arbitrary gnuplot directives; will be placed right"
+	echo "                           before the plot directive. Separate commands with semicolon."
+        echo " -d  --dots                Graph with dots instead of blocks"
+        echo " -e  --enablescript        Output the gnuplot script below the graph and keep data file"
+        echo " -h  --help                This text"
+        echo " -H  --height  STR         Graph height in characters"
+        echo " -l  --lines               Graph with lines instead of blocks"
+        echo "     --label               Additional text inside the graph. Default positioned top left"
+        echo " -L  --logscale            Logarithmic scale. Default is normale scale."
+        echo " -m  --minx STR            Starting value of x-axis. Default is $MINX"
+        echo " -o  --output STR          Write graph into a file (png)"
+        echo " -s  --sameaxis            Use the same y-axis. Default is seperate axis"
+        echo " -t  --title STR           Title of graph"
+        echo " -w  --width STR           Width of graph (terminal actually). Default is terminal width"
+	echo " -x  --xaxisticsmodulo N   Suppress lables on certain tics on the x axis. xaxisticsmodulo 5"
+	echo "                           means every Nth tics gets a label. Default is $XAXISMODULO. 1 means"
+	echo "                           every tics gets a label."
+        echo " -2                        Usa an additional, second data column"
+        echo
+        echo "Example: "
+        echo " ls -l /tmp | head -15 | grep -v total | awk '{ print \$5 \" \" \$9 } ' | arbigraph"
+        echo
+        echo "Arbigraph will graph the first column. Subsequent columns are ignored."
+        echo "The X-axis is actually the line number of a value."
+        echo "Command line option \"minx\" therefore defines the"
+        echo "starting point of the line numbering."
+	echo 
+	echo "A label inside the graph can be added with the --label option. By default, this is"
+	echo "is put in the top left corner. You can align it to the right by adding \"(right)\""
+	echo "inside the label text. This will not be printed. You can use \\n to get a CR:"
+	echo "$> arbigraph --label '\n\n\n                  PEAK--->'"
+	echo
+	echo "The caption (tics) on the x axis are always crowded. Use --xaxisticsmodulo to"
+	echo "suppress some of the labels. A value of 5 means, that only every 5th label is"
+	echo "printed. The other ones are hidden."
+	echo "You can define an offset for the first label to be printed. So that no the 5th"
+	echo "starting from 0 will be printed, but the 5th starting from 2. Define this shift"
+	echo "behind a slash. Negative values are ok."
+	echo "$> arbigraph --xaxisticsmodulo \"24/-2\""
+	echo "You will have to try out various values for xaxisticsmodulo and a shift to the"
+	echo "right or to the left until you find something that suits the data and the graph."
+}
+
+function set_columnnames {
+        COL1=`echo "$1" | cut -d';' -f1`
+        COL2=`echo "$1" | cut -d';' -f2`
+}
+export TRUE=-1
+export FALSE=0
+
+NOSCRIPT=$TRUE			  # Do not print gnuplot directives at the end and do not keep gnuplot data file
+HEIGHT=30                         # graph height in characters
+STYLE="boxes"                     # gnuplot style
+GP=`tempfile -p arbig -s .gp`     # gnuplot file
+DATA=`tempfile -p arbig -s .data` # data file
+DATACOLUMNS=1                     # there is a single data column
+MINX=1                            # the default minimal value X is 1
+WIDTH=""                          # width passed via command line
+SAMEAXIS=0                        # use the same yaxis
+LOGSCALE=0                        # Use logscale on y axis. Default is 0 (= off)
+COL1="Col 1"                      # Name of Column 1
+COL2="Col 2"                      # Name of Column 2
+TITLE=""                          # Title of graph
+CUSTOM_DIRECTIVES=""              # Custom arbitrary gnuplot directives to be passed via CLI
+XAXISMODULO=1			  # Suppress some of the x axis tics labels. Modulo 5 means every 5th label is displayed.
+XAXISMODULOSHIFT=-2		  # When using xaxismodulo to suppress certain x axis tics labels, you can use this
+				  # to shift the first label to the right or to the left. Negative values OK
+
+# param checking loop
+while [ $# -gt 0 ]
+do
+  case $1
+  in
+    -d) export STYLE="dots"; shift 1;;
+    --dots) export STYLE="dots";shift 1;;
+    -c) set_columnnames "$2"; shift 2;;
+    --columnnames) set_columnnames "$2"; shift 2;;
+    -C) export CUSTOM_DIRECTIVES="$2"; shift 2;;
+    --custom) export CUSTOM_DIRECTIVES="$2"; shift 2;;
+    -e) export NOSCRIPT="$FALSE"; shift 1;;
+    --enablescript) export NOSCRIPT="$FALSE";shift 1;;
+    -h) usage; exit;;
+    --help) usage; exit;;
+    -H) export HEIGHT=$2; shift 2;;
+    --height) export HEIGHT=$2; shift 2;;
+    -l) export STYLE="lines"; shift 1;;
+    --lines) export STYLE="lines";shift 1;;
+    --label) export LABEL="$2";shift 2;;
+    -L) export LOGSCALE=1; shift 1;;
+    --logscale) export LOGSCALE=1; shift 1;;
+    -m) export MINX="$2"; shift 1;;
+    --minx) export MINX="$2";shift 1;;
+    -s) export SAMEAXIS=1; shift 1;;
+    --sameaxis) export SAMEAXIS=1; shift 1;;
+    -t) export TITLE="$2"; shift 2;;
+    --title) export TITLE="$2"; shift 2;;
+    -o) export OUTPUT="set output \"$2\"; "; OUTPUTFILE="$2"; shift 2;;
+    --output) export OUTPUT="set output \"$2\"; "; OUTPUTFILE="$2"; shift 2;;
+    -w) export WIDTH="$2"; shift 1;;
+    --width) export WIDTH="$2"; shift 1;;
+    -x) export XAXISMODULO_STR="$2"; shift 1;;
+    --xaxisticsmodulo) export XAXISMODULO_STR="$2"; shift 1;;
+    -2) export DATACOLUMNS=2; shift 1;;
+    *) shift 1;;
+  esac
+done
+
+if [ ! -z $XAXISMODULO_STR ]; then
+	XAXISMODULO=$(echo $XAXISMODULO_STR | sed -e "s/\/.*//")
+	XAXISMODULOSHIFT=$(echo $XAXISMODULO_STR | sed -e "s/.*\///")
+	if [ -z $XAXISMODULOSHIFT ]; then
+		XAXISMODULOSHIFT=0
+	fi
+fi 
+
+if [ $DATACOLUMNS -eq 2 -a "$STYLE" = "boxes" ]; then
+	echo "When working with two data columns, you need to set the option --lines (as boxes and dots do not work). This is fatal. Aborting."
+	exit 1
+fi
+
+# -----------------------------------------------------------------------
+# MAIN
+# -----------------------------------------------------------------------
+
+
+N="$MINX"               # add line numbering
+while read line; do     # read STDIN
+	if [ $N -eq $MINX ]; then
+		echo "$line" | grep -P -q "\t"
+
+		if [ $? -eq 0 ]; then
+			LABELS_IN_FILE="$TRUE"
+		else
+			LABELS_IN_FILE="$FALSE"
+		fi
+	fi
+        N=$(($N+1))
+	if [ "$(((($N+$XAXISMODULOSHIFT)) % $XAXISMODULO))" -eq 0 ]; then	# we are shifting the modulo a bit. This brings better results with modulo 5
+        	echo -n "$N " >> $DATA
+		if [ "$LABELS_IN_FILE" -eq "$TRUE" ]; then
+			echo -n "$line" | sed -e 's/-/\\n-\\n/' -e "s/\ /_/g" -e "s/\t.*//" >> $DATA
+			echo -n -e "\t" >> $DATA
+			echo "$line" | sed -e "s/.*\t//" >> $DATA
+		else
+			echo "$line" | sed -e 's/-/\\n-\\n/' >> $DATA
+		fi
+	else
+        	echo -n "$N " >> $DATA
+		echo "$line" | sed -e 's/.*\t/\\n\t/' >> $DATA
+	fi
+done
+
+
+if [ $SAMEAXIS -eq 0 ]; then
+	if [ "$LABELS_IN_FILE" -eq "$TRUE" ]; then
+        	MAXY=`cat $DATA | tr "\t" " " | cut -d' ' -f3 | sort -n | tail -1`    # maximum y value
+	else
+        	MAXY=`cat $DATA | cut -d' ' -f2 | sort -n | tail -1`    # maximum y value
+	fi
+
+        MAXY=`perl -e "print 1.1 * $MAXY;" 2>/dev/null`                     # maximum y value stretched by 10%
+	if [ $? -ne 0 ]; then
+		echo "There is something wrong with the calculation of the y axes. If you have the x-axis labels in the STDIN, please make sure there is a TAB between label and data. This is fatal. Aborting."
+		exit 1
+	fi
+        if [ $DATACOLUMNS = 2 ]; then
+                MAXY2=`cat $DATA | cut -d' ' -f3 | sort -n | tail -1`    # maximum y value
+                MAXY2=`perl -e "print 1.1 * $MAXY2;"`                     # maximum y value stretched by 10%
+        fi
+else
+        MAXY=`(cat $DATA | cut -d' ' -f2; cat $DATA | cut -d' ' -f3;) | sort -n | tail -1`    # maximum y value collected from both data columns
+        MAXY=`perl -e "print 1.1 * $MAXY;"`                     # maximum y value stretched by 10%
+        MAXY2=$MAXY
+fi
+
+MAXX=$N                                                 # maximum x value
+
+
+BD=1 				                        # boxwith
+#BD=`perl -e "print 4.0/$MAXX;"`                        # boxwith. This is a good value for MAXX from 5 to 40
+if [ "$WIDTH" == "" ]; then
+        TW=`tput cols`                                  # terminal width
+else
+        TW=$WIDTH
+fi
+
+
+if [ ! -z "$LABEL" ]; then
+	POS="$MAXX*0.03,$MAXY*0.95 left"
+	if [ `echo "$LABEL" | grep "(right)" | wc -l` -eq 1 ]; then
+		TMPL=`echo $LABEL | sed -e "s/(right)//"`
+		LABEL="$TMPL"
+		POS="$MAXX*0.97,$MAXY*0.85 right"
+	fi
+	LABEL="set label 2 \"$LABEL\" at $POS; "
+fi
+
+if [ "$LOGSCALE" -eq 1 ]; then
+	DOLOGSCALE="set logscale y; set logscale y2;"
+	MINY="1"
+else
+	DOLOGSCALE=";"
+	MINY="0"
+fi
+
+TERMINAL="dumb"
+
+if [ ! -z "$OUTPUT" ]; then
+        TERMINAL="png"
+	TERMFONT="enhanced font 'Verdana,14'"
+else
+	TERMFONT=""
+fi
+
+
+if [ $STYLE == "boxes" ]; then
+
+
+	if [ $DATACOLUMNS = 1 ]; then
+		if [ "$LABELS_IN_FILE" = "$TRUE" ]; then
+			echo "set terminal $TERMINAL $TW $HEIGHT $TERMFONT; $OUTPUT set boxwidth $BD; set format x \"\\n\\n\"; set title \"$TITLE\"; $DOLOGSCALE; $LABEL; $CUSTOM_DIRECTIVES;  plot \"$DATA\" using 1:3:xtic(2) title \"$COL1\" with $STYLE" > $GP
+		else
+			echo "set terminal $TERMINAL $TW $HEIGHT $TERMFONT; $OUTPUT set boxwidth $BD; set title \"$TITLE\"; $DOLOGSCALE; $LABEL; $CUSTOM_DIRECTIVES;  plot [$MINX:$MAXX][$MINY:$MAXY] \"$DATA\" using 1:2 title \"$COL1\" with $STYLE" > $GP
+		fi
+	else
+		echo "Boxes style does not work with more than one data column. This is fatal. Aborting."
+		exit 1
+	fi
+else 
+	if [ $DATACOLUMNS = 1 ]; then
+		if [ "$LABELS_IN_FILE" = "$TRUE" ]; then
+			echo "set terminal $TERMINAL $TW $HEIGHT $TERMFONT; $OUTPUT set boxwidth $BD; set format x \"\\n\\n\"; set title \"$TITLE\"; $DOLOGSCALE; $LABEL; $CUSTOM_DIRECTIVES;  plot [$MINX:$MAXX][$MINY:$MAXY] \"$DATA\" using 1:3:xtic(2) title \"$COL1\" with $STYLE" > $GP
+		else
+			echo "set terminal $TERMINAL $TW $HEIGHT $TERMFONT; $OUTPUT set boxwidth $BD; set title \"$TITLE\"; $DOLOGSCALE; $LABEL; $CUSTOM_DIRECTIVES;  plot [$MINX:$MAXX][$MINY:$MAXY] \"$DATA\" using 1:2 title \"$COL1\" with $STYLE" > $GP
+		fi
+	else
+		if [ "$LABELS_IN_FILE" = "$TRUE" ]; then
+			#echo "Multiple data columns style has not been implemented with labels in file. Please use input file without labels. Aborting."
+			echo "set terminal $TERMINAL $TW $HEIGHT $TERMFONT; $OUTPUT set boxwidth $BD; set format x \"\\n\\n\"; set title \"$TITLE\"; set y2tics; $DOLOGSCALE; $LABEL; $CUSTOM_DIRECTIVES; plot [$MINX:$MAXX][$MINY:$MAXY][$MINX:$MAXX][$MINY:$MAXY2] \"$DATA\" using 1:3:xtic(2) title \"$COL1\" axis x1y1 with $STYLE, \"$DATA\" using 1:4 title \"$COL2\" axis x1y2 with $STYLE;" > $GP
+		else
+			echo "set terminal $TERMINAL $TW $HEIGHT $TERMFONT; $OUTPUT set boxwidth $BD; set title \"$TITLE\"; set y2tics; $DOLOGSCALE; $LABEL; $CUSTOM_DIRECTIVES; plot [$MINX:$MAXX][$MINY:$MAXY][$MINX:$MAXX][$MINY:$MAXY2] \"$DATA\" using 1:2 title \"$COL1\" axis x1y1 with $STYLE, \"$DATA\" using 1:3 title \"$COL2\" axis x1y2 with $STYLE;" > $GP
+		fi
+	fi
+fi
+
+gnuplot $GP
+
+
+if [ "$NOSCRIPT" = "$FALSE" ]; then
+        echo "THE GNUPLOT SCRIPT"
+        echo "------------------"
+        cat $GP
+	echo
+	echo "The transformed datafile $DATA is left for future use."
+	echo
+	rm $GP
+else
+	rm $GP $DATA
+fi
+
+if [ ! -z "$OUTPUT" ]; then
+        echo "Plot written to file $OUTPUTFILE."
+fi
+
