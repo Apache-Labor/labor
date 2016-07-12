@@ -102,8 +102,8 @@ Der in Lektion 2 konfigurierte Webserver läuft als Benutzer _www-data_ oder je 
 Begeben wir uns ins Verzeichnis mit dem Apache Quelltext und kompilieren den Server neu. 
 
 ```bash
-$> cd /usr/src/apache/httpd-2.4.17
-$> ./configure --prefix=/opt/apache-2.4.17 --enable-mods-shared=all --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared="event worker" --enable-nonportable-atomics=yes --enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.4.17/bin && make && sudo make install
+$> cd /usr/src/apache/httpd-2.4.23
+$> ./configure --prefix=/opt/apache-2.4.23 --enable-mods-shared=all --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared="event worker" --enable-nonportable-atomics=yes --enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.4.23/bin && make && sudo make install
 ```
 
 Zum bekannten _configure_ sind nun drei Optionen hinzugekommen, die sich um das _Suexec_ kümmern. _Enable-suexec_ spricht für sich, _with-suexec-caller_ teilen wir dem gewissenhaften Modul mit, dass ausschliesslich der User _www-data_ die Erlaubnis erhalten soll, das Modul mit dem dahinter liegenden Programm aufzurufen. Schliesslich geben wir dem Modul noch bekannt, wo die aufzurufenden Skripte liegen sollen. Der Einfachheit halber nehmen wir das existierende _bin-Verzeichnis_. Allerdings ist _suexec_ pingelig und wir können nicht mit dem Symlink arbeiten. Es muss also der voll qualifizierte Pfad sein.
