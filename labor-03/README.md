@@ -378,8 +378,11 @@ SSLSessionTickets	On
 <VirtualHost 127.0.0.1:443>
 
 	ServerName              www.example.com
+	
+	SSLEngine On
+	Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 
-...
+	...
 ```
 
 Sinnvoll ist es, den mit dem Zertifikat übereinstimmenden _ServerName_ auch im _VirtualHost_ bekanntzugeben. Wenn wir das nicht tun, wird Apache eine Warnung ausgeben (und dann dennoch den einzigen konfigurierten VirtualHost wählen und korrekt weiterfunktionieren).
