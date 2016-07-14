@@ -4,15 +4,25 @@
 
 Let's Encrypt will das ganze Internet sicher machen. 
 Die Zertifizierungsstelle hat es sich zum Ziel gemacht, das ganze Internet mit Zertifikaten zu versorgen.
-Das Ganze soll automatisiert und ohne Kosten für den Webseitenbetreiber geschehen.
+Betrieben wird das Projekt von der non-profit Organisation _Internet Security Research Group (ISRG)_.
+
+Let's Encrypt möchte das ganze Vorhaben kostenlos, automatisiert, und offen für alle zur Verfügung stellen.
+
+Bekannte Sponsoren des Projekts sind etwa Mozilla, Cisco und Google Chrome. 
+Und auch Facebook scheint ein Interesse an einem sichern Web zu haben.
+Zudem finden sich Namen von grossen schweizer Hosting Anbietern, welche in ihren Angeboten inzwischen gratis SSL-Zertifikate anbieten.
+Das Ziel von 100% https ist also auf eine solide Basis gestellt.
 
 ###Wie funktioniert das?
 
-Da das ganze automatisiert geschehen soll, benötigen wir einen Client oder ein Script auf unserem Server, 
+Da das Ganze automatisiert geschehen soll, benötigen wir einen Client oder ein Script auf unserem Server, 
 sodass wir keinen Aufwand mehr haben ein Zertifikat zu bestellen.
  * genauere Technische Erklärung (Englisch): https://letsencrypt.org/how-it-works/
+
 Let's Encrypt schlägt einige Clients vor.
 Eine einfache Variante (es handelt sich lediglich um ein Bash-Script) ist getssl.
+
+###HowTo
 
 Mit der nachfolgenden Zeile kopieren wir den ganzen Source-Code zu uns auf den Server und geben Ausführ-Rechte:
 
@@ -21,7 +31,8 @@ curl --silent https://raw.githubusercontent.com/srvrco/getssl/master/getssl > ge
 ```
 
 Nun führen wir das Script aus um die benötigten Dateien zu generieren:
-(Natürlich muss der Domainname ein gültiger sein und hier entsprechen angepasst werden.)
+
+(Natürlich sollte man die Domain besitzen und diese bei einem Registrar angemeldet haben.)
 
 ```
 ./getssl -c domain.ch
@@ -59,7 +70,7 @@ SSLCONF="/usr/lib/ssl/openssl.cnf"
 ```
 
 ~/.getssl/domain.ch/getssl.cfg
-(Wenn direkt mehrere Domains "verwaltet" werden können hier noch jeweils abweichungen vom "Standard" oben gemacht werden)
+(Wenn direkt mehrere Domains "verwaltet" werden können hier noch jeweils Abweichungen vom "Standard" oben gemacht werden.)
 ```
 # Testserver (stellt kein gültigen Zertifikate aus)
 #CA="https://acme-staging.api.letsencrypt.org"
@@ -133,6 +144,28 @@ copying private key to ssh:server5:/home/yourdomain/ssl/domain.key
 copying CA certificate to ssh:server5:/home/yourdomain/ssl/chain.crt
 reloading SSL services
 ```
+
+Wenn nun alles funktioniert, die Dateien richtig generiert werden, setzen wird den CA-Server auf "produktiv":
+
+~/.getssl/getssl.cfg
+```
+# Testserver (stellt kein gültigen Zertifikate aus)
+#CA="https://acme-staging.api.letsencrypt.org"
+# Der "richtige" Zertifikatserver, ACHTUNG: Aus Sicherheitsgründen gibt es ein Limit für angeforderte Zertifikate. Also nicht "probieren"
+CA="https://acme-v01.api.letsencrypt.org"
+
+...
+```
+
+Danach forcieren wir ein Neugenerieren um auch ein gültiges Zertifikat zu bekommen:
+```
+getssl -f domain.ch
+```
+
+Fertig. :)
+
+
+####Automatisierte Abfrage mittels Cron-Job
 
 Um nicht regelmässig das Script auszuführen, greifen wir auf einen Cron-Job zurück:
 
