@@ -57,6 +57,8 @@ LoadModule              authz_core_module       modules/mod_authz_core.so
 
 LoadModule              ssl_module              modules/mod_ssl.so
 
+LoadModule				headers_module			modules/mod_headers.so
+
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
 LogFormat               "%h %l %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
 
@@ -101,7 +103,8 @@ DocumentRoot            /apache/htdocs
 <VirtualHost 127.0.0.1:443>
 
         SSLEngine On
-
+		Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		
         <Directory /apache/htdocs>
 
             Require all granted
@@ -123,7 +126,7 @@ Darauf folgt die Direktive _SSLHonorCipherOrder_. Sie ist von hoher Wichtigkeit.
 
 Verschlüsselung arbeitet mit Zufallszahlen. Der Zufallszahlengenerator will korrekt gestartet und benützt werden, wozu die Direktive _SSLRandomSeed_ dient. Dies ist wieder ein Punkt wo Performance und Sicherheit bedacht werden wollen. Beim Starten des Servers greifen wir auf die Zufallszahlen des Betriebssystems in _/dev/urandom_ zu. Während des Betriebs des Servers, beim _SSL-Handshake_ verwenden wir dann die apache-eigene Quelle für Zufallszahlen (_builtin_), die sich aus dem Verkehr des Servers speist. Zwar ist _/dev/urandom_ nicht die allerbeste Quelle für Zufallszahlen, aber es ist eine schnelle Quelle und zudem eine, die eine bestimmte Menge Entropie garantiert. Die qualitativ bessere Quelle _/dev/random_ könnte unseren Server unter widrigen Umständen beim Start blockieren, da nicht genügend Daten vorhanden sind, weshalb in aller Regel _/dev/urandom_ bevorzugt wird.
 
-Wir haben auch noch einen zweiten _Virtual-Host_ eingeführt. Er gleicht dem _Virtual-Host_ für Port 80 sehr stark. Die Portnummer ist aber _443_ und wir aktivieren die _SSL-Engine_, die uns die Verschlüsselung des Verkehrs liefert und die oben gesetzen Konfigurationen erst aktiviert.
+Wir haben auch noch einen zweiten _Virtual-Host_ eingeführt. Er gleicht dem _Virtual-Host_ für Port 80 sehr stark. Die Portnummer ist aber _443_ und wir aktivieren die _SSL-Engine_, die uns die Verschlüsselung des Verkehrs liefert und die oben gesetzen Konfigurationen erst aktiviert. Zusätzlich setzen wir den _STS-Header_ mit "Header always set Strict-Transport-Security". Dieser sagt dem Browser das diese Seite nur über https angesprochen werden will. Der Browser merkt sich das und ruft die Seite standardmässig mit https auf.
 
 ###Schritt 2: Ausprobieren
 
@@ -375,8 +378,11 @@ SSLSessionTickets	On
 <VirtualHost 127.0.0.1:443>
 
 	ServerName              www.example.com
+	
+	SSLEngine On
+	Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 
-...
+	...
 ```
 
 Sinnvoll ist es, den mit dem Zertifikat übereinstimmenden _ServerName_ auch im _VirtualHost_ bekanntzugeben. Wenn wir das nicht tun, wird Apache eine Warnung ausgeben (und dann dennoch den einzigen konfigurierten VirtualHost wählen und korrekt weiterfunktionieren).
