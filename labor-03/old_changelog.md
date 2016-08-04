@@ -1,5 +1,6 @@
 ##### Changelog
 
+* 3\. August 2016: Erweiterung um mod_headers and STS-Header (Luca Käser)
 * 16\. Januar 2016: Lizenzhinweis eingefügt
 * 29.\. Oktober 2015: Rechtschreibung und Rewording der Signierungspassage (Benjamin Affolter)
 * 1\. Oktober 2015: Erweiterung um Erklärungen zu SSL Session Cache
