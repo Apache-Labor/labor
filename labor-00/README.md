@@ -119,7 +119,9 @@ Wir gehen nun in das Verzeichnis und konfigurieren den Compiler mit unseren Eing
 
 ```bash
 $> cd httpd-2.4.23
-$> ./configure --prefix=/opt/apache-2.4.23  --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared=event --enable-mods-shared=all --enable-nonportable-atomics=yes
+$> ./configure --prefix=/opt/apache-2.4.23 --with-apr=/usr/local/apr/bin/apr-1-config \
+--with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared=event \
+--enable-mods-shared=all --enable-nonportable-atomics=yes
 ```
 
 Hier bestimmen wir das Zielverzeichnis für den zukünftigen Apache Webserver; wieder konform mit dem _FHS_. Darauf folgen zwei Optionen, um die beiden als Vorbedingung installierten Bibliotheken anzubinden. Mittels `--enable-mpms-shared` wählen wir ein sogenanntes Prozessmodell des Servers aus. Das ist – vereinfacht gesagt – so etwas wie der Motorentyp der Maschine: Benzin oder Diesel. In unserem Fall stehen `event`, `worker`, `prefork` und ein paar experimentelle Motoren zur Verfügung. Wir nehmen hier das Modell `event`, das unter 2.4 den neuen Standard darstellt und deutlich performanter ist als die übrigen Architekturen. In den Versionslinien 2.0 und 2.2 gab es bei diesem Entscheid deutlich mehr als nur die Performance zu bedenken, aber seit 2.4 hat sich die Problematik deutlich entschärft und wir fahren nun mit `event` am besten. Mehr Infos zu den verschiedenen Prozessmodellen (_MPMs_) liefert das Apache Projekt.
@@ -185,7 +187,8 @@ Das ist wieder ein Kniff für den Testbetrieb: Apache ist eigentlich ein Daemon 
 Vermutlich gibt es nun beim Start eine Warnung:
 
 ```bash
-AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1. Set the 'ServerName' directive globally to suppress this message
+AH00558: httpd: Could not reliably determine the server's fully qualified domain name, using …
+127.0.1.1. Set the 'ServerName' directive globally to suppress this message
 ```
 
 Das ist nicht weiter schlimm und wir können die Warnung für den Moment ignorieren.
@@ -377,7 +380,7 @@ total 8.8M
 
 Das sind alle Module, welche von Apache zusammen mit dem Server verteilt werden; bekanntlich haben wir bei den zu kompilierenden Modulen die Option _all_ ausgewählt. Weitere Module gibt es von Drittanbietern. Alle unsere Module brauchen wir kaum, aber einige will man fast immer dabei haben: Sie stehen von Beginng weg für eine Einbindung bereit.
 
-#####Verweise
+###Verweise
 - Apache: [http://httpd.apache.org](http://httpd.apache.org)
 - File Hierarchy Standard: [http://www.pathname.com/fhs/](http://www.pathname.com/fhs/)
 - Apache ./configure documenation: [http://httpd.apache.org/docs/trunk/programs/configure.html](http://httpd.apache.org/docs/trunk/programs/configure.html)
