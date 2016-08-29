@@ -148,7 +148,7 @@ Nach dem Durchlauf von _configure_ sind wir bereit für den Compiler. Hier sollt
 $> make
 ```
 
-Das dauert wohl einige Zeit aus den 38MB werden knapp 100MB.
+Das dauert wohl einige Zeit. Dabei werden aus den 38MB knapp 100MB.
 
 ###Schritt 6: Installieren
 
@@ -219,7 +219,7 @@ $> sudo ./bin/httpd -V
 
 ```bash
 Server version: Apache/2.4.23 (Unix)
-Server built:   Oct 16 2015 21:09:49
+Server built:   Jul 15 2016 21:09:49
 Server's Module Magic Number: 20120211:47
 Server loaded:  APR 1.5.2, APR-UTIL 1.5.4
 Compiled using: APR 1.5.2, APR-UTIL 1.5.4
@@ -272,110 +272,110 @@ $> ls -lh modules
 
 ```bash
 total 8.8M
--rw-r--r-- 1 myuser dune73  14K Oct 16 21:09 httpd.exp
--rwxr-xr-x 1 myuser root    36K Oct 16 21:16 mod_access_compat.so
--rwxr-xr-x 1 myuser root    34K Oct 16 21:17 mod_actions.so
--rwxr-xr-x 1 myuser root    49K Oct 16 21:17 mod_alias.so
--rwxr-xr-x 1 myuser root    31K Oct 16 21:17 mod_allowmethods.so
--rwxr-xr-x 1 myuser root    30K Oct 16 21:17 mod_asis.so
--rwxr-xr-x 1 myuser root    47K Oct 16 21:16 mod_auth_basic.so
--rwxr-xr-x 1 myuser root   102K Oct 16 21:16 mod_auth_digest.so
--rwxr-xr-x 1 myuser root    79K Oct 16 21:16 mod_auth_form.so
--rwxr-xr-x 1 myuser root    30K Oct 16 21:16 mod_authn_anon.so
--rwxr-xr-x 1 myuser root    39K Oct 16 21:16 mod_authn_core.so
--rwxr-xr-x 1 myuser root    43K Oct 16 21:16 mod_authn_dbd.so
--rwxr-xr-x 1 myuser root    33K Oct 16 21:16 mod_authn_dbm.so
--rwxr-xr-x 1 myuser root    33K Oct 16 21:16 mod_authn_file.so
--rwxr-xr-x 1 myuser root    54K Oct 16 21:16 mod_authn_socache.so
--rwxr-xr-x 1 myuser root    70K Oct 16 21:16 mod_authz_core.so
--rwxr-xr-x 1 myuser root    46K Oct 16 21:16 mod_authz_dbd.so
--rwxr-xr-x 1 myuser root    37K Oct 16 21:16 mod_authz_dbm.so
--rwxr-xr-x 1 myuser root    41K Oct 16 21:16 mod_authz_groupfile.so
--rwxr-xr-x 1 myuser root    37K Oct 16 21:16 mod_authz_host.so
--rwxr-xr-x 1 myuser root    31K Oct 16 21:16 mod_authz_owner.so
--rwxr-xr-x 1 myuser root    31K Oct 16 21:16 mod_authz_user.so
--rwxr-xr-x 1 myuser root   129K Oct 16 21:17 mod_autoindex.so
--rwxr-xr-x 1 myuser root    35K Oct 16 21:17 mod_buffer.so
--rwxr-xr-x 1 myuser root   103K Oct 16 21:17 mod_cache_disk.so
--rwxr-xr-x 1 myuser root   229K Oct 16 21:17 mod_cache.so
--rwxr-xr-x 1 myuser root   108K Oct 16 21:17 mod_cache_socache.so
--rwxr-xr-x 1 myuser root   118K Oct 16 21:17 mod_cgid.so
--rwxr-xr-x 1 myuser root    68K Oct 16 21:17 mod_charset_lite.so
--rwxr-xr-x 1 myuser root    33K Oct 16 21:17 mod_data.so
--rwxr-xr-x 1 myuser root   221K Oct 16 21:17 mod_dav_fs.so
--rwxr-xr-x 1 myuser root    83K Oct 16 21:17 mod_dav_lock.so
--rwxr-xr-x 1 myuser root   395K Oct 16 21:17 mod_dav.so
--rwxr-xr-x 1 myuser root    71K Oct 16 21:17 mod_dbd.so
--rwxr-xr-x 1 myuser root   100K Oct 16 21:17 mod_deflate.so
--rwxr-xr-x 1 myuser root    36K Oct 16 21:17 mod_dialup.so
--rwxr-xr-x 1 myuser root    37K Oct 16 21:17 mod_dir.so
--rwxr-xr-x 1 myuser root    33K Oct 16 21:17 mod_dumpio.so
--rwxr-xr-x 1 myuser root    34K Oct 16 21:17 mod_echo.so
--rwxr-xr-x 1 myuser root    32K Oct 16 21:17 mod_env.so
--rwxr-xr-x 1 myuser root    44K Oct 16 21:17 mod_expires.so
--rwxr-xr-x 1 myuser root    74K Oct 16 21:17 mod_ext_filter.so
--rwxr-xr-x 1 myuser root    42K Oct 16 21:17 mod_file_cache.so
--rwxr-xr-x 1 myuser root    62K Oct 16 21:17 mod_filter.so
--rwxr-xr-x 1 myuser root    73K Oct 16 21:17 mod_headers.so
--rwxr-xr-x 1 myuser root    30K Oct 16 21:17 mod_heartbeat.so
--rwxr-xr-x 1 myuser root    79K Oct 16 21:17 mod_heartmonitor.so
--rwxr-xr-x 1 myuser root   163K Oct 16 21:17 mod_include.so
--rwxr-xr-x 1 myuser root    85K Oct 16 21:17 mod_info.so
--rwxr-xr-x 1 myuser root    35K Oct 16 21:17 mod_lbmethod_bybusyness.so
--rwxr-xr-x 1 myuser root    35K Oct 16 21:17 mod_lbmethod_byrequests.so
--rwxr-xr-x 1 myuser root    35K Oct 16 21:17 mod_lbmethod_bytraffic.so
--rwxr-xr-x 1 myuser root    52K Oct 16 21:17 mod_lbmethod_heartbeat.so
--rwxr-xr-x 1 myuser root   103K Oct 16 21:17 mod_log_config.so
--rwxr-xr-x 1 myuser root    43K Oct 16 21:17 mod_log_debug.so
--rwxr-xr-x 1 myuser root    37K Oct 16 21:17 mod_log_forensic.so
--rwxr-xr-x 1 myuser root    35K Oct 16 21:17 mod_logio.so
--rwxr-xr-x 1 myuser root   467K Oct 16 21:17 mod_lua.so
--rwxr-xr-x 1 myuser root    56K Oct 16 21:17 mod_macro.so
--rwxr-xr-x 1 myuser root    88K Oct 16 21:17 mod_mime_magic.so
--rwxr-xr-x 1 myuser root    60K Oct 16 21:17 mod_mime.so
--rwxr-xr-x 1 myuser root   184K Oct 16 21:16 mod_mpm_event.so
--rwxr-xr-x 1 myuser root   136K Oct 16 21:16 mod_mpm_worker.so
--rwxr-xr-x 1 myuser root   117K Oct 16 21:17 mod_negotiation.so
--rwxr-xr-x 1 myuser root   198K Oct 16 21:17 mod_proxy_ajp.so
--rwxr-xr-x 1 myuser root   139K Oct 16 21:17 mod_proxy_balancer.so
--rwxr-xr-x 1 myuser root    59K Oct 16 21:17 mod_proxy_connect.so
--rwxr-xr-x 1 myuser root    40K Oct 16 21:17 mod_proxy_express.so
--rwxr-xr-x 1 myuser root    77K Oct 16 21:17 mod_proxy_fcgi.so
--rwxr-xr-x 1 myuser root    40K Oct 16 21:17 mod_proxy_fdpass.so
--rwxr-xr-x 1 myuser root   131K Oct 16 21:17 mod_proxy_ftp.so
--rwxr-xr-x 1 myuser root   114K Oct 16 21:17 mod_proxy_html.so
--rwxr-xr-x 1 myuser root   121K Oct 16 21:17 mod_proxy_http.so
--rwxr-xr-x 1 myuser root    66K Oct 16 21:17 mod_proxy_scgi.so
--rwxr-xr-x 1 myuser root   357K Oct 16 21:17 mod_proxy.so
--rwxr-xr-x 1 myuser root    59K Oct 16 21:17 mod_proxy_wstunnel.so
--rwxr-xr-x 1 myuser root    33K Oct 16 21:17 mod_ratelimit.so
--rwxr-xr-x 1 myuser root    34K Oct 16 21:17 mod_reflector.so
--rwxr-xr-x 1 myuser root    41K Oct 16 21:17 mod_remoteip.so
--rwxr-xr-x 1 myuser root    48K Oct 16 21:17 mod_reqtimeout.so
--rwxr-xr-x 1 myuser root    40K Oct 16 21:17 mod_request.so
--rwxr-xr-x 1 myuser root   210K Oct 16 21:17 mod_rewrite.so
--rwxr-xr-x 1 myuser root   144K Oct 16 21:17 mod_sed.so
--rwxr-xr-x 1 myuser root    35K Oct 16 21:17 mod_session_cookie.so
--rwxr-xr-x 1 myuser root    53K Oct 16 21:17 mod_session_dbd.so
--rwxr-xr-x 1 myuser root    61K Oct 16 21:17 mod_session.so
--rwxr-xr-x 1 myuser root    47K Oct 16 21:17 mod_setenvif.so
--rwxr-xr-x 1 myuser root    32K Oct 16 21:17 mod_slotmem_plain.so
--rwxr-xr-x 1 myuser root    59K Oct 16 21:17 mod_slotmem_shm.so
--rwxr-xr-x 1 myuser root    52K Oct 16 21:17 mod_socache_dbm.so
--rwxr-xr-x 1 myuser root    40K Oct 16 21:17 mod_socache_memcache.so
--rwxr-xr-x 1 myuser root    82K Oct 16 21:17 mod_socache_shmcb.so
--rwxr-xr-x 1 myuser root    43K Oct 16 21:17 mod_speling.so
--rwxr-xr-x 1 myuser root   897K Oct 16 21:17 mod_ssl.so
--rwxr-xr-x 1 myuser root    80K Oct 16 21:17 mod_status.so
--rwxr-xr-x 1 myuser root    48K Oct 16 21:17 mod_substitute.so
--rwxr-xr-x 1 myuser root    35K Oct 16 21:17 mod_unique_id.so
--rwxr-xr-x 1 myuser root    37K Oct 16 21:17 mod_unixd.so
--rwxr-xr-x 1 myuser root    34K Oct 16 21:17 mod_userdir.so
--rwxr-xr-x 1 myuser root    44K Oct 16 21:17 mod_usertrack.so
--rwxr-xr-x 1 myuser root    27K Oct 16 21:17 mod_version.so
--rwxr-xr-x 1 myuser root    40K Oct 16 21:17 mod_vhost_alias.so
--rwxr-xr-x 1 myuser root    54K Oct 16 21:17 mod_watchdog.so
--rwxr-xr-x 1 myuser root    69K Oct 16 21:17 mod_xml2enc.so
+-rw-r--r-- 1 myuser dune73  14K Jul 15 21:09 httpd.exp
+-rwxr-xr-x 1 myuser root    36K Jul 15 21:16 mod_access_compat.so
+-rwxr-xr-x 1 myuser root    34K Jul 15 21:17 mod_actions.so
+-rwxr-xr-x 1 myuser root    49K Jul 15 21:17 mod_alias.so
+-rwxr-xr-x 1 myuser root    31K Jul 15 21:17 mod_allowmethods.so
+-rwxr-xr-x 1 myuser root    30K Jul 15 21:17 mod_asis.so
+-rwxr-xr-x 1 myuser root    47K Jul 15 21:16 mod_auth_basic.so
+-rwxr-xr-x 1 myuser root   102K Jul 15 21:16 mod_auth_digest.so
+-rwxr-xr-x 1 myuser root    79K Jul 15 21:16 mod_auth_form.so
+-rwxr-xr-x 1 myuser root    30K Jul 15 21:16 mod_authn_anon.so
+-rwxr-xr-x 1 myuser root    39K Jul 15 21:16 mod_authn_core.so
+-rwxr-xr-x 1 myuser root    43K Jul 15 21:16 mod_authn_dbd.so
+-rwxr-xr-x 1 myuser root    33K Jul 15 21:16 mod_authn_dbm.so
+-rwxr-xr-x 1 myuser root    33K Jul 15 21:16 mod_authn_file.so
+-rwxr-xr-x 1 myuser root    54K Jul 15 21:16 mod_authn_socache.so
+-rwxr-xr-x 1 myuser root    70K Jul 15 21:16 mod_authz_core.so
+-rwxr-xr-x 1 myuser root    46K Jul 15 21:16 mod_authz_dbd.so
+-rwxr-xr-x 1 myuser root    37K Jul 15 21:16 mod_authz_dbm.so
+-rwxr-xr-x 1 myuser root    41K Jul 15 21:16 mod_authz_groupfile.so
+-rwxr-xr-x 1 myuser root    37K Jul 15 21:16 mod_authz_host.so
+-rwxr-xr-x 1 myuser root    31K Jul 15 21:16 mod_authz_owner.so
+-rwxr-xr-x 1 myuser root    31K Jul 15 21:16 mod_authz_user.so
+-rwxr-xr-x 1 myuser root   129K Jul 15 21:17 mod_autoindex.so
+-rwxr-xr-x 1 myuser root    35K Jul 15 21:17 mod_buffer.so
+-rwxr-xr-x 1 myuser root   103K Jul 15 21:17 mod_cache_disk.so
+-rwxr-xr-x 1 myuser root   229K Jul 15 21:17 mod_cache.so
+-rwxr-xr-x 1 myuser root   108K Jul 15 21:17 mod_cache_socache.so
+-rwxr-xr-x 1 myuser root   118K Jul 15 21:17 mod_cgid.so
+-rwxr-xr-x 1 myuser root    68K Jul 15 21:17 mod_charset_lite.so
+-rwxr-xr-x 1 myuser root    33K Jul 15 21:17 mod_data.so
+-rwxr-xr-x 1 myuser root   221K Jul 15 21:17 mod_dav_fs.so
+-rwxr-xr-x 1 myuser root    83K Jul 15 21:17 mod_dav_lock.so
+-rwxr-xr-x 1 myuser root   395K Jul 15 21:17 mod_dav.so
+-rwxr-xr-x 1 myuser root    71K Jul 15 21:17 mod_dbd.so
+-rwxr-xr-x 1 myuser root   100K Jul 15 21:17 mod_deflate.so
+-rwxr-xr-x 1 myuser root    36K Jul 15 21:17 mod_dialup.so
+-rwxr-xr-x 1 myuser root    37K Jul 15 21:17 mod_dir.so
+-rwxr-xr-x 1 myuser root    33K Jul 15 21:17 mod_dumpio.so
+-rwxr-xr-x 1 myuser root    34K Jul 15 21:17 mod_echo.so
+-rwxr-xr-x 1 myuser root    32K Jul 15 21:17 mod_env.so
+-rwxr-xr-x 1 myuser root    44K Jul 15 21:17 mod_expires.so
+-rwxr-xr-x 1 myuser root    74K Jul 15 21:17 mod_ext_filter.so
+-rwxr-xr-x 1 myuser root    42K Jul 15 21:17 mod_file_cache.so
+-rwxr-xr-x 1 myuser root    62K Jul 15 21:17 mod_filter.so
+-rwxr-xr-x 1 myuser root    73K Jul 15 21:17 mod_headers.so
+-rwxr-xr-x 1 myuser root    30K Jul 15 21:17 mod_heartbeat.so
+-rwxr-xr-x 1 myuser root    79K Jul 15 21:17 mod_heartmonitor.so
+-rwxr-xr-x 1 myuser root   163K Jul 15 21:17 mod_include.so
+-rwxr-xr-x 1 myuser root    85K Jul 15 21:17 mod_info.so
+-rwxr-xr-x 1 myuser root    35K Jul 15 21:17 mod_lbmethod_bybusyness.so
+-rwxr-xr-x 1 myuser root    35K Jul 15 21:17 mod_lbmethod_byrequests.so
+-rwxr-xr-x 1 myuser root    35K Jul 15 21:17 mod_lbmethod_bytraffic.so
+-rwxr-xr-x 1 myuser root    52K Jul 15 21:17 mod_lbmethod_heartbeat.so
+-rwxr-xr-x 1 myuser root   103K Jul 15 21:17 mod_log_config.so
+-rwxr-xr-x 1 myuser root    43K Jul 15 21:17 mod_log_debug.so
+-rwxr-xr-x 1 myuser root    37K Jul 15 21:17 mod_log_forensic.so
+-rwxr-xr-x 1 myuser root    35K Jul 15 21:17 mod_logio.so
+-rwxr-xr-x 1 myuser root   467K Jul 15 21:17 mod_lua.so
+-rwxr-xr-x 1 myuser root    56K Jul 15 21:17 mod_macro.so
+-rwxr-xr-x 1 myuser root    88K Jul 15 21:17 mod_mime_magic.so
+-rwxr-xr-x 1 myuser root    60K Jul 15 21:17 mod_mime.so
+-rwxr-xr-x 1 myuser root   184K Jul 15 21:16 mod_mpm_event.so
+-rwxr-xr-x 1 myuser root   136K Jul 15 21:16 mod_mpm_worker.so
+-rwxr-xr-x 1 myuser root   117K Jul 15 21:17 mod_negotiation.so
+-rwxr-xr-x 1 myuser root   198K Jul 15 21:17 mod_proxy_ajp.so
+-rwxr-xr-x 1 myuser root   139K Jul 15 21:17 mod_proxy_balancer.so
+-rwxr-xr-x 1 myuser root    59K Jul 15 21:17 mod_proxy_connect.so
+-rwxr-xr-x 1 myuser root    40K Jul 15 21:17 mod_proxy_express.so
+-rwxr-xr-x 1 myuser root    77K Jul 15 21:17 mod_proxy_fcgi.so
+-rwxr-xr-x 1 myuser root    40K Jul 15 21:17 mod_proxy_fdpass.so
+-rwxr-xr-x 1 myuser root   131K Jul 15 21:17 mod_proxy_ftp.so
+-rwxr-xr-x 1 myuser root   114K Jul 15 21:17 mod_proxy_html.so
+-rwxr-xr-x 1 myuser root   121K Jul 15 21:17 mod_proxy_http.so
+-rwxr-xr-x 1 myuser root    66K Jul 15 21:17 mod_proxy_scgi.so
+-rwxr-xr-x 1 myuser root   357K Jul 15 21:17 mod_proxy.so
+-rwxr-xr-x 1 myuser root    59K Jul 15 21:17 mod_proxy_wstunnel.so
+-rwxr-xr-x 1 myuser root    33K Jul 15 21:17 mod_ratelimit.so
+-rwxr-xr-x 1 myuser root    34K Jul 15 21:17 mod_reflector.so
+-rwxr-xr-x 1 myuser root    41K Jul 15 21:17 mod_remoteip.so
+-rwxr-xr-x 1 myuser root    48K Jul 15 21:17 mod_reqtimeout.so
+-rwxr-xr-x 1 myuser root    40K Jul 15 21:17 mod_request.so
+-rwxr-xr-x 1 myuser root   210K Jul 15 21:17 mod_rewrite.so
+-rwxr-xr-x 1 myuser root   144K Jul 15 21:17 mod_sed.so
+-rwxr-xr-x 1 myuser root    35K Jul 15 21:17 mod_session_cookie.so
+-rwxr-xr-x 1 myuser root    53K Jul 15 21:17 mod_session_dbd.so
+-rwxr-xr-x 1 myuser root    61K Jul 15 21:17 mod_session.so
+-rwxr-xr-x 1 myuser root    47K Jul 15 21:17 mod_setenvif.so
+-rwxr-xr-x 1 myuser root    32K Jul 15 21:17 mod_slotmem_plain.so
+-rwxr-xr-x 1 myuser root    59K Jul 15 21:17 mod_slotmem_shm.so
+-rwxr-xr-x 1 myuser root    52K Jul 15 21:17 mod_socache_dbm.so
+-rwxr-xr-x 1 myuser root    40K Jul 15 21:17 mod_socache_memcache.so
+-rwxr-xr-x 1 myuser root    82K Jul 15 21:17 mod_socache_shmcb.so
+-rwxr-xr-x 1 myuser root    43K Jul 15 21:17 mod_speling.so
+-rwxr-xr-x 1 myuser root   897K Jul 15 21:17 mod_ssl.so
+-rwxr-xr-x 1 myuser root    80K Jul 15 21:17 mod_status.so
+-rwxr-xr-x 1 myuser root    48K Jul 15 21:17 mod_substitute.so
+-rwxr-xr-x 1 myuser root    35K Jul 15 21:17 mod_unique_id.so
+-rwxr-xr-x 1 myuser root    37K Jul 15 21:17 mod_unixd.so
+-rwxr-xr-x 1 myuser root    34K Jul 15 21:17 mod_userdir.so
+-rwxr-xr-x 1 myuser root    44K Jul 15 21:17 mod_usertrack.so
+-rwxr-xr-x 1 myuser root    27K Jul 15 21:17 mod_version.so
+-rwxr-xr-x 1 myuser root    40K Jul 15 21:17 mod_vhost_alias.so
+-rwxr-xr-x 1 myuser root    54K Jul 15 21:17 mod_watchdog.so
+-rwxr-xr-x 1 myuser root    69K Jul 15 21:17 mod_xml2enc.so
 ```
 
 Das sind alle Module, welche von Apache zusammen mit dem Server verteilt werden; bekanntlich haben wir bei den zu kompilierenden Modulen die Option _all_ ausgewählt. Weitere Module gibt es von Drittanbietern. Alle unsere Module brauchen wir kaum, aber einige will man fast immer dabei haben: Sie stehen von Beginng weg für eine Einbindung bereit.

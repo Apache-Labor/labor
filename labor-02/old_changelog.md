@@ -1,5 +1,6 @@
 ##### Changelog
 
+* 25\. August 2016: Zeilenumbrüche justiert
 * 04\. März 2016: Rechtschreibefehler korrigiert
 * 16\. Januar 2016: Lizenzhinweis eingefügt
 * 29\. Oktober 2015: Rechtschreibung (Benjamin Affolter)

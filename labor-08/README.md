@@ -69,20 +69,20 @@ ProxyRequests Off
 
 Diese Direktive meint tatsächlich nur das Weiterleiten von Requests an Server im Internet, auch wenn der Name auf eine generellere Einstellung hindeutet. Wie erwähnt ist die Direktive auf Apache 2.4 aber korrekt voreingestellt und sie wird hier nur deshalb erwähnt, um Fragen oder zukünftigen Fehleinstellungen vorzubeugen.
 
-### Schritt 3: ProxyPass
+###Schritt 3: ProxyPass
 
 Wir kommen damit zu den eigentlichen *Proxying* Einstellungen: Es gibt mehrere Arten, wie wir Apache instruieren können, einen Request an eine Backend-Applikation weiterzureichen. Wir schauen die Varianten nacheinander an. Die gängige Variante um Anfragen zu proxen basiert auf der Direktive *ProxyPass*. Sie wird wie folgt verwendet:
 
 ```bash
-ProxyPass		/service1	http://localhost:8000/service1
-ProxyPassReverse	/service1	http://localhost:8000/service1
+ProxyPass               /service1     http://localhost:8000/service1
+ProxyPassReverse        /service1     http://localhost:8000/service1
 
 <Proxy http://localhost:8000/service1>
 
-	Require all granted
+    Require all granted
 
-	AllowOverride none
-	Options none
+    AllowOverride none
+    Options none
 
 </Proxy>
 ```
@@ -91,20 +91,20 @@ Der wichtigste Befehl ist hier *ProxyPass*. Er definiert einen Pfad `/service1` 
 
 Auf der nächsten Zeile kommt eine verwandte Direktive, die trotz ähnlichem Namen nur eine kleine Hilfsfunktion übernimmt. *Redirect-Responses* vom Backend sind in *http-konformer* Ausprägung voll-qualifiziert. Also etwa `https://backend.example.com/service1`. Für den Client ist diese Adresse aber nicht erreichbar. Aus diesem Grund muss der *Reverse Proxy* den sogenannten *Location-Header* des Backends umschreiben, `backend.example.com` durch seinen eigenen Namen ersetzen und damit in seinen eigenen *Namespace* zurückmappen. *ProxyPassReverse*, das so einen vollmundigen Namen besitzt, hat in Wahrheit also nur eine einfache Suchen-Ersetzen Funktion, die auf *Location-Header* greift. Wie schon bei der *Proxy-Pass* Direktive zeigt sich das symmetrische *Proxying*: Die Pfade werden 1:1 übersetzt. Wir sind frei, uns nicht an diese Regel zu halten, aber ich rate dringend dazu diese Regel einzuhalten, denn jenseits davon lauern Missverständnisse und Verwirrung. Neben dem Zugriff auf den *Location-Header* gibt es eine Reihe von weiteren *Reverse-Direktiven*, die sich etwa um Cookies etc. kümmern. Dies kann fallweise hilfreich sein.
 
-### Schritt 4: Proxy Stanza
+###Schritt 4: Proxy Stanza
 
 Weiter in der Konfiguration: Nun folgt der *Proxy-Block*, wo die Verbindung zum Backend genauer definiert wird. Namentlich Authentisierung und Autorisierung eines Requests finden hier statt. Weiter unten in der Anleitung werden wir aber auch einen *Load-Balancer* in diesem Block unterbringen.
 
 Der *Proxy-Block* entspricht dem *Location-* und dem *Directory-Block*, die wir in unserer Konfiguration bereits früher kennengelernt haben. Es handelt sich dabei um sogenannte *Container*. *Container* geben dem Webserver an, wie er die Arbeit strukturieren soll. Sobald er in der Konfiguration einen *Container* antrifft, bereitet er dafür eine Verarbeitungsstruktur vor. Im Fall von *mod_proxy* kann das Backend auch ohne *Proxy-Container* erreicht werden. Der Zugriffsschutz bleibt dabei aber unberücksichtigt und auch weitere Direktiven besitzen damit keinen Ort mehr in den sie eingebracht werden können. Ohne *Proxy-Block* bleibt die Verarbeitung bei komplexeren Servern immer etwas zufällig und wir tun gut daran, diesen Teil mitzukonfigurieren. Mittels der Direktive *ProxySet* können wir dann hier noch weiter eingreifen und etwa das Verbindungsverhalten vorgeben. Mit *min*, *max* und *smax* können die Anzahl Threads, die dem Proxy Connection Pool zugewiesen werden, spezifiziert werden. Dies kann fallweise die Performance beeinflussen. Das *Keepalive Verhalten* der Proxy-Verbindung lässt sich beeinflussen und auch verschiedene *Timeout*-Werte sind so zu definieren. Weitere Informationen dazu finden sich in der Dokumentation des Apache Projektes.
 
-### Schritt 5: Ausnahmen beim Proxying definieren und weitere Einstellungen vornehmen
+###Schritt 5: Ausnahmen beim Proxying definieren und weitere Einstellungen vornehmen
 
 Die von uns verwendete _ProxyPass_ Direktive hat die Gesamtheit der Requests für `/service1` an das Backend weitergegeben. In der Praxis kommt es aber oft vor, dass man nicht ganz alles weitergeben möchte. Stellen wir uns vor, dass es den Pfad `/service1/admin` gibt, den wir nicht im Internet exponieren möchten. Dies lässt sich ebenfalls mit Hilfe der richtigen _ProxyPass_ Einstellung verhindern, wobei die Ausnahme mittels des Ausrufezeichens initiiert wird. Wichtig ist es, die Ausnahme zu definieren, bevor der eigentliche Proxy-Befehl konfiguriert wird:
 
 ```bash
-ProxyPass 		/service1/admin !
-ProxyPass		/service1	http://localhost:8000/service1
-ProxyPassReverse	/service1	http://localhost:8000/service1
+ProxyPass          /service1/admin !
+ProxyPass          /service1       http://localhost:8000/service1
+ProxyPassReverse   /service1       http://localhost:8000/service1
 ```
 
 Oft sieht man Konfigurationen, die den gesamten Namespace unter `/` an das Backend weitergeben. Dazu werden dann oft eine Vielzahl von Ausnahmen nach obenstehendem Muster definiert. Ich halte das für den falschen Ansatz und ziehe es vor, nur das weiterzureichen, was auch tatsächlich verarbeitet werden wird. Der Vorteil liegt auf der Hand: Scanner und automatisierte Angriffe, die sich aus dem Pool der IP-Adressen des Internets ihre Opfer suchen, stellen Requests mit einer Vielzahl nicht-existierender Pfade an unseren Server. Wir können die nun auf das Backend weiterreichen und je nachdem das Backend belasten oder sogar gefährden. Oder aber wir blockieren diese Anfragen bereits auf dem Reverse Proxy Server. Letzteres ist aus Gründen der Sicherheit klar vorzuziehen.
@@ -127,7 +127,7 @@ Backend-Systeme achten oft weniger auf die Sicherheit als ein Reverse Proxy. Ein
 ProxyErrorOverride	On
 ```
 
-### Schritt 6: ModRewrite
+###Schritt 6: ModRewrite
 
 Neben der Direktive _ProxyPass_ kann auch das *Rewrite-Modul* eingesetzt werden, um die *Reverse Proxy*-Funktionalität auszulösen. Gegenüber dem *ProxyPass* erlaubt dies eine flexiblere Konfiguration. Wir haben *ModRewrite* bis dato nicht gesehen. Da es sich dabei um ein sehr wichtiges Modul handelt, sollten wir es gründlich studieren.
 
@@ -142,7 +142,7 @@ LoadModule              headers_module          modules/mod_headers.so
 RewriteEngine           On
 RewriteOptions          InheritDownBefore
 
-RewriteRule   		^/$	%{REQUEST_SCHEME}://%{HTTP_HOST}/index.html  [redirect,last]
+RewriteRule             ^/$   %{REQUEST_SCHEME}://%{HTTP_HOST}/index.html  [redirect,last]
 ```
 
 Wir initialisieren also die Engine auf Stufe Server. Dann instruieren wir die Engine, die eigenen Regeln an weitere Rewrite Engines zu vererben. Und zwar so, dass die eigenen Regeln vor den nachgeordneten Regeln ausgeführt werden. Danach folgt die eigentliche Regel. Wir instruieren hierbei den Server, bei einem Request ohne Pfad, also einem Request auf "/", den Client zu instruieren, doch eine neue Anfrage an _/index.html_ abzusetzen. Man spricht von einem _Redirect_. Wichtig ist, dass ein *Redirect* sowohl das Schema des Requests, also *http* oder *https*, als auch den Hostnamen aufweisen muss. Relative Pfade funktionieren somit nicht. Da wir ausserhalb des *VirtualHosts* stehen, kennen wir das Schema aber nicht. Und den Hostnamen möchten wir auch nicht hart codieren, sondern lieber den Hostnamen aus dem Request des Clients übernehmen. Diese beiden Werte stehen als Variablen zur Verfügung, wie man im obenstehenden Beispiel sehen kann.
@@ -188,11 +188,11 @@ Nun kann man sich fragen, weshalb wir im Server-Kontext überhaupt eine *Rewrite
 ```bash
 <VirtualHost 127.0.0.1:80>
       
-	RewriteEngine		On
+    RewriteEngine   On
 
-	RewriteRule		^/(.*)$	https://%{HTTP_HOST}/$1	[redirect,last]
+    RewriteRule     ^/(.*)$   https://%{HTTP_HOST}/$1    [redirect,last]
 
-	...
+    ...
 
 </VirtualHost>
 ```
@@ -201,7 +201,7 @@ Das gewünschte Schema ist nun klar. Aber links davon ist ein neues Element hinz
 
 Damit ist *ModRewrite* eingeführt. Für weitere Beispiele sei hier auf die Dokumentation verwiesen oder die nachfolgenden Kapitel dieser Anleitung, wo wir noch weitere Rezepte kennenlernen werden.
 
-### Schritt 7: ModRewrite [Proxy]
+###Schritt 7: ModRewrite [Proxy]
 
 Wir haben gesehen wie eine *RewriteEngine* initialisiert wird und wie man einfache und etwas komplexere Redirects auslösen kann. Nun werden wir mit diesen Mitteln einen *Reverse Proxy* konfigurieren. Das machen wir wie folgt:
 
@@ -211,17 +211,17 @@ Wir haben gesehen wie eine *RewriteEngine* initialisiert wird und wie man einfac
 
     ...
 
-    RewriteEngine	On
+    RewriteEngine     On
 
-    RewriteRule		^/service1/(.*)		http://localhost:8000/service1/$1 [proxy,last]
-    ProxyPassReverse	/	              	http://localhost:8000/
+    RewriteRule       ^/service1/(.*)     http://localhost:8000/service1/$1 [proxy,last]
+    ProxyPassReverse  /                   http://localhost:8000/
 
     <Proxy http://localhost:8000/service1>
 
-	Require all granted
+        Require all granted
 
-	AllowOverride none
-	Options none
+        AllowOverride none
+        Options none
 
     </Proxy>
 
@@ -233,14 +233,14 @@ Soweit die einfache Konfiguration mittels einer RewriteRule. Sie bringt noch kei
 
 Nun kann es aber sein, dass wir mit einem einzelnen Reverse Proxy mehrere Backends zusammenfassen oder die Last auf mehrere Server verteilen möchten. Ein eigentlicher LoadBalancer ist dazu gefragt. Das sehen wir uns im nächsten Abschnitt an:
 
-### Schritt 8: Balancer [proxy]
+###Schritt 8: Balancer [proxy]
 
 Den Apache Loadbalancer müssen wir zunächst als Modul laden:
 
 ```bash
 LoadModule        proxy_balancer_module           modules/mod_proxy_balancer.so
 LoadModule        lbmethod_byrequests_module      modules/mod_lbmethod_byrequests.so
-LoadModule	  slotmem_shm_module              modules/mod_slotmem_shm.so
+LoadModule        slotmem_shm_module              modules/mod_slotmem_shm.so
 ```
 
 Neben dem Loadbalancer-Modul selbst benötigen wir auch ein Modul, welches uns dabei hilft, die Anfragen auf die verschiedenen Backends zu verteilen. Wir gehen den einfachsten Weg und laden das Modul *lbmethod_byrequests*.
@@ -258,8 +258,8 @@ Die verschiedenen Module sind online gut dokumentiert, so dass diese knappen Bes
 Damit sind wir bereit für die Konfiguration des Loadbalancers. Wir können ihn jetzt über die inzwischen bekannte RewriteRule einführen. Diese Anpassung der RewriteRule wirkt sich auch auf die Proxy-Stanza aus, wo der eben definierte Balancer referenziert und aufgelöst werden muss:
 
 ```bash
-    RewriteRule 	^/service1/(.*)		balancer://backend/service/$1   [proxy,last]
-    ProxyPassReverse    /         		balancer://backend/
+    RewriteRule         ^/service1/(.*)  balancer://backend/service/$1   [proxy,last]
+    ProxyPassReverse    /                balancer://backend/
 
     <Proxy balancer://backend>
         BalancerMember http://localhost:8000 route=backend-port-8000
@@ -336,15 +336,19 @@ Server response, port 8001
 In diesem etwas ungewohnten Aufruf werden zwei identische Requests mit einem einzigen Curl-Befehl initiiert. Interessant ist unter anderem der Umstand, dass mit dieser Methode HTTP Keep-Alive von curl angewendet wird. Beim ersten Request landete der Request auf dem ersten Backend, beim zweiten Request auf dem zweiten Backend. Schauen wir uns die zugehörigen Einträge im Access-Log des Servers an:
 
 ```bash
-127.0.0.1 - - [2015-12-10 06:42:14.390998] "GET /service1/index.html HTTP/1.1" 200 28 "-" "curl/7.35.0" localhost 127.0.0.1 443 proxy-server backend-port-8000 + "-" VmkQtn8AAQEAAH@M3zAAAAAN TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 538 1402 -% 7856 1216 3708 381 0 0
-127.0.0.1 - - [2015-12-10 06:42:14.398995] "GET /service1/index.html HTTP/1.1" 200 28 "-" "curl/7.35.0" localhost 127.0.0.1 443 proxy-server backend-port-8001 + "-" VmkQtn8AAQEAAH@M3zEAAAAN TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 121 202 -% 7035 1121 3752 354 0 0
+127.0.0.1 - - [2015-12-10 06:42:14.390998] "GET /service1/index.html HTTP/1.1" 200 28 "-" …
+"curl/7.35.0" localhost 127.0.0.1 443 proxy-server backend-port-8000 + "-" VmkQtn8AAQEAAH@M3zAAAAAN …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 538 1402 -% 7856 1216 3708 381 0 0
+127.0.0.1 - - [2015-12-10 06:42:14.398995] "GET /service1/index.html HTTP/1.1" 200 28 "-" …
+"curl/7.35.0" localhost 127.0.0.1 443 proxy-server backend-port-8001 + "-" VmkQtn8AAQEAAH@M3zEAAAAN …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 121 202 -% 7035 1121 3752 354 0 0
 ```
 
 Neben dem erwähnten Keep-Alive ist der Request-Handler von Interesse. Der Request wurde also vom _proxy-server Handler_ bearbeitet. Auch bei der Route sehen wir Einträge, nämlich die oben definierten Werte _backend-port-8000_ und _backend-port-8001_. So ist es uns also möglich, im Access-Log des Servers festzustellen, welche Route ein Request genau genommen hat.
 
 In einer späteren Anleitung werden wir sehen, dass sich der Proxy-Balancer auch in anderen Situationen anwenden lässt. Für den Moment begnügen wir uns aber mit dem Gesehenen und wenden uns den RewriteMaps zu. Bei RewriteMaps handelt es sich um eine Hilfskonstruktion, welche die Mächtigkeit von ModRewrite nochmals erhöht. Wenn wir es mit dem Proxy-Server kombinieren, dann erhöht sich die Flexibilität massiv.
 
-### Schritt 9: RewriteMap [proxy]
+###Schritt 9: RewriteMap [proxy]
 
 RewriteMaps kommen in verschiedenen Ausprägungen vor. Ihre Funktion besteht darin, bei jedem Aufruf einem Schlüssel-Paramter einen Wert zuzuordnen. Eine Hash-Tabelle ist ein einfaches Beispiel. Dann ist es aber auch möglich, externe Skripte als programmierbare RewriteMap zu konfigurieren. Die folgenden Typen von Maps sind möglich:
 
@@ -360,7 +364,7 @@ Diese Liste macht deutlich, dass RewriteMaps äusserst flexibel sind und in vers
 Zunächst bilden wir aus der IP-Adresse des Clients einen Hashwert. Das heisst, wir verwandeln die IP-Adresse in eine zufällige hexadezimale Zeichenfolge:
 
 ```bash
-SecRule REMOTE_ADDR	"^(.)"	"phase:1,id:50001,capture,nolog,t:sha1,t:hexEncode,setenv:IPHashChar=%{TX.1}"
+SecRule REMOTE_ADDR    "^(.)"   "phase:1,id:50001,capture,nolog,t:sha1,t:hexEncode,setenv:IPHashChar=%{TX.1}"
 ```
 
 Den mittels der sha1-Funktion generierten binären Hash-Wert haben wir mittels hexEncode in lesbare Zeichen umgewandelt. Auf diesem Wert wenden wir dann den regulären Ausdruck an. "^(.)" meint dabei, dass wir einen Match auf einem beliebigen ersten Zeichen erzielen möchten. Von den darauf folgenden ModSecurity Flags ist namentlich *capture* von Interesse, das den Wert in der Klammer der ersten Transaktionsvariablen *TX.1* zuweist. Aus dieser Variable nehmen wir den Wert dann auf und legen ihn in der Umgebungsvariable IPHashChar.
@@ -370,8 +374,8 @@ Wenn Unsicherheit besteht, ob dies wirklich funktioniert, dann lässt sich der I
 ```bash
 RewriteMap hashchar2backend "txt:/apache/conf/hashchar2backend.txt"
 
-RewriteCond 	"%{ENV:IPHashChar}"	^(.)
-RewriteRule 	^/service1/(.*)		http://${hashchar2backend:%1|localhost:8000}/service1/$1 [proxy,last]
+RewriteCond "%{ENV:IPHashChar}"  ^(.)
+RewriteRule ^/service1/(.*)      http://${hashchar2backend:%1|localhost:8000}/service1/$1 [proxy,last]
 
 <Proxy http://localhost:8000/service1>
 
@@ -420,7 +424,7 @@ f	localhost:8001
 
 Wir unterscheiden zwei Backends und können hier die Verteilung beliebig vornehmen. Gemeinsam bedeutet dieses eher komplexe Rezept nun, dass wir aus der jeweiligen IP-Adresse einen Hash bilden und daraus das erste Zeichen benützen, um in der eben geschriebenen Hash-Tabelle auf eines von zwei Backends zu schliessen. Solange die IP-Adresse des Clients konstant bleibt (was in der Praxis durchaus nicht immer der Fall sein muss), wird das Resultat dieses Lookups immer dasselbe sein. Das heisst, der Client wird immer auf demselben Backend landen. Man nennt dies IP-Stickyness. Da es sich aber um eine Hash-Operation und nicht um einen simplen IP-Adressen-Lookup handelt, werden zwei Clients mit einer ähnlichen IP-Adresse einen gänzlich anderen Hash erhalten und nicht zwingend auf demselben Backend landen. Wir gewinnen damit eine einigermassen flache Verteilung der Requests und sind dennoch sicher, dass bestimmte Clients bis zu einem Wechsel der IP-Adresse immer auf demselben Backend landen werden.
 
-### Schritt 10: Weiterleiten von Informationen an die Backend-Systeme
+###Schritt 10: Weiterleiten von Informationen an die Backend-Systeme
 
 Der *Reverse Proxy*-Server schirmt den Applikationsserver vom direkten Zugriff durch den Client ab. Dies bedeutet aber auch, dass der Applikationsserver gewisse Informationen zum Client und seiner Verbindung zum *Reverse Proxy* nicht mehr sehen kann. Zur Kompensation dieses Verlustes setzt das Proxy-Modul drei HTTP Request Header-Zeilen, welche den *Reverse Proxy* beschreiben:
 
@@ -433,10 +437,10 @@ Sind mehrere Proxies hintereinander gestaffelt, dann werden die zusätzlichen IP
 Häufig wird der Reverse Proxy auch dazu eingesetzt, eine Authentifizierung durchzuführen. Wir haben das zwar noch nicht eingerichtet, aber es ist dennoch sinnvoll, diesen Wert in eine weiterzuverwendende Grundkonfiguration mit aufzunehmen. Wenn keine Authentifizierung definiert wird, dann bleibt dieser Wert einfach leer. Und schliesslich wollen wir das Backend-System auch noch über die Art der Verschlüsselung informieren, auf die sich Client und *Reverse Proxy* geeinigt haben. Der gesamte Block sieht dann so aus:
 
 ```bash
-RequestHeader set "X-RP-UNIQUE-ID" 	"%{UNIQUE_ID}e"
-RequestHeader set "X-RP-REMOTE-USER" 	"%{REMOTE_USER}e"
-RequestHeader set "X-RP-SSL-PROTOCOL" 	"%{SSL_PROTOCOL}s"
-RequestHeader set "X-RP-SSL-CIPHER" 	"%{SSL_CIPHER}s"
+RequestHeader set "X-RP-UNIQUE-ID"      "%{UNIQUE_ID}e"
+RequestHeader set "X-RP-REMOTE-USER"    "%{REMOTE_USER}e"
+RequestHeader set "X-RP-SSL-PROTOCOL"   "%{SSL_PROTOCOL}s"
+RequestHeader set "X-RP-SSL-CIPHER"     "%{SSL_CIPHER}s"
 ```
 
 Sehen wir an, wie sich das auf die Anfrage zwischen *Reverse Proxy* und Backend auswirkt:
@@ -458,7 +462,7 @@ Connection: close
 
 Die verschiedenen erweiterten Header-Zeilen werden also nacheinander aufgeführt und wo vorhanden mit Werten gefüllt.
 
-### Schritt 11 (Bonus): Die Konfiguration des kompletten Reverse Proxy-Servers inklusive der vorangegangenen Lektionen
+###Schritt 11 (Bonus): Die Konfiguration des kompletten Reverse Proxy-Servers inklusive der vorangegangenen Lektionen
 
 Mit dieser kleinen Erweiterung kommen wir zum Abschluss dieser Anleitung und auch zum Ende des Basis-Blockes der verschiedenen Anleitungen. Wir haben in mehreren Lektionen den Aufbau eines Apache Webservers von der Kompilierung über die Grundkonfiguration, das Tuning von ModSecurity bis zur Konfiguration eine Reverse Proxies gesehen und so einen vertieften Einblick in die Funktionsweise des Servers und seiner wichtigsten Module erhalten.
 
@@ -502,11 +506,14 @@ LoadModule        proxy_module            modules/mod_proxy.so
 LoadModule        proxy_http_module       modules/mod_proxy_http.so
 LoadModule        proxy_balancer_module   modules/mod_proxy_balancer.so
 LoadModule        lbmethod_byrequests_module modules/mod_lbmethod_byrequests.so
-LoadModule	  slotmem_shm_module      modules/mod_slotmem_shm.so
+LoadModule        slotmem_shm_module      modules/mod_slotmem_shm.so
 
 
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
-LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" %{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% %D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e %{ModSecAnomalyScoreIn}e %{ModSecAnomalyScoreOut}e" extended
+LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \
+\"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" \
+%{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% %D %{ModSecTimeIn}e \
+%{ApplicationTime}e %{ModSecTimeOut}e %{ModSecAnomalyScoreIn}e %{ModSecAnomalyScoreOut}e" extended
 
 LogFormat "[%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] %{UNIQUE_ID}e %D \
 PerfModSecInbound: %{TX.perf_modsecinbound}M \
@@ -583,14 +590,17 @@ SecAction "id:'90002',phase:3,nolog,pass,setvar:TX.ModSecTimestamp3start=%{DURAT
 SecAction "id:'90003',phase:4,nolog,pass,setvar:TX.ModSecTimestamp4start=%{DURATION}"
 SecAction "id:'90004',phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURATION}"
                       
-# SecRule REQUEST_FILENAME "@beginsWith /" "id:'90005',phase:5,t:none,nolog,noauditlog,pass,setenv:write_perflog"
+# SecRule REQUEST_FILENAME "@beginsWith /" "id:'90005',phase:5,t:none,nolog,noauditlog,pass,\
+#                                           setenv:write_perflog"
 
 
 # === ModSec Recommended Rules (in modsec src package) (ids: 200000-200010)
 
-SecRule REQUEST_HEADERS:Content-Type "text/xml" "id:'200000',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
+SecRule REQUEST_HEADERS:Content-Type "text/xml" "id:'200000',phase:1,t:none,t:lowercase,pass,\
+                                                 nolog,ctl:requestBodyProcessor=XML"
 
-SecRule REQBODY_ERROR "!@eq 0" "id:'200001',phase:2,t:none,deny,status:400,log,msg:'Failed to parse request body.',\
+SecRule REQBODY_ERROR "!@eq 0" "id:'200001',phase:2,t:none,deny,status:400,log,\
+                                msg:'Failed to parse request body.',\
 logdata:'%{reqbody_error_msg}',severity:2"
 
 SecRule MULTIPART_STRICT_ERROR "!@eq 0" \
@@ -609,7 +619,8 @@ IP %{MULTIPART_INVALID_PART}, \
 IH %{MULTIPART_INVALID_HEADER_FOLDING}, \
 FL %{MULTIPART_FILE_LIMIT_EXCEEDED}'"
 
-SecRule TX:/^MSC_/ "!@streq 0" "id:'200004',phase:2,t:none,deny,status:500,msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
+SecRule TX:/^MSC_/ "!@streq 0" "id:'200004',phase:2,t:none,deny,status:500,\
+                                msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
 
 
 # === ModSecurity Rules (ids: 900000-999999)
@@ -622,8 +633,10 @@ SecAction "id:'900001',phase:1,t:none, \
    setvar:tx.warning_anomaly_score=3, \
    setvar:tx.notice_anomaly_score=2, \
    nolog, pass"
-SecAction "id:'900002',phase:1,t:none,setvar:tx.inbound_anomaly_score_level=10000,setvar:tx.inbound_anomaly_score=0,nolog,pass"
-SecAction "id:'900003',phase:1,t:none,setvar:tx.outbound_anomaly_score_level=10000,setvar:tx.outbound_anomaly_score=0,nolog,pass"
+SecAction "id:'900002',phase:1,t:none,setvar:tx.inbound_anomaly_score_level=10000,\
+           setvar:tx.inbound_anomaly_score=0,nolog,pass"
+SecAction "id:'900003',phase:1,t:none,setvar:tx.outbound_anomaly_score_level=10000,\
+           setvar:tx.outbound_anomaly_score=0,nolog,pass"
 SecAction "id:'900004',phase:1,t:none,setvar:tx.anomaly_score_blocking=on,nolog,pass"
 
 SecAction "id:'900006',phase:1,t:none,setvar:tx.max_num_args=255,nolog,pass"
@@ -634,20 +647,26 @@ SecAction "id:'900010',phase:1,t:none,setvar:tx.max_file_size=10000000,nolog,pas
 SecAction "id:'900011',phase:1,t:none,setvar:tx.combined_file_sizes=10000000,nolog,pass"
 SecAction "id:'900012',phase:1,t:none, \
   setvar:'tx.allowed_methods=GET HEAD POST OPTIONS', \
-  setvar:'tx.allowed_request_content_type=application/x-www-form-urlencoded|multipart/form-data|text/xml|application/xml|application/x-amf|application/json', \
+  setvar:'tx.allowed_request_content_type=application/x-www-form-urlencoded|multipart/form-data|\
+text/xml|application/xml|application/x-amf|application/json', \
   setvar:'tx.allowed_http_versions=HTTP/0.9 HTTP/1.0 HTTP/1.1', \
-  setvar:'tx.restricted_extensions=.asa/ .asax/ .ascx/ .axd/ .backup/ .bak/ .bat/ .cdx/ .cer/ .cfg/ .cmd/ .com/ .config/ .conf/ .cs/ .csproj/ .csr/ .dat/ .db/ .dbf/ .dll/ .dos/ .htr/ .htw/ .ida/ .idc/ .idq/ .inc/ .ini/ .key/ .licx/ .lnk/ .log/ .mdb/ .old/ .pass/ .pdb/ .pol/ .printer/ .pwd/ .resources/ .resx/ .sql/ .sys/ .vb/ .vbs/ .vbproj/ .vsdisco/ .webinfo/ .xsd/ .xsx/', \
-  setvar:'tx.restricted_headers=/Proxy-Connection/ /Lock-Token/ /Content-Range/ /Translate/ /via/ /if/', \
+  setvar:'tx.restricted_extensions=.asa/ .asax/ .ascx/ .axd/ .backup/ .bak/ .bat/ .cdx/ \
+.cer/ .cfg/ .cmd/ .com/ .config/ .conf/ .cs/ .csproj/ .csr/ .dat/ .db/ .dbf/ .dll/ .dos/ \
+.htr/ .htw/ .ida/ .idc/ .idq/ .inc/ .ini/ .key/ .licx/ .lnk/ .log/ .mdb/ .old/ .pass/ .pdb/ \
+.pol/ .printer/ .pwd/ .resources/ .resx/ .sql/ .sys/ .vb/ .vbs/ .vbproj/ .vsdisco/ .webinfo/ \
+.xsd/ .xsx/', \
+  setvar:'tx.restricted_headers=/Proxy-Connection/ /Lock-Token/ /Content-Range/ /Translate/ \
+/via/ /if/', \
   nolog,pass"
 
-SecRule REQUEST_HEADERS:User-Agent "^(.*)$" "id:'900018',phase:1,t:none,t:sha1,t:hexEncode,setvar:tx.ua_hash=%{matched_var}, \
-  nolog,pass"
+SecRule REQUEST_HEADERS:User-Agent "^(.*)$" "id:'900018',phase:1,t:none,t:sha1,t:hexEncode,\
+  setvar:tx.ua_hash=%{matched_var},nolog,pass"
 SecRule REQUEST_HEADERS:x-forwarded-for "^\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b" \
   "id:'900019',phase:1,t:none,capture,setvar:tx.real_ip=%{tx.1},nolog,pass"
-SecRule &TX:REAL_IP "!@eq 0" "id:'900020',phase:1,t:none,initcol:global=global,initcol:ip=%{tx.real_ip}_%{tx.ua_hash}, \
-  nolog,pass"
-SecRule &TX:REAL_IP "@eq 0" "id:'900021',phase:1,t:none,initcol:global=global,initcol:ip=%{remote_addr}_%{tx.ua_hash},setvar:tx.real_ip=%{remote_addr}, \
-  nolog,pass"
+SecRule &TX:REAL_IP "!@eq 0" "id:'900020',phase:1,t:none,initcol:global=global,\
+  initcol:ip=%{tx.real_ip}_%{tx.ua_hash},nolog,pass"
+SecRule &TX:REAL_IP "@eq 0" "id:'900021',phase:1,t:none,initcol:global=global,\
+  initcol:ip=%{remote_addr}_%{tx.ua_hash},setvar:tx.real_ip=%{remote_addr},nolog,pass"
 
 
 # === ModSecurity Ignore Rules Before Core Rules Inclusion; order by id of ignored rule (ids: 10000-49999)
@@ -702,7 +721,8 @@ SSLCertificateKeyFile   /etc/ssl/private/ssl-cert-snakeoil.key
 SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
 
 SSLProtocol             All -SSLv2 -SSLv3
-SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM !MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
+SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM !MD5 !EXP \
+!DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
 SSLHonorCipherOrder     On
 
 SSLRandomSeed           startup file:/dev/urandom 2048
@@ -745,7 +765,7 @@ DocumentRoot            /apache/htdocs
 
     RewriteEngine             On
 
-    RewriteRule               ^/service1/(.*)	  http://localhost:8000/service1/$1 [proxy,last]
+    RewriteRule               ^/service1/(.*)   http://localhost:8000/service1/$1 [proxy,last]
     ProxyPassReverse          /                 http://localhost:8000/
 
 
@@ -770,7 +790,7 @@ DocumentRoot            /apache/htdocs
 </VirtualHost>
 ```
 
-### Verweise
+###Verweise
 
 * Apache mod_proxy [https://httpd.apache.org/docs/2.4/mod/mod_proxy.html)](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html)
 * Apache mod_rewrite [https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)](https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)

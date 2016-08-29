@@ -316,8 +316,9 @@ Je nach Anfrage werden sehr viele Daten in das Audit-Log geschrieben. Oft sind e
 Hier ein Beispiel aus dem zentralen Audit-Log:
 
 ```bash
-localhost 127.0.0.1 - - [17/Oct/2015:15:54:54 +0200] "POST /index.html HTTP/1.1" 200 45 "-" "-" UYkHrn8AAQEAAHb-AM0AAAAB "-" 
-  /20130507/20130507-1554/20130507-155454-UYkHrn8AAQEAAHb-AM0AAAAB 0 20343 md5:a395b35a53c836f14514b3fff7e45308
+localhost 127.0.0.1 - - [17/Oct/2015:15:54:54 +0200] "POST /index.html HTTP/1.1" 200 45 "-" "-" …
+UYkHrn8AAQEAAHb-AM0AAAAB "-" /20130507/20130507-1554/20130507-155454-UYkHrn8AAQEAAHb-AM0AAAAB 0 …
+20343 md5:a395b35a53c836f14514b3fff7e45308
 ```
 
 Wir sehen einige Informationen zum Request, den HTTP Status Code und kurz darauf die _Unique-ID_ des Requests, die wir auch in unserem Access-Log finden. Wenig später folgt ein absoluter Pfad. Er ist aber nur scheinbar absolut. Konkret müssen wir diesen Pfad-Teil an den Wert in _SecAuditLogStorageDir_ hinzufügen. Für uns heisst das also _/apache/logs/audit/20130507/20130507-1554/20130507-155454-UYkHrn8AAQEAAHb-AM0AAAAB_. In diesem File finden wir dann die Details zum Request:
@@ -327,7 +328,8 @@ Wir sehen einige Informationen zum Request, den HTTP Status Code und kurz darauf
 [17/Oct/2013:15:54:54 +0200] UYkHrn8AAQEAAHb-AM0AAAAB 127.0.0.1 42406 127.0.0.1 80
 --5a70c866-B--
 POST /index.html HTTP/1.1
-User-Agent: curl/7.35.0 (x86_64-pc-linux-gnu) libcurl/7.35.0 OpenSSL/1.0.1 zlib/1.2.3.4 libidn/1.23 librtmp/2.3
+User-Agent: curl/7.35.0 (x86_64-pc-linux-gnu) libcurl/7.35.0 OpenSSL/1.0.1 zlib/1.2.3.4 …
+libidn/1.23 librtmp/2.3
 Accept: */*
 Host: 127.0.0.1
 Content-Length: 3
@@ -459,7 +461,11 @@ on this server.</p>
 Sehen wir auch nach, was wir im _Error-Log_ dazu finden:
 
 ```bash
-[2015-10-27 22:43:28.265834] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Pattern match "/phpmyadmin" at REQUEST_FILENAME. [file "/apache/conf/httpd.conf_modsec_minimal"] [line "140"] [id "10000"] [msg "Blocking access to /phpmyadmin."] [tag "Local Lab Service"] [tag "Blacklist Rules"] [hostname "localhost"] [uri "/phpmyadmin"] [unique_id "Vi-wAH8AAQEAABuNHj8AAAAA"]
+[2015-10-27 22:43:28.265834] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with …
+code 403 (phase 1). Pattern match "/phpmyadmin" at REQUEST_FILENAME. [file …
+"/apache/conf/httpd.conf_modsec_minimal"] [line "140"] [id "10000"] [msg "Blocking access to …
+/phpmyadmin."] [tag "Local Lab Service"] [tag "Blacklist Rules"] [hostname "localhost"] [uri …
+"/phpmyadmin"] [unique_id "Vi-wAH8AAQEAABuNHj8AAAAA"]
 ```
 
 _ModSecurity_ beschreibt hier die ausgelöste Regel und die Massnahme, die ergriffen wurde: Zunächst der Zeitstempfel. Dann die durch Apache zugewiesene Schwere des Log-Eintrages. Die Stufe _error_ wird für alle _ModSecurity_ Meldungen vergeben. Dann folgt die IP-Adresse des Clients. Dazwischen einige leere Felder, welche nur mittels "-" bezeichnet werden. Sie bleiben bei Apache 2.4 leer, weil das Logformat sich änderte und *ModSecurity* diese Änderung noch nicht nachvollzogen hat. Danach die eigentliche Meldung, die mit der Massnahme eröffnet: _Access denied with code 403_ und zwar bereits in der Phase 1, also während des Empfangens der Anfrage-Header. Danach sehen wir einen Hinweis auf die Regelverletzung: Der String _"/phpMyAdmin"_ wurde im *REQUEST_FILENAME* gefunden. Dies ist genau das, was wir definiert haben. Die folgenden Informations-Stücke sind in Blöcken aus eckigen Klammern eingebettet. In jedem Block zunächst die Bezeichnung und dann durch einen Leerschlag getrennt die Information. Wir befinden uns mit unserer Regel also in der Datei */opt/apache-2.4.23/conf/httpd.conf_modsec_minimal* auf der Zeile 140. Die Regel besitzt - wie wir wissen - die ID 10000. Unter _msg_ sehen wir die in der Regel definierte Zusammenfassung der Regel, wobei die Variable *MATCHED_VAR* durch den Pfad-Teil der Anfrage ersetzt wurde. Danach der Tag, den wir in der _SecDefaultAction_ gesetzt haben; schliesslich der zusätzliche für diese Regel gesetzte Tag. Schliesslich folgen noch Hostname, URI und die Unique-ID der Anfrage.
@@ -474,19 +480,34 @@ Mit der im Schritt 7 beschriebenen Regel konnten wir den Zugriff auf eine bestim
 
 SecMarker "BEGIN_LOGIN_WHITELIST"
 
-SecRule REQUEST_FILENAME     "!@beginsWith /login" "id:10001,phase:1,pass,t:lowercase,t:normalisePath,nolog,msg:'Skipping',skipAfter:END_LOGIN_WHITELIST"
-SecRule REQUEST_FILENAME     "!@beginsWith /login" "id:10002,phase:2,pass,t:lowercase,t:normalisePath,nolog,msg:'Skipping',skipAfter:END_LOGIN_WHITELIST"
+SecRule REQUEST_FILENAME     "!@beginsWith /login" "id:10001,phase:1,pass,t:lowercase,\
+                              t:normalisePath,nolog,msg:'Skipping',skipAfter:END_LOGIN_WHITELIST"
+SecRule REQUEST_FILENAME     "!@beginsWith /login" "id:10002,phase:2,pass,t:lowercase,\
+                              t:normalisePath,nolog,msg:'Skipping',skipAfter:END_LOGIN_WHITELIST"
 
-SecRule REQUEST_FILENAME     "!^/login/(index.html|login.do)$" "id:10003,phase:1,deny,log,msg:'Unknown Login URL',tag:'Whitelist Login'"
+SecRule REQUEST_FILENAME     "!^/login/(index.html|login.do)$" \
+                             "id:10003,phase:1,deny,log,msg:'Unknown Login URL',\
+                              tag:'Whitelist Login'"
 
-SecRule ARGS_GET_NAMES       "!^()$" "id:10004,phase:1,deny,log,msg:'Unknown Query-String Parameter',tag:'Whitelist Login'"
-SecRule ARGS_POST_NAMES      "!^(username|password)$" "id:10005,phase:2,deny,log,msg:'Unknown Post Parameter',tag:'Whitelist Login'"
+SecRule ARGS_GET_NAMES       "!^()$" "id:10004,phase:1,deny,log,\
+                              msg:'Unknown Query-String Parameter',tag:'Whitelist Login'"
+SecRule ARGS_POST_NAMES      "!^(username|password)$" "id:10005,phase:2,deny,log,\
+                              msg:'Unknown Post Parameter',tag:'Whitelist Login'"
 
-SecRule &ARGS_POST:username  "@gt 1" "id:10006,phase:2,deny,log,msg:'%{MATCHED_VAR_NAME} occurring more than once',tag:'Whitelist Login'"
-SecRule &ARGS_POST:password  "@gt 1" "id:10007,phase:2,deny,log,msg:'%{MATCHED_VAR_NAME} occurring more than once',tag:'Whitelist Login'"
+SecRule &ARGS_POST:username  "@gt 1" "id:10006,phase:2,deny,log,\
+                              msg:'%{MATCHED_VAR_NAME} occurring more than once',\
+                              tag:'Whitelist Login'"
+SecRule &ARGS_POST:password  "@gt 1" "id:10007,phase:2,deny,log,\
+                              msg:'%{MATCHED_VAR_NAME} occurring more than once',\
+                              tag:'Whitelist Login'"
 
-SecRule ARGS_POST:username   "!^[a-zA-Z0-9_-]{1,16}$" "id:10008,phase:2,deny,log,msg:'%{MATCHED_VAR_NAME} parameter does not meet value domain',tag:'Whitelist Login'"
-SecRule ARGS_POST:password   "!^[a-zA-Z0-9@#+<>_-]{1,16}$" "id:10009,phase:2,deny,log,msg:'%{MATCHED_VAR_NAME} parameter does not meet value domain',tag:'Whitelist Login'"
+SecRule ARGS_POST:username   "!^[a-zA-Z0-9_-]{1,16}$" "id:10008,phase:2,deny,log,\
+                              msg:'%{MATCHED_VAR_NAME} parameter does not meet value domain',\
+                              tag:'Whitelist Login'"
+SecRule ARGS_POST:password   "!^[a-zA-Z0-9@#+<>_-]{1,16}$" \
+                             "id:10009,phase:2,deny,log,\
+                              msg:'%{MATCHED_VAR_NAME} parameter does not meet value domain',\
+                              tag:'Whitelist Login'"
 
 SecMarker "END_LOGIN_WHITELIST"
 
@@ -508,13 +529,15 @@ Aber funktioniert das auch wirklich? Hier einige Versuche:
 
 ```bash
 $> curl http://localhost/login/index.html
--> OK (ModSecurity erlaubt den Zugriff. Die Seite selbst existiert aber nicht. Wir erhalten also ein 404, Page not Found)
+-> OK (ModSecurity erlaubt den Zugriff. Die Seite selbst existiert aber nicht. 
+       Wir erhalten also ein 404, Page not Found)
 $> curl http://localhost/login/index.html?debug=on
 -> FAIL
 $> curl http://localhost/login/admin.html
 -> FAIL
 $> curl -d "username=1234&password=test" http://localhost/login/login.do
--> OK (ModSecurity erlaubt den Zugriff. Die Seite selbst existiert aber nicht. Wir erhalten also ein 404, Page not Found)
+-> OK (ModSecurity erlaubt den Zugriff. Die Seite selbst existiert aber nicht. \
+       Wir erhalten also ein 404, Page not Found)
 $> curl -d "username=1234&password=test&backdoor=1" http://localhost/login/login.do
 -> FAIL
 $> curl -d "username=12345678901234567&password=test" http://localhost/login/login.do
@@ -528,13 +551,42 @@ $> curl -d "username=1234&username=5678&password=test" http://localhost/login/lo
 Ein Blick in das Error-Log des Servers belegt, dass die Regeln genau so griffen, wie wir sie definiert haben (Auszug gefiltert):
 
 ```bash
-[2015-10-17 05:26:05.396430] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Match of "rx ^()$" against "ARGS_GET_NAMES:debug" required. [file "/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "180"] [id "10003"] [msg "Unknown Query-String Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/index.html"] [unique_id "UcAVIn8AAQEAAFjeANQAAAAA"]
-[2015-10-17 05:26:07.539846] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Match of "rx ^()$" against "ARGS_GET_NAMES:debug" required. [file "/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "180"] [id "10003"] [msg "Unknown Query-String Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/index.html"] [unique_id "UcAVkH8AAQEAAFjeANYAAAAC"]
-[2015-10-17 05:26:12.345245] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Match of "rx ^/login/(index.html|login.do)$" against "REQUEST_FILENAME" required. [file "/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "179"] [id "10002"] [msg "Unknown Login URL"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/admin.html"] [unique_id "UcAVlH8AAQEAAFjeANcAAAAD"]
-[2015-10-17 05:26:19.976533] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^(username|password)$" against "ARGS_POST_NAMES:backdoor" required. [file "/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "181"] [id "10004"] [msg "Unknown Post Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVmn8AAQEAAFjeANkAAAAF"]
-[2015-10-17 05:26:25.165337] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9_-]{1,16}$" against "ARGS_POST:username" required. [file "/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "186"] [id "10007"] [msg "ARGS_POST:username parameter does not meet value domain"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVnn8AAQEAAFjeANoAAAAG"]
-[2015-10-17 05:26:42.924352] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9_-]{1,16}$" against "ARGS_POST:username" required. [file "/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "186"] [id "10007"] [msg "ARGS_POST:username parameter does not meet value domain"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVon8AAQEAAFjeANsAAAAH"]
-[2015-10-17 05:27:55.853951] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Operator GT matched 1 at ARGS_POST. [file "/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "183"] [id "10005"] [msg "ARGS_POST occurring more than once"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVpn8AAQEAAFjeANwAAAAI"]
+[2015-10-17 05:26:05.396430] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied …
+with code 403 (phase 1). Match of "rx ^()$" against "ARGS_GET_NAMES:debug" required. [file …
+"/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "180"] [id "10003"] [msg "Unknown …
+Query-String Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname …
+"localhost"] [uri "/login/index.html"] [unique_id "UcAVIn8AAQEAAFjeANQAAAAA"]
+[2015-10-17 05:26:07.539846] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with …
+code 403 (phase 1). Match of "rx ^()$" against "ARGS_GET_NAMES:debug" required. [file …
+"/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "180"] [id "10003"] [msg "Unknown …
+Query-String Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] …
+[uri "/login/index.html"] [unique_id "UcAVkH8AAQEAAFjeANYAAAAC"]
+[2015-10-17 05:26:12.345245] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with …
+code 403 (phase 1). Match of "rx ^/login/(index.html|login.do)$" against "REQUEST_FILENAME" …
+required. [file "/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "179"] [id "10002"] …
+[msg "Unknown Login URL"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] …
+[uri "/login/admin.html"] [unique_id "UcAVlH8AAQEAAFjeANcAAAAD"]
+[2015-10-17 05:26:19.976533] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code …
+403 (phase 2). Match of "rx ^(username|password)$" against "ARGS_POST_NAMES:backdoor" required. …
+[file "/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "181"] [id "10004"] [msg "Unknown …
+Post Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri …
+"/login/login.do"] [unique_id "UcAVmn8AAQEAAFjeANkAAAAF"]
+[2015-10-17 05:26:25.165337] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code …
+403 (phase 2). Match of "rx ^[a-zA-Z0-9_-]{1,16}$" against "ARGS_POST:username" required. [file …
+"/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "186"] [id "10007"] [msg …
+"ARGS_POST:username parameter does not meet value domain"] [tag "Local Lab Service"] [tag …
+"Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVnn8AAQEAAFjeANoAAAAG"]
+[2015-10-17 05:26:42.924352] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code …
+403 (phase 2). Match of "rx ^[a-zA-Z0-9_-]{1,16}$" against "ARGS_POST:username" required. [file …
+"/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "186"] [id "10007"] [msg …
+"ARGS_POST:username parameter does not meet value domain"] [tag "Local Lab Service"] [tag …
+"Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id …
+"UcAVon8AAQEAAFjeANsAAAAH"]
+[2015-10-17 05:27:55.853951] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code …
+403 (phase 2). Operator GT matched 1 at ARGS_POST. [file …
+"/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "183"] [id "10005"] [msg "ARGS_POST …
+occurring more than once"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] …
+[uri "/login/login.do"] [unique_id "UcAVpn8AAQEAAFjeANwAAAAI"]
 ```
 
 Es funktioniert also von A bis Z.
@@ -544,7 +596,8 @@ Es funktioniert also von A bis Z.
 Bevor wir zum Ende dieser Anleitung kommen, folgt hier noch ein Tipp, der einem in der Praxis oft hilft: _ModSecurity_ ist nämlich nicht nur eine _Web Application Firewall_. Es ist auch ein sehr exaktes Debugging-Hilfsmittel. So lässt sich etwa der komplette Verkehr zwischen Client und Server aufzeichnen. Das geht so:
 
 ```bash
-SecRule REMOTE_ADDR  "@streq 127.0.0.1"   "id:11000,phase:1,pass,log,auditlog,msg:'Initializing full traffic log'"
+SecRule REMOTE_ADDR  "@streq 127.0.0.1"   "id:11000,phase:1,pass,log,auditlog,\
+                                          msg:'Initializing full traffic log'"
 ```
 Wir finden den Verkehr des in der Regel angegebenen Clients 127.0.0.1 dann im Audit-Log.
 
@@ -552,13 +605,17 @@ Wir finden den Verkehr des in der Regel angegebenen Clients 127.0.0.1 dann im Au
 $> curl localhost
 ...
 $> sudo tail -1 /apache/logs/modsec_audit.log
-localhost 127.0.0.1 - - [17/Oct/2015:06:17:08 +0200] "GET /index.html HTTP/1.1" 404 214 "-" "-" UcAmDH8AAQEAAGUjAMoAAAAA "-" /20151017/20151017-0617/20151017-061708-UcAmDH8AAQEAAGUjAMoAAAAA 0 15146 md5:e2537a9239cbbe185116f744bba0ad97 
+localhost 127.0.0.1 - - [17/Oct/2015:06:17:08 +0200] "GET /index.html HTTP/1.1" 404 214 …
+"-" "-" UcAmDH8AAQEAAGUjAMoAAAAA "-" …
+/20151017/20151017-0617/20151017-061708-UcAmDH8AAQEAAGUjAMoAAAAA 0 15146 …
+md5:e2537a9239cbbe185116f744bba0ad97 
 $> sudo cat /apache/logs/audit/20151017/20151017-0617/20151017-061708-UcAmDH8AAQEAAGUjAMoAAAAA
 --c54d6c5e-A--
 [17/Oct/2015:06:17:08 +0200] UcAmDH8AAQEAAGUjAMoAAAAA 127.0.0.1 52386 127.0.0.1 80
 --c54d6c5e-B--
 GET /index.html HTTP/1.1
-User-Agent: curl/7.35.0 (x86_64-pc-linux-gnu) libcurl/7.35.0 OpenSSL/1.0.1 zlib/1.2.3.4 libidn/1.23 librtmp/2.3
+User-Agent: curl/7.35.0 (x86_64-pc-linux-gnu) libcurl/7.35.0 OpenSSL/1.0.1 zlib/1.2.3.4 …
+libidn/1.23 librtmp/2.3
 Host: localhost
 Accept: */*
 

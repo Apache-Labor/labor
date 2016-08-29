@@ -78,7 +78,11 @@ LoadModule        unique_id_module        modules/mod_unique_id.so
 LoadModule        security2_module        modules/mod_security2.so
 
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
-LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" %{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% %D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e %{ModSecAnomalyScoreIn}e %{ModSecAnomalyScoreOut}e" extended
+LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \
+\"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" \
+%{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% \
+%D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e \
+%{ModSecAnomalyScoreIn}e %{ModSecAnomalyScoreOut}e" extended
 
 LogFormat "[%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] %{UNIQUE_ID}e %D \
 PerfModSecInbound: %{TX.perf_modsecinbound}M \
@@ -155,15 +159,18 @@ SecAction "id:'90002',phase:3,nolog,pass,setvar:TX.ModSecTimestamp3start=%{DURAT
 SecAction "id:'90003',phase:4,nolog,pass,setvar:TX.ModSecTimestamp4start=%{DURATION}"
 SecAction "id:'90004',phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURATION}"
                       
-# SecRule REQUEST_FILENAME "@beginsWith /" "id:'90005',phase:5,t:none,nolog,noauditlog,pass,setenv:write_perflog"
+# SecRule REQUEST_FILENAME "@beginsWith /" "id:'90005',phase:5,t:none,nolog,\
+# noauditlog,pass,setenv:write_perflog"
 
 
 
 # === ModSec Recommended Rules (in modsec src package) (ids: 200000-200010)
 
-SecRule REQUEST_HEADERS:Content-Type "text/xml" "id:'200000',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
+SecRule REQUEST_HEADERS:Content-Type "text/xml" "id:'200000',phase:1,t:none,\
+t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
 
-SecRule REQBODY_ERROR "!@eq 0" "id:'200001',phase:2,t:none,deny,status:400,log,msg:'Failed to parse request body.',\
+SecRule REQBODY_ERROR "!@eq 0" "id:'200001',phase:2,t:none,deny,status:400,\
+log,msg:'Failed to parse request body.',\
 logdata:'%{reqbody_error_msg}',severity:2"
 
 SecRule MULTIPART_STRICT_ERROR "!@eq 0" \
@@ -182,7 +189,8 @@ IP %{MULTIPART_INVALID_PART}, \
 IH %{MULTIPART_INVALID_HEADER_FOLDING}, \
 FL %{MULTIPART_FILE_LIMIT_EXCEEDED}'"
 
-SecRule TX:/^MSC_/ "!@streq 0" "id:'200004',phase:2,t:none,deny,status:500,msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
+SecRule TX:/^MSC_/ "!@streq 0" "id:'200004',phase:2,t:none,deny,status:500,\
+msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
 
 
 # === ModSecurity Rules (ids: 900000-999999)
@@ -195,8 +203,10 @@ SecAction "id:'900001',phase:1,t:none, \
    setvar:tx.warning_anomaly_score=3, \
    setvar:tx.notice_anomaly_score=2, \
    nolog, pass"
-SecAction "id:'900002',phase:1,t:none,setvar:tx.inbound_anomaly_score_level=10000,setvar:tx.inbound_anomaly_score=0,nolog,pass"
-SecAction "id:'900003',phase:1,t:none,setvar:tx.outbound_anomaly_score_level=10000,setvar:tx.outbound_anomaly_score=0,nolog,pass"
+SecAction "id:'900002',phase:1,t:none,setvar:tx.inbound_anomaly_score_level=10000,\
+           setvar:tx.inbound_anomaly_score=0,nolog,pass"
+SecAction "id:'900003',phase:1,t:none,setvar:tx.outbound_anomaly_score_level=10000,\
+           setvar:tx.outbound_anomaly_score=0,nolog,pass"
 SecAction "id:'900004',phase:1,t:none,setvar:tx.anomaly_score_blocking=on,nolog,pass"
 
 SecAction "id:'900006',phase:1,t:none,setvar:tx.max_num_args=255,nolog,pass"
@@ -207,20 +217,27 @@ SecAction "id:'900010',phase:1,t:none,setvar:tx.max_file_size=10000000,nolog,pas
 SecAction "id:'900011',phase:1,t:none,setvar:tx.combined_file_sizes=10000000,nolog,pass"
 SecAction "id:'900012',phase:1,t:none, \
   setvar:'tx.allowed_methods=GET HEAD POST OPTIONS', \
-  setvar:'tx.allowed_request_content_type=application/x-www-form-urlencoded|multipart/form-data|text/xml|application/xml|application/x-amf|application/json', \
+  setvar:'tx.allowed_request_content_type=application/x-www-form-urlencoded|multipart/form-data|\
+text/xml|application/xml|application/x-amf|application/json', \
   setvar:'tx.allowed_http_versions=HTTP/0.9 HTTP/1.0 HTTP/1.1', \
-  setvar:'tx.restricted_extensions=.asa/ .asax/ .ascx/ .axd/ .backup/ .bak/ .bat/ .cdx/ .cer/ .cfg/ .cmd/ .com/ .config/ .conf/ .cs/ .csproj/ .csr/ .dat/ .db/ .dbf/ .dll/ .dos/ .htr/ .htw/ .ida/ .idc/ .idq/ .inc/ .ini/ .key/ .licx/ .lnk/ .log/ .mdb/ .old/ .pass/ .pdb/ .pol/ .printer/ .pwd/ .resources/ .resx/ .sql/ .sys/ .vb/ .vbs/ .vbproj/ .vsdisco/ .webinfo/ .xsd/ .xsx/', \
-  setvar:'tx.restricted_headers=/Proxy-Connection/ /Lock-Token/ /Content-Range/ /Translate/ /via/ /if/', \
+  setvar:'tx.restricted_extensions=.asa/ .asax/ .ascx/ .axd/ .backup/ .bak/ .bat/ .cdx/ \
+.cer/ .cfg/ .cmd/ .com/ .config/ .conf/ .cs/ .csproj/ .csr/ .dat/ .db/ .dbf/ .dll/ .dos/ \
+.htr/ .htw/ .ida/ .idc/ .idq/ .inc/ .ini/ .key/ .licx/ .lnk/ .log/ .mdb/ .old/ .pass/ .pdb/ \
+.pol/ .printer/ .pwd/ .resources/ .resx/ .sql/ .sys/ .vb/ .vbs/ .vbproj/ .vsdisco/ .webinfo/ \
+.xsd/ .xsx/', \
+  setvar:'tx.restricted_headers=/Proxy-Connection/ /Lock-Token/ /Content-Range/ /Translate/ \
+/via/ /if/', \
   nolog,pass"
 
-SecRule REQUEST_HEADERS:User-Agent "^(.*)$" "id:'900018',phase:1,t:none,t:sha1,t:hexEncode,setvar:tx.ua_hash=%{matched_var}, \
-  nolog,pass"
+SecRule REQUEST_HEADERS:User-Agent "^(.*)$" "id:'900018',phase:1,t:none,t:sha1,t:hexEncode,\
+  setvar:tx.ua_hash=%{matched_var},nolog,pass"
 SecRule REQUEST_HEADERS:x-forwarded-for "^\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b" \
   "id:'900019',phase:1,t:none,capture,setvar:tx.real_ip=%{tx.1},nolog,pass"
-SecRule &TX:REAL_IP "!@eq 0" "id:'900020',phase:1,t:none,initcol:global=global,initcol:ip=%{tx.real_ip}_%{tx.ua_hash}, \
-  nolog,pass"
-SecRule &TX:REAL_IP "@eq 0" "id:'900021',phase:1,t:none,initcol:global=global,initcol:ip=%{remote_addr}_%{tx.ua_hash},setvar:tx.real_ip=%{remote_addr}, \
-  nolog,pass"
+SecRule &TX:REAL_IP "!@eq 0" "id:'900020',phase:1,t:none,initcol:global=global,\
+  initcol:ip=%{tx.real_ip}_%{tx.ua_hash},nolog,pass"
+SecRule &TX:REAL_IP "@eq 0" "id:'900021',phase:1,t:none,initcol:global=global,\
+  initcol:ip=%{remote_addr}_%{tx.ua_hash},setvar:tx.real_ip=%{remote_addr},nolog,pass"
+
 
 # === ModSecurity Ignore Rules Before Core Rules Inclusion; order by id of ignored rule (ids: 10000-49999)
 
@@ -261,7 +278,8 @@ SSLCertificateKeyFile   /etc/ssl/private/ssl-cert-snakeoil.key
 SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
 
 SSLProtocol             All -SSLv2 -SSLv3
-SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM !MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
+SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM !MD5 !EXP \
+!DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
 SSLHonorCipherOrder     On
 
 SSLRandomSeed           startup file:/dev/urandom 2048
@@ -350,7 +368,14 @@ $> nikto -h localhost
 Dieser Scan sollte auf dem Server zahlreiche *ModSecurity-Alarme* ausgelöst haben. Sehen wir uns das *Apache Error-Log* einmal genauer an. In meinem Fall waren es gut 33'000 Einträge im Error-Log. Hier eine Beispielmeldung:
 
 ```bash
-[2015-11-07 08:34:13.816811] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Pattern match "(fromcharcode|alert|eval)\\\\s*\\\\(" at ARGS:how_many_back. [file "/modsecurity-core-rules/modsecurity_crs_41_xss_attacks.conf"] [line "391"] [id "973307"] [rev "2"] [msg "XSS Attack Detected"] [data "Matched Data: alert( found within ARGS:how_many_back: \\x22><script>alert(1)</script>"] [ver "OWASP_CRS/2.2.9"] [maturity "8"] [accuracy "8"] [tag "Local Lab Service"] [tag "OWASP_CRS/WEB_ATTACK/XSS"] [tag "WASCTC/WASC-8"] [tag "WASCTC/WASC-22"] [tag "OWASP_TOP_10/A2"] [tag "OWASP_AppSensor/IE1"] [tag "PCI/6.5.1"] [hostname "localhost"] [uri "/scripts/message/message_dialog.tml"] [unique_id "Vj2pdX8AAQEAABa9vbcAAAAU"]
+[2015-11-07 08:34:13.816811] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Pattern match …
+"(fromcharcode|alert|eval)\\\\s*\\\\(" at ARGS:how_many_back. [file …
+"/modsecurity-core-rules/modsecurity_crs_41_xss_attacks.conf"] [line "391"] [id "973307"] [rev "2"] …
+[msg "XSS Attack Detected"] [data "Matched Data: alert( found within ARGS:how_many_back: \\x22>…
+<script>alert(1)</script>"] [ver "OWASP_CRS/2.2.9"] [maturity "8"] [accuracy "8"] [tag "Local Lab …
+Service"] [tag "OWASP_CRS/WEB_ATTACK/XSS"] [tag "WASCTC/WASC-8"] [tag "WASCTC/WASC-22"] [tag …
+"OWASP_TOP_10/A2"] [tag "OWASP_AppSensor/IE1"] [tag "PCI/6.5.1"] [hostname "localhost"] [uri …
+"/scripts/message/message_dialog.tml"] [unique_id "Vj2pdX8AAQEAABa9vbcAAAAU"]
 ```
 
 Das *Error-Log* wurde bereits in der vorangegangenen Anleitung beschrieben. Die Meldungen, welche durch die Core-Rules ausgelöst werden, bringen gegenüber den Standard-Meldungen noch weitere Informationen, so dass es sich anbietet, das Logformat noch einmal zu besprechen.
@@ -473,7 +498,8 @@ $> cat logs/error.log | melid | sort | uniq -c | sort -n
    6134 981203
    6135 990002
    6135 990012
-$> cat logs/error.log | melid | sort | uniq -c | sort -n  | while read STR; do echo -n "$STR "; ID=$(echo "$STR" | sed -e "s/.*\ //"); grep $ID logs/error.log | head -1 | melmsg; done
+$> cat logs/error.log | melid | sort | uniq -c | sort -n  | while read STR; do echo -n "$STR "; \
+ID=$(echo "$STR" | sed -e "s/.*\ //"); grep $ID logs/error.log | head -1 | melmsg; done
 1 950000 Session Fixation
 1 950107 URL Encoding Abuse Attack Attempt
 1 950907 System Command Injection
@@ -481,7 +507,7 @@ $> cat logs/error.log | melid | sort | uniq -c | sort -n  | while read STR; do e
 1 960007 Empty Host Header
 1 960208 Argument value too long
 1 960209 Argument name too long
-1 981202 Correlated Attack Attempt Identified: (Total Score: 22, SQLi=5, XSS=) Inbound Attack (SQL Injection Attack: Common Injection Testing Detected Inbound Anomaly Score: 18) + Outbound Application Error (The application is not available - Outbound Anomaly Score: 4)
+1 981202 Correlated Attack Attempt Identified: (Total Score: 22, SQLi=5, XSS=) Inbound Attack … 
 1 981319 SQL Injection Attack: SQL Operator Detected
 2 958031 Cross-site Scripting (XSS) Attack
 2 959071 SQL Injection Attack
@@ -544,7 +570,8 @@ Damit lässt sich arbeiten. Aber es bietet sich wohl an, den *One-Liner* genauer
 Dieses Kommando kann je nach Rechnerleistung einige Sekunden oder sogar Minuten dauern. Man könnte nun meinen, es wäre schlauer einen zusätzlichen Alias zu definieren, um Identifikation und Beschreibung der Regel in einem Schritt zu eruieren. Dies führte uns aber auf den Holzweg, denn die Regel 981203 hat eine Bezeichnung, die in der Klammer und nach der Klammer dynamische Teile enthält. Das möchten wir natürlich zusammenfassen, um die Regel nur einmal abzubilden. Um die Auswertung also wirklich zu vereinfachen müssen wir die dynamischen Bezeichnungen eliminieren. Hier ein zusätzlicher *Alias*, der diese Idee umsetzt. Er ist Teil des bereits bekannten *Alias-Files .apache-modsec.alias*.
 
 ```bash
-alias melidmsg='grep -o "\[id [^]]*\].*\[msg [^]]*\]" | sed -e "s/\].*\[/] [/" | cut -b6-11,19- | tr -d \] | sed -e "s/(Total .*/(Total ...) .../" | tr -d \"'
+alias melidmsg='grep -o "\[id [^]]*\].*\[msg [^]]*\]" | sed -e "s/\].*\[/] [/" | cut -b6-11,19- | \
+tr -d \] | sed -e "s/(Total .*/(Total ...) .../" | tr -d \"'
 ```
 
 ```
@@ -605,7 +632,7 @@ $> cat logs/error.log | melidmsg | sucs
     284 958052 Cross-site Scripting (XSS) Attack
     284 973307 XSS Attack Detected
     418 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-    531 981173 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+    531 981173 Restricted SQL Character Anomaly Detection Alert - Total # of special characters … 
    2274 950119 Remote File Inclusion Attack
    2335 950120 Possible Remote File Inclusion (RFI) Attack: Off-Domain Reference/Link
    6133 960015 Request Missing an Accept Header
@@ -647,7 +674,8 @@ Diese Resultate geben uns eine Idee der Situation: Die allermeisten Anfragen pas
 So eine richtige Idee über die nötigen *Tuning-Schritte* gibt uns dies aber noch nicht. Um diese Information in geeigneter Form darzustellen, habe ich ein Skript vorbereitet, das die *Anomaly-Scores* auswertet: [modsec-positive-stats.rb](https://github.com/Apache-Labor/labor/blob/master/bin/modsec-positive-stats.rb). Das Skript auf das Logfile angewendet bringt folgendes Resultat:
 
 ```
-$> cat labor-04-example-access.log  | egrep -o "[0-9-]+ [0-9-]+$" | tr " " ";" | modsec-positive-stats.rb
+$> cat labor-04-example-access.log  | egrep -o "[0-9-]+ [0-9-]+$" | tr " " ";" | \
+modsec-positive-stats.rb
 INCOMING                     Num of req. | % of req. |  Sum of % | Missing %
 Number of incoming req. (total) |  10000 | 100.0000% | 100.0000% |   0.0000%
 
@@ -745,14 +773,27 @@ $> curl -v -H "Accept: " http://localhost/index.html
 ...
 $> tail /apache/logs/error.log
 ...
-[Tue Dec 10 06:41:41 2013] [error] [client 127.0.0.1] ModSecurity: Warning. Operator EQ matched 0 at REQUEST_HEADERS. [file "/apache/conf/modsecurity-core-rules-latest/modsecurity_crs_21_protocol_anomalies.conf"] [line "47"] [id "960015"] [rev "1"] [msg "Request Missing an Accept Header"] [severity "NOTICE"] [ver "OWASP_CRS/2.2.8"] [maturity "9"] [accuracy "9"] [tag "Local Lab Service"] [tag "OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER_ACCEPT"] [tag "WASCTC/WASC-21"] [tag "OWASP_TOP_10/A7"] [tag "PCI/6.5.10"] [hostname "localhost"] [uri "/index.html"] [unique_id "UqaplX8AAQEAABiYANYAAAAD"]
-[Tue Dec 10 06:41:41 2013] [error] [client 127.0.0.1] ModSecurity: Warning. Operator LT matched 1000 at TX:inbound_anomaly_score. [file "/apache/conf/modsecurity-core-rules-latest/modsecurity_crs_60_correlation.conf"] [line "33"] [id "981203"] [msg "Inbound Anomaly Score (Total Inbound Score: 2, SQLi=, XSS=): Request Missing an Accept Header"] [tag "Local Lab Service"] [hostname "localhost"] [uri "/index.html"] [unique_id "UqaplX8AAQEAABiYANYAAAAD"]
+[Tue Dec 10 06:41:41 2013] [error] [client 127.0.0.1] ModSecurity: Warning. Operator EQ …
+matched 0 at REQUEST_HEADERS. [file …
+"/apache/conf/modsecurity-core-rules-latest/modsecurity_crs_21_protocol_anomalies.conf"] …
+[line "47"] [id "960015"] [rev "1"] [msg "Request Missing an Accept Header"] [severity "NOTICE"] …
+[ver "OWASP_CRS/2.2.8"] [maturity "9"] [accuracy "9"] [tag "Local Lab Service"] [tag …
+"OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER_ACCEPT"] [tag "WASCTC/WASC-21"] [tag …
+"OWASP_TOP_10/A7"] [tag "PCI/6.5.10"] [hostname "localhost"] [uri "/index.html"] [unique_id …
+"UqaplX8AAQEAABiYANYAAAAD"]
+[Tue Dec 10 06:41:41 2013] [error] [client 127.0.0.1] ModSecurity: Warning. Operator LT …
+matched 1000 at TX:inbound_anomaly_score. [file …
+"/apache/conf/modsecurity-core-rules-latest/modsecurity_crs_60_correlation.conf"] [line "33"] …
+[id "981203"] [msg "Inbound Anomaly Score (Total Inbound Score: 2, SQLi=, XSS=): Request …
+Missing an Accept Header"] [tag "Local Lab Service"] [hostname "localhost"] [uri "/index.html"] …
+[unique_id "UqaplX8AAQEAABiYANYAAAAD"]
 ```
 
 Wir haben *curl* angewiesen, einen Request ohne den *Accept-Header* abzusetzen. Mit der *Verbose*-Option (*-v*) können wir dieses Verhalten schön kontrollieren. Das *Error-Log* zeigt dann auch tatsächlich den provozierten Alarm und auf der folgenden Zeile die Zusammenfassung des *Anomaly Scores*: Die Regelverletzung brachte dem Request 2 Punkte. Nun unterdrücken wir die Regel durch das Schreiben einer *Ignore-Rule*, welche wir im dazu vorgesehenen Konfigurationsteil vor dem *Core-Rules Include" positionieren:
 
 ```bash
-SecRule REQUEST_FILENAME "@beginsWith /" "phase:1,nolog,pass,t:none,id:10000,ctl:ruleRemoveById=960015"
+SecRule REQUEST_FILENAME "@beginsWith /" "phase:1,nolog,pass,t:none,id:10000,\
+                                          ctl:ruleRemoveById=960015"
 ```
 
 Wir definieren eine Regel, welche zunächst den Pfad überprüft. Mit der Bedingung auf dem Pfad *"/"* wird die Regel natürlich immer zutreffen und die Bedingung ist damit an sich überflüssig. Wir setzen sie mit Vorteil dennoch in dieser Art, denn auf diesem Grundmuster lässt sie sich leicht für verschiedene Pfade verwenden. Ohne Bedingung würden wir sie als *SecAction* formulieren. Wir definieren unsere Regel in der Phase 1, wir wollen nicht loggen, sondern weisen ihr eine Identifikation zu Beginn unseres Blocks zu (*10000*). Schliesslich unterdrücken wir die Regel *960015*. Dies geschieht über eine Kontroll-Anweisung (*ctl:*).
@@ -760,7 +801,8 @@ Wir definieren eine Regel, welche zunächst den Pfad überprüft. Mit der Beding
 Das war sehr wichtig. Deshalb nochmals zusammengefasst: Wir definieren eine Regel, um eine andere Regel zu unterdrücken. Wir benützen dazu ein Muster, das uns einen Pfad als Bedingung definieren lässt. Damit können wir Regeln für einzelne Applikationsteile ausschalten. Just dort, wo der Fehlalarm auftritt. Dies verhindert, dass wir die Regel auf dem gesamten Server ausschalten, während der Fehlalarm doch nur bei der Verarbeitung eines einzelnen Formulars auftritt, was sehr häufig der Fall ist. Das sähe etwa so aus:
 
 ```
-SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:1,nolog,pass,t:none,id:10001,ctl:ruleRemoveById=960015"
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:1,nolog,pass,t:none,\
+                                                       id:10001,ctl:ruleRemoveById=960015"
 ```
 
 Nun haben wir also eine Regel ausgeschaltet. Sei es für den kompletten Service (Pfad *"/"*) oder für einen bestimmten Unterpfad (Pfad *"/app/submit.do"*). Leider sind wir damit blind geworden, was diese Regel betrifft: Wir wissen gar nicht mehr, ob eingehende Requests die Regel verletzen würden. Denn nicht immer kennen wir die Applikationen auf unseren Servern bis ins Detail und wenn wir nun ein Jahr abwarten und uns überlegen, ob wir die *Ignore-Rule* weiterhin brauchen, werden wir keine Antwort darauf haben. Wir haben jede Meldung zum Thema unterdrückt. Ideal wäre es, wenn wir das Zuschnappen der Regel noch beobachten könnten, aber so, dass der Request nicht blockiert wird und auch der *Anomaly Score* unverändert bleibt. Die Erhöhung des *Anomaly Scores* geschieht in der Definition der Regel. Dies ist in den *Core Rules* für die Regel *960015* wie folgt gelöst:
@@ -773,8 +815,10 @@ Hier wird also zur Transaktionsvariablen *inbound_anomaly_score* der Wert *tx.no
 
 ```
 ...
-SecRule REQUEST_FILENAME "@beginsWith /index.html" "chain,phase:2,log,pass,t:none,id:10004,msg:'Adjusting inbound anomaly score for rule 960015'"
-   SecRule "&TX:960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS" "@ge 1" "setvar:tx.inbound_anomaly_score=-%{tx.notice_anomaly_score}"
+SecRule REQUEST_FILENAME "@beginsWith /index.html" "chain,phase:2,log,pass,t:none,id:10004,\
+   msg:'Adjusting inbound anomaly score for rule 960015'"
+   SecRule "&TX:960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS" "@ge 1" \
+      "setvar:tx.inbound_anomaly_score=-%{tx.notice_anomaly_score}"
 ...
 ```
 
@@ -783,8 +827,16 @@ Wir haben hier zwei Regeln vor uns, die mittels dem Kommando *chain* verbunden w
 Im *Error-Log* ergibt das nachher für den oben bereits vorgestellen *curl-*Aufruf folgende zwei Einträge:
 
 ```bash
-[2015-11-08 08:16:19.215089] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Operator EQ matched 0 at REQUEST_HEADERS. [file "/modsecurity-core-rules/modsecurity_crs_21_protocol_anomalies.conf"] [line "47"] [id "960015"] [rev "1"] [msg "Request Missing an Accept Header"] [severity "NOTICE"] [ver "OWASP_CRS/2.2.9"] [maturity "9"] [accuracy "9"] [tag "Local Lab Service"] [tag "OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER_ACCEPT"] [tag "WASCTC/WASC-21"] [tag "OWASP_TOP_10/A7"] [tag "PCI/6.5.10"] [hostname "localhost"] [uri "/app/submit.do"] [unique_id "Vj72w38AAQEAADwHNSoAAAAA"]
-[2015-11-08 08:16:19.220263] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Operator GE matched 1 at TX. [file "/apache/conf/httpd.conf_labor-06"] [line "187"] [id "10001"] [msg "Adjusting inbound anomaly score for rule 960015"] [tag "Local Lab Service"] [hostname "localhost"] [uri "/app/submit.do"] [unique_id "Vj72w38AAQEAADwHNSoAAAAA"]
+[2015-11-08 08:16:19.215089] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Operator EQ …
+matched 0 at REQUEST_HEADERS. [file "/modsecurity-core-rules/modsecurity_crs_21_protocol_anomalies.conf"] …
+[line "47"] [id "960015"] [rev "1"] [msg "Request Missing an Accept Header"] [severity "NOTICE"] …
+[ver "OWASP_CRS/2.2.9"] [maturity "9"] [accuracy "9"] [tag "Local Lab Service"] [tag …
+"OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER_ACCEPT"] [tag "WASCTC/WASC-21"] [tag "OWASP_TOP_10/A7"] …
+[tag "PCI/6.5.10"] [hostname "localhost"] [uri "/app/submit.do"] [unique_id "Vj72w38AAQEAADwHNSoAAAAA"]
+[2015-11-08 08:16:19.220263] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Operator …
+GE matched 1 at TX. [file "/apache/conf/httpd.conf_labor-06"] [line "187"] [id "10001"] [msg …
+"Adjusting inbound anomaly score for rule 960015"] [tag "Local Lab Service"] [hostname "localhost"] …
+[uri "/app/submit.do"] [unique_id "Vj72w38AAQEAADwHNSoAAAAA"]
 ```
 
 Der Eintrag zum abschliessenden *Anomaly-Score* fällt weg, da dieser Wert wieder auf 0 zurückgesetzt wurde. Das alles bedeutet nun, dass wir weiterhin informiert werden, wenn eine Regelverletzung vorliegt, aber dem Request wird kein *Anomaly-Score* mehr aufgrund dieser Regel zugewiesen. Wir haben den Alarm in diesem Sinn akzeptiert.
@@ -795,23 +847,24 @@ Den Variablen-Namen können wir entweder aus der Regeldefinition in den *Core Ru
 
 ```
 $> sudo egrep "Set variable.*960015" logs/modsec_debug.log
-[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/app/submit.do][9] Set variable "tx.960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS" to "0".
+[16/Dec/2013:10:16:11 +0100] [localhost/sid#1470170][rid#7fbc5c018e40][/app/submit.do][9] …
+Set variable "tx.960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS" to "0".
 ```
 
 Die hier als *tx.960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS* muss in einer Regel als *TX:960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS* geschrieben werden; genau so, wie wir es oben gemacht haben. Das vorgestellte *&* bedeutet, dass nicht die Variable selbst untersucht wird, sondern die Anzahl der Variablen mit diesem Namen: Also *1*. Den genauen Wert, den wir im *Inbound Anomaly Score* wieder abziehen müssen, finden wir ebenfalls im *Debug Log*:
 
 ```bash
 $> sudo egrep -B9 "Set variable.*960015" logs/modsec_debug.log
-[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Setting variable: tx.anomaly_score=+%{tx.notice_anomaly_score}
-[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Recorded original collection variable: tx.anomaly_score = "0"
-[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Resolved macro %{tx.notice_anomaly_score} to: 2
-[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Relative change: anomaly_score=0+2
-[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Set variable "tx.anomaly_score" to "2".
-[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Setting variable: tx.%{rule.id}-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-%{matched_var_name}=%{matched_var}
-[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Resolved macro %{rule.id} to: 960015
-[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Resolved macro %{matched_var_name} to: REQUEST_HEADERS
-[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Resolved macro %{matched_var} to: 0
-[08/Nov/2015:08:16:19 +0100] [localhost/sid#758700][rid#7fee30002970][/app/submit.do][9] Set variable "tx.960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_HEADER-REQUEST_HEADERS" to "0"
+[08/Nov/2015:08:16:19 +0100] ... Setting variable: tx.anomaly_score=+%{tx.notice_anomaly_score}
+[08/Nov/2015:08:16:19 +0100] ... Recorded original collection variable: tx.anomaly_score = "0"
+[08/Nov/2015:08:16:19 +0100] ... Resolved macro %{tx.notice_anomaly_score} to: 2
+[08/Nov/2015:08:16:19 +0100] ... Relative change: anomaly_score=0+2
+[08/Nov/2015:08:16:19 +0100] ... Set variable "tx.anomaly_score" to "2".
+[08/Nov/2015:08:16:19 +0100] ... Setting variable: tx.%{rule.id}-OWASP_CRS/PROTOCOL_VIOLATION/...
+[08/Nov/2015:08:16:19 +0100] ... Resolved macro %{rule.id} to: 960015
+[08/Nov/2015:08:16:19 +0100] ... Resolved macro %{matched_var_name} to: REQUEST_HEADERS
+[08/Nov/2015:08:16:19 +0100] ... Resolved macro %{matched_var} to: 0
+[08/Nov/2015:08:16:19 +0100] ... Set variable "tx.960015-OWASP_CRS/PROTOCOL_VIOLATION/MISSING_...
 ```
 
 Wir sehen hier im Detail, wie *ModSecurity* seine arithmetischen Funktionen durchführt. Interessant ist die erste Zeile, in der dargelegt wird, wie der Anomaly Score erhöht wird. Er wird um *tx.notice_anomaly_score* erhöht. Diesen Wert würden wir auch in der Definition der *Core Rules* finden, hier ist er aber leichter zu lesen.
@@ -819,26 +872,55 @@ Wir sehen hier im Detail, wie *ModSecurity* seine arithmetischen Funktionen durc
 Es kommt natürlich vor, dass eine Regel mehrfach verletzt wird. Das heisst, dass mehrere Parameter dieselbe Regel verletzen. Auch diesen Fall können wir abdecken, wenn auch unter der weiteren Erhöhung der Komplexität. In diesem Fall schreibt *ModSecurity* eine Collection-Variable, welche den Variablen-Namen mit einschliesst: also Regelnummer sowie Bezeichnung und dies um das Suffix *-ARGS:<name>* erweitert. Das ergibt für eine *File Injection Regel* wie *950005* zum Beispiel *TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_name*. Haben wir es mit zwei Parametern zu tun, welche diese Regel verletzen (sagen wir *contact_form_name* und *contact_form_address*), die folgende Konstruktion:
 
 ```bash
-SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "chain,phase:2,log,t:none,pass,id:10003,msg:'Adjusting inbound anomaly score for rule 950005'"
-   SecRule "&TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_name" "@ge 1" "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "chain,phase:2,log,t:none,pass,id:10003,\
+				     msg:'Adjusting inbound anomaly score for rule 950005'"
+   SecRule "&TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_name" "@ge 1" \
+                                     "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
 
-SecRule REQUEST_FILENAME "@beginsWith /submit.do" "chain,phase:2,log,pass,t:none,id:10004,msg:'Adjusting inbound anomaly score for rule 950005'"
-   SecRule "&TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_address" "@ge 1" "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
+SecRule REQUEST_FILENAME "@beginsWith /submit.do" "chain,phase:2,log,pass,t:none,id:10004,\
+                                     msg:'Adjusting inbound anomaly score for rule 950005'"
+   SecRule "&TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_address" "@ge 1" \
+                                     "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
 ```
 
 Auslösen können wir die Regelverletzung und die eben konfigurierte Nachjustierung der Anomalie-Werte durch folgenden Aufruf:
 
 ```bash
-$> curl -d "contact_form_name=/etc/passwd" -d "contact_form_address=/etc/passwd" http://localhost/app/submit.do
+$> curl -d "contact_form_name=/etc/passwd" -d "contact_form_address=/etc/passwd" \
+http://localhost/app/submit.do
 ...
 $> tail -1 logs/access.log
-127.0.0.1 - - [2015-11-08 08:25:46.950543] "POST /app/submit.do HTTP/1.1" 404 45 "-" "curl/7.46.0-DEV" localhost 127.0.0.1 80 - - "-" Vj74@n8AAQEAADydhKkAAAAE - - 219 231 -% 21734 19189 71 588 0 0
+127.0.0.1 - - [2015-11-08 08:25:46.950543] "POST /app/submit.do HTTP/1.1" 404 45 "-" …
+"curl/7.46.0-DEV" localhost 127.0.0.1 80 - - "-" Vj74@n8AAQEAADydhKkAAAAE - - 219 231 … 
+-% 21734 19189 71 588 0 0
 $> grep Vj74@n8AAQEAADydhKkAAAAE logs/error.log
 ...
-[2015-11-08 08:25:46.961718] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Pattern match "(?:\\\\b(?:\\\\.(?:ht(?:access|passwd|group)|www_?acl)|global\\\\.asa|httpd\\\\.conf|boot\\\\.ini)\\\\b|\\\\/etc\\\\/)" at ARGS:contact_form_address. [file "/modsecurity-core-rules/modsecurity_crs_40_generic_attacks.conf"] [line "205"] [id "950005"] [rev "3"] [msg "Remote File Access Attempt"] [data "Matched Data: /etc/ found within ARGS:contact_form_address: /etc/passwd"] [severity "CRITICAL"] [ver "OWASP_CRS/2.2.9"] [maturity "9"] [accuracy "9"] [tag "Local Lab Service"] [tag "OWASP_CRS/WEB_ATTACK/FILE_INJECTION"] [tag "WASCTC/WASC-33"] [tag "OWASP_TOP_10/A4"] [tag "PCI/6.5.4"] [hostname "localhost"] [uri "/app/submit.do"] [unique_id "Vj74@n8AAQEAADydhKkAAAAE"]
-[2015-11-08 08:25:46.961953] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Pattern match "(?:\\\\b(?:\\\\.(?:ht(?:access|passwd|group)|www_?acl)|global\\\\.asa|httpd\\\\.conf|boot\\\\.ini)\\\\b|\\\\/etc\\\\/)" at ARGS:contact_form_name. [file "/modsecurity-core-rules/modsecurity_crs_40_generic_attacks.conf"] [line "205"] [id "950005"] [rev "3"] [msg "Remote File Access Attempt"] [data "Matched Data: /etc/ found within ARGS:contact_form_name: /etc/passwd"] [severity "CRITICAL"] [ver "OWASP_CRS/2.2.9"] [maturity "9"] [accuracy "9"] [tag "Local Lab Service"] [tag "OWASP_CRS/WEB_ATTACK/FILE_INJECTION"] [tag "WASCTC/WASC-33"] [tag "OWASP_TOP_10/A4"] [tag "PCI/6.5.4"] [hostname "localhost"] [uri "/app/submit.do"] [unique_id "Vj74@n8AAQEAADydhKkAAAAE"]
-[2015-11-08 08:25:46.970259] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Operator GE matched 1 at TX. [file "/apache/conf/httpd.conf_labor-06"] [line "187"] [id "50001"] [msg "Adjusting inbound anomaly score for rule 950005"] [tag "Local Lab Service"] [hostname "localhost"] [uri "/app/submit.do"] [unique_id "Vj74@n8AAQEAADydhKkAAAAE"]
-[2015-11-08 08:25:46.970320] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Operator GE matched 1 at TX. [file "/apache/conf/httpd.conf_labor-06"] [line "190"] [id "50002"] [msg "Adjusting inbound anomaly score for rule 950005"] [tag "Local Lab Service"] [hostname "localhost"] [uri "/app/submit.do"] [unique_id "Vj74@n8AAQEAADydhKkAAAAE"]
+[2015-11-08 08:25:46.961718] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Pattern …
+match "(?:\\\\b(?:\\\\.(?:ht(?:access|passwd|group)|www_?acl)|global\\\\.asa|httpd\\\\.conf…
+|boot\\\\.ini)\\\\b|\\\\/etc\\\\/)" at ARGS:contact_form_address. [file …
+"/modsecurity-core-rules/modsecurity_crs_40_generic_attacks.conf"] [line "205"] [id "950005"] …
+[rev "3"] [msg "Remote File Access Attempt"] [data "Matched Data: /etc/ found within …
+ARGS:contact_form_address: /etc/passwd"] [severity "CRITICAL"] [ver "OWASP_CRS/2.2.9"] [maturity …
+"9"] [accuracy "9"] [tag "Local Lab Service"] [tag "OWASP_CRS/WEB_ATTACK/FILE_INJECTION"] [tag …
+"WASCTC/WASC-33"] [tag "OWASP_TOP_10/A4"] [tag "PCI/6.5.4"] [hostname "localhost"] [uri …
+"/app/submit.do"] [unique_id "Vj74@n8AAQEAADydhKkAAAAE"]
+[2015-11-08 08:25:46.961953] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Pattern …
+match "(?:\\\\b(?:\\\\.(?:ht(?:access|passwd|group)|www_?acl)|global\\\\.asa|httpd\\\\.conf|…
+boot\\\\.ini)\\\\b|\\\\/etc\\\\/)" at ARGS:contact_form_name. [file …
+"/modsecurity-core-rules/modsecurity_crs_40_generic_attacks.conf"] [line "205"] [id "950005"] …
+[rev "3"] [msg "Remote File Access Attempt"] [data "Matched Data: /etc/ found within …
+ARGS:contact_form_name: /etc/passwd"] [severity "CRITICAL"] [ver "OWASP_CRS/2.2.9"] [maturity …
+"9"] [accuracy "9"] [tag "Local Lab Service"] [tag "OWASP_CRS/WEB_ATTACK/FILE_INJECTION"] …
+[tag "WASCTC/WASC-33"] [tag "OWASP_TOP_10/A4"] [tag "PCI/6.5.4"] [hostname "localhost"] [uri …
+"/app/submit.do"] [unique_id "Vj74@n8AAQEAADydhKkAAAAE"]
+[2015-11-08 08:25:46.970259] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Operator GE …
+matched 1 at TX. [file "/apache/conf/httpd.conf_labor-06"] [line "187"] [id "50001"] [msg …
+"Adjusting inbound anomaly score for rule 950005"] [tag "Local Lab Service"] [hostname …
+"localhost"] [uri "/app/submit.do"] [unique_id "Vj74@n8AAQEAADydhKkAAAAE"]
+[2015-11-08 08:25:46.970320] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. Operator …
+GE matched 1 at TX. [file "/apache/conf/httpd.conf_labor-06"] [line "190"] [id "50002"] [msg …
+"Adjusting inbound anomaly score for rule 950005"] [tag "Local Lab Service"] [hostname …
+"localhost"] [uri "/app/submit.do"] [unique_id "Vj74@n8AAQEAADydhKkAAAAE"]
 
 ```
 
@@ -859,7 +941,8 @@ Dieses Kommando, das nach dem Laden der *Core Rules* konfiguriert werden muss, p
 Bei Formular-Parametern sollten wir nicht so generell vorgehen, dass wir ihre Behandlung auf dem gesamten Service ausschalten. Es gibt aber ein Regel-Muster, das sehr eng an diesem Beispiel anlehnt, aber nur für einen einzelnen Parameter auf einem einzigen Pfad greift:
 
 ```bash
-SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:2,nolog,pass,t:none,id:10002,ctl:ruleRemoveTargetById=950005;ARGS:contact_form_name"
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:2,nolog,pass,\
+        t:none,id:10002,ctl:ruleRemoveTargetById=950005;ARGS:contact_form_name"
 ```
 
 Hier schalten wir die Behandlung des Parameters *contact_form_name* durch die Regel *950005* für den Pfad */app/submit.do* aus. Das ist punktgenau und in meiner Praxis die bevorzugte Art und Weise, ein einzelnes False Positive für einen Parameter zu unterdrücken.
@@ -912,7 +995,8 @@ Wir haben damit vier verschiedene Arten kennengelernt, wie man einen Fehlalarm u
 
 **Fall 1 : Regel für bestimmten Pfad deaktivieren** </br>
 ```bash
-SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:1,nolog,pass,t:none,id:10001,ctl:ruleRemoveById=950005"
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:1,nolog,pass,t:none,id:10001,\
+                                                       ctl:ruleRemoveById=950005"
 ```
 Position in der Konfiguration: Am besten generell vor dem *Core Rule Include* platzieren, kann aber bei *phase:1* auch nach *Include* platziert werden. </br>
 Phase: Mit Vorteil in Phase 1, da der Pfad in diesem Moment bekannt ist.</br>
@@ -927,7 +1011,8 @@ Position in der Konfiguration: Generell nach dem *Core Rule Include* platzieren.
 
 **Fall 3 : Regel für bestimmten Parameter auf einem bestimmten Pfad deaktivieren** </br>
 ```bash
-SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:2,nolog,pass,t:none,id:10002,ctl:ruleRemoveTargetById=950005;ARGS:contact_form_name"
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "phase:2,nolog,pass,t:none,id:10002,\
+                          ctl:ruleRemoveTargetById=950005;ARGS:contact_form_name"
 ```
 Position in der Konfiguration: Am Besten generell vor dem *Core Rule Include* platzieren. </br>
 Phase: Für *Post-Parameter* zwingend in Phase 2, ansonsten auch Phase 1 denkbar.</br>
@@ -935,8 +1020,10 @@ Phase: Für *Post-Parameter* zwingend in Phase 2, ansonsten auch Phase 1 denkbar
 
 **Fall 4 : Regel aktiv lassen, aber Scoring für bestimmten Parameter auf bestimmten Pfad deaktiveren** </br>
 ```bash   
-SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "chain,phase:2,log,pass,t:none,id:10003,msg:'Adjusting inbound anomaly score for rule 950005'"
-SecRule "&TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_name" "@ge 1" "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
+SecRule REQUEST_FILENAME "@beginsWith /app/submit.do" "chain,phase:2,log,pass,t:none,\
+                          id:10003,msg:'Adjusting inbound anomaly score for rule 950005'"
+SecRule "&TX:950005-OWASP_CRS/WEB_ATTACK/FILE_INJECTION-ARGS:contact_form_name" "@ge 1" \
+                          "setvar:tx.inbound_anomaly_score=-%{tx.critical_anomaly_score}"
 ```
 Position in der Konfiguration:: Am Besten generell vor dem *Core Rule Include* platzieren. </br>
 Phase: Für *Post-Parameter* zwingend in Phase 2, ansonsten auch Phase 1 denkbar.</br>

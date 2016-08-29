@@ -1,4 +1,6 @@
 ##### Changelog
+* 25\. August 2016: Zeilenumbrüche justiert
+* 15\. Juli 2016: Apache 2.4.20 -> 2.4.23 (Luca Käser)
 * 16\. Juni 2016: Link auf localhost um index.html erweitert
 * 16\. Januar 2016: Lizenzhinweis eingefügt
 * 16\. Oktober 2015: Version von 2.4.16 auf 2.4.17 erhöht

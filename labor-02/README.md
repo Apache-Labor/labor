@@ -48,7 +48,8 @@ LoadModule              suexec_module           modules/mod_suexec.so
 LoadModule              fcgid_module            modules/mod_fcgid.so
 
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
-LogFormat               "%h %l %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat               "%h %l %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \
+\"%{Referer}i\" \"%{User-Agent}i\"" combined
 
 LogLevel                debug
 ErrorLog                logs/error.log
@@ -103,7 +104,11 @@ Begeben wir uns ins Verzeichnis mit dem Apache Quelltext und kompilieren den Ser
 
 ```bash
 $> cd /usr/src/apache/httpd-2.4.23
-$> ./configure --prefix=/opt/apache-2.4.23 --enable-mods-shared=all --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared="event worker" --enable-nonportable-atomics=yes --enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.4.23/bin && make && sudo make install
+$> ./configure --prefix=/opt/apache-2.4.23 --enable-mods-shared=all \
+--with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config \
+--enable-mpms-shared="event worker" --enable-nonportable-atomics=yes \
+--enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.4.23/bin && \
+make && sudo make install
 ```
 
 Zum bekannten _configure_ sind nun drei Optionen hinzugekommen, die sich um das _Suexec_ kümmern. _Enable-suexec_ spricht für sich, _with-suexec-caller_ teilen wir dem gewissenhaften Modul mit, dass ausschliesslich der User _www-data_ die Erlaubnis erhalten soll, das Modul mit dem dahinter liegenden Programm aufzurufen. Schliesslich geben wir dem Modul noch bekannt, wo die aufzurufenden Skripte liegen sollen. Der Einfachheit halber nehmen wir das existierende _bin-Verzeichnis_. Allerdings ist _suexec_ pingelig und wir können nicht mit dem Symlink arbeiten. Es muss also der voll qualifizierte Pfad sein.

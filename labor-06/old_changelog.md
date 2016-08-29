@@ -1,5 +1,6 @@
 ###Changelog
 
+* 25\. August 2016: Zeilenumbrüche justiert
 * 25\. März 2016: Rechtschreibung (Darrel Kntuson)
 * 16\. Januar 2016: Lizenzhinweis eingefügt
 * 27\. November 2015: BugFix in LogFormat

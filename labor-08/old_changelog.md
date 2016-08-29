@@ -1,5 +1,6 @@
 ###Changelog
 
+* 25\. August 2016: Zeilenumbrüche justiert
 * 29\. März 2016: Rechtschreibung (Darrel Knutson)
 * 23\. Februar 2016: Korrektur bei der Beschreibung des X-Forwarded-For HTTP Headers
 * 16\. Januar 2016: Lizenzhinweis eingefügt

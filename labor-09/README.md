@@ -28,9 +28,11 @@ Curl ist das richtige Werkzeug um HTTP Anfragen auszulösen. Natürlich muss HTT
 Wir haben `curl` in den vorangegangenen Anleitungen verschiedentlich angewendet. Wir sind damit bereits sehr gut aufgestellt. Es lohnt sich aber, noch ein, zwei Features in den eigenen Werkzeugkasten mitaufzunehmen.
 
 ```bash
-$> curl --cookie-jar /tmp/cookies.txt --cookie /tmp/cookies.txt --data "username=test" --data "password=xxxxxxxx" http://localhost/login.action
+$> curl --cookie-jar /tmp/cookies.txt --cookie /tmp/cookies.txt --data "username=test" \
+--data "password=xxxxxxxx" http://localhost/login.action
 ...
-$> curl http://localhost/login.html --next --cookie-jar /tmp/cookies.txt --cookie /tmp/cookies.txt --data "username=test" --data "password=xxxxxxxx" http://localhost/login.action
+$> curl http://localhost/login.html --next --cookie-jar /tmp/cookies.txt --cookie /tmp/cookies.txt \
+--data "username=test" --data "password=xxxxxxxx" http://localhost/login.action
 ...
 ```
 
@@ -134,7 +136,8 @@ ERRORLOG="$2"
 ACCESS_IGNORE_REGEX="(heartbeat)"
 
 if [ -z "$ACCESSLOG" ]; then 
-        echo "Accesslog not passed via commandline. Please pass path to accesslog as first parameter. This is fatal. Aborting."
+        echo "Accesslog not passed via commandline. Please pass path to accesslog as first parameter. \
+This is fatal. Aborting."
         exit 1
 fi
 if [ ! -f "$ACCESSLOG" ]; then 
@@ -142,7 +145,8 @@ if [ ! -f "$ACCESSLOG" ]; then
         exit 1
 fi
 if [ -z "$ERRORLOG" ]; then 
-        echo "Errorlog not passed via commandline. Please pass path to errorlog as first parameter. This is fatal. Aborting."
+        echo "Errorlog not passed via commandline. Please pass path to errorlog as first parameter. \
+This is fatal. Aborting."
         exit 1
 fi
 if [ ! -f "$ERRORLOG" ]; then 
@@ -164,8 +168,15 @@ echo "$TIME $STATUS $SCORES $METHOD_PATH ($ID)"
 echo
 
 echo "ModSecurity Rules Triggered:"
-MODSEC=$(tail -500 $ERRORLOG | grep $ID | grep -o -E " (at|against) .*\[file.*\[id \"[0-9]+.*\[msg \"[^\"]+" | tr -d \" | sed -e "s/ at the end of input at/ at/" -e "s/ required. /. /" -e "s/\[rev .*\[msg/[msg/" -e "s/\. / /" -e "s/(Total .*/(Total ...) .../" | tr -d \] | cut -d\  -f3,9,11- |
-sed -e "s/^\([^ ]*\) \([^ ]*\)/\2 \1/" | awk "{ printf \"%+6s %-35s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n\", \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10, \$11, \$12, \$13, \$14, \$15, \$16, \$17, \$18, \$19, \$20 }" | sed -e "s/\ *$//")
+MODSEC=$(tail -500 $ERRORLOG | grep $ID | grep -o -E \
+" (at|against) .*\[file.*\[id \"[0-9]+.*\[msg \"[^\"]+" | tr -d \" | \
+sed -e "s/ at the end of input at/ at/" -e "s/ required. /. /" \
+    -e "s/\[rev .*\[msg/[msg/" -e "s/\. / /" \
+    -e "s/(Total .*/(Total ...) .../" | tr -d \] | cut -d\  -f3,9,11- | \
+sed -e "s/^\([^ ]*\) \([^ ]*\)/\2 \1/" | awk \
+    "{ printf \"%+6s %-35s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n\", \
+\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10, \$11, \$12, \$13, \$14, \$15, \
+\$16, \$17, \$18, \$19, \$20 }" | sed -e "s/\ *$//")
 # This is a crazy oneliner. A description starting with "grep -o -E":
 # We grep for the various ModSec alert messages and take the content from the
 # at/against via the parameter name, the id up and including the message. tr
@@ -207,15 +218,17 @@ $> lastrequestsummary /apache/logs/access.log /apache/logs/error.log
 07:53:14 200 2 0 GET /index.html?a=..... (VqkfSH8AAQEAAHjqe40AAAAC)
 
 ModSecurity Rules Triggered:
-981172 ARGS:a                                           Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+981172 ARGS:a    ...   Restricted SQL Character Anomaly Detection Alert - Total # of ...
 
 Apache Error Log:
-[2016-01-27 07:53:14.334862] [authz_core:debug] 127.0.0.1:36837 VqkfSH8AAQEAAHjqe40AAAAC AH01626: authorization result of Require all granted: granted
-[2016-01-27 07:53:14.334899] [authz_core:debug] 127.0.0.1:36837 VqkfSH8AAQEAAHjqe40AAAAC AH01626: authorization result of <RequireAll>: granted
-[2016-01-27 07:53:14.334914] [authz_core:debug] 127.0.0.1:36837 VqkfSH8AAQEAAHjqe40AAAAC AH01626: authorization result of <RequireAny>: granted
+[2016-01-27 07:53:14.334862] ... AH01626: authorization result of Require all granted: granted
+[2016-01-27 07:53:14.334899] ... AH01626: authorization result of <RequireAll>: granted
+[2016-01-27 07:53:14.334914] ... AH01626: authorization result of <RequireAny>: granted
 
 Full Apache Access Log:
-127.0.0.1 - - [2016-01-27 07:53:14.333396] "GET /index.html?a=..... HTTP/1.1" 200 45 "-" "curl/7.35.0" localhost 127.0.0.1 80 - - + "-" VqkfSH8AAQEAAHjqe40AAAAC - - 125 256 -% 4294 560 130 250 2 0
+127.0.0.1 - - [2016-01-27 07:53:14.333396] "GET /index.html?a=..... HTTP/1.1" 200 45 "-" …
+"curl/7.35.0" localhost 127.0.0.1 80 - - + "-" VqkfSH8AAQEAAHjqe40AAAAC - - 125 256 -% …
+4294 560 130 250 2 0
 ```
 
 Auf der dritten Zeile sehen wir das Timestamp des Requests, den HTTP Status, den ModSecurity Core Rules Incoming Anomaly Score, den Outgoing Anomaly Score, Method, Pfad und schliesslich in Klammern die eindeutige Request-Identifikation. Die übrigen Zeilen erklären sich von selbst und sind einfach ein illustrierendes Beispiel, wie sich so ein Skript umsetzen lässt.
