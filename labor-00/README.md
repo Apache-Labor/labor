@@ -45,17 +45,17 @@ $> cd apr-1.5.2
 $> ./configure --prefix=/usr/local/apr/
 ```
 
-Wir begeben uns nach dem Entpacken in das neue Verzeichnis mit dem Sourcecode und starten _configure_. Damit konfogurieren wir den Compiler. Wir geben den Installationspfad vor und _configure_ sucht sich dann eine Vielzahl von Informationen und Einstellungen zu unserem System selbst zusammen.
+Wir begeben uns nach dem Entpacken in das neue Verzeichnis mit dem Sourcecode und starten _configure_. Damit konfigurieren wir den Compiler. Wir geben den Installationspfad vor und _configure_ sucht sich dann eine Vielzahl von Informationen und Einstellungen zu unserem System selbst zusammen.
 Der Configure-Befehl beschwert sich oft über fehlende Komponenten. Ist klar: Ohne funktionierenden Compiler können wir nicht kompilieren und das Configure hat die Aufgabe nachzusehen, ob alles gut beisammen ist.
 
-Sachen, die typischerweise fehlen, sind Folgende:
+Sachen, die typischerweise fehlen, sind folgende:
 
 - build-essential
 - binutils
 - gcc
 
 Das sind die Paket-Namen auf einer debian-basierten Distribution. Andernorts mögen die Pakete anders heissen.
-Das Fehlen lässt sich leicht beheben, indem man sie mit den Hilfsmitteln der eigenen Distribution nachinstalliert. Danach _configure_ neu ausführen, eventuell nochmals etwas nachinstallieren und irgendwann läuft das Skript dann erfolgreich durch.
+Das Fehlen lässt sich leicht beheben, indem man sie mit den Hilfsmitteln der eigenen Distribution nachinstalliert. Danach _configure_ neu ausführen, eventuell nochmals etwas nachinstallieren und irgendwann läuft das Skript dann erfolgreich durch (einzelne Warnungen mitten drin spielen bei _configure_ übrigens keine Rolle. Wichtig ist, dass das Skript nicht mitten drin abbricht).
 
 Wenn dies problemlos durchläuft, wovon wir ausgehen, ist es Zeit für das Kompilieren.
 

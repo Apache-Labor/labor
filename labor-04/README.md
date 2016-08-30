@@ -601,13 +601,13 @@ Auch ein solches Skript steht zum Download bereit: [basicstats.awk](https://gith
 
 ```bash
 $> cat labor-04-example-access.log | alioout | basicstats.awk
-Num of values:        10000
-      Average:        15375
-       Median:         6646
-          Min:            0
-          Max:       340179
-        Range:       340179
-Std deviation:        25913
+Num of values:          10'000.00
+      Average:          15'375.98
+       Median:           6'646.00
+          Min:               0.00
+          Max:         340'179.00
+        Range:         340'179.00
+Std deviation:          25'913.14
 ```
 
 Mit diesen Zahlen wird der Service rasch plastisch. Mit einer durchschnittlichen Antwortgrösse von 15KB und einem Median von 6.6 KB haben wir einen typischen Webservice vor uns. Der Median bedeutet ja konkret, dass die Hälfte der Antworten kleiner als 6.6 KB waren. Die grösste Antwort kam bei 340 KB zu stehen, die Standard-Abweichung von knapp 26 KB bedeutet, dass die grossen Werte ingesamt selten waren.
@@ -616,13 +616,13 @@ Wie sieht es mit der Dauer der Anfragen aus. Haben wir dort ein ähnlich homogen
 
 ```bash
 $> cat labor-04-example-access.log | alduration | basicstats.awk
-Num of values:        10000
-      Average:        91306
-       Median:         2431
-          Min:           18
-          Max:    301455050
-        Range:    301455032
-Std deviation:      3023884
+Num of values:          10'000.00
+      Average:          91'306.41
+       Median:           2'431.50
+          Min:              18.00
+          Max:     301'455'050.00
+        Range:     301'455'032.00
+Std deviation:       3'023'884.17
 ```
 
 Hier ist es zunächst wichtig, sich zu vergegenwärtigen, dass wir es mit Mikrosekunden zu tun haben. Der Median liegt bei 2400 Mikroekunden, das sind gut 2 Millisekunden. Der Durschschnitt ist mit 91 Millisekunden viel grösser, offensichtlich haben wir zahlreiche Ausreisser, welche den Schnitt in die Höhe gezogen haben. Tatsächlich  haben wir einen Maximalwert von 301 Sekunden und wenig überraschend eine Standardabweichung von 3 Sekunden. Das Bild ist also weniger homogen und wir haben zumindest einige Requests, die wir untersuchen sollten. Das wird nun aber etwas komplizierter. Das vorgeschlagene Vorgehen ist nur ein mögliches und es steht hier als Vorschlag und als Inspiration für die weitere Arbeit mit dem Logfile:
