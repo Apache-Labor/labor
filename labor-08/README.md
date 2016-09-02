@@ -25,7 +25,8 @@ Der Zweck eines Reverse Proxies ist es, einen Applikationsserver vor direkten Zu
 Prinzipiell bietet sich eine beliebige HTTP Applikation für so eine Installation an und wir könnten gut den Applikationserver aus der dritten Anleitung anwenden. Allerdings scheint es mir gelegen, einen ganz simplen Ansatz zu demonstrieren. Dabei benützen wir das Hilfsmittel *socat*; kurz für *SOcket CAt*. 
 
 ```bash
-$> socat -vv TCP-LISTEN:8000,bind=127.0.0.1,crlf,reuseaddr,fork SYSTEM:"echo HTTP/1.0 200; echo Content-Type\: text/plain; echo; echo 'Server response, port 8000.'"
+$> socat -vv TCP-LISTEN:8000,bind=127.0.0.1,crlf,reuseaddr,fork SYSTEM:"echo HTTP/1.0 200; \
+echo Content-Type\: text/plain; echo; echo 'Server response, port 8000.'"
 ``` 
 
 Mit diesem komplexen Befehl instruieren wir *socat*, einen *Listener* auf dem lokalen Port 8000 zu installieren und bei einer Verbindung mittels mehrerer *echos* eine HTTP Antwort zu retournieren. Die weiteren Parameter sorgen dafür, dass der Listener dauerhaft erhalten bleibt und die Errorausgabe funktioniert.
