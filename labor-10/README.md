@@ -538,16 +538,6 @@ $> head -10 labor-07-example-access.log | alduration
 1048915
 1057174
 826016
-825618
-859946
-1304401
-931587
-957446
-1473020
-1719549
-857138
-630606
-1051057
 ``` 
 
 Wir finden hier also in der Grössenordnung von 1 Million Mikrosekunden. Wie sieht das statistisch aus (die entsprechenden Routinen kennen wir noch von früheren Anleitungen)?
