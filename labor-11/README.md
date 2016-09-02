@@ -37,7 +37,7 @@ Wir haben in der Anleitung 6 gesehen, wie wir ModSecurity konfigurieren können,
 In der Anleitung 6 haben wir die folgende Auswahl für die einzelnen Header getroffen.:
 
 ```bash
-SecAuditLogParts        ABIJEFHKZ
+SecAuditLogParts        ABEFHIJKZ
 ```
 
 Damit haben wir ein sehr umfassendes Protokoll festgelegt. Das ist in einem Labor-Setup das richtige Vorgehen. In einer produktiven Umgebung macht dies allerdings nur in Ausnahmefällen Sinn. Eine typische Ausprägung dieser Direktive in einer produktiven Umgebung lautet deshalb:
@@ -193,7 +193,7 @@ tcpdump: listening on lo, link-type EN10MB (Ethernet), capture size 65535 bytes
 Versuchen wir also das `PCAP`-File zu entschlüsseln. Wir verwenden dazu wieder `tshark` aus der `Wireshark`-Suite. Das `GUI` funktioniert natürlich ebenso, ist aber weniger komfortabel. Wichtig ist es nun, dem Tool den Schlüssel, den wir auf dem Server verwendet haben, mitzuübergeben.
 
 ```bash
-$> sudo tshark -r /tmp/localhost-port443.pcap -o "ssl.desegment_ssl_records: TRUE" -o "ssl.desegment_ssl_application_data: TRUE" -o "ssl.keys_list: 127.0.0.1,443,http,/etc/ssl/private/ssl-cert-snakeoil.key" -o "ssl.debug_file: /tmp/ssl-debug.log"
+$> sudo tshark -r /tmp/localhost-port443.pcap -o "ssl.desegment_ssl_records: TRUE" -o "ssl.desegment_ssl_application_data: TRUE" -o "ssl.keys_list: 0.0.0.0,443,http,/etc/ssl/private/ssl-cert-snakeoil.key" -o "ssl.debug_file: /tmp/ssl-debug.log"
 Running as user "root" and group "root". This could be dangerous.
   1   0.000000    127.0.0.1 -> 127.0.0.1    TCP 74 33517 > https [SYN] Seq=0 Win=43690 Len=0 MSS=65495 ...
   2   0.000040    127.0.0.1 -> 127.0.0.1    TCP 74 https > 33517 [SYN, ACK] Seq=0 Ack=1 Win=43690 Len=0 ...
