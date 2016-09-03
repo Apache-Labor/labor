@@ -163,7 +163,7 @@ SecDebugLogLevel              0
 
 SecAuditEngine                RelevantOnly
 SecAuditLogRelevantStatus     "^(?:5|4(?!04))"
-SecAuditLogParts              ABIJEFHKZ
+SecAuditLogParts              ABEFHIJKZ
 
 SecAuditLogType               Concurrent
 SecAuditLog                   /apache/logs/modsec_audit.log
