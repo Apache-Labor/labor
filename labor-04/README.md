@@ -104,21 +104,22 @@ Das Element _"%{Referer}i"_ bezeichnet den Referrer. Er wird in Anführungszeich
 _"%{User-agent}i"_ schliesslich meint den sogenannten User-Agent des Clients, der wiederum in Anführungszeichen gesetzt wird. Auch dies ist wieder ein Wert, der durch den Client kontrolliert wird und auf den wir uns nicht zu sehr verlassen sollten. Mit dem User-Agent ist die Browser-Software des Clients gemeint; normalerweise angereichert um die Version, die Rendering Engine, verschiedene Kompatibilitätsangaben mit anderen Browsern und diverse installierte Plugins. Das führt zu sehr langen User-Agent-Einträgen und kann im Einzelfall so viele Informationen enthalten, dass ein individueller Client sich darüber eindeutig identifizieren lässt, weil er eine besondere Kombination von verschiedenen Zusatzmodulen in bestimmten Versionen besitzt.
 
 
-###Schritt 3: Modul Logio aktivieren
+###Schritt 3: Module Logio und Unique-ID aktivieren
 
 Mit dem _combined_ Format haben wir das am weitesten verbreitete Apache Logformat kennengelernt. Um die alltägliche Arbeit zu erleichtern, reichen die dargestellten Werte aber nicht. Weitere Informationen werden deshalb mit Vorteil im Logfile mitgeschrieben.
 
 Es bietet sich an, auf sämtlichen Servern dasselbe Logformat zu verwenden. Anstatt jetzt also ein, zwei weitere Werte zu propagieren, beschreibt diese Anleitung ein sehr umfassendes Logformat, das sich in der Praxis in verschiedenen Szenarien bewährt hat.
 
-Um das in der Folge beschriebene Logformat konfigurieren zu können, muss aber zunächst das Modul _Logio_ aktiviert werden.
+Um das in der Folge beschriebene Logformat konfigurieren zu können, muss aber zunächst das Modul _Logio_ aktiviert werden. Und auch das Unique-ID Modul ist von Anfang an hilfreich.
 
-Wenn der Server wie in der Anleitung 1 beschrieben kompiliert wurde, dann ist das Modul bereits vorhanden und muss nur noch in der Liste der zu ladenden Module in der Konfigurationsdatei des Servers ergänzt werden.
+Wenn der Server wie in der Anleitung 1 beschrieben kompiliert wurde, dann sind die Module bereits vorhanden und müssen nur noch in der Liste der zu ladenden Module in der Konfigurationsdatei des Servers ergänzt werden.
 
 ```bash
 LoadModule		logio_module		modules/mod_logio.so
+LoadModule              unique_id_module        modules/mod_unique_id.so
 ```
 
-Wir benötigen dieses Modul um zwei Werte mitschreiben zu können. _IO-In_ und _IO-Out_. Also die totale Zahl der Bytes des HTTP-Requests inklusive Header-Zeilen und die totale Zahl der Bytes in der Antwort, wiederum inklusive Header-Zeilen.
+Wir benötigen das erste der beiden Module um zwei Werte mitschreiben zu können. _IO-In_ und _IO-Out_. Also die totale Zahl der Bytes des HTTP-Requests inklusive Header-Zeilen und die totale Zahl der Bytes in der Antwort, wiederum inklusive Header-Zeilen. Das Unique-ID Modul berechnet für jeden Request eine eindeutige Kennzeichnung. Wir kommen später nochmals darauf zurück.
 
 
 ###Schritt 4: Neues Logformat Extended konfigurieren
