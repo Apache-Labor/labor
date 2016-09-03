@@ -1,5 +1,6 @@
 ###Changelog
 
+* 3\. September 2016: Schritt 8 überarbeitet
 * 25\. August 2016: Zeilenumbrüche justiert
 * 2\. Juli 2016: Link geflickt
 * 16\. Januar 2016: Lizenzhinweis eingefügt

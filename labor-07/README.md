@@ -525,7 +525,7 @@ Erfolgreiches Tuning der *ModSecurity Core Rules* besteht im iterativen Wiederho
 
 ###Schritt 8: Weitere Ignore-Rules ableiten (Scores 50-89)
 
-Weil wir diese Anleitung aber zu Übungszwecken abarbeiten und keine produktive Umgebung vor uns haben, bringen wir die verfertigten *Ignore-Rules* nicht auf den Server, sondern üben uns noch etwas beim Schreiben dieser Regeln. In dieser zweiten Runde nehmen wir uns diejenigen Anfragen vor, die einen Score in den 50er bis 80ern ereichten. Als Basis dient uns ein Beispiel-Logfile aus dem die oben unterdrückten Regeln herausgefiltert wurden ([labor-07-example-error.log-step-7](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-04-example-error.log-step-7)). Regelverletzungen von 50 bis 89 waren in der urspünglichen Statistik sehr viele, aber es wird sich zeigen, dass nicht mehr viel zu unseren bestehenden Regelverletzungen hinzukommt. Um nicht dieselben Regelverletzungen erneut zu behandeln, unterdrücken wir die bereits behandelten Kombinationen mit einem etwas anspruchsvollen *One-Liner*:
+Weil wir diese Anleitung aber zu Übungszwecken abarbeiten und keine produktive Umgebung vor uns haben, bringen wir die verfertigten *Ignore-Rules* nicht auf den Server, sondern üben uns noch etwas beim Schreiben dieser Regeln. In dieser zweiten Runde nehmen wir uns diejenigen Anfragen vor, die einen Score in den 50er bis 80ern ereichten. Als Basis dient uns ein Beispiel-Logfile aus dem die oben unterdrückten Regeln herausgefiltert wurden ([labor-07-example-error.log-step-7](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-04-example-error.log-step-7)). Regelverletzungen von 50 bis 89 waren in der urspünglichen Statistik sehr viele, aber es wird sich zeigen, dass nicht mehr viel zu unseren bestehenden Regelverletzungen hinzukommt:
 
 ```bash
 $> cat labor-07-example-access.log | grep -E "[5-8][0-9] [0-9-]$" | alreqid > ids
@@ -538,7 +538,7 @@ $> grep -F -f ids labor-07-example-error.log-step-7 | melidmsg | sucs
       1 981317 SQL SELECT Statement Anomaly Detection Alert
       2 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
       5 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-$> grep -F -f ids labor-07-example-error.log | melmatch | sucs
+$> grep -F -f ids labor-07-example-error.log-step-7 | melmatch | sucs
       1 ARGS:message
       1 ARGS:subject
       1 TX:sqli_select_statement_count
@@ -549,9 +549,7 @@ $> grep -F -f ids labor-07-example-error.log | melmatch | sucs
 Mit *utag_main* haben wir erneut ein Cookie vor uns. Das behandeln wir wieder separat:
 
 ```bash
-$> grep -F -f ids labor-07-example-error.log | grep -v -E "ARGS:message.*(950911|960024|973300|973304|\
-973306|973314|973316|973332|973333|973335|973338|981231|981243|981244|981245|981246|981248|981257)" | \
-grep -v -E "REQUEST_COOKIES:X0_org.*981172" | grep "REQUEST_COOKIES:utag_main" | \
+$> grep -F -f ids labor-07-example-error.log-step-7 | grep "REQUEST_COOKIES:utag_main" | \
 modsec-rulereport.rb -m parameter
 5 x 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded ...
 -----------------------------------------------------------------------------------------------------------------------------
@@ -562,9 +560,7 @@ modsec-rulereport.rb -m parameter
 Das Argument *attachInfo* verletzt mehrere Regeln. Wir lassen uns *Ignore-Rules* vorschlagen und fassen sie dann händisch zusammen:
 
 ```bash
-$> grep -F -f ids labor-07-example-error.log | grep -v -E "ARGS:message.*(950911|960024|973300|973304|\
-973306|973314|973316|973332|973333|973335|973338|981231|981243|981244|981245|981246|981248|981257)" | \
-grep -v -E "REQUEST_COOKIES:X0_org.*981172" | grep "ARGS:attachInfo" | modsec-rulereport.rb -m combined
+$> grep -F -f ids labor-07-example-error.log-step-7 | grep "ARGS:attachInfo" | modsec-rulereport.rb -m combined
 
 1 x 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters (severity:  NONE/UNKOWN)
 -----------------------------------------------------------------------------------------------------------
@@ -619,9 +615,7 @@ Wichtig ist es, für diese Regel eine neue ID zu wählen. Das Skript fängt per 
 Damit verbleiben noch drei einzelne zu behandelnde Regelverletzungen in unserer Gruppe:
 
 ```bash
-$> grep -F -f ids labor-07-example-error.log | grep -v -E "ARGS:message.*(950911|960024|973300|973304|\
-973306|973314|973316|973332|973333|973335|973338|981231|981243|981244|981245|981246|981248|981257)" | \
-grep -v -E "REQUEST_COOKIES:X0_org.*981172" | grep -E "ARGS:(message|subject)" | \
+$> grep -F -f ids labor-07-example-error.log-step-7 | grep -E "ARGS:(message|subject)" | \
 modsec-rulereport.rb -m combined
 1 x 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters (severity:  NONE/UNKOWN)
 -----------------------------------------------------------------------------------------------------------
