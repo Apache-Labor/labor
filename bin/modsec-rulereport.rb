@@ -716,7 +716,7 @@ EOF
   end
 
   opts.on('-m', '--mode STR', 'Ignore-Rule suggestion mode:
-					     One of "simple", "supersimple", "rule", "parameter", "path",
+                                     One of "simple", "supersimple", "rule", "parameter", "path",
                                      "combined" or "graphviz". Default is "supersimple"') do |mode|
 	  case mode
 	  when "simple"
