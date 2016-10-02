@@ -256,7 +256,17 @@ Das Skript legt das Skript damit einen Vereichnisbaum an mit folgenden Verzeichn
 
 Bevor wir uns ein Zertifikat erstellen lassen können ist es wichtig, dass wir die beiden `getssl.cfg`-Dateien kurz bearbeiten. Zunächst die Grundkonfiguration in der Datei `.getssl/getssl.cfg`. In der Datei ist zu beachten, dass Let's Encrypt eine Test-CA mit der URL `https://acme-staging.api.letsencrypt.org` betreibt mit der man den eigenen Setup ausprobieren kann - und dann die richtige CA, welche die offiziellen Zertifikate ausstellt. Es ist sinnvoll, zunächst alles auf der Test-CA auszuprobieren und wenn die Pfade stimmen und die Validierung erfolgreich abgeschlossen wurde, die offizielle CA URL `https://acme-v01.api.letsencrypt.org` einzutragen. In der Datei `.getssl/getssl.cfg` ist per Default die Test-CA eingetragen. Zu Beginn gibt es deshalb nicht viel zu tun, lediglich die Variable `ACCOUNT_EMAIL` sollte sinnvollerweise ausgefüllt werden.
 
-Schreiten wir dann zur Konfigurations-Datei der Domain `.getssl/christian-folini.ch/getssl.cfg`. Hier überprüfen wir den Wert `SANS` (ich vermute er bedeutet `Subject Alternative NameS`) und bezeichnet damit weitere Host-Namen oder in der CA-Sprache `Subject-Names`, die in das Zertifikat eingetragen werden. Im Fall der Domain `christian.folini.ch` erwarten wir hier `SANS=www.christian-folini.ch`. Die meisten anderen Werte sind auskommentiert, was bedeutet, dass diejenigen Werte, die in der übergeordneten Datei gesetzt wurden, weitervererbt und hier nicht mehr speziell gesetzt werden müssen. Ein wichtiger Wert bleibt aber zu setzen: `ACL`. Für den Laborsetup lege ich den Wert wie folgt fest: `ACL=/apache/htdocs/.well-known/acme-challenge`. Der Pfad-Teil ab `.well-known` entspricht damit dem Let's Encrypt Standard. Es sind aber beliebige andere Optionen möglich.
+Schreiten wir dann zur Konfigurations-Datei der Domain `.getssl/christian-folini.ch/getssl.cfg`. Hier überprüfen wir den Wert `SANS` (ich vermute er bedeutet `Subject Alternative NameS`) und bezeichnet damit weitere Host-Namen oder in der CA-Sprache `Subject-Names`, die in das Zertifikat eingetragen werden. Im Fall der Domain `christian.folini.ch` erwarten wir hier `SANS=www.christian-folini.ch`. Die meisten anderen Werte sind auskommentiert, was bedeutet, dass diejenigen Werte, die in der übergeordneten Datei gesetzt wurden, weitervererbt und hier nicht mehr speziell gesetzt werden müssen. Ein wichtiger Wert bleibt aber zu setzen: `ACL`. Für den Laborsetup lege ich den Wert wie folgt fest: 
+
+```bash
+acl=('/apache/htdocs/.well-known/acme-challenge' '/apache/htdocs/.well-known/acme-challenge')
+```
+
+Dieses nicht ganz einsichtige Format bezeichnet die Haupt-Domain unseres Zertifikats und dann, mit einem Leerschlag getrennt, die `ACL` für den unter `SANS` definierten zweiten Domain-Namen.
+
+
+
+Der Pfad-Teil ab `.well-known` entspricht damit dem Let's Encrypt Standard. Es sind aber beliebige andere Optionen möglich.
 
 Nun starten wir den ersten Aufruf an Let's Encrypt:
 
@@ -281,6 +291,9 @@ Verifing christian-folini.ch
 copying challenge token to /apache/htdocs/.well-known/acme-challenge/xiM4FlHAqxo9fuAG-Ag-BTV_DsUJAbegPoZ6-l_luSA
 Pending
 Verified christian-folini.ch
+Verifing www.christian-folini.ch
+copying challenge token to /apache/htdocs/.well-known/acme-challenge/QK4x1EyQ1Su7qZ-XTJL7EIqP6brNCRY8ZcGpZpyEc3E
+Verified www.christian-folini.ch
 Verification completed, obtaining certificate.
 Certificate saved in /home/folini/.getssl/christian-folini.ch/christian-folini.ch.crt
 The intermediate CA cert is in /home/folini/.getssl/christian-folini.ch/chain.crt
@@ -302,52 +315,52 @@ Certificate:
     Data:
         Version: 3 (0x2)
         Serial Number:
-            03:ff:3f:b2:c2:5f:1b:05:c7:b2:8f:79:92:9e:84:38:47:50
+            03:42:97:46:58:7d:dd:38:6e:1d:b2:fa:76:1c:57:50:b5:22
     Signature Algorithm: sha256WithRSAEncryption
         Issuer: C=US, O=Let's Encrypt, CN=Let's Encrypt Authority X3
         Validity
-            Not Before: Oct  2 03:33:00 2016 GMT
-            Not After : Dec 31 03:33:00 2016 GMT
+            Not Before: Oct  2 06:24:00 2016 GMT
+            Not After : Dec 31 06:24:00 2016 GMT
         Subject: CN=christian-folini.ch
         Subject Public Key Info:
             Public Key Algorithm: rsaEncryption
                 Public-Key: (4096 bit)
                 Modulus:
-                    00:9f:d8:47:62:a0:58:9b:57:7e:ee:43:1c:c0:2e:
-                    71:2a:73:71:f5:89:f5:9b:3e:c1:f9:fd:63:78:56:
-                    fd:91:52:69:6c:39:ec:47:75:8d:29:e0:66:bf:c1:
-                    1c:d4:7b:ba:b2:5d:34:4b:e9:92:b2:a8:d4:07:5f:
-                    51:ea:e7:93:c1:94:ad:93:15:57:dd:72:3c:e5:ad:
-                    af:f1:c2:7d:fb:88:23:53:6f:44:93:ac:0f:e1:8b:
-                    8b:d8:ef:b4:f3:ec:ff:d0:72:13:3e:a8:86:03:ef:
-                    f0:69:1f:c4:05:b5:39:cb:65:57:6b:7a:11:7b:6c:
-                    f1:fe:ef:4b:72:3d:13:20:ea:e5:f3:3f:85:2e:8d:
-                    fa:fc:bb:5a:b9:25:9f:fd:b5:3a:bb:e9:7e:e8:4d:
-                    3f:c4:fc:8d:6d:02:96:0e:ce:a1:0a:a1:86:b5:01:
-                    f6:12:7f:5f:83:5c:2e:27:13:b3:27:4f:b8:b4:15:
-                    bf:da:cc:de:7e:42:bf:c6:f2:b6:7e:fc:48:18:13:
-                    c9:c2:7a:3c:79:af:6f:b7:ae:94:9c:a6:09:b7:6c:
-                    e9:2e:3a:37:e2:29:ae:a0:30:80:4c:0d:10:52:3d:
-                    74:2a:c4:f5:61:88:19:bc:16:1e:07:6e:d5:c2:04:
-                    4c:e8:06:4b:2a:a2:2e:94:f6:3c:ab:60:aa:be:b9:
-                    a4:fe:0e:b3:b1:80:dd:1f:30:d3:d8:24:24:0e:e1:
-                    8c:4c:29:e1:e0:43:bf:63:e7:13:ba:40:d6:10:e0:
-                    70:13:22:f7:8c:40:c5:27:44:68:00:b5:0c:a0:9e:
-                    8b:50:cd:b7:d2:72:a1:97:b7:9e:20:65:58:bb:17:
-                    30:25:c0:02:4d:b7:b7:ba:84:26:01:39:e4:e6:e5:
-                    39:6e:3e:c6:16:8e:43:5b:67:a7:17:a0:5c:9a:fc:
-                    f1:5e:ba:65:b9:e4:05:52:62:a8:3b:85:8a:0a:2a:
-                    8f:3d:f7:64:57:cf:f4:3b:aa:a8:b1:9b:3b:b8:e3:
-                    bc:b4:77:2c:1c:58:ed:d5:70:ad:79:01:40:4e:13:
-                    86:15:32:2b:49:6d:23:c5:32:83:90:a8:a2:73:99:
-                    be:0a:e8:8c:73:8e:52:f2:29:ba:f9:07:2d:34:f1:
-                    9a:85:d0:bf:d4:65:86:ca:4b:27:d8:f1:62:1e:18:
-                    e0:f5:e5:8d:71:d3:86:d4:52:8f:e4:20:20:70:59:
-                    5f:3e:22:76:41:8c:31:2e:8d:7f:b4:a2:9b:15:a1:
-                    19:d4:97:e3:27:fe:71:b6:b1:cf:27:4f:ce:1a:50:
-                    03:e2:57:88:c3:62:40:48:7b:72:cb:4a:d2:df:8e:
-                    22:ca:f6:2a:65:50:cc:5a:bd:bc:83:b3:1d:f6:5c:
-                    5b:3d:0f
+                    00:ac:e6:34:3a:6d:83:37:31:6e:7a:c5:d1:50:99:
+                    93:59:b7:12:d6:28:be:fd:cf:3a:25:f0:d0:0f:9d:
+                    c2:d9:8f:77:7b:6c:c8:38:41:26:43:c0:ec:91:46:
+                    c9:d4:e7:02:40:e9:90:e0:1f:82:f1:00:53:92:1f:
+                    bd:af:47:15:f5:59:03:71:0e:e7:ac:cf:d5:89:f2:
+                    fc:b7:8a:84:26:37:f4:0d:16:5e:79:c8:8a:87:ec:
+                    8c:c0:de:cb:1e:23:36:68:6a:c0:9c:51:04:77:cc:
+                    21:01:47:02:3c:d4:6b:fe:c7:b4:d7:b0:05:04:ad:
+                    42:e8:fd:41:2d:28:69:85:ba:eb:f2:f9:73:a6:5b:
+                    50:1e:a7:df:ec:ae:ab:69:fd:99:f3:90:f0:2b:89:
+                    1c:0d:9b:08:5b:ab:5a:6d:70:aa:9e:9c:72:bd:32:
+                    dc:8a:91:b1:78:b8:c1:87:2a:7c:53:64:d7:69:00:
+                    5b:06:07:14:21:80:13:9e:f3:9c:fd:c9:41:93:60:
+                    6f:5a:55:4f:66:f5:50:e7:a9:dc:e2:51:5e:19:5a:
+                    a3:5d:a3:58:b1:cb:96:b8:62:80:f1:73:cd:32:9c:
+                    fd:b2:3c:44:05:a2:d1:0f:78:0b:2a:2e:43:15:21:
+                    2f:81:b0:30:73:8d:ba:fb:e5:ce:0e:49:f5:08:62:
+                    dd:af:bb:bb:6a:57:04:e6:43:53:b8:d0:ba:c5:bf:
+                    6a:0a:17:12:7e:23:a3:bf:c3:a3:ff:50:ad:fc:54:
+                    75:84:f6:e0:0c:5e:75:83:aa:cd:ba:ce:e2:43:cf:
+                    e6:65:92:55:b7:3e:02:72:6d:0b:5d:45:18:ae:09:
+                    a1:ab:b8:b8:24:d1:ae:74:43:dc:e5:4f:0a:37:b9:
+                    05:8e:37:b0:67:01:5e:50:b4:7c:89:52:90:d2:fa:
+                    59:c0:33:31:f3:f0:35:80:38:a1:1b:fb:7f:c9:d2:
+                    5e:40:75:0f:33:73:1e:eb:dc:e3:9a:d1:dc:d6:94:
+                    a9:55:2a:f0:71:20:5e:64:71:b0:cf:03:3e:45:76:
+                    a6:ff:f1:12:93:5d:0c:d1:2b:5f:fd:1d:6e:ef:71:
+                    69:74:f1:dc:a8:64:c0:6b:a8:14:fc:7b:77:4d:d2:
+                    42:41:15:fc:10:84:9f:9b:78:bb:64:b1:6c:22:e4:
+                    c1:7d:6b:25:95:2a:91:70:16:4a:87:82:38:cd:7f:
+                    0a:03:ce:f0:68:c7:29:e5:63:f0:8a:ea:37:2f:ad:
+                    fd:ee:89:89:47:12:59:e8:95:c1:48:49:95:96:39:
+                    e8:a0:c5:7e:6f:83:6b:bb:fd:8a:00:74:91:54:a4:
+                    f9:89:2c:b9:5b:80:d5:d3:52:5e:41:c4:aa:c5:a5:
+                    f6:bb:e5
                 Exponent: 65537 (0x10001)
         X509v3 extensions:
             X509v3 Key Usage: critical
@@ -357,7 +370,7 @@ Certificate:
             X509v3 Basic Constraints: critical
                 CA:FALSE
             X509v3 Subject Key Identifier: 
-                56:36:4C:45:62:06:78:97:C7:12:E2:F1:22:6B:DA:3E:80:1B:70:FD
+                18:46:FD:E3:B3:4C:25:57:46:4A:38:DA:23:78:94:34:23:32:F3:39
             X509v3 Authority Key Identifier: 
                 keyid:A8:4A:6A:63:04:7D:DD:BA:E6:D1:39:B7:A6:45:65:EF:F3:A8:EC:A1
 
@@ -366,7 +379,7 @@ Certificate:
                 CA Issuers - URI:http://cert.int-x3.letsencrypt.org/
 
             X509v3 Subject Alternative Name: 
-                DNS:christian-folini.ch
+                DNS:christian-folini.ch, DNS:www.christian-folini.ch
             X509v3 Certificate Policies: 
                 Policy: 2.23.140.1.2.1
                 Policy: 1.3.6.1.4.1.44947.1.1.1
@@ -375,55 +388,55 @@ Certificate:
                     Explicit Text: This Certificate may only be relied upon by Relying Parties and only in accordance with the Certificate Policy found at https://letsencrypt.org/repository/
 
     Signature Algorithm: sha256WithRSAEncryption
-         2b:a8:79:e6:92:c1:e2:aa:d4:2f:a3:95:c1:e8:4c:17:e8:7e:
-         c7:6f:be:cb:b8:2d:ea:c4:98:5e:ca:08:86:df:88:55:77:3d:
-         bd:56:b9:61:79:c2:a0:74:05:88:42:b7:09:d6:c5:f7:28:9a:
-         dd:2c:a2:6f:79:b7:66:47:04:47:52:4e:8d:d5:a1:be:87:1f:
-         0a:23:ff:9b:75:f3:cb:ab:52:24:4f:9e:fa:56:88:ce:42:1d:
-         0f:95:cb:b1:d1:ac:29:8b:a1:bd:9f:7a:cd:47:66:25:29:26:
-         47:09:18:7c:8b:00:ad:de:ba:be:4c:ee:8e:16:bc:51:77:94:
-         16:e9:87:8e:6a:66:e3:d3:66:38:f2:15:e0:76:65:e8:3f:26:
-         62:55:e1:22:ee:4d:a6:48:cf:50:30:3d:f4:af:03:d7:54:cb:
-         a3:2b:cf:9c:45:a9:52:33:11:81:5c:29:44:a9:c7:66:0a:f8:
-         2d:0b:c3:a7:15:dc:1b:03:17:fe:52:b2:54:93:02:16:56:43:
-         74:d9:bd:04:19:dc:b7:75:78:36:13:97:a8:73:8b:14:9e:70:
-         78:18:10:f3:ad:2c:12:48:44:dd:9a:ad:87:a4:c9:1f:2d:a3:
-         e7:48:8f:e0:ca:6b:31:11:f6:d0:60:9d:20:d2:18:84:94:e1:
-         4f:cd:9c:ee
+         53:12:78:10:52:13:29:ae:6c:a2:2d:94:1b:34:5a:07:25:0f:
+         e0:0e:e7:cd:bb:b6:ea:14:ef:93:76:ad:19:92:aa:9f:9a:b0:
+         cf:a1:b9:2f:96:80:af:1d:5f:df:2a:2b:52:fd:05:be:23:21:
+         ab:0d:a0:15:c1:62:50:8d:fa:d8:56:f5:af:73:d6:90:72:6c:
+         7e:05:1b:db:a6:6f:d6:b7:cb:f0:89:bd:03:73:b2:ce:a4:2a:
+         5b:ab:27:6e:16:be:79:9f:b5:74:74:7e:75:d8:b5:e0:d0:0c:
+         69:0a:f1:cf:09:b2:84:be:cd:72:1a:cb:45:97:25:e2:be:1d:
+         ff:d2:40:8b:bf:d6:29:95:cf:a6:3d:b8:10:d1:eb:33:38:d4:
+         35:39:28:27:a8:c1:f8:c2:1e:e5:52:c9:b2:c6:4a:a1:1d:98:
+         ea:94:06:2f:af:5e:8e:0b:a3:05:3a:f2:e9:92:e8:63:9a:b8:
+         33:3b:86:b9:60:52:a0:90:40:30:80:b8:fa:4a:15:22:cb:34:
+         bf:91:5e:9b:51:7e:8b:a7:6d:4c:59:1e:2c:a4:70:d4:cd:9b:
+         ae:6b:57:ce:9e:fb:43:8c:ef:c6:a7:f4:be:39:fd:34:61:4c:
+         84:21:e0:fb:74:4d:31:bd:45:c3:1a:58:97:c7:bb:15:be:2a:
+         74:c0:7a:dd
 -----BEGIN CERTIFICATE-----
-MIIGEjCCBPqgAwIBAgISA/8/ssJfGwXHso95kp6EOEdQMA0GCSqGSIb3DQEBCwUA
+MIIGIzCCBQugAwIBAgISA0KXRlh93ThuHbL6dhxXULUiMA0GCSqGSIb3DQEBCwUA
 MEoxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MSMwIQYDVQQD
-ExpMZXQncyBFbmNyeXB0IEF1dGhvcml0eSBYMzAeFw0xNjEwMDIwMzMzMDBaFw0x
-NjEyMzEwMzMzMDBaMCIxIDAeBgNVBAMTF3d3dy5jaHJpc3RpYW4tZm9saW5pLmNo
-MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAn9hHYqBYm1d+7kMcwC5x
-KnNx9Yn1mz7B+f1jeFb9kVJpbDnsR3WNKeBmv8Ec1Hu6sl00S+mSsqjUB19R6ueT
-wZStkxVX3XI85a2v8cJ9+4gjU29Ek6wP4YuL2O+08+z/0HITPqiGA+/waR/EBbU5
-y2VXa3oRe2zx/u9Lcj0TIOrl8z+FLo36/LtauSWf/bU6u+l+6E0/xPyNbQKWDs6h
-CqGGtQH2En9fg1wuJxOzJ0+4tBW/2szefkK/xvK2fvxIGBPJwno8ea9vt66UnKYJ
-t2zpLjo34imuoDCATA0QUj10KsT1YYgZvBYeB27VwgRM6AZLKqIulPY8q2Cqvrmk
-/g6zsYDdHzDT2CQkDuGMTCnh4EO/Y+cTukDWEOBwEyL3jEDFJ0RoALUMoJ6LUM23
-0nKhl7eeIGVYuxcwJcACTbe3uoQmATnk5uU5bj7GFo5DW2enF6BcmvzxXrplueQF
-UmKoO4WKCiqPPfdkV8/0O6qosZs7uOO8tHcsHFjt1XCteQFAThOGFTIrSW0jxTKD
-kKiic5m+CuiMc45S8im6+QctNPGahdC/1GWGyksn2PFiHhjg9eWNcdOG1FKP5CAg
-cFlfPiJ2QYwxLo1/tKKbFaEZ1JfjJ/5xtrHPJ0/OGlAD4leIw2JASHtyy0rS344i
-yvYqZVDMWr28g7Md9lxbPQ8CAwEAAaOCAhgwggIUMA4GA1UdDwEB/wQEAwIFoDAd
-BgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDAYDVR0TAQH/BAIwADAdBgNV
-HQ4EFgQUVjZMRWIGeJfHEuLxImvaPoAbcP0wHwYDVR0jBBgwFoAUqEpqYwR93brm
-0Tm3pkVl7/Oo7KEwcAYIKwYBBQUHAQEEZDBiMC8GCCsGAQUFBzABhiNodHRwOi8v
-b2NzcC5pbnQteDMubGV0c2VuY3J5cHQub3JnLzAvBggrBgEFBQcwAoYjaHR0cDov
-L2NlcnQuaW50LXgzLmxldHNlbmNyeXB0Lm9yZy8wIgYDVR0RBBswGYIXd3d3LmNo
-cmlzdGlhbi1mb2xpbmkuY2gwgf4GA1UdIASB9jCB8zAIBgZngQwBAgEwgeYGCysG
-AQQBgt8TAQEBMIHWMCYGCCsGAQUFBwIBFhpodHRwOi8vY3BzLmxldHNlbmNyeXB0
-Lm9yZzCBqwYIKwYBBQUHAgIwgZ4MgZtUaGlzIENlcnRpZmljYXRlIG1heSBvbmx5
-IGJlIHJlbGllZCB1cG9uIGJ5IFJlbHlpbmcgUGFydGllcyBhbmQgb25seSBpbiBh
-Y2NvcmRhbmNlIHdpdGggdGhlIENlcnRpZmljYXRlIFBvbGljeSBmb3VuZCBhdCBo
-dHRwczovL2xldHNlbmNyeXB0Lm9yZy9yZXBvc2l0b3J5LzANBgkqhkiG9w0BAQsF
-AAOCAQEAK6h55pLB4qrUL6OVwehMF+h+x2++y7gt6sSYXsoIht+IVXc9vVa5YXnC
-oHQFiEK3CdbF9yia3Syib3m3ZkcER1JOjdWhvocfCiP/m3Xzy6tSJE+e+laIzkId
-D5XLsdGsKYuhvZ96zUdmJSkmRwkYfIsArd66vkzujha8UXeUFumHjmpm49NmOPIV
-4HZl6D8mYlXhIu5NpkjPUDA99K8D11TLoyvPnEWpUjMRgVwpRKnHZgr4LQvDpxXc
-GwMX/lKyVJMCFlZDdNm9BBnct3V4NhOXqHOLFJ5weBgQ860sEkhE3Zqth6TJHy2j
-50iP4MprMRH20GCdINIYhJThT82c7g==
+ExpMZXQncyBFbmNyeXB0IEF1dGhvcml0eSBYMzAeFw0xNjEwMDIwNjI0MDBaFw0x
+NjEyMzEwNjI0MDBaMB4xHDAaBgNVBAMTE2NocmlzdGlhbi1mb2xpbmkuY2gwggIi
+MA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCs5jQ6bYM3MW56xdFQmZNZtxLW
+KL79zzol8NAPncLZj3d7bMg4QSZDwOyRRsnU5wJA6ZDgH4LxAFOSH72vRxX1WQNx
+Duesz9WJ8vy3ioQmN/QNFl55yIqH7IzA3sseIzZoasCcUQR3zCEBRwI81Gv+x7TX
+sAUErULo/UEtKGmFuuvy+XOmW1Aep9/srqtp/ZnzkPAriRwNmwhbq1ptcKqenHK9
+MtyKkbF4uMGHKnxTZNdpAFsGBxQhgBOe85z9yUGTYG9aVU9m9VDnqdziUV4ZWqNd
+o1ixy5a4YoDxc80ynP2yPEQFotEPeAsqLkMVIS+BsDBzjbr75c4OSfUIYt2vu7tq
+VwTmQ1O40LrFv2oKFxJ+I6O/w6P/UK38VHWE9uAMXnWDqs26zuJDz+ZlklW3PgJy
+bQtdRRiuCaGruLgk0a50Q9zlTwo3uQWON7BnAV5QtHyJUpDS+lnAMzHz8DWAOKEb
++3/J0l5AdQ8zcx7r3OOa0dzWlKlVKvBxIF5kcbDPAz5Fdqb/8RKTXQzRK1/9HW7v
+cWl08dyoZMBrqBT8e3dN0kJBFfwQhJ+beLtksWwi5MF9ayWVKpFwFkqHgjjNfwoD
+zvBoxynlY/CK6jcvrf3uiYlHElnolcFISZWWOeigxX5vg2u7/YoAdJFUpPmJLLlb
+gNXTUl5BxKrFpfa75QIDAQABo4ICLTCCAikwDgYDVR0PAQH/BAQDAgWgMB0GA1Ud
+JQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAMBgNVHRMBAf8EAjAAMB0GA1UdDgQW
+BBQYRv3js0wlV0ZKONojeJQ0IzLzOTAfBgNVHSMEGDAWgBSoSmpjBH3duubRObem
+RWXv86jsoTBwBggrBgEFBQcBAQRkMGIwLwYIKwYBBQUHMAGGI2h0dHA6Ly9vY3Nw
+LmludC14My5sZXRzZW5jcnlwdC5vcmcvMC8GCCsGAQUFBzAChiNodHRwOi8vY2Vy
+dC5pbnQteDMubGV0c2VuY3J5cHQub3JnLzA3BgNVHREEMDAughNjaHJpc3RpYW4t
+Zm9saW5pLmNoghd3d3cuY2hyaXN0aWFuLWZvbGluaS5jaDCB/gYDVR0gBIH2MIHz
+MAgGBmeBDAECATCB5gYLKwYBBAGC3xMBAQEwgdYwJgYIKwYBBQUHAgEWGmh0dHA6
+Ly9jcHMubGV0c2VuY3J5cHQub3JnMIGrBggrBgEFBQcCAjCBngyBm1RoaXMgQ2Vy
+dGlmaWNhdGUgbWF5IG9ubHkgYmUgcmVsaWVkIHVwb24gYnkgUmVseWluZyBQYXJ0
+aWVzIGFuZCBvbmx5IGluIGFjY29yZGFuY2Ugd2l0aCB0aGUgQ2VydGlmaWNhdGUg
+UG9saWN5IGZvdW5kIGF0IGh0dHBzOi8vbGV0c2VuY3J5cHQub3JnL3JlcG9zaXRv
+cnkvMA0GCSqGSIb3DQEBCwUAA4IBAQBTEngQUhMprmyiLZQbNFoHJQ/gDufNu7bq
+FO+Tdq0ZkqqfmrDPobkvloCvHV/fKitS/QW+IyGrDaAVwWJQjfrYVvWvc9aQcmx+
+BRvbpm/Wt8vwib0Dc7LOpCpbqyduFr55n7V0dH512LXg0AxpCvHPCbKEvs1yGstF
+lyXivh3/0kCLv9Yplc+mPbgQ0eszONQ1OSgnqMH4wh7lUsmyxkqhHZjqlAYvr16O
+C6MFOvLpkuhjmrgzO4a5YFKgkEAwgLj6ShUiyzS/kV6bUX6Lp21MWR4spHDUzZuu
+a1fOnvtDjO/Gp/S+Of00YUyEIeD7dE0xvUXDGliXx7sVvip0wHrd
 -----END CERTIFICATE-----
 ```
 
@@ -441,6 +454,8 @@ Danach tragen wir die neuen Pfade in der Konfiguration ein:
 SSLCertificateKeyFile   /etc/ssl/private/christian-folini.ch.key
 SSLCertificateFile      /etc/ssl/certs/christian-folini.ch.crt
 ```
+
+
 
 FIXME: Chain File / Intermediate Cert
 
