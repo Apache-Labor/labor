@@ -224,78 +224,230 @@ Im Folgenden geht es nun darum, ein offizielles Zertifikat zu beziehen, dieses d
 
 HTTPS erweitert das bekannte HTTP-Protokoll um eine SSL-Schicht. Technisch wurde SSL (_Secure Socket Layer_) zwar heute von TLS (_Transport Security Layer_) ersetzt, aber man spricht dennoch immer noch von SSL. Das Protokoll garantiert verschlüsselten und damit abhörsicheren Datenverkehr. Der Verkehr wird symmetrisch verschlüsselt, was einen hohen Durchsatz garantiert, setzt aber im Fall von HTTPS einen Public-/Private-Key Setup voraus, der den sicheren Austausch der symmetrischen Schlüssel durch sich zuvor unbekannte Kommunikationspartner voraus. Dieser Public-/Private-Key Handshake geschieht mit Hilfe eines Serverzertifikats, das durch eine offizielle Stelle signiert werden muss.
 
-Serverzertifikate existieren in verschiedenen Formen, Validierungen und Gültigkeitsbereichen. Nicht jedes Merkmal ist wirklich technischer Natur, das Marketing spielt auch eine Rolle. Die Preisunterschiede sind sehr gross, weshalb sich ein Vergleich lohnt. Für unseren Test-Setup verwenden wir ein freies Zertifikat, das wir aber dennoch offiziell beglaubigen lassen. Bei <a href="https://www.startssl.com">_StartSSL_</a> lässt sich beides einfach und ohne Bezahlung mit einer Laufzeit von 12 Monaten beziehen. _StartSSL_ steht immer wieder in der Kritik, weshalb dieser Gratis-Service keinen guten Ruf besitzt (bspw. ist die Revozierung eines Zertifikats kostenpflichtig). Es ist allerdings ein einfacher Weg, um zu einem offiziellen Zertifikat für einen Test-Server zu kommen und vergleichbare Gratis-Angebote haben Laufzeiten von 90 Tagen und weniger.
+Serverzertifikate existieren in verschiedenen Formen, Validierungen und Gültigkeitsbereichen. Nicht jedes Merkmal ist wirklich technischer Natur, das Marketing spielt auch eine Rolle. Die Preisunterschiede sind sehr gross, weshalb sich ein Vergleich lohnt. Für unseren Test-Setup verwenden wir ein freies Zertifikat, das wir aber dennoch offiziell beglaubigen lassen. Diese Beglaubigung übernimmt Let's Encrypt für uns. Diese 2015 ins Leben gerufene Certificate Authority steht unentgeltlich zur Verfügung und vereinfacht den Signierungsprozess gegenüber den traditionellen, kommerziellen Signierungsstellen massiv.
 
-Dieses Zertifikat ist an sich auch für einen sicheren Einsatz auf einem produktiven Server geeignet, allerdings tut man bis heute meist gut daran, eine qualifiziertere _Certificate Authority_ zu benützen als die vorgeschlagene. Für den 16. November 2015 ist die Eröffnung von _Let's Encrypt_ angekündigt. Dies ist eine _CA_, welche ausschliesslich Gratis-Zertifikate anbieten will. Sobald _Let's Encrypt_ erfolgreich aktiv ist, wird diese Anleitung hier angepasst werden.
+Bevor Let's Encrypt uns ein validiertes Zertifikat für unseren Server aushändigt, muss die Certificate Authority sicherstellen, dass wir auch wirklich im Besitz der Domain sind, für die wir ein Zertifikat erstellen lassen möchten. Dies geschieht so, dass wir ein Test-Datei auf dem unserem Server platzieren müssen. Dann rufen wir eine URL bei Let's Encrypt auf und beauftragen die Zertifizierungsstelle mit der Überprüfung. Let's Encrypt spricht dann unseren Webserver auf und vergleicht den Inhalt der Testdatei mit den Daten im Auftrag. Stimmen die Daten überein, dann haben wir belegt, dass wir den Server mit der verlangten Domain tatsächlich kontrollieren und Let's Encrypt akzeptiert uns als Besitzer der besagten Domain. Darauf stellt es uns ein Zertifikat aus. Dieses installieren wir daraufhin auf dem Webserver.
 
-Für den Moment setzen wir aber auf _StartSSL_. Der Anbieter überprüft zunächst die Identität eines Antragsstellers und dann vor der Ausstellung des Zertifikats auch noch dessen Berechtigung, ein bestimmtes Zertifikat für eine bestimmte Domain zu erhalten. Diese Überprüfung geschieht durch ein Email an eine vordefinierte Adresse der gewünschten Zertifikats-Domäne. Konkret bedeutet dies im Fall der Domäne _example.com_, dass _StartSSL_ eine Email-Nachricht mit einem Sicherheitscode an eine der drei Adressen _postmaster@example.com_, _webmaster@example.com_ oder _hostmaster@example.com_ versendet. Dies verhindert, dass jemand ein Zertifikat für eine fremde Domäne beziehen kann, denn in diesem Fall ginge die Nachricht mit dem Code ins Leere.
+Es gibt verschiedene Clients zum Umgang mit Let's Encrypt. Luca Käser hat mich auf `getssl` hingewiesen, das einfache Bedienung auf der Kommandozeile und maximale Kontrolle bietet. Es eignet sich auf für den produktiven Einsatz sehr gut, da es in der Lage ist, die Testdatei nicht nur auf dem lokalen System zu deponieren, sondern auch mittels `ssh` auf einem entfernten System einzustellen. Das ist dann von Vorteil, wenn man dem Webserver nicht erlaubt, selbst Anfragen ins Internet abzusetzen und damit der Auftrag an Let's Encrypt nicht vom Webserver selbst ausgelöst werden kann.
 
-Zur Zeit kommt man über die folgenden Schritte zu einem Server-Zertifikat:
-
-* Registrieren
-* Persönliche Email-Adresse überprüfen
-* Zertifikats- und Schlüssel-Erstellung starten
-* Berechtigung für Domäne überprüfen
-* Zertifikats- und Schlüssel-Erstellung abschliessen
-* Zertifikat signieren
-* Signiertes Zertifikat und Schlüssel herunterladen und installieren
-
-Natürlich ist es auch möglich, Zertifikat und Private Key selbst zu erstellen und ersteres dann online nur noch signieren zu lassen. So bekommt die CA unseren Private Key erst gar nie in die Hände, was durchaus sehr empfohlen, wenn nicht sogar Pflicht ist. Wichtig ist in beiden Varianten, dass man den Schlüssel durch ein starkes Passwort schützt. Dieses Passwort benötigen wir später bei der Konfiguration des Servers.
-
-###Schritt 3b: Zertifikat selbst erstellen und offiziell signieren lassen
-
-Einen sehr guten Schlüssel generieren wir wie folgt:
+Aber dies ist ein fortgeschrittenes Szenario. Für den einfachen Fall rufen wir Let's Encrypt direkt auf. Zunächst müssen wir uns aber das Skript `getssl` besorgen, denn es ist so frisch, dass es noch nicht Teil der weit verbreiteten Linux Distributionen ist. Wir laden das Skript herunter. In meinem Fall lege ich es im privaten `bin`-Ordner ab. Je nach eigenem Setup wird man einen alternativen Platz dafür bestimmen. Wichtig ist, dass `getssl` in der Folge Teil des Shell-Suchpfades ist. Wir beziehen das Skript von Github. Es besteht die Möglichkeit, das gesamte Projektverzeichnis zu clonen. Wir machen es uns aber einfach, indem wir einfach das Skript herunterladen und ausführbar machen.
 
 ```bash
-$> openssl genrsa -des3 -out server.key 2048
-```
-
-Die Generierung des Schlüssels dürfte einen Moment in Anspruch nehmen, denn eine Länge von 2048 wie angegeben ist ziemlich gross und die notwendige Entropie muss erst gefunden werden. Es wäre auch möglich, mit einer Länge von 4096 zu arbeiten, aber der geringe kryptographische Mehrwert wird durch eine mehrfach schlechtere Performance auf dem Server erkauft. Wir erwarten folgenden Ablauf des Aufrufs:
- 
-```bash
-Generating RSA private key, 2048 bit long modulus
-.+++++++++++++++++++++++++++...
+$> wget https://raw.githubusercontent.com/srvrco/getssl/master/getssl -O $HOME/bin/getssl && chmod +x $HOME/bin/getssl
 ...
+```
+
+Als Beispiel-Domain benütze ich `christian-folini.ch`. In einem ersten Schritt erstellen wir eine Grundkonfiguration für die Domain. 
+
+```bash
+$> getssl -c christian-folini.ch
+...
+```
+
+Das Skript legt das Skript damit einen Vereichnisbaum an mit folgenden Verzeichnissen und Dateien an:
+
+```bash
+.getssl
+.getssl/getssl.cfg
+.getssl/christian-folini.ch
+.getssl/christian-folini.ch/christian-folini.ch.crt
+.getssl/christian-folini.ch/getssl.cfg
+```
+
+Bevor wir uns ein Zertifikat erstellen lassen können ist es wichtig, dass wir die beiden `getssl.cfg`-Dateien kurz bearbeiten. Zunächst die Grundkonfiguration in der Datei `.getssl/getssl.cfg`. In der Datei ist zu beachten, dass Let's Encrypt eine Test-CA mit der URL `https://acme-staging.api.letsencrypt.org` betreibt mit der man den eigenen Setup ausprobieren kann - und dann die richtige CA, welche die offiziellen Zertifikate ausstellt. Es ist sinnvoll, zunächst alles auf der Test-CA auszuprobieren und wenn die Pfade stimmen und die Validierung erfolgreich abgeschlossen wurde, die offizielle CA URL `https://acme-v01.api.letsencrypt.org` einzutragen. In der Datei `.getssl/getssl.cfg` ist per Default die Test-CA eingetragen. Zu Beginn gibt es deshalb nicht viel zu tun, lediglich die Variable `ACCOUNT_EMAIL` sollte sinnvollerweise ausgefüllt werden.
+
+Schreiten wir dann zur Konfigurations-Datei der Domain `.getssl/christian-folini.ch/getssl.cfg`. Hier überprüfen wir den Wert `SANS` (ich vermute er bedeutet `Subject Alternative NameS`) und bezeichnet damit weitere Host-Namen oder in der CA-Sprache `Subject-Names`, die in das Zertifikat eingetragen werden. Im Fall der Domain `christian.folini.ch` erwarten wir hier `SANS=www.christian-folini.ch`. Die meisten anderen Werte sind auskommentiert, was bedeutet, dass diejenigen Werte, die in der übergeordneten Datei gesetzt wurden, weitervererbt und hier nicht mehr speziell gesetzt werden müssen. Ein wichtiger Wert bleibt aber zu setzen: `ACL`. Für den Laborsetup lege ich den Wert wie folgt fest: `ACL=/apache/htdocs/.well-known/acme-challenge`. Der Pfad-Teil ab `.well-known` entspricht damit dem Let's Encrypt Standard. Es sind aber beliebige andere Optionen möglich.
+
+Nun starten wir den ersten Aufruf an Let's Encrypt:
+
+```bash
+$> getssl christian-folini.ch
+archiving old certificate file to /home/dune73/.getssl/christian-folini.ch/christian-folini.ch.crt_2016-09-30_2016-12-29
+creating account key /home/folini/.getssl/account.key
+Generating RSA private key, 4096 bit long modulus
+..................................................++
+............................................................++
 e is 65537 (0x10001)
-Enter pass phrase for server.key:
-Verifying - Enter pass phrase for server.key:
+creating domain key - /home/folini/.getssl/christian-folini.ch/christian-folini.ch.key
+Generating RSA private key, 4096 bit long modulus
+..............++
+...................................++
+e is 65537 (0x10001)
+creating domain csr - /home/folini/.getssl/christian-folini.ch/christian-folini.ch.csr
+Registering account
+Registered
+Verify each domain
+Verifing christian-folini.ch
+copying challenge token to /apache/htdocs/.well-known/acme-challenge/xiM4FlHAqxo9fuAG-Ag-BTV_DsUJAbegPoZ6-l_luSA
+Pending
+Verified christian-folini.ch
+Verification completed, obtaining certificate.
+Certificate saved in /home/folini/.getssl/christian-folini.ch/christian-folini.ch.crt
+The intermediate CA cert is in /home/folini/.getssl/christian-folini.ch/chain.crt
+getssl: christian-folini.ch - certificate obtained but certificate on server is different from the new certificate
 ```
 
-Merken Sie sich diese Passphrase gut. Mit dem neuen Schlüssel generieren wir nun einen Signierungsantrag, einen _Certificate Signing Request_, kurz _CSR_:
+Wir sehen schön, wie zunächst ein neuer Schlüssel erstellt wurde. Dann wurde ein `Certificate Signing Request` mit der Datei-Endung `csr` generiert und dann die Testdatei `/apache/htdocs/.well-known/acme-challenge/xiM4FlHAqxo9fuAG-Ag-BTV_DsUJAbegPoZ6-l_luSA` hinterlegt. Darauf folgt der Auftrag zur Überprüfung und Signierung an Let's Encrypt. Im Access Log des Servers sehen wir danach den folgenden Eintrag (Die IP Adressen des Validierungsservers können variieren):
 
 ```bash
-$> openssl req -new -key server.key > server.csr
-```
+66.133.109.36 US - [2016-10-02 06:26:40.635068] "GET /.well-known/acme-challenge/zg0bwpHNmRmFdXS4YeTgjBKiy84JoYDpu-cHON2mC9k HTTP/1.1" 200 87 "-" "Mozilla/5.0 (compatible; Let's Encrypt validation server; +https://www.letsencrypt.org)"
+``` 
+Wenn wir oben die Ausgabe des `getssl` Kommandos nochmals überprüfen, dann sehen wir, dass die Verifikation über die Bühne ging. Auch ein Zertifikat wurde erstellt und ausgeliefert. Dennoch lief etwas schief, denn auf der letzten Zeile rapportiert das Skript, dass das Zertifikat, das auf dem Server liege, nicht mit dem ausgelieferten übereinstimmt. Das ist tatsächlich der Fall, denn wir haben das Zertifikat, ja noch nicht auf dem Server installiert. Das Skript ist in der Lage, dies ebenfalls in einem Durchlauf zu erledigen (Dazu dienen die Variablen `DOMAIN_KEY_LOCATION` sowie `RELOAD_CMD` im Konfigurationsfile).
 
-Hier werden ein paar weitere Fragen gestellt, die wir gewissenhaft beantworten:
+Schauen wir uns das erhaltene Zertifikat erst einmal genauer an. Wichtig sind die Felder Validity mit dem zeitlichen Geltungsbereich des Zertifikats (3 Monate), der Signierungsalgorithmus, der Public Key Algorithmus und natürlich Subject sowie Subject Alternative Name. Um all das zu überprüfen benutzen wir die Kommandozeilenversion von `openssl`:
 
 ```bash
-Enter pass phrase for server.key:
-You are about to be asked to enter information that will be incorporated
-into your certificate request.
-What you are about to enter is what is called a Distinguished Name or a DN.
-There are quite a few fields but you can leave some blank
-For some fields there will be a default value,
-If you enter '.', the field will be left blank.
------
-Country Name (2 letter code) [AU]:CH
-State or Province Name (full name) [Some-State]:Bern
-Locality Name (eg, city) []:Bern
-Organization Name (eg, company) [Internet Widgits Pty Ltd]:example.com
-Organizational Unit Name (eg, section) []:-
-Common Name (eg, YOUR name) []:Christian Folini
-Email Address []:webmaster@example.com
+$> openssl x509 -text -in ~/.getssl/christian-folini.ch/christian-folini.ch.crt
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            03:ff:3f:b2:c2:5f:1b:05:c7:b2:8f:79:92:9e:84:38:47:50
+    Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C=US, O=Let's Encrypt, CN=Let's Encrypt Authority X3
+        Validity
+            Not Before: Oct  2 03:33:00 2016 GMT
+            Not After : Dec 31 03:33:00 2016 GMT
+        Subject: CN=christian-folini.ch
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (4096 bit)
+                Modulus:
+                    00:9f:d8:47:62:a0:58:9b:57:7e:ee:43:1c:c0:2e:
+                    71:2a:73:71:f5:89:f5:9b:3e:c1:f9:fd:63:78:56:
+                    fd:91:52:69:6c:39:ec:47:75:8d:29:e0:66:bf:c1:
+                    1c:d4:7b:ba:b2:5d:34:4b:e9:92:b2:a8:d4:07:5f:
+                    51:ea:e7:93:c1:94:ad:93:15:57:dd:72:3c:e5:ad:
+                    af:f1:c2:7d:fb:88:23:53:6f:44:93:ac:0f:e1:8b:
+                    8b:d8:ef:b4:f3:ec:ff:d0:72:13:3e:a8:86:03:ef:
+                    f0:69:1f:c4:05:b5:39:cb:65:57:6b:7a:11:7b:6c:
+                    f1:fe:ef:4b:72:3d:13:20:ea:e5:f3:3f:85:2e:8d:
+                    fa:fc:bb:5a:b9:25:9f:fd:b5:3a:bb:e9:7e:e8:4d:
+                    3f:c4:fc:8d:6d:02:96:0e:ce:a1:0a:a1:86:b5:01:
+                    f6:12:7f:5f:83:5c:2e:27:13:b3:27:4f:b8:b4:15:
+                    bf:da:cc:de:7e:42:bf:c6:f2:b6:7e:fc:48:18:13:
+                    c9:c2:7a:3c:79:af:6f:b7:ae:94:9c:a6:09:b7:6c:
+                    e9:2e:3a:37:e2:29:ae:a0:30:80:4c:0d:10:52:3d:
+                    74:2a:c4:f5:61:88:19:bc:16:1e:07:6e:d5:c2:04:
+                    4c:e8:06:4b:2a:a2:2e:94:f6:3c:ab:60:aa:be:b9:
+                    a4:fe:0e:b3:b1:80:dd:1f:30:d3:d8:24:24:0e:e1:
+                    8c:4c:29:e1:e0:43:bf:63:e7:13:ba:40:d6:10:e0:
+                    70:13:22:f7:8c:40:c5:27:44:68:00:b5:0c:a0:9e:
+                    8b:50:cd:b7:d2:72:a1:97:b7:9e:20:65:58:bb:17:
+                    30:25:c0:02:4d:b7:b7:ba:84:26:01:39:e4:e6:e5:
+                    39:6e:3e:c6:16:8e:43:5b:67:a7:17:a0:5c:9a:fc:
+                    f1:5e:ba:65:b9:e4:05:52:62:a8:3b:85:8a:0a:2a:
+                    8f:3d:f7:64:57:cf:f4:3b:aa:a8:b1:9b:3b:b8:e3:
+                    bc:b4:77:2c:1c:58:ed:d5:70:ad:79:01:40:4e:13:
+                    86:15:32:2b:49:6d:23:c5:32:83:90:a8:a2:73:99:
+                    be:0a:e8:8c:73:8e:52:f2:29:ba:f9:07:2d:34:f1:
+                    9a:85:d0:bf:d4:65:86:ca:4b:27:d8:f1:62:1e:18:
+                    e0:f5:e5:8d:71:d3:86:d4:52:8f:e4:20:20:70:59:
+                    5f:3e:22:76:41:8c:31:2e:8d:7f:b4:a2:9b:15:a1:
+                    19:d4:97:e3:27:fe:71:b6:b1:cf:27:4f:ce:1a:50:
+                    03:e2:57:88:c3:62:40:48:7b:72:cb:4a:d2:df:8e:
+                    22:ca:f6:2a:65:50:cc:5a:bd:bc:83:b3:1d:f6:5c:
+                    5b:3d:0f
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Key Usage: critical
+                Digital Signature, Key Encipherment
+            X509v3 Extended Key Usage: 
+                TLS Web Server Authentication, TLS Web Client Authentication
+            X509v3 Basic Constraints: critical
+                CA:FALSE
+            X509v3 Subject Key Identifier: 
+                56:36:4C:45:62:06:78:97:C7:12:E2:F1:22:6B:DA:3E:80:1B:70:FD
+            X509v3 Authority Key Identifier: 
+                keyid:A8:4A:6A:63:04:7D:DD:BA:E6:D1:39:B7:A6:45:65:EF:F3:A8:EC:A1
 
-Please enter the following 'extra' attributes
-to be sent with your certificate request
-A challenge password []:sjk3hrer8jk   
-An optional company name []:test company
+            Authority Information Access: 
+                OCSP - URI:http://ocsp.int-x3.letsencrypt.org/
+                CA Issuers - URI:http://cert.int-x3.letsencrypt.org/
+
+            X509v3 Subject Alternative Name: 
+                DNS:christian-folini.ch
+            X509v3 Certificate Policies: 
+                Policy: 2.23.140.1.2.1
+                Policy: 1.3.6.1.4.1.44947.1.1.1
+                  CPS: http://cps.letsencrypt.org
+                  User Notice:
+                    Explicit Text: This Certificate may only be relied upon by Relying Parties and only in accordance with the Certificate Policy found at https://letsencrypt.org/repository/
+
+    Signature Algorithm: sha256WithRSAEncryption
+         2b:a8:79:e6:92:c1:e2:aa:d4:2f:a3:95:c1:e8:4c:17:e8:7e:
+         c7:6f:be:cb:b8:2d:ea:c4:98:5e:ca:08:86:df:88:55:77:3d:
+         bd:56:b9:61:79:c2:a0:74:05:88:42:b7:09:d6:c5:f7:28:9a:
+         dd:2c:a2:6f:79:b7:66:47:04:47:52:4e:8d:d5:a1:be:87:1f:
+         0a:23:ff:9b:75:f3:cb:ab:52:24:4f:9e:fa:56:88:ce:42:1d:
+         0f:95:cb:b1:d1:ac:29:8b:a1:bd:9f:7a:cd:47:66:25:29:26:
+         47:09:18:7c:8b:00:ad:de:ba:be:4c:ee:8e:16:bc:51:77:94:
+         16:e9:87:8e:6a:66:e3:d3:66:38:f2:15:e0:76:65:e8:3f:26:
+         62:55:e1:22:ee:4d:a6:48:cf:50:30:3d:f4:af:03:d7:54:cb:
+         a3:2b:cf:9c:45:a9:52:33:11:81:5c:29:44:a9:c7:66:0a:f8:
+         2d:0b:c3:a7:15:dc:1b:03:17:fe:52:b2:54:93:02:16:56:43:
+         74:d9:bd:04:19:dc:b7:75:78:36:13:97:a8:73:8b:14:9e:70:
+         78:18:10:f3:ad:2c:12:48:44:dd:9a:ad:87:a4:c9:1f:2d:a3:
+         e7:48:8f:e0:ca:6b:31:11:f6:d0:60:9d:20:d2:18:84:94:e1:
+         4f:cd:9c:ee
+-----BEGIN CERTIFICATE-----
+MIIGEjCCBPqgAwIBAgISA/8/ssJfGwXHso95kp6EOEdQMA0GCSqGSIb3DQEBCwUA
+MEoxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MSMwIQYDVQQD
+ExpMZXQncyBFbmNyeXB0IEF1dGhvcml0eSBYMzAeFw0xNjEwMDIwMzMzMDBaFw0x
+NjEyMzEwMzMzMDBaMCIxIDAeBgNVBAMTF3d3dy5jaHJpc3RpYW4tZm9saW5pLmNo
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAn9hHYqBYm1d+7kMcwC5x
+KnNx9Yn1mz7B+f1jeFb9kVJpbDnsR3WNKeBmv8Ec1Hu6sl00S+mSsqjUB19R6ueT
+wZStkxVX3XI85a2v8cJ9+4gjU29Ek6wP4YuL2O+08+z/0HITPqiGA+/waR/EBbU5
+y2VXa3oRe2zx/u9Lcj0TIOrl8z+FLo36/LtauSWf/bU6u+l+6E0/xPyNbQKWDs6h
+CqGGtQH2En9fg1wuJxOzJ0+4tBW/2szefkK/xvK2fvxIGBPJwno8ea9vt66UnKYJ
+t2zpLjo34imuoDCATA0QUj10KsT1YYgZvBYeB27VwgRM6AZLKqIulPY8q2Cqvrmk
+/g6zsYDdHzDT2CQkDuGMTCnh4EO/Y+cTukDWEOBwEyL3jEDFJ0RoALUMoJ6LUM23
+0nKhl7eeIGVYuxcwJcACTbe3uoQmATnk5uU5bj7GFo5DW2enF6BcmvzxXrplueQF
+UmKoO4WKCiqPPfdkV8/0O6qosZs7uOO8tHcsHFjt1XCteQFAThOGFTIrSW0jxTKD
+kKiic5m+CuiMc45S8im6+QctNPGahdC/1GWGyksn2PFiHhjg9eWNcdOG1FKP5CAg
+cFlfPiJ2QYwxLo1/tKKbFaEZ1JfjJ/5xtrHPJ0/OGlAD4leIw2JASHtyy0rS344i
+yvYqZVDMWr28g7Md9lxbPQ8CAwEAAaOCAhgwggIUMA4GA1UdDwEB/wQEAwIFoDAd
+BgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDAYDVR0TAQH/BAIwADAdBgNV
+HQ4EFgQUVjZMRWIGeJfHEuLxImvaPoAbcP0wHwYDVR0jBBgwFoAUqEpqYwR93brm
+0Tm3pkVl7/Oo7KEwcAYIKwYBBQUHAQEEZDBiMC8GCCsGAQUFBzABhiNodHRwOi8v
+b2NzcC5pbnQteDMubGV0c2VuY3J5cHQub3JnLzAvBggrBgEFBQcwAoYjaHR0cDov
+L2NlcnQuaW50LXgzLmxldHNlbmNyeXB0Lm9yZy8wIgYDVR0RBBswGYIXd3d3LmNo
+cmlzdGlhbi1mb2xpbmkuY2gwgf4GA1UdIASB9jCB8zAIBgZngQwBAgEwgeYGCysG
+AQQBgt8TAQEBMIHWMCYGCCsGAQUFBwIBFhpodHRwOi8vY3BzLmxldHNlbmNyeXB0
+Lm9yZzCBqwYIKwYBBQUHAgIwgZ4MgZtUaGlzIENlcnRpZmljYXRlIG1heSBvbmx5
+IGJlIHJlbGllZCB1cG9uIGJ5IFJlbHlpbmcgUGFydGllcyBhbmQgb25seSBpbiBh
+Y2NvcmRhbmNlIHdpdGggdGhlIENlcnRpZmljYXRlIFBvbGljeSBmb3VuZCBhdCBo
+dHRwczovL2xldHNlbmNyeXB0Lm9yZy9yZXBvc2l0b3J5LzANBgkqhkiG9w0BAQsF
+AAOCAQEAK6h55pLB4qrUL6OVwehMF+h+x2++y7gt6sSYXsoIht+IVXc9vVa5YXnC
+oHQFiEK3CdbF9yia3Syib3m3ZkcER1JOjdWhvocfCiP/m3Xzy6tSJE+e+laIzkId
+D5XLsdGsKYuhvZ96zUdmJSkmRwkYfIsArd66vkzujha8UXeUFumHjmpm49NmOPIV
+4HZl6D8mYlXhIu5NpkjPUDA99K8D11TLoyvPnEWpUjMRgVwpRKnHZgr4LQvDpxXc
+GwMX/lKyVJMCFlZDdNm9BBnct3V4NhOXqHOLFJ5weBgQ860sEkhE3Zqth6TJHy2j
+50iP4MprMRH20GCdINIYhJThT82c7g==
+-----END CERTIFICATE-----
 ```
 
-Wir erhalten darauf einen _CSR_ mit Namen server.csr. Damit gehen wir zu _StartSSL_ und lassen ihn signieren.
+Falls dieses Zertifikat unseren Vorstellungen entspricht, kopieren wir es gemeinsam mit dem Schlüssel auf den Server:
 
 
-###Schritt 4: Zertifikat für die Vertrauenskette beziehen
+```bash
+$> cp ~/.getssl/christian-folini.ch.key /etc/ssl/private/
+$> cp ~/.getssl/christian-folini.ch.crt /etc/ssl/certs/
+``` 
+
+Danach tragen wir die neuen Pfade in der Konfiguration ein:
+
+```bash
+SSLCertificateKeyFile   /etc/ssl/private/christian-folini.ch.key
+SSLCertificateFile      /etc/ssl/certs/christian-folini.ch.crt
+```
+
+FIXME: Chain File / Intermediate Cert
+
+
+Und nun bleibt noch der Start oder Neustart des Servers und wir haben ein offiziell signiertes Zertifikat komplett installiert.
+
+FIXME ###Schritt 4: Zertifikat für die Vertrauenskette beziehen
 
 Ich setze voraus, dass Sie ein offiziell signiertes Zertifikat mit zugehörigem Schlüssel wie beschrieben bezogen oder selbst generiert und offiziell signiert haben.
 
@@ -308,7 +460,7 @@ $> wget https://www.startssl.com/certs/sub.class1.server.ca.pem -O startssl-clas
 Ich wähle beim Herunterladen einen etwas anderen Datei-Namen als vorgegeben. Wir gewinnen dadurch an Klarheit für die Konfiguration. Die signierten Dateien werden bei der Überprüfung durch den Client aneinandergereiht. Gemeinsam bilden die Signaturen auf den Zertifikaten dann die Vertrauenskette von unserem Zertifikat zur _Certificate Authority_.
 
 
-###Schritt 5: SSL Schlüssel und Zertifikate installieren
+FIXME ###Schritt 5: SSL Schlüssel und Zertifikate installieren
 
 Damit sind nun der Schlüssel und die zwei benötigten Zertifikate vorhanden. Konkret:
 
@@ -347,7 +499,7 @@ $> sudo chmod 700 /apache/bin/gen_passphrase.sh
 $> sudo chown root:root /apache/bin/gen_passphrase.sh
 ```
 
-###Schritt 7: Apache konfigurieren
+FIXME ###Schritt 7: Apache konfigurieren
 
 Nun sind alle Vorbereitungen abgeschlossen und wir können den Webserver final konfigurieren. Ich liefere hier nicht mehr die komplette Konfiguration, sondern nur noch den korrekten Servernamen und den verfeinerten SSL-Teil:
 
@@ -418,7 +570,7 @@ Zu Übungszwecken haben wir unseren Testserver erneut auf der lokalen IP-Adresse
 ...
 ```
 
-Nun können wir entweder mit dem Browser oder mit curl auf die URL [https://www.example.com](https://www.example.com) zugreifen. Wenn dies ohne eine Zertifikats-Warnung funktioniert, dann haben wir den Server korrekt konfiguriert. Etwas genauer lässt sich die Verschlüsselung und die Vertrauenskette mit dem Kommendozeilen-Tool _OpenSSL_ überprüfen. Da _OpenSSL_ aber anders als der Browser und curl keine Liste mit Zertifikatsauthoritäten besitzt, müssen wir dem Tool das Zertifikat der Authorität auch mitgeben. Wir besorgen es uns bei _StartSSL_.
+FIXME Nun können wir entweder mit dem Browser oder mit curl auf die URL [https://www.example.com](https://www.example.com) zugreifen. Wenn dies ohne eine Zertifikats-Warnung funktioniert, dann haben wir den Server korrekt konfiguriert. Etwas genauer lässt sich die Verschlüsselung und die Vertrauenskette mit dem Kommendozeilen-Tool _OpenSSL_ überprüfen. Da _OpenSSL_ aber anders als der Browser und curl keine Liste mit Zertifikatsauthoritäten besitzt, müssen wir dem Tool das Zertifikat der Authorität auch mitgeben. Wir besorgen es uns bei _StartSSL_.
 
 ```bash
 $> wget https://www.startssl.com/certs/ca.pem
@@ -494,7 +646,7 @@ Die Höchstnote ist mit dieser Anleitung in Reichweite.
 
 * [Wikipedia OpenSSL](http://de.wikipedia.org/wiki/Openssl)
 * [Apache Mod_SSL](http://httpd.apache.org/docs/2.4/mod/mod_ssl.html)
-* [StartSSL Zertifikate](https://www.startssl.com)
+FIXME * [StartSSL Zertifikate](https://www.startssl.com)
 * [SSLLabs](https://www.ssllabs.com)
 * [OpenSSL Cookbook](https://www.feistyduck.com/books/openssl-cookbook/)
 * [Bulletproof SSL und TLS](https://www.feistyduck.com/books/bulletproof-ssl-and-tls/)
