@@ -14,6 +14,8 @@ Das HTTP Protokoll ist ein Klartext-Protokoll, das sich sehr gut abhören lässt
 
 ###Schritt 1: Server mit SSL/TLS, aber ohne offiziell signiertes Zertifikat konfigurieren
 
+Die Funktionsweise des _SSL-/TLS_-Protokolls ist anspruchsvoll. Eine gute Einführung bietet das _OpenSSL Cookbook_ von Ivan Ristić (siehe Links) oder sein umfassenderes Werk _Bulletproof SSL und TLS_, das die Vertrauensbeziehungen im Detail bespricht.
+
 Ein SSL Server muss sich beim Kontakt mit dem Client durch ein signiertes Zertifikat ausweisen. Für eine erfolgreiche Verbindung muss die Signierstelle dem Client bekannt sein, was er durch eine Überprüfung der Zertifikatskette vom Server- bis zum Root-Zertifikat der Signierstelle, der Certificate Authority, überprüft. Offiziell signierte Zertifikate bezieht man deshalb von einem öffentlichen (oder privaten) Anbieter, dessen Root-Zertifikat dem Browser bekannt ist. 
 
 Die Konfiguration eines SSL-Servers umfasst also zwei Schritte: Den Bezug eines offiziell signierten Zertifikats und die Konfiguration des Servers. Die Konfiguration des Servers ist der interessantere und einfachere Teil, weshalb wir ihn vorziehen. Dazu bedienen wir uns eines inoffiziellen Behelfzertifikats, das auf unserem System bereits vorhanden ist (zumindest wenn es aus der Debian-Familie stammt und das Paket _ssl-cert_ installiert ist).
@@ -56,7 +58,7 @@ LoadModule              authn_core_module       modules/mod_authn_core.so
 LoadModule              authz_core_module       modules/mod_authz_core.so
 
 LoadModule              ssl_module              modules/mod_ssl.so
-LoadModule              headers_module         	modules/mod_headers.so
+LoadModule              headers_module          modules/mod_headers.so
 
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
 LogFormat               "%h %l %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \
@@ -104,8 +106,8 @@ DocumentRoot            /apache/htdocs
 <VirtualHost 127.0.0.1:443>
 
         SSLEngine On
-		Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
-		
+        Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
         <Directory /apache/htdocs>
 
             Require all granted
@@ -220,7 +222,7 @@ Im Folgenden geht es nun darum, ein offizielles Zertifikat zu beziehen, dieses d
 
 
 
-###Schritt 3a: SSL-Schlüssel und -Zertifikat beziehen
+###Schritt 3: SSL-Schlüssel und -Zertifikat beziehen
 
 HTTPS erweitert das bekannte HTTP-Protokoll um eine SSL-Schicht. Technisch wurde SSL (_Secure Socket Layer_) zwar heute von TLS (_Transport Security Layer_) ersetzt, aber man spricht dennoch immer noch von SSL. Das Protokoll garantiert verschlüsselten und damit abhörsicheren Datenverkehr. Der Verkehr wird symmetrisch verschlüsselt, was einen hohen Durchsatz garantiert, setzt aber im Fall von HTTPS einen Public-/Private-Key Setup voraus, der den sicheren Austausch der symmetrischen Schlüssel durch sich zuvor unbekannte Kommunikationspartner voraus. Dieser Public-/Private-Key Handshake geschieht mit Hilfe eines Serverzertifikats, das durch eine offizielle Stelle signiert werden muss.
 
@@ -467,18 +469,13 @@ SSLCertificateFile      /etc/ssl/certs/christian-folini.ch.crt
 SSLCertificateChainFile /etc/ssl/certs/lets-encrypt-chain.crt
 ```
 
-Und nun bleibt noch der Start oder Neustart des Servers und wir haben ein offiziell signiertes Zertifikat komplett installiert.
+###Schritt 4: Apache Konfiguration noch etwas verfeinern
 
-FIXME: unterbringen:
-Die Funktionsweise des _SSL-/TLS_-Protokolls ist anspruchsvoll. Eine gute Einführung bietet das _OpenSSL Cookbook_ von Ivan Ristić (siehe Links) oder sein umfassenderes Werk _Bulletproof SSL und TLS_. Ein Bereich, der schwer verständlich ist, umfasst die Vertrauensbeziehungen, die _SSL_ garantiert. 
-
-FIXME ###Schritt 7: Apache konfigurieren
-
-Nun sind alle Vorbereitungen abgeschlossen und wir können den Webserver final konfigurieren. Ich liefere hier nicht mehr die komplette Konfiguration, sondern nur noch den korrekten Servernamen und den verfeinerten SSL-Teil:
+Nun sind alle Vorbereitungen abgeschlossen und wir können den Webserver final konfigurieren. Ich liefere hier nicht mehr die komplette Konfiguration, sondern nur noch den korrekten Servernamen und den verfeinerten SSL-Teil. Als Servername dient mir hier `www.example.org`. Dies als Platzhalter für die eigentliche Domain:
 
 
 ```bash
-ServerName		www.example.com
+ServerName              www.example.com
 
 ...
 
@@ -492,15 +489,15 @@ SSLCertificateChainFile conf/ssl.crt/startssl-class1-chain-ca.pem
 SSLPassPhraseDialog     exec:bin/gen_passphrase.sh
 
 SSLProtocol             All -SSLv2 -SSLv3
-SSLCipherSuite		'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM \
+SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM \
 !MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
-SSLHonorCipherOrder	On
+SSLHonorCipherOrder     On
 
 SSLRandomSeed           startup file:/dev/urandom 2048
 SSLRandomSeed           connect builtin
 
-SSLSessionCache 	"shmcb:/apache/logs/ssl_gcache_data(1024000)"
-SSLSessionTickets	On
+SSLSessionCache         "shmcb:/apache/logs/ssl_gcache_data(1024000)"
+SSLSessionTickets       On
 
 
 ...
@@ -508,12 +505,12 @@ SSLSessionTickets	On
 
 <VirtualHost 127.0.0.1:443>
 
-	ServerName              www.example.com
-	
-	SSLEngine On
-	Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        ServerName              www.example.com
 
-	...
+        SSLEngine On
+        Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+        ...
 ```
 
 Sinnvoll ist es, den mit dem Zertifikat übereinstimmenden _ServerName_ auch im _VirtualHost_ bekanntzugeben. Wenn wir das nicht tun, wird Apache eine Warnung ausgeben (und dann dennoch den einzigen konfigurierten VirtualHost wählen und korrekt weiterfunktionieren).
@@ -528,7 +525,7 @@ Beide Varianten des Session Caches lassen sich ausschalten. Dies geschieht wie f
 
 ```bash
 SSLSessionCache         nonenotnull
-SSLSessionTickets	Off
+SSLSessionTickets       Off
 ```
 
 Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance. Allerdings nimmt sich der Performance-Verlust durchaus klein aus. Es wäre überraschend, wenn ein Last-Test auf das Ausschalten mit einem Leistungsrückgang von mehr als 10% reagieren würde.
@@ -539,7 +536,7 @@ Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance. Allerd
 Zu Übungszwecken haben wir unseren Testserver erneut auf der lokalen IP-Adresse _127.0.0.1_ konfiguriert. Um das Funktionieren der Zertifikatskette zu testen, dürfen wir den Server nicht einfach mittels der IP-Adresse ansprechen, sondern wir müssen ihn mit dem korrekten Hostnamen kontaktieren. Und dieser Hostname muss natürlich mit demjenigen auf dem Zertifikat übereinstimmen. Im Fall von _127.0.0.1_ erreichen wir dies, indem wir das _Host-File_ unter _/etc/hosts_ anpassen:
 
 ```bash
-127.0.0.1	localhost myhost www.example.com
+127.0.0.1      localhost myhost www.example.com
 ...
 ```
 
