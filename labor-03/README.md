@@ -222,7 +222,7 @@ Im Folgenden geht es nun darum, ein offizielles Zertifikat zu beziehen, dieses d
 
 
 
-###Schritt 3: SSL-Schlüssel und -Zertifikat beziehen
+###Schritt 3: Bezug von SSL-Schlüssel und -Zertifikat vorbereiten
 
 HTTPS erweitert das bekannte HTTP-Protokoll um eine SSL-Schicht. Technisch wurde SSL (_Secure Socket Layer_) zwar heute von TLS (_Transport Security Layer_) ersetzt, aber man spricht dennoch immer noch von SSL. Das Protokoll garantiert verschlüsselten und damit abhörsicheren Datenverkehr. Der Verkehr wird symmetrisch verschlüsselt, was einen hohen Durchsatz garantiert, setzt aber im Fall von HTTPS einen Public-/Private-Key Setup voraus, der den sicheren Austausch der symmetrischen Schlüssel durch sich zuvor unbekannte Kommunikationspartner voraus. Dieser Public-/Private-Key Handshake geschieht mit Hilfe eines Serverzertifikats, das durch eine offizielle Stelle signiert werden muss.
 
@@ -266,9 +266,9 @@ acl=('/apache/htdocs/.well-known/acme-challenge' '/apache/htdocs/.well-known/acm
 
 Dieses nicht ganz einsichtige Format bezeichnet die Haupt-Domain unseres Zertifikats und dann, mit einem Leerschlag getrennt, die `ACL` für den unter `SANS` definierten zweiten Domain-Namen.
 
+Der Pfad-Teil ab `.well-known` entspricht damit dem Let's Encrypt Standard. Es sind aber beliebige andere Werte möglich.
 
-
-Der Pfad-Teil ab `.well-known` entspricht damit dem Let's Encrypt Standard. Es sind aber beliebige andere Optionen möglich.
+###Schritt 4: SSL-Schlüssel und -Zertifikat beziehen
 
 Nun starten wir den ersten Aufruf an Let's Encrypt:
 
@@ -442,7 +442,8 @@ a1fOnvtDjO/Gp/S+Of00YUyEIeD7dE0xvUXDGliXx7sVvip0wHrd
 -----END CERTIFICATE-----
 ```
 
-Falls dieses Zertifikat unseren Vorstellungen entspricht, kopieren wir es gemeinsam mit dem Schlüssel auf den Server. Neben Zertifikat und Schlüssel müssen wir aber auch das Chain-File Mitübertragen. Worum geht es dabei? Der Webbrowser vertraut von Beginn weg einer Liste von Zertifizierungs-Authoritäten. Beim Aufbau der _SSL_-Verbindung wird dieses Vertrauen auf unseren Webserver erweitert. Zu diesem Zweck versucht der Browser von unserem Zertifikat in mehreren Schritten eine Vertrauenskette zu einer der ihm bekannten Zertifizierungsstellen herzustellen. Neben dem Serverzertifikat verläuft dieses Kette über mehrere signierte Zwischenzertifikate, die wir dem Browser in der Form des Chain-Files ausliefern. Das heisst, ein dem Browser bekanntes Root-Zertifikat hat das erste Element des Chain-Files signiert. Dieses Zertifikat wiederum wurde dazu verwendet, um das nächste Zertifikat in der Kettte zu signieren und das dann wieder für das nächste und so weiter, bis wir endlich zu unserem kürzlich erhaltenen Zertifikat gelangen. Lassen sich alle diese Zertifikate erfolgreich prüfen, dann ist die Vertrauenskette intakt und der Browser nimmt an, dass er mit dem gewünschten Server spricht. Dem Chain-File kommt als Bindeglied zwischen Certificate Authority und unserem Zertifikat als eine grosse Bedeutung zu. Deshalb hat `getssl` diese Datei auch gleich besorgt und neben Schlüssel und Zertifikat abgelegt. Nehmen wir also diese drei Dateien und kopieren wir sie auf den Server:
+Falls dieses Zertifikat unseren Vorstellungen entspricht, kopieren wir es gemeinsam mit dem Schlüssel auf den Server. Neben Zertifikat und Schlüssel müssen wir aber auch das Chain-File mitübertragen. Worum geht es dabei? Der Webbrowser vertraut von Beginn weg einer Liste von Zertifizierungs-Authoritäten. Beim Aufbau der _SSL_-Verbindung wird dieses Vertrauen auf unseren Webserver erweitert. Zu diesem Zweck versucht der Browser von unserem Zertifikat in mehreren Schritten eine Vertrauenskette zu einer der ihm bekannten Zertifizierungsstellen herzustellen. Neben dem Serverzertifikat verläuft dieses Kette über mehrere signierte Zwischenzertifikate, die wir dem Browser in der Form des Chain-Files ausliefern. Das heisst, ein dem Browser bekanntes Root-Zertifikat hat das erste Element des Chain-Files signiert. Dieses Zertifikat wiederum wurde dazu verwendet, um das nächste Zertifikat in der Kettte zu signieren und das dann wieder für das nächste und so weiter, bis wir endlich zu unserem kürzlich erhaltenen Zertifikat gelangen. Lassen sich alle diese Zertifikate erfolgreich prüfen, dann ist die Vertrauenskette intakt und der Browser nimmt an, dass er mit dem gewünschten Server spricht. Dem Chain-File kommt als Bindeglied zwischen Zertifizierungsstelle und unserem Zertifikat also eine erhebliche Bedeutung zu. Deshalb hat `getssl` diese Datei auch für uns heruntergeladen und neben Schlüssel und Zertifikat in der Datei `~/.getssl/christian-folini.ch/chain.crt` abgelegt, wie wir weiter oben sehen konnten. Nehmen wir also diese drei Dateien und kopieren wir sie auf dem Server an die richtige Stelle. Der genaue Standort spielt dabei keine wesentliche Rolle..Ich entscheide mich deshalb für einen Platz bei den bereits gut geschützten Schlüsseln und Zertifikaten des Systems unter `/etc/ssl/`.
+
 
 ```bash
 $> sudo cp ~/.getssl/christian-folini.ch/christian-folini.ch.key /etc/ssl/private/
@@ -450,7 +451,7 @@ $> sudo cp ~/.getssl/christian-folini.ch/christian-folini.ch.crt /etc/ssl/certs/
 $> sudo cp ~/.getssl/christian-folini.ch/chain.crt /etc/ssl/certs/lets-encrypt-chain.crt
 ``` 
 
-Wichtig ist, dass die Permissions korrekt eingestellt sind:
+Wichtig ist, dass die Berechtigungen korrekt konfiguriert sind:
 
 ```bash
 $> chmod 400 /etc/ssl/private/christian-folini.key
@@ -483,10 +484,9 @@ LoadModule              socache_shmcb_module    modules/mod_socache_shmcb.so
 
 ...
 
-SSLCertificateKeyFile   conf/ssl.key/server.key
-SSLCertificateFile      conf/ssl.crt/server.crt
-SSLCertificateChainFile conf/ssl.crt/startssl-class1-chain-ca.pem
-SSLPassPhraseDialog     exec:bin/gen_passphrase.sh
+SSLCertificateKeyFile   conf/ssl.key/example.com-server.key
+SSLCertificateFile      conf/ssl.crt/example.com-server.crt
+SSLCertificateChainFile conf/ssl.crt/lets-encrypt-chain.crt
 
 SSLProtocol             All -SSLv2 -SSLv3
 SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM \
@@ -543,71 +543,144 @@ Zu Übungszwecken haben wir unseren Testserver erneut auf der lokalen IP-Adresse
 FIXME Nun können wir entweder mit dem Browser oder mit curl auf die URL [https://www.example.com](https://www.example.com) zugreifen. Wenn dies ohne eine Zertifikats-Warnung funktioniert, dann haben wir den Server korrekt konfiguriert. Etwas genauer lässt sich die Verschlüsselung und die Vertrauenskette mit dem Kommendozeilen-Tool _OpenSSL_ überprüfen. Da _OpenSSL_ aber anders als der Browser und curl keine Liste mit Zertifikatsauthoritäten besitzt, müssen wir dem Tool das Zertifikat der Authorität auch mitgeben. Wir besorgen es uns bei _StartSSL_.
 
 ```bash
-$> wget https://www.startssl.com/certs/ca.pem
+$> wget https://letsencrypt.org/certs/isrgrootx1.pem -O ca-lets-encrypt.crt
 ...
-$> openssl s_client -showcerts -CAfile ca.pem -connect www.example.com:443
+$> openssl s_client -showcerts -CAfile ca-lets-encrypt.crt -connect www.christian-folini.ch:443 -servername www.christian-folini.ch | head
 ```
-Hier instruieren wir _OpenSSL_, den eingebauten client zu verwenden, uns die vollen Zertifikatsinformationen zu zeigen, das eben heruntergeladene CA-Zertifikat zu verwenden und mit diesen Parametern auf unseren Server zuzugreifen. Im optimalen Fall sieht der Output (leicht gekürzt) wie folgt aus:
+
+Hier instruieren wir _OpenSSL_, den eingebauten client zu verwenden, uns die vollen Zertifikatsinformationen zu zeigen, das eben heruntergeladene CA-Zertifikat zu verwenden, uns mit diesen Parametern auf unseren Server zuzugreifen und beim Handshake den Server mit `www.christian.folini.ch`. Im optimalen Fall sieht der Output (leicht gekürzt) ähnlich wie folgt aus:
 
 ```bash
+depth=2 O = Digital Signature Trust Co., CN = DST Root CA X3
+verify return:1
+depth=1 C = US, O = Let's Encrypt, CN = Let's Encrypt Authority X3
+verify return:1
+depth=0 CN = christian-folini.ch
+verify return:1
 CONNECTED(00000003)
 ---
 Certificate chain
- 0 s:/description=329817-gqai4gyx3JMxBbCV/C=CH/O=Persona Not Validated/OU=StartCom Free Certificate …
-   i:/C=IL/O=StartCom Ltd./OU=Secure Digital Certificate Signing/CN=StartCom Class 1 Primary …
+ 0 s:/CN=christian-folini.ch
+   i:/C=US/O=Let's Encrypt/CN=Let's Encrypt Authority X3
 -----BEGIN CERTIFICATE-----
-MIIHtDCCBpygAwIBAgIDArSFMA0GCSqGSIb3DQEBBQUAMIGMMQswCQYDVQQGEwJJ
-...
-...
-...
-x94JRF4camVVVDe3ae7TXZ/xl/Y8vR7TMbZJx4vg33IjnmLS6FOlf97BP6wA7wZN
-zZnCQe+3NTU=
+
+MIIGIzCCBQugAwIBAgISA0KXRlh93ThuHbL6dhxXULUiMA0GCSqGSIb3DQEBCwUA
+MEoxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MSMwIQYDVQQD
+ExpMZXQncyBFbmNyeXB0IEF1dGhvcml0eSBYMzAeFw0xNjEwMDIwNjI0MDBaFw0x
+NjEyMzEwNjI0MDBaMB4xHDAaBgNVBAMTE2NocmlzdGlhbi1mb2xpbmkuY2gwggIi
+MA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCs5jQ6bYM3MW56xdFQmZNZtxLW
+KL79zzol8NAPncLZj3d7bMg4QSZDwOyRRsnU5wJA6ZDgH4LxAFOSH72vRxX1WQNx
+Duesz9WJ8vy3ioQmN/QNFl55yIqH7IzA3sseIzZoasCcUQR3zCEBRwI81Gv+x7TX
+sAUErULo/UEtKGmFuuvy+XOmW1Aep9/srqtp/ZnzkPAriRwNmwhbq1ptcKqenHK9
+MtyKkbF4uMGHKnxTZNdpAFsGBxQhgBOe85z9yUGTYG9aVU9m9VDnqdziUV4ZWqNd
+o1ixy5a4YoDxc80ynP2yPEQFotEPeAsqLkMVIS+BsDBzjbr75c4OSfUIYt2vu7tq
+VwTmQ1O40LrFv2oKFxJ+I6O/w6P/UK38VHWE9uAMXnWDqs26zuJDz+ZlklW3PgJy
+bQtdRRiuCaGruLgk0a50Q9zlTwo3uQWON7BnAV5QtHyJUpDS+lnAMzHz8DWAOKEb
++3/J0l5AdQ8zcx7r3OOa0dzWlKlVKvBxIF5kcbDPAz5Fdqb/8RKTXQzRK1/9HW7v
+cWl08dyoZMBrqBT8e3dN0kJBFfwQhJ+beLtksWwi5MF9ayWVKpFwFkqHgjjNfwoD
+zvBoxynlY/CK6jcvrf3uiYlHElnolcFISZWWOeigxX5vg2u7/YoAdJFUpPmJLLlb
+gNXTUl5BxKrFpfa75QIDAQABo4ICLTCCAikwDgYDVR0PAQH/BAQDAgWgMB0GA1Ud
+JQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAMBgNVHRMBAf8EAjAAMB0GA1UdDgQW
+BBQYRv3js0wlV0ZKONojeJQ0IzLzOTAfBgNVHSMEGDAWgBSoSmpjBH3duubRObem
+RWXv86jsoTBwBggrBgEFBQcBAQRkMGIwLwYIKwYBBQUHMAGGI2h0dHA6Ly9vY3Nw
+LmludC14My5sZXRzZW5jcnlwdC5vcmcvMC8GCCsGAQUFBzAChiNodHRwOi8vY2Vy
+dC5pbnQteDMubGV0c2VuY3J5cHQub3JnLzA3BgNVHREEMDAughNjaHJpc3RpYW4t
+Zm9saW5pLmNoghd3d3cuY2hyaXN0aWFuLWZvbGluaS5jaDCB/gYDVR0gBIH2MIHz
+MAgGBmeBDAECATCB5gYLKwYBBAGC3xMBAQEwgdYwJgYIKwYBBQUHAgEWGmh0dHA6
+Ly9jcHMubGV0c2VuY3J5cHQub3JnMIGrBggrBgEFBQcCAjCBngyBm1RoaXMgQ2Vy
+dGlmaWNhdGUgbWF5IG9ubHkgYmUgcmVsaWVkIHVwb24gYnkgUmVseWluZyBQYXJ0
+aWVzIGFuZCBvbmx5IGluIGFjY29yZGFuY2Ugd2l0aCB0aGUgQ2VydGlmaWNhdGUg
+UG9saWN5IGZvdW5kIGF0IGh0dHBzOi8vbGV0c2VuY3J5cHQub3JnL3JlcG9zaXRv
+cnkvMA0GCSqGSIb3DQEBCwUAA4IBAQBTEngQUhMprmyiLZQbNFoHJQ/gDufNu7bq
+FO+Tdq0ZkqqfmrDPobkvloCvHV/fKitS/QW+IyGrDaAVwWJQjfrYVvWvc9aQcmx+
+BRvbpm/Wt8vwib0Dc7LOpCpbqyduFr55n7V0dH512LXg0AxpCvHPCbKEvs1yGstF
+lyXivh3/0kCLv9Yplc+mPbgQ0eszONQ1OSgnqMH4wh7lUsmyxkqhHZjqlAYvr16O
+C6MFOvLpkuhjmrgzO4a5YFKgkEAwgLj6ShUiyzS/kV6bUX6Lp21MWR4spHDUzZuu
+a1fOnvtDjO/Gp/S+Of00YUyEIeD7dE0xvUXDGliXx7sVvip0wHrd
 -----END CERTIFICATE-----
- 1 s:/C=IL/O=StartCom Ltd./OU=Secure Digital Certificate Signing/CN=StartCom Class 1 Primary …
-   i:/C=IL/O=StartCom Ltd./OU=Secure Digital Certificate Signing/CN=StartCom Certification …
+ 1 s:/C=US/O=Let's Encrypt/CN=Let's Encrypt Authority X3
+   i:/O=Digital Signature Trust Co./CN=DST Root CA X3
 -----BEGIN CERTIFICATE-----
-MIIGNDCCBBygAwIBAgIBGDANBgkqhkiG9w0BAQUFADB9MQswCQYDVQQGEwJJTDEW
-...
-...
-...
-p/EiO/h94pDQehn7Skzj0n1fSoMD7SfWI55rjbRZotnvbIIp3XUZPD9MEI3vu3Un
-0q6Dp6jOW6c=
+MIIEkjCCA3qgAwIBAgIQCgFBQgAAAVOFc2oLheynCDANBgkqhkiG9w0BAQsFADA/
+MSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMT
+DkRTVCBSb290IENBIFgzMB4XDTE2MDMxNzE2NDA0NloXDTIxMDMxNzE2NDA0Nlow
+SjELMAkGA1UEBhMCVVMxFjAUBgNVBAoTDUxldCdzIEVuY3J5cHQxIzAhBgNVBAMT
+GkxldCdzIEVuY3J5cHQgQXV0aG9yaXR5IFgzMIIBIjANBgkqhkiG9w0BAQEFAAOC
+AQ8AMIIBCgKCAQEAnNMM8FrlLke3cl03g7NoYzDq1zUmGSXhvb418XCSL7e4S0EF
+q6meNQhY7LEqxGiHC6PjdeTm86dicbp5gWAf15Gan/PQeGdxyGkOlZHP/uaZ6WA8
+SMx+yk13EiSdRxta67nsHjcAHJyse6cF6s5K671B5TaYucv9bTyWaN8jKkKQDIZ0
+Z8h/pZq4UmEUEz9l6YKHy9v6Dlb2honzhT+Xhq+w3Brvaw2VFn3EK6BlspkENnWA
+a6xK8xuQSXgvopZPKiAlKQTGdMDQMc2PMTiVFrqoM7hD8bEfwzB/onkxEz0tNvjj
+/PIzark5McWvxI0NHWQWM6r6hCm21AvA2H3DkwIDAQABo4IBfTCCAXkwEgYDVR0T
+AQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAYYwfwYIKwYBBQUHAQEEczBxMDIG
+CCsGAQUFBzABhiZodHRwOi8vaXNyZy50cnVzdGlkLm9jc3AuaWRlbnRydXN0LmNv
+bTA7BggrBgEFBQcwAoYvaHR0cDovL2FwcHMuaWRlbnRydXN0LmNvbS9yb290cy9k
+c3Ryb290Y2F4My5wN2MwHwYDVR0jBBgwFoAUxKexpHsscfrb4UuQdf/EFWCFiRAw
+VAYDVR0gBE0wSzAIBgZngQwBAgEwPwYLKwYBBAGC3xMBAQEwMDAuBggrBgEFBQcC
+ARYiaHR0cDovL2Nwcy5yb290LXgxLmxldHNlbmNyeXB0Lm9yZzA8BgNVHR8ENTAz
+MDGgL6AthitodHRwOi8vY3JsLmlkZW50cnVzdC5jb20vRFNUUk9PVENBWDNDUkwu
+Y3JsMB0GA1UdDgQWBBSoSmpjBH3duubRObemRWXv86jsoTANBgkqhkiG9w0BAQsF
+AAOCAQEA3TPXEfNjWDjdGBX7CVW+dla5cEilaUcne8IkCJLxWh9KEik3JHRRHGJo
+uM2VcGfl96S8TihRzZvoroed6ti6WqEBmtzw3Wodatg+VyOeph4EYpr/1wXKtx8/
+wApIvJSwtmVi4MFU5aMqrSDE6ea73Mj2tcMyo5jMd6jmeWUHK8so/joWUoHOUgwu
+X4Po1QYz+3dszkDqMp4fklxBwXRsW10KXzPMTZ+sOPAveyxindmjkW8lGy+QsRlG
+PfZ+G6Z6h7mjem0Y+iWlkYcV4PIWL1iwBi8saCbGS5jN2p8M+X+Q7UNKEkROb3N6
+KOqkqm57TH2H3eDJAkSnh6/DNFu0Qg==
 -----END CERTIFICATE-----
 ---
 Server certificate
-subject=/description=329817-gqai4fgt3JMxBbCV/C=CH/O=Persona Not Validated/OU=StartCom Free Certificate ...
-issuer=/C=IL/O=StartCom Ltd./OU=Secure Digital Certificate Signing/CN=StartCom Class 1 Primary ...
+subject=/CN=christian-folini.ch
+issuer=/C=US/O=Let's Encrypt/CN=Let's Encrypt Authority X3
 ---
 No client certificate CA names sent
 ---
-SSL handshake has read 4526 bytes and written 319 bytes
+SSL handshake has read 3719 bytes and written 453 bytes
 ---
-New, TLSv1/SSLv3, Cipher is AES256-SHA
-Server public key is 2048 bit
+New, TLSv1/SSLv3, Cipher is ECDHE-RSA-AES256-GCM-SHA384
+Server public key is 4096 bit
 Secure Renegotiation IS supported
 Compression: NONE
 Expansion: NONE
 SSL-Session:
-    Protocol  : TLSv1
-    Cipher    : AES256-SHA
-    Session-ID: FE496BB191B6888EA9CA3ED4E166707857186D5B32F1A0D9E418145D1B721CB4
+    Protocol  : TLSv1.2
+    Cipher    : ECDHE-RSA-AES256-GCM-SHA384
+    Session-ID: 14085DAC8BEEEE156D6B12EA9010A765D3237501B2C8142BDDEDE7DAF6D1C708
     Session-ID-ctx: 
-    Master-Key: 1BF16E22B0DF086E1AF4E13D9158AC0A3B1039E334C0C7F177A8757694B516E00E20AC3D6250B10D…
+    Master-Key: 96C3DCF06D88B17C3FCDEDA226AC05015CE0EFFFCBEB57175A7742D6EF59500C36363315A2EC415B1131E25FFB6DE2E2
     Key-Arg   : None
-    Start Time: 1294591828
+    PSK identity: None
+    PSK identity hint: None
+    SRP username: None
+    TLS session ticket lifetime hint: 300 (seconds)
+    TLS session ticket:
+    0000 - 24 ae 3e f6 19 3e b5 b5-5c 91 8f f3 04 87 38 6a   $.>..>..\.....8j
+    0010 - 35 69 84 d5 3b a8 29 1a-95 df 2a a1 29 ce 82 eb   5i..;.)...*.)...
+    0020 - bd f1 52 83 44 1f a3 8a-46 62 97 09 c5 4f 42 3b   ..R.D...Fb...OB;
+    0030 - 1c 62 d6 4b 69 88 5f 83-e5 75 c1 cf 63 24 6f cd   .b.Ki._..u..c$o.
+    0040 - 76 03 6e c6 f8 29 48 d8-dc fc ad aa 9b 3d 17 7f   v.n..)H......=..
+    0050 - 0d c4 06 ea 38 7e 7e f4-b4 24 a0 f2 b3 9b ea a9   ....8~~..$......
+    0060 - 8d 8b 0a 69 18 14 d4 ff-47 f0 b9 c7 a2 54 11 e0   ...i....G....T..
+    0070 - 42 cf f3 42 21 34 7e f9-05 05 f7 34 7c d8 a3 9d   B..B!4~....4|...
+    0080 - c5 1a d1 99 70 de d3 c4-19 4e ef 51 42 df 70 3d   ....p....N.QB.p=
+    0090 - 11 82 b6 77 94 ae 7b a6-a0 c9 b5 e1 41 0a 89 4f   ...w..{.....A..O
+    00a0 - 0c 99 11 db 0a 79 42 20-30 02 2c e5 13 f0 76 ce   .....yB 0.,...v.
+    00b0 - fa bc 57 5c 92 2d be b0-a2 9e 45 09 a8 d9 4e 67   ..W\.-....E...Ng
+    00c0 - b7 9e d4 d3 d7 49 05 79-37 1e d3 19 1f 6d 49 ff   .....I.y7....mI.
+
+    Start Time: 1475506220
     Timeout   : 300 (sec)
     Verify return code: 0 (ok)
 ---
 ```
 
-Damit haben wir einen sauberen _HTTPS-Server_ konfiguriert. 
+Entscheidend ist hier die letzte Zeile (`ok`) sowie die ersten Zeilen, wo die Kette nacheinander aufgelistet wird. Wir können dort erkennen, dass Let's Encrypt seinerseits wiederum von einer anderen Zertifizierungsstelle abhängt. Das liegt daran, dass Let's Encrypt noch eine junge Zertifizierungsstelle ist und deshalb den Weg in den Browser noch nicht in jedem Fall gefunden hat. Das zwingt Let's Encrypt dazu, die eigenen Zertifikate wiederum von einer anderen Zertifizierungsstelle signieren zu lassen, um im Browser nicht Sicherheitswarnungen zu provozieren. 
 
-Interessanterweise gibt es im Internet so etwas wie eine Hitparade, was sichere _HTTPS-Server_ betrifft. Das sehen wir uns nun noch als Bonus an.
-
+Mit diesem Kontrollschritt sind wir jetzt ziemlich sicher, dass wir einen sauberen _HTTPS-Server_ konfiguriert haben.
+Interessanterweise gibt es im Internet so etwas wie eine Bewertungsinstanz, was sichere _HTTPS-Server_ betrifft. Das sehen wir uns nun noch als Bonus an.
 
 ###Schritt 9 (Bonus): Qualität der SSL Sicherung extern überprüfen lassen
 
-Ivan Ristić, der oben erwähnte Autor von mehreren Büchern über Apache und SSL, betreibt im Dienst von Qualys einen Analyse-Service zur Überprüfung von _SSL-Webservern_. Er befindet sich unter [www.ssllabs.com](https://www.ssllabs.com/ssldb/index.html). Ein Webserver wie oben konfiguriert brachte mir im Test die Höchstnote von _A+_ ein.
+Ivan Ristić, der oben erwähnte Autor von mehreren Büchern über Apache und SSL, hat einen Dienst zur Überprüfung von _SSL-Webservern_ aufgebaut. Diesen Service hat er inzwischen ans Qualys weiterverkauft, wo er aktiv gepflegt und laufend erweitert wird. Er befindet sich unter [www.ssllabs.com](https://www.ssllabs.com/ssldb/index.html). Ein Webserver wie oben konfiguriert brachte mir im Test die Höchstnote von _A+_ ein.
 
 ![Screenshot: SSLLabs](./apache-tutorial-03-screenshot-ssllabs.png)
 Die Höchstnote ist mit dieser Anleitung in Reichweite.
@@ -616,12 +689,11 @@ Die Höchstnote ist mit dieser Anleitung in Reichweite.
 
 * [Wikipedia OpenSSL](http://de.wikipedia.org/wiki/Openssl)
 * [Apache Mod_SSL](http://httpd.apache.org/docs/2.4/mod/mod_ssl.html)
-FIXME * [StartSSL Zertifikate](https://www.startssl.com)
+* [Let's Encrypt](https://letsencrypt.org/)
 * [SSLLabs](https://www.ssllabs.com)
 * [OpenSSL Cookbook](https://www.feistyduck.com/books/openssl-cookbook/)
 * [Bulletproof SSL und TLS](https://www.feistyduck.com/books/bulletproof-ssl-and-tls/)
 * [Keylength.com - Hintergrundinformationen zu Ciphers und Keys](http://www.keylength.com)
-
 
 ### Lizenz / Kopieren / Weiterverwenden
 
