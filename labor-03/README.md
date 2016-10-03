@@ -440,79 +440,37 @@ a1fOnvtDjO/Gp/S+Of00YUyEIeD7dE0xvUXDGliXx7sVvip0wHrd
 -----END CERTIFICATE-----
 ```
 
-Falls dieses Zertifikat unseren Vorstellungen entspricht, kopieren wir es gemeinsam mit dem Schlüssel auf den Server:
-
+Falls dieses Zertifikat unseren Vorstellungen entspricht, kopieren wir es gemeinsam mit dem Schlüssel auf den Server. Neben Zertifikat und Schlüssel müssen wir aber auch das Chain-File Mitübertragen. Worum geht es dabei? Der Webbrowser vertraut von Beginn weg einer Liste von Zertifizierungs-Authoritäten. Beim Aufbau der _SSL_-Verbindung wird dieses Vertrauen auf unseren Webserver erweitert. Zu diesem Zweck versucht der Browser von unserem Zertifikat in mehreren Schritten eine Vertrauenskette zu einer der ihm bekannten Zertifizierungsstellen herzustellen. Neben dem Serverzertifikat verläuft dieses Kette über mehrere signierte Zwischenzertifikate, die wir dem Browser in der Form des Chain-Files ausliefern. Das heisst, ein dem Browser bekanntes Root-Zertifikat hat das erste Element des Chain-Files signiert. Dieses Zertifikat wiederum wurde dazu verwendet, um das nächste Zertifikat in der Kettte zu signieren und das dann wieder für das nächste und so weiter, bis wir endlich zu unserem kürzlich erhaltenen Zertifikat gelangen. Lassen sich alle diese Zertifikate erfolgreich prüfen, dann ist die Vertrauenskette intakt und der Browser nimmt an, dass er mit dem gewünschten Server spricht. Dem Chain-File kommt als Bindeglied zwischen Certificate Authority und unserem Zertifikat als eine grosse Bedeutung zu. Deshalb hat `getssl` diese Datei auch gleich besorgt und neben Schlüssel und Zertifikat abgelegt. Nehmen wir also diese drei Dateien und kopieren wir sie auf den Server:
 
 ```bash
-$> cp ~/.getssl/christian-folini.ch.key /etc/ssl/private/
-$> cp ~/.getssl/christian-folini.ch.crt /etc/ssl/certs/
+$> sudo cp ~/.getssl/christian-folini.ch/christian-folini.ch.key /etc/ssl/private/
+$> sudo cp ~/.getssl/christian-folini.ch/christian-folini.ch.crt /etc/ssl/certs/
+$> sudo cp ~/.getssl/christian-folini.ch/chain.crt /etc/ssl/certs/lets-encrypt-chain.crt
 ``` 
+
+Wichtig ist, dass die Permissions korrekt eingestellt sind:
+
+```bash
+$> chmod 400 /etc/ssl/private/christian-folini.key
+$> chown root:root /etc/ssl/private/christian-folini.key
+$> chmod 644 /etc/ssl/certs/christian-folini.crt
+$> chown root:root /etc/ssl/certs/christian-folini.crt
+$> chmod 644 /etc/ssl/certs/christian-folini.crt
+$> chown root:root /etc/ssl/certs/lets-encrypt-chain.crt
+```
 
 Danach tragen wir die neuen Pfade in der Konfiguration ein:
 
 ```bash
 SSLCertificateKeyFile   /etc/ssl/private/christian-folini.ch.key
 SSLCertificateFile      /etc/ssl/certs/christian-folini.ch.crt
+SSLCertificateChainFile /etc/ssl/certs/lets-encrypt-chain.crt
 ```
-
-
-
-FIXME: Chain File / Intermediate Cert
-
 
 Und nun bleibt noch der Start oder Neustart des Servers und wir haben ein offiziell signiertes Zertifikat komplett installiert.
 
-FIXME ###Schritt 4: Zertifikat für die Vertrauenskette beziehen
-
-Ich setze voraus, dass Sie ein offiziell signiertes Zertifikat mit zugehörigem Schlüssel wie beschrieben bezogen oder selbst generiert und offiziell signiert haben.
-
-Die Funktionsweise des _SSL-/TLS_-Protokolls ist anspruchsvoll. Eine gute Einführung bietet das _OpenSSL Cookbook_ von Ivan Ristić (siehe Links) oder sein umfassenderes Werk _Bulletproof SSL und TLS_. Ein Bereich, der schwer verständlich ist, umfasst die Vertrauensbeziehungen, die _SSL_ garantiert. Der Webbrowser vertraut von Beginn weg einer Liste von Zertifizierungs-Authoritäten, wozu auch _StartSSL_ gehört. Beim Aufbau der _SSL_-Verbindung wird dieses Vertrauen auf unseren Webserver erweitert. Dies geschieht mit Hilfe des Zertifikates. Es wird eine Vertrauenskette zwischen der Zertifizierungs-Authorität und unserem Server gebildet. Aus technischen Gründen gibt es ein Zwischenglied zwischen der Zertifizierungs-Authorität und unserem Webserver. Dieses Glied müssen wir in der Konfiguration auch definieren. Zunächst müssen wir die Datei aber beziehen:
-
-```bash
-$> wget https://www.startssl.com/certs/sub.class1.server.ca.pem -O startssl-class1-chain-ca.pem
-```
-
-Ich wähle beim Herunterladen einen etwas anderen Datei-Namen als vorgegeben. Wir gewinnen dadurch an Klarheit für die Konfiguration. Die signierten Dateien werden bei der Überprüfung durch den Client aneinandergereiht. Gemeinsam bilden die Signaturen auf den Zertifikaten dann die Vertrauenskette von unserem Zertifikat zur _Certificate Authority_.
-
-
-FIXME ###Schritt 5: SSL Schlüssel und Zertifikate installieren
-
-Damit sind nun der Schlüssel und die zwei benötigten Zertifikate vorhanden. Konkret:
-
-* server.key _Server-Schlüssel_
-* server.crt _Server-Zertifikat_
-* startssl-class1-chain-ca.pem _StartSSL-Chainfile_
-
-Wir installieren sie in zwei speziell gesicherte Unterverzeichnisse des Konfigurations-Ordners:
-
-```bash
-$> mkdir /apache/conf/ssl.key
-$> chmod 700 /apache/conf/ssl.key
-$> mv server.key /apache/conf/ssl.key
-$> chmod 400 /apache/conf/ssl.key/server.key
-$> mkdir /apache/conf/ssl.crt
-$> chmod 700 /apache/conf/ssl.crt
-$> mv server.crt /apache/conf/ssl.crt
-$> chmod 400 /apache/conf/ssl.crt/server.crt
-$> mv startssl-class1-chain-ca.pem /apache/conf/ssl.crt/
-$> chown -R root:root /apache/conf/ssl.*/
-```
-
-###Schritt 6: Passphrase Dialog automatisch beantworten
-
-Beim Beziehen des Schlüssels mussten wir eine Passphrase definieren, um den Schlüssel zu entsperren. Damit unser Webserver den Schlüssel benutzen kann, müssen wir ihm diesen Code bekannt geben. Er wird uns beim Starten des Servers danach fragen. Möchten wir das nicht, dann müssen wir es in der Konfiguration mit angeben. Wir tun dies mittels einer separaten Datei, die auf Anfrage die Passphrase liefert. Nennen wir diese Datei _/apache/bin/gen_passphrase.sh_ und tragen wir die oben gewählte Passphrase ein:
-
-```bash
-#!/bin/sh
-echo "S7rh29Hj3def-07hdkBgj4jDfg_skDg$48JuPhd"
-```
-
-Diese Datei muss speziell gesichert und vor fremden Augen geschützt werden.
-
-```bash
-$> sudo chmod 700 /apache/bin/gen_passphrase.sh
-$> sudo chown root:root /apache/bin/gen_passphrase.sh
-```
+FIXME: unterbringen:
+Die Funktionsweise des _SSL-/TLS_-Protokolls ist anspruchsvoll. Eine gute Einführung bietet das _OpenSSL Cookbook_ von Ivan Ristić (siehe Links) oder sein umfassenderes Werk _Bulletproof SSL und TLS_. Ein Bereich, der schwer verständlich ist, umfasst die Vertrauensbeziehungen, die _SSL_ garantiert. 
 
 FIXME ###Schritt 7: Apache konfigurieren
 
