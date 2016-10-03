@@ -470,77 +470,9 @@ SSLCertificateFile      /etc/ssl/certs/christian-folini.ch.crt
 SSLCertificateChainFile /etc/ssl/certs/lets-encrypt-chain.crt
 ```
 
-###Schritt 4: Apache Konfiguration noch etwas verfeinern
+###Schritt 7: Vertrauenskette überprüfen
 
-Nun sind alle Vorbereitungen abgeschlossen und wir können den Webserver final konfigurieren. Ich liefere hier nicht mehr die komplette Konfiguration, sondern nur noch den korrekten Servernamen und den verfeinerten SSL-Teil. Als Servername dient mir hier `www.example.org`. Dies als Platzhalter für die eigentliche Domain:
-
-
-```bash
-ServerName              www.example.com
-
-...
-
-LoadModule              socache_shmcb_module    modules/mod_socache_shmcb.so
-
-...
-
-SSLCertificateKeyFile   conf/ssl.key/example.com-server.key
-SSLCertificateFile      conf/ssl.crt/example.com-server.crt
-SSLCertificateChainFile conf/ssl.crt/lets-encrypt-chain.crt
-
-SSLProtocol             All -SSLv2 -SSLv3
-SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM \
-!MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
-SSLHonorCipherOrder     On
-
-SSLRandomSeed           startup file:/dev/urandom 2048
-SSLRandomSeed           connect builtin
-
-SSLSessionCache         "shmcb:/apache/logs/ssl_gcache_data(1024000)"
-SSLSessionTickets       On
-
-
-...
-
-
-<VirtualHost 127.0.0.1:443>
-
-        ServerName              www.example.com
-
-        SSLEngine On
-        Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
-
-        ...
-```
-
-Sinnvoll ist es, den mit dem Zertifikat übereinstimmenden _ServerName_ auch im _VirtualHost_ bekanntzugeben. Wenn wir das nicht tun, wird Apache eine Warnung ausgeben (und dann dennoch den einzigen konfigurierten VirtualHost wählen und korrekt weiterfunktionieren).
-
-Neu hinzugekommen sind auch die beiden Optionen _SSLSessionCache_ sowie _SSLSessionTickets_. Die beiden Direktiven kontrollieren das Verhalten des _SSL Session Caches_. Voraussetzung für den Cache ist das Modul *socache_shmcb*, welches die Caching-Funktionalität zur Verfügung stellt und von *mod_ssl* angesprochen wird. Das funktioniert folgendermassen: Während des SSL Handshakes werden Parameter der Verbindung wie etwa der Schlüssel und ein Verschlüsselungsalgorithmus ausgehandelt. Dies geschieht im Public-Key Modus, der sehr rechenintensiv ist. Ist der Handshake erfolgreich beendet, verkehrt der Server mit dem Client über die performantere symmetrische Verschlüsselung mit Hilfe der eben ausgehandelten Parameter. Ist der Request beendet und die _Keep-Alive_ Periode ohne neue Anfrage verstrichen, dann gehen die TCP-Verbindung und die mit der Verbindung verhängten Parameter verloren. Wird die Verbindung kurze Zeit später neu aufgebaut, müssen die Parameter neu ausgehandelt werden. Das ist aufwändig, wie wir eben gesehen haben. Besser wäre es, man könnte die vormals ausgehandelten Parameter re-aktivieren. Diese Möglichkeit besteht in der Form des _SSL Session Caches_. Traditionell wird dieser Cache serverseitig verwaltet.
-
-Beim Session Cache via Tickets werden die Parameter in einem Session Ticket zusammengefasst und dem Client übergeben, wo sie clientseitig gespeichert werden, was auf dem Webserver Speicherplatz spart. Beim Aufbau einer neuen Verbindung sendet der Client die Parameter an den Server und dieser konfiguriert die Verbindung entsprechend. Um eine Manipulation der Parameter im Ticket zu verhindern, signiert der Server das Ticket vorgängig und überprüft es beim Aufbei einer Verbindung wieder. Bei diesem Mechanismus ist daran zu denken, dass die Signatur von einem Signierschlüssel abhängt und es sinnvoll ist, diesen meist dynamisch erzeugten Schlüssel regelmässig zu erneuern. Ein neues Laden des Server gewährleistet dies.
-
-SSL Session Tickets sind jünger und nunmehr von allen relevanten Browsern unterstützt. Sie gelten auch als sicher. Das ändert aber nichts an der Tatsache, dass zumindest eine theoretische Verwundbarkeit besteht, indem die Session Parameter clientseitig gestohlen werden können. 
-
-Beide Varianten des Session Caches lassen sich ausschalten. Dies geschieht wie folgt: 
-
-```bash
-SSLSessionCache         nonenotnull
-SSLSessionTickets       Off
-```
-
-Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance. Allerdings nimmt sich der Performance-Verlust durchaus klein aus. Es wäre überraschend, wenn ein Last-Test auf das Ausschalten mit einem Leistungsrückgang von mehr als 10% reagieren würde.
-
-
-###Schritt 8: Ausprobieren
-
-Zu Übungszwecken haben wir unseren Testserver erneut auf der lokalen IP-Adresse _127.0.0.1_ konfiguriert. Um das Funktionieren der Zertifikatskette zu testen, dürfen wir den Server nicht einfach mittels der IP-Adresse ansprechen, sondern wir müssen ihn mit dem korrekten Hostnamen kontaktieren. Und dieser Hostname muss natürlich mit demjenigen auf dem Zertifikat übereinstimmen. Im Fall von _127.0.0.1_ erreichen wir dies, indem wir das _Host-File_ unter _/etc/hosts_ anpassen:
-
-```bash
-127.0.0.1      localhost myhost www.example.com
-...
-```
-
-FIXME Nun können wir entweder mit dem Browser oder mit curl auf die URL [https://www.example.com](https://www.example.com) zugreifen. Wenn dies ohne eine Zertifikats-Warnung funktioniert, dann haben wir den Server korrekt konfiguriert. Etwas genauer lässt sich die Verschlüsselung und die Vertrauenskette mit dem Kommendozeilen-Tool _OpenSSL_ überprüfen. Da _OpenSSL_ aber anders als der Browser und curl keine Liste mit Zertifikatsauthoritäten besitzt, müssen wir dem Tool das Zertifikat der Authorität auch mitgeben. Wir besorgen es uns bei _StartSSL_.
+Bevor wir nun mit dem Browser oder curl auf unseren Server zugreifen, ist es angezeigt, die Vertrauenskette zu inspizieren und die Verschlüsselung zu überprüfen. Dazu verwenden wir das Kommandozeilen-Hilfsmittel `openssl`.  Da _OpenSSL_ aber anders als der Browser und curl keine Liste mit Zertifikatsauthoritäten besitzt, müssen wir dem Tool das Zertifikat der Authorität auch mitgeben. Wir besorgen es uns bei Let's Encrypt und rufen wir `openssl` gleich damit auf:
 
 ```bash
 $> wget https://letsencrypt.org/certs/isrgrootx1.pem -O ca-lets-encrypt.crt
@@ -675,8 +607,74 @@ SSL-Session:
 
 Entscheidend ist hier die letzte Zeile (`ok`) sowie die ersten Zeilen, wo die Kette nacheinander aufgelistet wird. Wir können dort erkennen, dass Let's Encrypt seinerseits wiederum von einer anderen Zertifizierungsstelle abhängt. Das liegt daran, dass Let's Encrypt noch eine junge Zertifizierungsstelle ist und deshalb den Weg in den Browser noch nicht in jedem Fall gefunden hat. Das zwingt Let's Encrypt dazu, die eigenen Zertifikate wiederum von einer anderen Zertifizierungsstelle signieren zu lassen, um im Browser nicht Sicherheitswarnungen zu provozieren. 
 
-Mit diesem Kontrollschritt sind wir jetzt ziemlich sicher, dass wir einen sauberen _HTTPS-Server_ konfiguriert haben.
+
+
+###Schritt 5: Apache Konfiguration noch etwas verfeinern
+
+Nun sind alle Vorbereitungen abgeschlossen und wir können den Webserver final konfigurieren. Ich liefere hier nicht mehr die komplette Konfiguration, sondern nur noch den korrekten Servernamen und den verfeinerten SSL-Teil. Als Servername dient mir hier `www.example.org`. Dies als Platzhalter für die eigentliche Domain:
+
+
+```bash
+ServerName              www.example.com
+
+...
+
+LoadModule              socache_shmcb_module    modules/mod_socache_shmcb.so
+
+...
+
+SSLCertificateKeyFile   conf/ssl.key/example.com-server.key
+SSLCertificateFile      conf/ssl.crt/example.com-server.crt
+SSLCertificateChainFile conf/ssl.crt/lets-encrypt-chain.crt
+
+SSLProtocol             All -SSLv2 -SSLv3
+SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM \
+!MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
+SSLHonorCipherOrder     On
+
+SSLRandomSeed           startup file:/dev/urandom 2048
+SSLRandomSeed           connect builtin
+
+SSLSessionCache         "shmcb:/apache/logs/ssl_gcache_data(1024000)"
+SSLSessionTickets       On
+
+
+...
+
+
+<VirtualHost 127.0.0.1:443>
+
+        ServerName              www.example.com
+
+        SSLEngine On
+        Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+        ...
+```
+
+Sinnvoll ist es, den mit dem Zertifikat übereinstimmenden _ServerName_ auch im _VirtualHost_ bekanntzugeben. Wenn wir das nicht tun, wird Apache eine Warnung ausgeben (und dann dennoch den einzigen konfigurierten VirtualHost wählen und korrekt weiterfunktionieren).
+
+Neu hinzugekommen sind auch die beiden Optionen _SSLSessionCache_ sowie _SSLSessionTickets_. Die beiden Direktiven kontrollieren das Verhalten des _SSL Session Caches_. Voraussetzung für den Cache ist das Modul *socache_shmcb*, welches die Caching-Funktionalität zur Verfügung stellt und von *mod_ssl* angesprochen wird. Das funktioniert folgendermassen: Während des SSL Handshakes werden Parameter der Verbindung wie etwa der Schlüssel und ein Verschlüsselungsalgorithmus ausgehandelt. Dies geschieht im Public-Key Modus, der sehr rechenintensiv ist. Ist der Handshake erfolgreich beendet, verkehrt der Server mit dem Client über die performantere symmetrische Verschlüsselung mit Hilfe der eben ausgehandelten Parameter. Ist der Request beendet und die _Keep-Alive_ Periode ohne neue Anfrage verstrichen, dann gehen die TCP-Verbindung und die mit der Verbindung verhängten Parameter verloren. Wird die Verbindung kurze Zeit später neu aufgebaut, müssen die Parameter neu ausgehandelt werden. Das ist aufwändig, wie wir eben gesehen haben. Besser wäre es, man könnte die vormals ausgehandelten Parameter re-aktivieren. Diese Möglichkeit besteht in der Form des _SSL Session Caches_. Traditionell wird dieser Cache serverseitig verwaltet.
+
+Beim Session Cache via Tickets werden die Parameter in einem Session Ticket zusammengefasst und dem Client übergeben, wo sie clientseitig gespeichert werden, was auf dem Webserver Speicherplatz spart. Beim Aufbau einer neuen Verbindung sendet der Client die Parameter an den Server und dieser konfiguriert die Verbindung entsprechend. Um eine Manipulation der Parameter im Ticket zu verhindern, signiert der Server das Ticket vorgängig und überprüft es beim Aufbei einer Verbindung wieder. Bei diesem Mechanismus ist daran zu denken, dass die Signatur von einem Signierschlüssel abhängt und es sinnvoll ist, diesen meist dynamisch erzeugten Schlüssel regelmässig zu erneuern. Ein neues Laden des Server gewährleistet dies.
+
+SSL Session Tickets sind jünger und nunmehr von allen relevanten Browsern unterstützt. Sie gelten auch als sicher. Das ändert aber nichts an der Tatsache, dass zumindest eine theoretische Verwundbarkeit besteht, indem die Session Parameter clientseitig gestohlen werden können. 
+
+Beide Varianten des Session Caches lassen sich ausschalten. Dies geschieht wie folgt: 
+
+```bash
+SSLSessionCache         nonenotnull
+SSLSessionTickets       Off
+```
+
+Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance. Allerdings nimmt sich der Performance-Verlust durchaus klein aus. Es wäre überraschend, wenn ein Last-Test auf das Ausschalten mit einem Leistungsrückgang von mehr als 10% reagieren würde.
+
+###Schritt 8: Den Server im Browser aufrufen
+
+Jetzt, da wir sicher sind, dass wir ein offiziell signiertes Zertifikat mit einer gültigen Vertrauenskette besitzen und auch die weitere Konfiguration im Detai verstanden haben, können wir uns dem Browser zuwenden und die konfigurierte Domain dort aufrufen. In meinem Fall ist das [https://www.christian-folini.ch](https://www.christian-folini.ch)
+
 Interessanterweise gibt es im Internet so etwas wie eine Bewertungsinstanz, was sichere _HTTPS-Server_ betrifft. Das sehen wir uns nun noch als Bonus an.
+
 
 ###Schritt 9 (Bonus): Qualität der SSL Sicherung extern überprüfen lassen
 
