@@ -261,12 +261,12 @@ Bevor wir uns ein Zertifikat erstellen lassen können ist es wichtig, dass wir d
 Schreiten wir dann zur Konfigurations-Datei der Domain `.getssl/christian-folini.ch/getssl.cfg`. Hier überprüfen wir den Wert `SANS` (ich vermute er bedeutet `Subject Alternative NameS`) und bezeichnet damit weitere Host-Namen oder in der CA-Sprache `Subject-Names`, die in das Zertifikat eingetragen werden. Im Fall der Domain `christian.folini.ch` erwarten wir hier `SANS=www.christian-folini.ch`. Die meisten anderen Werte sind auskommentiert, was bedeutet, dass diejenigen Werte, die in der übergeordneten Datei gesetzt wurden, weitervererbt und hier nicht mehr speziell gesetzt werden müssen. Ein wichtiger Wert bleibt aber zu setzen: `ACL`. Für den Laborsetup lege ich den Wert wie folgt fest: 
 
 ```bash
-acl=('/apache/htdocs/.well-known/acme-challenge' '/apache/htdocs/.well-known/acme-challenge')
+acl='/apache/htdocs/.well-known/acme-challenge'
 ```
 
-Dieses nicht ganz einsichtige Format bezeichnet die Haupt-Domain unseres Zertifikats und dann, mit einem Leerschlag getrennt, die `ACL` für den unter `SANS` definierten zweiten Domain-Namen.
+Dies bezeichnet den Pfad des Tokens, das `getssl` im Dateisystem platziert und es dann von Let's Encrypt überprüfen zu lassen. Das heisst, das Skript legt das Token unter diesem Pfad ab und beauftragt dann die Zertifizierungsstelle, das Token über den Webserver zu beziehen. Wenn das gelingt und das Token den richtigen Inhalt zeigt, dann sind wir als Besitzer der Domain bestätigt und dürfen in der Folge ein gültiges Zertifikat beziehen. Der Teil des `acl` Pfades ab `.well-known` entspricht damit dem Let's Encrypt Standard. Es sind aber beliebige andere Werte möglich.
 
-Der Pfad-Teil ab `.well-known` entspricht damit dem Let's Encrypt Standard. Es sind aber beliebige andere Werte möglich.
+Wir haben neben dem Domain-Namen auch noch einen alternativen Namen eingetragen. Let's Encrypt wird beide Namen überprüfen und für beide Namen ein eigenes Token platzieren. Wir können dazu zwei Mal denselben `acl` Pfad angeben, oder aber wir setzen die Variable `USE_SINGLE_ACL`, was viel eleganter ist.
 
 ###Schritt 4: SSL-Schlüssel und -Zertifikat beziehen
 
@@ -472,12 +472,12 @@ SSLCertificateChainFile /etc/ssl/certs/lets-encrypt-chain.crt
 
 ###Schritt 5: Vertrauenskette überprüfen
 
-Bevor wir nun mit dem Browser oder curl auf unseren Server zugreifen, ist es angezeigt, die Vertrauenskette zu inspizieren und die Verschlüsselung zu überprüfen. Dazu verwenden wir das Kommandozeilen-Hilfsmittel `openssl`.  Da _OpenSSL_ aber anders als der Browser und curl keine Liste mit Zertifikatsauthoritäten besitzt, müssen wir dem Tool das Zertifikat der Authorität auch mitgeben. Wir besorgen es uns bei Let's Encrypt und rufen wir `openssl` gleich damit auf:
+Bevor wir nun mit dem Browser oder curl auf unseren Server zugreifen, ist es angezeigt, die Vertrauenskette zu inspizieren und die Verschlüsselung zu überprüfen. Starten wir den Server also und schreiten wir zur Überprüfung. Dazu verwenden wir das Kommandozeilen-Hilfsmittel `openssl`.  Da _OpenSSL_ aber anders als der Browser und curl keine Liste mit Zertifikatsauthoritäten besitzt, müssen wir dem Tool das Zertifikat der Authorität auch bekannt geben. Wir besorgen es uns bei Let's Encrypt und rufen wir `openssl` gleich damit auf:
 
 ```bash
-$> wget https://letsencrypt.org/certs/isrgrootx1.pem -O ca-lets-encrypt.crt
+$> wget https://letsencrypt.org/certs/isrgrootx1.pem -O /tmp/ca-lets-encrypt.crt
 ...
-$> openssl s_client -showcerts -CAfile ca-lets-encrypt.crt -connect www.christian-folini.ch:443 -servername www.christian-folini.ch | head
+$> openssl s_client -showcerts -CAfile /tmp/ca-lets-encrypt.crt -connect www.christian-folini.ch:443 -servername www.christian-folini.ch | head
 ```
 
 Hier instruieren wir _OpenSSL_, den eingebauten client zu verwenden, uns die vollen Zertifikatsinformationen zu zeigen, das eben heruntergeladene CA-Zertifikat zu verwenden, uns mit diesen Parametern auf unseren Server zuzugreifen und beim Handshake den Server mit `www.christian.folini.ch`. Im optimalen Fall sieht der Output (leicht gekürzt) ähnlich wie folgt aus:
@@ -623,9 +623,9 @@ LoadModule              socache_shmcb_module    modules/mod_socache_shmcb.so
 
 ...
 
-SSLCertificateKeyFile   conf/ssl.key/example.com-server.key
-SSLCertificateFile      conf/ssl.crt/example.com-server.crt
-SSLCertificateChainFile conf/ssl.crt/lets-encrypt-chain.crt
+SSLCertificateKeyFile   /etc/ssl/private/example.com.key
+SSLCertificateFile      /etc/ssl/certs/example.com.crt
+SSLCertificateChainFile /etc/ssl/certs/lets-encrypt-chain.crt
 
 SSLProtocol             All -SSLv2 -SSLv3
 SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM \
@@ -674,6 +674,7 @@ Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance. Allerd
 Jetzt, da wir sicher sind, dass wir ein offiziell signiertes Zertifikat mit einer gültigen Vertrauenskette besitzen und auch die weitere Konfiguration im Detai verstanden haben, können wir uns dem Browser zuwenden und die konfigurierte Domain dort aufrufen. In meinem Fall ist das [https://www.christian-folini.ch](https://www.christian-folini.ch)
 
 ![Screenshot: christian-folini.ch](./apache-tutorial-03-screenshot-christian-folini.ch.png)
+
 Der Browser bewertet die Verbindung als sicher.
 
 Interessanterweise gibt es im Internet so etwas wie eine Bewertungsinstanz, was sichere _HTTPS-Server_ betrifft. Das sehen wir uns nun noch als Bonus an.
@@ -684,6 +685,7 @@ die Höchstnote ist mit dieser Anleitung in Reichweite.
 Ivan Ristić, der oben erwähnte Autor von mehreren Büchern über Apache und SSL, hat einen Dienst zur Überprüfung von _SSL-Webservern_ aufgebaut. Diesen Service hat er inzwischen ans Qualys weiterverkauft, wo er weiterhin gepflegt und laufend erweitert wird. Er befindet sich unter [www.ssllabs.com](https://www.ssllabs.com/ssldb/index.html). Ein Webserver wie oben konfiguriert brachte mir im Test die Höchstnote von _A+_ ein.
 
 ![Screenshot: SSLLabs](./apache-tutorial-03-screenshot-ssllabs.png)
+
 Die Höchstnote ist mit dieser Anleitung in Reichweite.
 
 ###Verweise
@@ -699,4 +701,3 @@ Die Höchstnote ist mit dieser Anleitung in Reichweite.
 ### Lizenz / Kopieren / Weiterverwenden
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/80x15.png" /></a><br />Diese Arbeit ist wie folgt lizenziert / This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
-
