@@ -470,7 +470,7 @@ SSLCertificateFile      /etc/ssl/certs/christian-folini.ch.crt
 SSLCertificateChainFile /etc/ssl/certs/lets-encrypt-chain.crt
 ```
 
-###Schritt 7: Vertrauenskette überprüfen
+###Schritt 5: Vertrauenskette überprüfen
 
 Bevor wir nun mit dem Browser oder curl auf unseren Server zugreifen, ist es angezeigt, die Vertrauenskette zu inspizieren und die Verschlüsselung zu überprüfen. Dazu verwenden wir das Kommandozeilen-Hilfsmittel `openssl`.  Da _OpenSSL_ aber anders als der Browser und curl keine Liste mit Zertifikatsauthoritäten besitzt, müssen wir dem Tool das Zertifikat der Authorität auch mitgeben. Wir besorgen es uns bei Let's Encrypt und rufen wir `openssl` gleich damit auf:
 
@@ -609,7 +609,7 @@ Entscheidend ist hier die letzte Zeile (`ok`) sowie die ersten Zeilen, wo die Ke
 
 
 
-###Schritt 5: Apache Konfiguration noch etwas verfeinern
+###Schritt 6: Apache Konfiguration noch etwas verfeinern
 
 Nun sind alle Vorbereitungen abgeschlossen und wir können den Webserver final konfigurieren. Ich liefere hier nicht mehr die komplette Konfiguration, sondern nur noch den korrekten Servernamen und den verfeinerten SSL-Teil. Als Servername dient mir hier `www.example.org`. Dies als Platzhalter für die eigentliche Domain:
 
@@ -667,18 +667,21 @@ SSLSessionCache         nonenotnull
 SSLSessionTickets       Off
 ```
 
-Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance. Allerdings nimmt sich der Performance-Verlust durchaus klein aus. Es wäre überraschend, wenn ein Last-Test auf das Ausschalten mit einem Leistungsrückgang von mehr als 10% reagieren würde.
+Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance. Allerdings nimmt sich der Performance-Verlust eher klein aus. Es wäre überraschend, wenn ein Last-Test auf das Ausschalten mit einem Leistungsrückgang von mehr als 5 oder 10% reagieren würde.
 
-###Schritt 8: Den Server im Browser aufrufen
+###Schritt 7: Den Server im Browser aufrufen
 
 Jetzt, da wir sicher sind, dass wir ein offiziell signiertes Zertifikat mit einer gültigen Vertrauenskette besitzen und auch die weitere Konfiguration im Detai verstanden haben, können wir uns dem Browser zuwenden und die konfigurierte Domain dort aufrufen. In meinem Fall ist das [https://www.christian-folini.ch](https://www.christian-folini.ch)
 
+![Screenshot: christian-folini.ch](./apache-tutorial-03-screenshot-christian-folini.ch.png)
+Der Browser bewertet die Verbindung als sicher.
+
 Interessanterweise gibt es im Internet so etwas wie eine Bewertungsinstanz, was sichere _HTTPS-Server_ betrifft. Das sehen wir uns nun noch als Bonus an.
+die Höchstnote ist mit dieser Anleitung in Reichweite.
 
+###Schritt 8 (Bonus): Qualität der SSL Sicherung extern überprüfen lassen
 
-###Schritt 9 (Bonus): Qualität der SSL Sicherung extern überprüfen lassen
-
-Ivan Ristić, der oben erwähnte Autor von mehreren Büchern über Apache und SSL, hat einen Dienst zur Überprüfung von _SSL-Webservern_ aufgebaut. Diesen Service hat er inzwischen ans Qualys weiterverkauft, wo er aktiv gepflegt und laufend erweitert wird. Er befindet sich unter [www.ssllabs.com](https://www.ssllabs.com/ssldb/index.html). Ein Webserver wie oben konfiguriert brachte mir im Test die Höchstnote von _A+_ ein.
+Ivan Ristić, der oben erwähnte Autor von mehreren Büchern über Apache und SSL, hat einen Dienst zur Überprüfung von _SSL-Webservern_ aufgebaut. Diesen Service hat er inzwischen ans Qualys weiterverkauft, wo er weiterhin gepflegt und laufend erweitert wird. Er befindet sich unter [www.ssllabs.com](https://www.ssllabs.com/ssldb/index.html). Ein Webserver wie oben konfiguriert brachte mir im Test die Höchstnote von _A+_ ein.
 
 ![Screenshot: SSLLabs](./apache-tutorial-03-screenshot-ssllabs.png)
 Die Höchstnote ist mit dieser Anleitung in Reichweite.
