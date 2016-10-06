@@ -242,7 +242,9 @@ Es gibt verschiedene Clients zum Umgang mit Let's Encrypt. Luca Käser hat mich 
 Aber dies ist ein fortgeschrittenes Szenario. Für den ersten Versuch rufen wir Let's Encrypt direkt vom Server aus auf. Zunächst müssen wir uns aber das Skript `getssl` selbst besorgen, denn es ist so neu, dass es noch nicht Teil der weit verbreiteten Linux Distributionen ist. Wir laden das Skript herunter. In meinem Fall lege ich es im privaten `bin`-Ordner ab. Je nach eigenem Setup wird man einen alternativen Platz dafür bestimmen. Wichtig ist, dass `getssl` in der Folge Teil des Shell-Suchpfades ist. Wir beziehen das Skript von Github. Es besteht die Möglichkeit, das gesamte Projektverzeichnis zu clonen. Wir machen es uns aber einfach, indem wir einfach das Skript herunterladen und ausführbar machen.
 
 ```bash
-$> wget https://raw.githubusercontent.com/srvrco/getssl/master/getssl -O $HOME/bin/getssl && chmod +x $HOME/bin/getssl
+$> wget https://raw.githubusercontent.com/srvrco/getssl/master/getssl -O $HOME/bin/getssl 
+...
+$> chmod +x $HOME/bin/getssl
 ...
 ```
 
@@ -283,7 +285,7 @@ Nun starten wir den ersten Aufruf an Let's Encrypt:
 
 ```bash
 $> getssl christian-folini.ch
-archiving old certificate file to /home/dune73/.getssl/christian-folini.ch/christian-folini.ch.crt_2016-09-30_2016-12-29
+archiving old certificate file to /home/dune73/.getssl/christian-folini.ch/christian-folini.ch. …
 creating account key /home/folini/.getssl/account.key
 Generating RSA private key, 4096 bit long modulus
 ..................................................++
@@ -314,7 +316,9 @@ getssl: christian-folini.ch - certificate obtained but certificate on server is 
 Wir sehen schön, wie zunächst ein neuer Schlüssel erstellt wurde. Dann wurde ein `Certificate Signing Request` mit der Datei-Endung `csr` generiert und dann die Testdatei `/apache/htdocs/.well-known/acme-challenge/xiM4FlHAqxo9fuAG-Ag-BTV_DsUJAbegPoZ6-l_luSA` hinterlegt. Darauf folgt der Auftrag zur Überprüfung und Signierung an Let's Encrypt. Im Access Log des Servers sehen wir danach den folgenden Eintrag (Die IP Adressen des Validierungsservers können variieren):
 
 ```bash
-66.133.109.36 US - [2016-10-02 06:26:40.635068] "GET /.well-known/acme-challenge/zg0bwpHNmRmFdXS4YeTgjBKiy84JoYDpu-cHON2mC9k HTTP/1.1" 200 87 "-" "Mozilla/5.0 (compatible; Let's Encrypt validation server; +https://www.letsencrypt.org)"
+66.133.109.36 US - [2016-10-02 06:26:40.635068] …
+"GET /.well-known/acme-challenge/zg0bwpHNmRmFdXS4YeTgjBKiy84JoYDpu-cHON2mC9k HTTP/1.1" …
+200 87 "-" "Mozilla/5.0 (compatible; Let's Encrypt validation server; +https://www.letsencrypt.org)"
 ``` 
 Wenn wir oben die Ausgabe des `getssl` Kommandos nochmals überprüfen, dann sehen wir, dass die Verifikation zwei Mal über die Bühne ging. Auch ein Zertifikat wurde erstellt und ausgeliefert. Dennoch lief etwas schief, denn auf der letzten Zeile rapportiert das Skript, dass das Zertifikat, das auf dem Server liege, nicht mit dem ausgelieferten übereinstimmt. Das ist tatsächlich der Fall, denn wir haben das erhaltene Zertifikat ja noch nicht auf dem Server installiert. Das Skript ist in der Lage, dies ebenfalls in einem Durchlauf zu erledigen (Dazu dienen die Variablen `DOMAIN_KEY_LOCATION` sowie `RELOAD_CMD` im Konfigurationsfile).
 
@@ -398,7 +402,9 @@ Certificate:
                 Policy: 1.3.6.1.4.1.44947.1.1.1
                   CPS: http://cps.letsencrypt.org
                   User Notice:
-                    Explicit Text: This Certificate may only be relied upon by Relying Parties and only in accordance with the Certificate Policy found at https://letsencrypt.org/repository/
+                    Explicit Text: This Certificate may only be relied upon by …
+		    Relying Parties and only in accordance with the Certificate …
+		    Policy found at https://letsencrypt.org/repository/
 
     Signature Algorithm: sha256WithRSAEncryption
          53:12:78:10:52:13:29:ae:6c:a2:2d:94:1b:34:5a:07:25:0f:
@@ -488,7 +494,8 @@ Bevor wir nun mit dem Browser oder curl auf unseren Server zugreifen, ist es ang
 ```bash
 $> wget https://letsencrypt.org/certs/isrgrootx1.pem -O /tmp/ca-lets-encrypt.crt
 ...
-$> openssl s_client -showcerts -CAfile /tmp/ca-lets-encrypt.crt -connect 127.0.0.1:443 -servername www.christian-folini.ch
+$> openssl s_client -showcerts -CAfile /tmp/ca-lets-encrypt.crt \
+-connect 127.0.0.1:443 -servername www.christian-folini.ch
 ```
 
 Hier instruieren wir _OpenSSL_, den eingebauten HTTP Client zu verwenden, uns die vollen Zertifikatsinformationen zu zeigen, das eben heruntergeladene CA-Zertifikat zu verwenden, auf unseren Server zuzugreifen und beim Handshake den Server mit `www.christian.folini.ch` anzusprechen. Im optimalen Fall sieht der Output ähnlich wie folgt aus:
@@ -588,7 +595,7 @@ SSL-Session:
     Cipher    : ECDHE-RSA-AES256-GCM-SHA384
     Session-ID: 14085DAC8BEEEE156D6B12EA9010A765D3237501B2C8142BDDEDE7DAF6D1C708
     Session-ID-ctx: 
-    Master-Key: 96C3DCF06D88B17C3FCDEDA226AC05015CE0EFFFCBEB57175A7742D6EF59500C36363315A2EC415B1131E25FFB6DE2E2
+    Master-Key: 96C3DCF06D88B17C3FCDEDA226AC05015CE0EFFFCBEB57175A7742D6EF59500C3 …
     Key-Arg   : None
     PSK identity: None
     PSK identity hint: None
