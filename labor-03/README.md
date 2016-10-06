@@ -1,7 +1,8 @@
 ##Konfigurieren eines SSL Servers
 
 ###Was machen wir?
-Wir setzen einen mit Serverzertifikat gesicherten Apache Webserver auf.
+
+Wir setzen einen mit einem Serverzertifikat gesicherten Apache Webserver auf.
 
 ###Warum tun wir das?
 
@@ -12,7 +13,7 @@ Das HTTP Protokoll ist ein Klartext-Protokoll, das sich sehr gut abhören lässt
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](http://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](http://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
 
-In einem ersten Schritt wird ein SSL-fähiger Server mit einem selbst signierten Zertifikat konfiguriert. Danach wird der Bezug eines offiziellen Zertifikats erklärt. Hiezu ist es nötig, dass eine vom Internet zugängliche Domain kontrolliert und auf den Übungsserver geroutet wird. In der Anleitung selbst wird als Beispiel mit der Domain `christian-folini.ch` gearbeitet.
+In dieser Anleitung wird in einem ersten Schritt ein SSL-fähiger Server mit einem selbst signierten Zertifikat konfiguriert. Danach wird der Bezug eines offiziellen Zertifikats erklärt. Hiezu ist es nötig, dass eine vom Internet zugängliche Domain kontrolliert und auf den Übungsserver geroutet wird. In der Anleitung selbst wird als Beispiel mit der Domain `christian-folini.ch` gearbeitet.
 
 Die ganze Serie von Anleitungen versteht sich als Anleitung für einen tauglichen Labor-Setup, um Apache wirklich zu verstehen. Dies vorliegende Anleitung bildet ein Stück weit eine Ausnahme als es für den Bezug des Zertifikats wie eben dargelegt wichtig ist, auf einem vom Internet her erreichbaren Server zu arbeiten. Die folgenden Anleitungen werden aber wieder zum Labor-Setup zurückkehren.
 
@@ -126,7 +127,7 @@ DocumentRoot            /apache/htdocs
 
 ```
 
-Ich beschreibe nicht die gesamte Konfiguration, nur die gegenüber Lektion 2 hinzugekommenen Direktiven. Neu lauschen wir neben dem Port 80 auch noch auf Port 443; dem _HTTPS-Port_. Da wir in den folgenden Schritten vom Internet her erreichbar sein müssen, konfigurieren wir auch nicht mehr nur die `Localhost` Adresse des Servers, sondern erlauben dem Server mittels `*`, sämtliche auf dem Server konfigurierten IP Adressen zu besetzen. Diesem Setup wird auch in den beiden Virtual-Hosts Rechnung getragen.
+Ich beschreibe nicht die gesamte Konfiguration, nur die gegenüber Lektion 2 hinzugekommenen Direktiven. Neu lauschen wir neben dem Port 80 auch noch auf Port 443; dem _HTTPS-Port_. Da wir in den folgenden Schritten vom Internet her erreichbar sein müssen, konfigurieren wir auch nicht mehr nur die Localhost Adresse des Servers, sondern erlauben dem Server mittels `*`, sämtliche auf dem Server konfigurierten IP Adressen zu besetzen. Diesem Setup wird auch in den beiden Virtual-Hosts Rechnung getragen.
 
 Wie erwartet ist das *SSL-*Modul neu hinzugeladen und ferner das Header-Modul, das wir weiter unten benötigen. Dann konfigurieren wir den Schlüssel und das Zertifikat mittels der Direktiven _SSLCertificateKeyFile_ und _SSLCertificateFile_. In der Protokollzeile (_SSLProtocol_) ist es sehr wichtig, das wir das ältere und unsichere Protokoll _SSLv2_ ausschalten, aber auch _SSLv3_ ist seit der _POODLE_ Attacke nicht mehr länger sicher. Am besten wäre es, nurmehr _TLSv1.2_ zuzulassen, aber das beherrschen noch nicht alle Browser. Wir schliessen also einfach _SSLv2_ sowie _SSLv3_ vom Gebrauch aus und lassen damit zur Zeit faktisch TLSv1, das sehr seltene TLSv1.1 sowie das quantitativ dominierende TLSv1.2 zu. Der Handshake und die Verschlüsselung geschieht durch einen Satz von mehreren Algorithmen. Diese kryptographischen Algorithmen definieren wir mit der sogenannten _Cipher-Suite_. Es ist wichtig, eine saubere _Cipher-Suite_ zu verwenden, denn an dieser Stelle setzen Abhörangriffe typischerweise an: Sie nützen die Schwächen und die zu geringe Schlüssellänge älterer Algorithmen aus. Eine sehr eingeschränkte Suite verhindert allerdings, dass ältere Browser auf unseren Server zugreifen können. Die vorgeschlagene _Cipher-Suite_ weist eine hohe Sicherheit auf und berücksichtigt auch einige ältere Browser ab Windows Vista. Windows XP und sehr alte Android-Versionen schliessen wir damit aber von der Kommunikation aus.
 
@@ -234,27 +235,27 @@ HTTPS erweitert das bekannte HTTP-Protokoll um eine SSL-Schicht. Technisch wurde
 
 Serverzertifikate existieren in verschiedenen Formen, Validierungen und Gültigkeitsbereichen. Nicht jedes Merkmal ist wirklich technischer Natur, das Marketing spielt auch eine Rolle. Die Preisunterschiede sind sehr gross, weshalb sich ein Vergleich lohnt. Für unseren Test-Setup verwenden wir ein freies Zertifikat, das wir aber dennoch offiziell beglaubigen lassen. Diese Beglaubigung übernimmt Let's Encrypt für uns. Diese 2015 ins Leben gerufene Certificate Authority steht unentgeltlich zur Verfügung und vereinfacht den Signierungsprozess gegenüber den traditionellen, kommerziellen Signierungsstellen massiv.
 
-Bevor Let's Encrypt uns ein validiertes Zertifikat für unseren Server aushändigt, muss die Certificate Authority sicherstellen, dass wir auch wirklich im Besitz der Domain sind, für die wir ein Zertifikat beziehen möchten. Dies erfolgt folgendermassen: Wir müssen eine Test-Datei mit einem geheimen Token auf unserem Server platzieren. Dann rufen wir eine URL bei Let's Encrypt auf und beauftragen die Zertifizierungsstelle mit der Überprüfung des Tokens, das wir Let's Encrypt bekannt geben. Let's Encrypt spricht dann unseren Webserver auf und vergleicht den Inhalt der Testdatei mit dem Token im Auftrag. Stimmen die Daten überein, dann haben wir belegt, dass wir den Server mit der verlangten Domain tatsächlich kontrollieren und Let's Encrypt akzeptiert uns als Besitzer der besagten Domain. Darauf stellt es uns ein Zertifikat aus. Dieses installieren wir daraufhin auf dem Webserver.
+Bevor Let's Encrypt uns ein validiertes Zertifikat für unseren Server aushändigt, muss die Certificate Authority sicherstellen, dass wir auch wirklich im Besitz der Domain sind, für die wir ein Zertifikat beziehen möchten. Dies geschieht folgendermassen: Wir müssen eine Test-Datei mit einem geheimen Token auf unserem Server platzieren. Dann rufen wir eine URL bei Let's Encrypt auf und beauftragen die Zertifizierungsstelle mit der Überprüfung des Tokens, das wir Let's Encrypt bekannt geben. Let's Encrypt kontaktiert dann unseren Webserver und vergleicht den Inhalt der Testdatei mit dem Token im Auftrag. Stimmen die Daten überein, dann haben wir belegt, dass wir den Server mit der verlangten Domain tatsächlich kontrollieren und Let's Encrypt akzeptiert uns als Besitzer der besagten Domain. Darauf stellt es uns ein Zertifikat aus. Dieses installieren wir daraufhin auf dem Webserver.
 
-Es gibt verschiedene Clients zum Umgang mit Let's Encrypt. Luca Käser hat mich auf `getssl` hingewiesen, das einfache Bedienung auf der Kommandozeile und maximale Kontrolle bietet. Es eignet sich auf für den produktiven Einsatz sehr gut, da es in der Lage ist, die Testdatei nicht nur auf dem lokalen System zu deponieren, sondern auch mittels `ssh` auf einem entfernten System einzustellen. Das ist dann von Vorteil, wenn man dem Webserver nicht erlaubt, selbst Anfragen ins Internet abzusetzen und damit der Auftrag an Let's Encrypt nicht vom Webserver selbst ausgelöst werden kann.
+Es gibt verschiedene Clients zum Umgang mit Let's Encrypt. Luca Käser hat mich auf `getssl` hingewiesen, das einfache Bedienung auf der Kommandozeile und maximale Kontrolle bietet. Es eignet sich auch für den produktiven Einsatz, da es unter anderem in der Lage ist, die Testdatei nicht nur auf dem lokalen System zu deponieren, sondern auch mittels `ssh` auf einem entfernten System einzustellen. Das ist dann von Vorteil, wenn man dem Webserver nicht erlaubt, selbst Anfragen ins Internet abzusetzen und damit der Auftrag an Let's Encrypt nicht vom Webserver selbst ausgelöst werden kann.
 
-Aber dies ist ein fortgeschrittenes Szenario. Für den ersten Versuch rufen wir Let's Encrypt direkt vom Server aus auf. Zunächst müssen wir uns aber das Skript `getssl` besorgen, denn es ist so frisch, dass es noch nicht Teil der weit verbreiteten Linux Distributionen ist. Wir laden das Skript herunter. In meinem Fall lege ich es im privaten `bin`-Ordner ab. Je nach eigenem Setup wird man einen alternativen Platz dafür bestimmen. Wichtig ist, dass `getssl` in der Folge Teil des Shell-Suchpfades ist. Wir beziehen das Skript von Github. Es besteht die Möglichkeit, das gesamte Projektverzeichnis zu clonen. Wir machen es uns aber einfach, indem wir einfach das Skript herunterladen und ausführbar machen.
+Aber dies ist ein fortgeschrittenes Szenario. Für den ersten Versuch rufen wir Let's Encrypt direkt vom Server aus auf. Zunächst müssen wir uns aber das Skript `getssl` selbst besorgen, denn es ist so neu, dass es noch nicht Teil der weit verbreiteten Linux Distributionen ist. Wir laden das Skript herunter. In meinem Fall lege ich es im privaten `bin`-Ordner ab. Je nach eigenem Setup wird man einen alternativen Platz dafür bestimmen. Wichtig ist, dass `getssl` in der Folge Teil des Shell-Suchpfades ist. Wir beziehen das Skript von Github. Es besteht die Möglichkeit, das gesamte Projektverzeichnis zu clonen. Wir machen es uns aber einfach, indem wir einfach das Skript herunterladen und ausführbar machen.
 
 ```bash
 $> wget https://raw.githubusercontent.com/srvrco/getssl/master/getssl -O $HOME/bin/getssl && chmod +x $HOME/bin/getssl
 ...
 ```
 
-Als Beispiel-Domain benütze ich `christian-folini.ch`. Hier ist die eigene Test-Domain einzusetzen. Das bringt es mit sich, dass sämtliche Befehle mit `christian-folini.ch` umgeschrieben werden müssen.
+Als Beispiel-Domain benütze ich `christian-folini.ch`. Dies wird sich in den unten angeführten Shell-Befehlen zeigen. Diese Kommandos sind auf die eigene Domain umzuschreiben, wenn sie funktionieren sollen.
 
 In einem ersten Schritt erstellen wir eine Grundkonfiguration für unsere Domain. 
 
 ```bash
-$> getssl -c christian-folini.ch
+$> getssl --create christian-folini.ch
 ...
 ```
 
-Das Skript legt mit diesem Befehl einen Verzeichnisbaum mit folgenden Verzeichnissen und Dateien an:
+Das Skript legt mit diesem Befehl im Heim-Verzeichnis einen Verzeichnisbaum mit folgenden Verzeichnissen und Dateien an:
 
 ```bash
 .getssl
@@ -264,9 +265,9 @@ Das Skript legt mit diesem Befehl einen Verzeichnisbaum mit folgenden Verzeichni
 .getssl/christian-folini.ch/getssl.cfg
 ```
 
-Bevor wir uns ein Zertifikat erstellen lassen können ist es wichtig, dass wir die beiden `getssl.cfg`-Dateien kurz bearbeiten. Zunächst die Grundkonfiguration in der Datei `.getssl/getssl.cfg`. In der Datei ist zu beachten, dass Let's Encrypt eine Test-CA mit der URL `https://acme-staging.api.letsencrypt.org` betreibt mit der man den eigenen Setup ausprobieren kann - und dann die richtige CA, welche die offiziellen Zertifikate ausstellt. Es ist sinnvoll, zunächst alles auf der Test-CA auszuprobieren und wenn die Pfade stimmen und die Validierung erfolgreich abgeschlossen wurde, die offizielle CA URL `https://acme-v01.api.letsencrypt.org` einzutragen. In der Datei `.getssl/getssl.cfg` ist per Default die Test-CA eingetragen. Zu Beginn gibt es deshalb nicht viel zu tun, lediglich die Variable `ACCOUNT_EMAIL` sollte sinnvollerweise ausgefüllt werden.
+Bevor wir uns ein Zertifikat erstellen lassen können ist es wichtig, dass wir die beiden `getssl.cfg`-Dateien kurz bearbeiten. Zunächst die Grundkonfiguration in der Datei `.getssl/getssl.cfg`. In der Datei ist zu beachten, dass Let's Encrypt eine Test-CA mit der URL `https://acme-staging.api.letsencrypt.org` betreibt mit der man den eigenen Setup ausprobieren kann - und dann die richtige CA, welche die offiziellen Zertifikate ausstellt. Es ist sinnvoll, zunächst alles auf der Test-CA auszuprobieren und, wenn die Pfade stimmen und die Validierung erfolgreich abgeschlossen wurde, die offizielle CA URL `https://acme-v01.api.letsencrypt.org` einzutragen. In der Datei `.getssl/getssl.cfg` ist per Default die Test-CA aktiv. Zu Beginn gibt es deshalb nicht viel zu tun, lediglich die Variable `ACCOUNT_EMAIL` sollte sinnvollerweise ausgefüllt werden.
 
-Schreiten wir dann zur Konfigurations-Datei der Domain `.getssl/christian-folini.ch/getssl.cfg`. Hier überprüfen wir den Wert `SANS` (ich vermute er bedeutet `Subject Alternative NameS`) und bezeichnet damit weitere Host-Namen oder in der CA-Sprache `Subject-Names`, die in das Zertifikat eingetragen werden. Im Fall der Domain `christian.folini.ch` erwarten wir hier `SANS=www.christian-folini.ch`. Die meisten anderen Werte sind auskommentiert, was bedeutet, dass diejenigen Werte, die in der übergeordneten Datei gesetzt wurden, weitervererbt und hier nicht mehr speziell gesetzt werden müssen. Ein wichtiger Wert bleibt aber zu setzen: `ACL`. Für den Laborsetup lege ich den Wert wie folgt fest: 
+Schreiten wir dann zur Konfigurations-Datei der Domain `.getssl/christian-folini.ch/getssl.cfg`. Hier überprüfen wir den Wert `SANS`. Ich vermute er bedeutet `Subject Alternative NameS` und bezeichnet damit weitere Host-Namen oder in der CA-Sprache `Subject-Names`, die in das Zertifikat eingetragen werden. Im Fall der Domain `christian.folini.ch` erwarten wir hier `SANS=www.christian-folini.ch`. Die meisten anderen Werte sind auskommentiert, was bedeutet, dass diejenigen Werte, die in der übergeordneten Datei gesetzt wurden, weitervererbt und hier nicht mehr speziell gesetzt werden müssen. Ein wichtiger Wert bleibt aber zu setzen: `ACL`. Für den Laborsetup lege ich den Wert wie folgt fest: 
 
 ```bash
 acl='/apache/htdocs/.well-known/acme-challenge'
@@ -315,9 +316,11 @@ Wir sehen schön, wie zunächst ein neuer Schlüssel erstellt wurde. Dann wurde 
 ```bash
 66.133.109.36 US - [2016-10-02 06:26:40.635068] "GET /.well-known/acme-challenge/zg0bwpHNmRmFdXS4YeTgjBKiy84JoYDpu-cHON2mC9k HTTP/1.1" 200 87 "-" "Mozilla/5.0 (compatible; Let's Encrypt validation server; +https://www.letsencrypt.org)"
 ``` 
-Wenn wir oben die Ausgabe des `getssl` Kommandos nochmals überprüfen, dann sehen wir, dass die Verifikation über die Bühne ging. Auch ein Zertifikat wurde erstellt und ausgeliefert. Dennoch lief etwas schief, denn auf der letzten Zeile rapportiert das Skript, dass das Zertifikat, das auf dem Server liege, nicht mit dem ausgelieferten übereinstimmt. Das ist tatsächlich der Fall, denn wir haben das erhaltene Zertifikat ja noch nicht auf dem Server installiert. Das Skript ist in der Lage, dies ebenfalls in einem Durchlauf zu erledigen (Dazu dienen die Variablen `DOMAIN_KEY_LOCATION` sowie `RELOAD_CMD` im Konfigurationsfile).
+Wenn wir oben die Ausgabe des `getssl` Kommandos nochmals überprüfen, dann sehen wir, dass die Verifikation zwei Mal über die Bühne ging. Auch ein Zertifikat wurde erstellt und ausgeliefert. Dennoch lief etwas schief, denn auf der letzten Zeile rapportiert das Skript, dass das Zertifikat, das auf dem Server liege, nicht mit dem ausgelieferten übereinstimmt. Das ist tatsächlich der Fall, denn wir haben das erhaltene Zertifikat ja noch nicht auf dem Server installiert. Das Skript ist in der Lage, dies ebenfalls in einem Durchlauf zu erledigen (Dazu dienen die Variablen `DOMAIN_KEY_LOCATION` sowie `RELOAD_CMD` im Konfigurationsfile).
 
-Schauen wir uns das erhaltene Zertifikat erst einmal genauer an. Wichtig sind die Felder `Validity` mit dem zeitlichen Geltungsbereich des Zertifikats (3 Monate), der `Signierungsalgorithmus`, der `Public Key Algorithm` und natürlich `Subject` sowie `Subject Alternative Name`. Um all das zu überprüfen benutzen wir die Kommandozeilenversion von `openssl`:
+Ich habe vorgeschlagen im ersten Durchlauf mit der Test-Certificate-Authority von Let's Encrypt zu arbeiten. Wenn das Skript sauber durchläuft, dann kann die produktive Certificate-Authority eingetragen werden. Der Aufruf bleibt gleich und wir erhalten, dann ein öffentlich signiertes Zertifikat, das wir auf dem Server installieren können.
+
+Schauen wir uns das erhaltene Zertifikat aber zunächst einmal genauer an. Dazu verwenden wir die Kommandozeilenversion von `openssl`. Zu beachten sind die Felder `Validity` mit dem zeitlichen Geltungsbereich des Zertifikats (3 Monate), der `Signature Algorithm`, der `Public Key Algorithm` und natürlich `Subject` sowie `Subject Alternative Name`:
 
 ```bash
 $> openssl x509 -text -in $HOME/.getssl/christian-folini.ch/christian-folini.ch.crt
@@ -480,15 +483,15 @@ SSLCertificateChainFile /etc/ssl/certs/lets-encrypt-chain.crt
 
 ###Schritt 5: Vertrauenskette überprüfen
 
-Bevor wir nun mit dem Browser oder curl auf unseren Server zugreifen, ist es angezeigt, die Vertrauenskette zu inspizieren und die Verschlüsselung zu überprüfen. Starten wir den Server also und schreiten wir zur Überprüfung. Dazu verwenden wir das Kommandozeilen-Hilfsmittel `openssl`.  Da _OpenSSL_ aber anders als der Browser und curl keine Liste mit offiziellen Signierungsstellen besitzt, müssen wir dem Tool das Zertifikat von Let's Encrypt auch bekannt geben. Wir besorgen es uns bei Let's Encrypt und rufen wir `openssl` gleich damit auf:
+Bevor wir nun mit dem Browser oder curl auf unseren Server zugreifen, ist es angezeigt, die Vertrauenskette zu inspizieren und die Verschlüsselung zu überprüfen. Starten wir den Server also und schreiten wir zur Überprüfung. Dazu verwenden wir erneut das Kommandozeilen-Hilfsmittel `openssl`, das mit einer Vielzahl von Optionen und Anwendungsmöglichkeiten glänzt.  Da _OpenSSL_ aber anders als der Browser und `curl` keine Liste mit offiziellen Signierungsstellen besitzt, müssen wir dem Tool das Zertifikat von Let's Encrypt auch bekannt geben. Wir besorgen es uns bei Let's Encrypt und rufen wir `openssl` gleich damit auf:
 
 ```bash
 $> wget https://letsencrypt.org/certs/isrgrootx1.pem -O /tmp/ca-lets-encrypt.crt
 ...
-$> openssl s_client -showcerts -CAfile /tmp/ca-lets-encrypt.crt -connect www.christian-folini.ch:443 -servername www.christian-folini.ch
+$> openssl s_client -showcerts -CAfile /tmp/ca-lets-encrypt.crt -connect 127.0.0.1:443 -servername www.christian-folini.ch
 ```
 
-Hier instruieren wir _OpenSSL_, den eingebauten client zu verwenden, uns die vollen Zertifikatsinformationen zu zeigen, das eben heruntergeladene CA-Zertifikat zu verwenden, auf unseren Server zuzugreifen und beim Handshake den Server mit `www.christian.folini.ch` anzusprechen. Im optimalen Fall sieht der Output ähnlich wie folgt aus:
+Hier instruieren wir _OpenSSL_, den eingebauten HTTP Client zu verwenden, uns die vollen Zertifikatsinformationen zu zeigen, das eben heruntergeladene CA-Zertifikat zu verwenden, auf unseren Server zuzugreifen und beim Handshake den Server mit `www.christian.folini.ch` anzusprechen. Im optimalen Fall sieht der Output ähnlich wie folgt aus:
 
 ```bash
 depth=2 O = Digital Signature Trust Co., CN = DST Root CA X3
@@ -680,7 +683,7 @@ Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance. Allerd
 
 ###Schritt 7: Den Server im Browser aufrufen
 
-Jetzt, da wir sicher sind, dass wir ein offiziell signiertes Zertifikat mit einer gültigen Vertrauenskette besitzen und auch die weitere Konfiguration im Detail verstanden haben, können wir uns dem Browser zuwenden und die konfigurierte Domain dort aufrufen. In meinem Fall ist das [https://www.christian-folini.ch](https://www.christian-folini.ch)
+Jetzt, da wir sicher sind, dass wir ein offiziell signiertes Zertifikat mit einer gültigen Vertrauenskette besitzen und auch die weitere Konfiguration im Detail verstanden haben, können wir uns dem Browser zuwenden und die konfigurierte Domain dort aufrufen. In meinem Fall ist das [https://www.christian-folini.ch](https://www.christian-folini.ch).
 
 ![Screenshot: christian-folini.ch](./apache-tutorial-03-screenshot-christian-folini.ch.png)
 
@@ -695,7 +698,7 @@ Das Skript `getssl` bietet die Möglichkeit, den Aufruf an Let's Encrypt nicht v
 
 Die Risiken wollen gut abgewogen und im Einzelfall bewertet werden. Ist eine gute Lösung bestimmt, so kann der Prozess mit folgenden Schritten komplett automatisiert werden:
 
-* Gegebenenfalls Umbau des `ACL` Eintrage im Konfigurationsfile, wenn von einem Adminserver aus gearbeitet wird.
+* Gegebenenfalls Umbau der `acl` Einträge in der Konfigurationsdatei, wenn von einem Administrationsserver aus gearbeitet wird.
 * Definition der Variablen `DOMAIN_CERT_LOCATION`
 * Definition der Variablen `DOMAIN_KEY_LOCATION`
 * Definition der Variablen `DOMAIN_CHAIN_LOCATION`
