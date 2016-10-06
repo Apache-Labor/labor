@@ -1,4 +1,4 @@
-##Title: Apache und ModSecurity Logfiles visualisieren
+##Apache und ModSecurity Logfiles visualisieren
 
 ###Was machen wir?
 

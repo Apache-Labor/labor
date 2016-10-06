@@ -1,4 +1,4 @@
-##Title: ModSecurity einbinden 
+##ModSecurity einbinden 
 
 ###Was machen wir?
 Wir kompilieren das Sicherheits-Modul ModSecurity, binden es in den Apache Webserver ein, erstellen eine Basis-Konfiguration und setzen uns erstmals mit _False Positives_ auseinander.

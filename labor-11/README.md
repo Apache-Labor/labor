@@ -1,4 +1,4 @@
-##Title: Den vollen Verkehr mitschreiben und entschlüsseln
+##Den vollen Verkehr mitschreiben und entschlüsseln
 
 ###Was machen wir?
 

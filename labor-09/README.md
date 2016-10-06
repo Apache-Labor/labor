@@ -1,4 +1,4 @@
-##Title: Apache und ModSec effizient in der Shell konfigurieren und debuggen
+##Apache und ModSec effizient in der Shell konfigurieren und debuggen
 
 ###Was machen wir?
 

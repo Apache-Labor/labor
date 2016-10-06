@@ -1,5 +1,6 @@
 ###Changelog
 
+* 6\. Oktober 2016: Titel neu formatiert
 * 2\. September 2016: Zeilenumbruch socat call justiert
 * 25\. August 2016: Zeilenumbrüche justiert
 * 29\. März 2016: Rechtschreibung (Darrel Knutson)

@@ -1,5 +1,6 @@
 ###Changelog
 
+* 6\. Oktober 2016: Titel neu formatiert
 * 3\. September 2016: Schritt 8 überarbeitet
 * 25\. August 2016: Zeilenumbrüche justiert
 * 2\. Juli 2016: Link geflickt

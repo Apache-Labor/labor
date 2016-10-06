@@ -1,4 +1,4 @@
-##Title: Einen Reverse Proxy Server aufsetzen
+##Einen Reverse Proxy Server aufsetzen
 
 ###Was machen wir?
 

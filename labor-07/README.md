@@ -1,4 +1,4 @@
-##Title: OWASP ModSecurity Core Rules tunen
+##OWASP ModSecurity Core Rules tunen
 
 ###Was machen wir?
 
