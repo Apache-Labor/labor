@@ -1,5 +1,6 @@
 ##### Changelog
 
+* 8\. Oktober 2016: Kleine Anpassungen im Test
 * 6\. Oktober 2016: Einführung der CA Let's Encrypt nach Unterstützung durch Luca Käser
 * 25\. August 2016: Zeilenumbrüche justiert
 * 3\. August 2016: Erweiterung um mod_headers and STS-Header (Luca Käser)
