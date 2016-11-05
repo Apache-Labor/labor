@@ -230,7 +230,7 @@ def display_ignore_rule_mode_path(id, event, events)
   # Remarks: none
 
 	puts "      # ModSec Rule Exclusion: #{id} : #{event.msg} (severity: #{Severities[event.severity].to_s} #{event.severity})"
-	puts "      SecRule REQUEST_FILENAME \"@beginsWith /foo\" \"phase:1,nolog,pass,id:#{$params[:ruleid]},ctl:ruleRemoveById=#{id}\""
+	puts "      SecRule REQUEST_URI \"@beginsWith /foo\" \"phase:1,nolog,pass,id:#{$params[:ruleid]},ctl:ruleRemoveById=#{id}\""
 	$params[:ruleid] = $params[:ruleid] + 1
 
 	uris = Array.new
@@ -306,7 +306,7 @@ def display_ignore_rule_mode_path_and_parameter(id, event, events)
 				if $params[:verbose]
 					prefix = couple[:num].to_s + " x"
 				end
-				printf "     %s SecRule REQUEST_FILENAME \"@beginsWith %s\" \"phase:2,nolog,pass,id:%d,ctl:ruleRemoveTargetById=%d;%s\"\n", prefix, couple[:uri], $params[:ruleid], id, couple[:parameter]
+				printf "     %s SecRule REQUEST_URI \"@beginsWith %s\" \"phase:2,nolog,pass,id:%d,ctl:ruleRemoveTargetById=%d;%s\"\n", prefix, couple[:uri], $params[:ruleid], id, couple[:parameter]
 				$params[:ruleid] = $params[:ruleid] + 1
 
 		end
