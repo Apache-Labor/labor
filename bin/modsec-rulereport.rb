@@ -1,5 +1,7 @@
 #!/usr/bin/ruby
 #
+# Copyright (c) 2015 netnea, AG. (https://www.netnea.com/)
+#
 # A ruby script which extracts ModSec alerts out of an apache
 # error log and displays them in a terse report.
 #
