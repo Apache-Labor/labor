@@ -223,8 +223,9 @@ Wir könnten dazu _Apache Bench_ wie in der zweiten Anleitung zwei beschrieben v
 
 ```bash
 $> for N in {1..100}; do curl --silent http://localhost/index.html?n=${N}a >/dev/null; done
-$> for N in {1..100}; do PAYLOAD=$(uuid -n $N | xargs); curl --silent --data "payload=$PAYLOAD" \
-http://localhost/index.html?n=${N}b >/dev/null; done
+$> for N in {1..100}; do PAYLOAD=$(uuid -n $N | xargs); \
+   curl --silent --data "payload=$PAYLOAD" http://localhost/index.html?n=${N}b >/dev/null; \
+   done
 ```
 
 Auf der ersten Zeile setzen wir einfach hundert Requests ab, wobei wir sie im _Query-String_ nummerieren. Auf der zweiten Zeile dann die interessantere Idee: Wieder setzen wir hundert Anfragen ab. Dieses Mal möchten wir aber Daten mit Hilfe eines POST-Requests im Body-Teil der Anfrage mitschicken. Diesen sogenannen Payload generieren wir dynamisch und zwar so, dass er mit jedem Aufruf grösser wird. Die benötigten Daten generieren wir mittels _uuidgen_. Dabei handelt es sich um einen Befehl, der eine _ascii-ID_ generiert.
@@ -540,7 +541,7 @@ $> cat labor-04-example-access.log | alsslprotocol | sucspercent
                          Total        10000 100.00%
 ```
 
-Wunderbar. Nun sind wir in der Lage für beliebige, sich wiederholende Werte die Zahlenverhältnisse auszugeben. Wie sieht es denn zum Beispiel mit den verwendeten Veschlüsslungsverfahren aus?
+Wunderbar. Nun sind wir in der Lage für beliebige, sich wiederholende Werte die Zahlenverhältnisse auszugeben. Wie sieht es denn zum Beispiel mit den verwendeten Veschlüsselungsverfahren aus?
 
 
 ```bash

@@ -1,5 +1,6 @@
 ##### Changelog
 
+* 04\. Dezember 2016: Zeilenumbrüche, Schreibfehler
 * 03\. September 2016: Unique-ID Modul hinzugefügt
 * 30\. August 2016: Update im Output des basicstats.awk Skript
 * 25\. August 2016: Zeilenumbrüche justiert
