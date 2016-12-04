@@ -22,6 +22,7 @@
 # - order by number of hits per rule or rule id
 # - option to have anomaly scoring checks be included in the rule
 #     (hidden by default)
+# - multiline rules like CRS
 
 # -----------------------------------------------------------
 # INIT
