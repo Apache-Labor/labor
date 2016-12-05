@@ -1,5 +1,6 @@
 ##### Changelog
 
+* 12\. Dezember 2016: Update the Whitelisting Regel
 * 6\. Oktober 2016: Titel neu formatiert
 * 3\. September 2016: Fix SecAuditLogParts order of parts in example config
 * 25\. August 2016: Zeilenumbrüche justiert

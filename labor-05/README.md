@@ -6,7 +6,6 @@ Wir kompilieren das Sicherheits-Modul ModSecurity, binden es in den Apache Webse
 ###Warum tun wir das?
 
 ModSecurity ist ein Sicherheitsmodul für den Webserver. Das Hilfsmittel ermöglicht die Überprüfung sowohl der Anfrage als auch der Antwort nach vordefinierten Regeln. Man nennt das auch _Web Application Firewall_. Der Administrator erhält also eine direkte Kontrolle über die Requests und die Responses, welche das System durchlaufen. Das Modul gibt einem aber auch neue Möglichkeiten zum Monitoring in die Hand, denn der gesamte Verkehr zwischen Client und Server lässt sich 1:1 auf die Festplatte schreiben. Dies hilft bei der Fehlersuche.
-Eine _WAF_ greift in den HTTP Verkehr ein. Das führt zu Fehlern, wenn sie eine legitime Anfrage blockiert. Man nennt dies _False Positive_. Da die Behandlung dieser Fehler ein wichtiger Teil der Arbeit mit _ModSecurity_ ist, versuchen wir uns von Beginn weg in dieser Disziplin.
 
 ###Voraussetzungen
 
@@ -23,38 +22,37 @@ Den Sourcecode für den Webserver haben wir nach `/usr/src/apache` heruntergelad
 $> sudo mkdir /usr/src/modsecurity
 $> sudo chown `whoami` /usr/src/modsecurity
 $> cd /usr/src/modsecurity
-$> wget https://www.modsecurity.org/tarball/2.9.0/modsecurity-2.9.0.tar.gz
+$> wget https://www.modsecurity.org/tarball/2.9.1/modsecurity-2.9.1.tar.gz
 ```
 
 Der gepackte Sourcecode ist gut vier Megabyte gross. Nun bleibt noch das überprüfen der Checksum. Sie wird im Format SHA256 angeboten.
 
 ```bash
-$> wget https://www.modsecurity.org/tarball/2.9.0/modsecurity-2.9.0.tar.gz.sha256
-$> sha256sum --check modsecurity-2.9.0.tar.gz.sha256
+$> wget https://www.modsecurity.org/tarball/2.9.1/modsecurity-2.9.1.tar.gz.sha256
+$> sha256sum --check modsecurity-2.9.1.tar.gz.sha256
 ```
 
 Darauf erwarten wir folgende Antwort:
 
 ```bash
-modsecurity-2.9.0.tar.gz: OK
+modsecurity-2.9.1.tar.gz: OK
 ```
 
 ###Schritt 2: Entpacken und Compiler konfigurieren
 
-Wir entpacken nun den Sourcecode und leiten die Konfiguration ein. Noch vorher gilt es aber drei Pakete zu installieren, die eine Voraussetzung für das Kompilieren von _ModSecurity_ bilden. Eine Library zum Parsen von XML-Strukturen und die Grundlagen-/Header-Dateien der systemeigenen Regular Expression Library: _libxml2-dev_, _libexpat1-dev_ und _libpcre3-dev_.
+Wir entpacken nun den Sourcecode und leiten die Konfiguration ein. Noch vorher gilt es aber four Pakete zu installieren, die eine Voraussetzung für das Kompilieren von _ModSecurity_ bilden. Eine Library zum Parsen von XML-Strukturen und die Grundlagen-/Header-Dateien der systemeigenen Regular Expression Library: _libxml2-dev_, _libexpat1-dev_, _libpcre3-dev_ and _libyajl-dev_.
 
 Damit sind die Voraussetzungen geschaffen und wir sind bereit für ModSecurity.
 
 ```bash
-$> tar xvzf modsecurity-2.9.0.tar.gz
-$> cd modsecurity-2.9.0
+$> tar xvzf modsecurity-2.9.1.tar.gz
+$> cd modsecurity-2.9.1
 $> ./configure --with-apxs=/apache/bin/apxs \
 --with-apr=/usr/local/apr/bin/apr-1-config \
---with-pcre=/usr/bin/pcre-config \
---enable-request-early
+--with-pcre=/usr/bin/pcre-config
 ```
 
-Wir haben im Tutorial zur Kompilierung von Apache den Symlink `/apache` angelegt. Das kommt uns nun erneut zu Hilfe, denn unabhängig von der verwendeten Apache-Version können wir die ModSecurity Konfiguration nun immer mit denselben Parametern arbeiten lassen und erhalten immer Zugriff auf den aktuellen Apache Webserver. Die ersten beiden Optionen stellen die Verbindung zum Apache Binary her, denn wir müssen dafür sorgen, dass ModSecurity mit der richtigen API-Version arbeitet. Die Option _with-pcre_ legt fest, dass wir die systemeigene _PCRE-Library_, also Regular Expression Bibliothek, verwenden, und nicht die von Apache zur Verfügung gestellte. Dies gibt uns eine gewisse Flexibilität bei den Updates, da wir damit in diesem Bereich unabhängig von Apache werden, was sich in der Praxis bewährt hat. Voraussetzung ist das eben erst installierte Paket _libpcre3-dev_ Die letzte Option _enable-request-early_ greift in das Verhalten von ModSecurity ein. Sie führt dazu, dass unser Sicherheitssystem die erste Verarbeitungsphase nach Erhalt der Request Header in Angriff nimmt. Wir warten also nicht den fertigen Request inklusive der Body-Daten ab, sondern können sofort eingreifen. Das ist zwar nur ein Detail, gibt in der Praxis aber etwas stärkere Kontrolle.
+Wir haben im Tutorial zur Kompilierung von Apache den Symlink `/apache` angelegt. Das kommt uns nun erneut zu Hilfe, denn unabhängig von der verwendeten Apache-Version können wir die ModSecurity Konfiguration nun immer mit denselben Parametern arbeiten lassen und erhalten immer Zugriff auf den aktuellen Apache Webserver. Die ersten beiden Optionen stellen die Verbindung zum Apache Binary her, denn wir müssen dafür sorgen, dass ModSecurity mit der richtigen API-Version arbeitet. Die Option _with-pcre_ legt fest, dass wir die systemeigene _PCRE-Library_, also Regular Expression Bibliothek, verwenden, und nicht die von Apache zur Verfügung gestellte. Dies gibt uns eine gewisse Flexibilität bei den Updates, da wir damit in diesem Bereich unabhängig von Apache werden, was sich in der Praxis bewährt hat. Voraussetzung ist das eben erst installierte Paket _libpcre3-dev_.
 
 ###Schritt 3: Kompilieren
 
@@ -74,7 +72,7 @@ $> sudo make install
 $> sudo chown `whoami` /apache/modules/mod_security2.so
 ```
 
-Das Modul trägt die Zahl `2` im Namen. Dies wurde beim Versionsprung auf 2.0 eingeführt, als eine Neuausrichtung des Moduls dies nötig machte. Dies ist aber nur ein Detail, das keine Rolle spielt.
+Das Modul trägt die Zahl <i>2</i> im Namen. Dies wurde beim Versionsprung auf 2.0 eingeführt, als eine Neuausrichtung des Moduls dies nötig machte. Dies ist aber nur ein Detail, das keine Rolle spielt.
 
 ###Schritt 5: Grundkonfiguration erstellen
 
@@ -113,7 +111,11 @@ LoadModule        unique_id_module        modules/mod_unique_id.so
 LoadModule        security2_module        modules/mod_security2.so
 
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
-LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" %{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% %D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e %{ModSecAnomalyScoreIn}e %{ModSecAnomalyScoreOut}e" extended
+LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \
+\"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" \
+%{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% \
+%D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e \
+%{ModSecAnomalyScoreIn}e %{ModSecAnomalyScoreOut}e" extended
 
 LogFormat "[%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] %{UNIQUE_ID}e %D \
 PerfModSecInbound: %{TX.perf_modsecinbound}M \
@@ -151,8 +153,8 @@ SecRequestBodyNoFilesLimit    64000
 SecResponseBodyAccess         On
 SecResponseBodyLimit          10000000
 
-SecPcreMatchLimit             15000
-SecPcreMatchLimitRecursion    15000
+SecPcreMatchLimit             100000
+SecPcreMatchLimitRecursion    100000
 
 SecTmpDir                     /tmp/
 SecDataDir                    /tmp/
@@ -189,35 +191,42 @@ SecAction "id:'90002',phase:3,nolog,pass,setvar:TX.ModSecTimestamp3start=%{DURAT
 SecAction "id:'90003',phase:4,nolog,pass,setvar:TX.ModSecTimestamp4start=%{DURATION}"
 SecAction "id:'90004',phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURATION}"
                       
-# SecRule REQUEST_FILENAME "@beginsWith /" "id:'90005',phase:5,t:none,nolog,noauditlog,pass,setenv:write_perflog"
+# SecRule REQUEST_FILENAME "@beginsWith /" \
+#       "id:'90005',phase:5,t:none,nolog,noauditlog,pass,setenv:write_perflog"
 
 
 
 # === ModSec Recommended Rules (in modsec src package) (ids: 200000-200010)
 
-SecRule REQUEST_HEADERS:Content-Type "text/xml" "id:'200000',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
+SecRule REQUEST_HEADERS:Content-Type "text/xml" \
+  "id:200000,phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
 
-SecRule REQBODY_ERROR "!@eq 0" "id:'200001',phase:2,t:none,deny,status:400,log,msg:'Failed to parse request body.',\
-logdata:'%{reqbody_error_msg}',severity:2"
+SecRule REQUEST_HEADERS:Content-Type "application/json" \
+  "id:200001,phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=JSON"
+
+SecRule REQBODY_ERROR "!@eq 0" \
+  "id:200002,phase:2,t:none,deny,status:400,log,\
+  msg:'Failed to parse request body.',logdata:'%{reqbody_error_msg}',severity:2"
 
 SecRule MULTIPART_STRICT_ERROR "!@eq 0" \
-"id:'200002',phase:2,t:none,log,deny,status:403, \
-msg:'Multipart request body failed strict validation: \
-PE %{REQBODY_PROCESSOR_ERROR}, \
-BQ %{MULTIPART_BOUNDARY_QUOTED}, \
-BW %{MULTIPART_BOUNDARY_WHITESPACE}, \
-DB %{MULTIPART_DATA_BEFORE}, \
-DA %{MULTIPART_DATA_AFTER}, \
-HF %{MULTIPART_HEADER_FOLDING}, \
-LF %{MULTIPART_LF_LINE}, \
-SM %{MULTIPART_MISSING_SEMICOLON}, \
-IQ %{MULTIPART_INVALID_QUOTING}, \
-IP %{MULTIPART_INVALID_PART}, \
-IH %{MULTIPART_INVALID_HEADER_FOLDING}, \
-FL %{MULTIPART_FILE_LIMIT_EXCEEDED}'"
+  "id:200003,phase:2,t:none,deny,status:403,log, \
+  msg:'Multipart request body failed strict validation: \
+  PE %{REQBODY_PROCESSOR_ERROR}, \
+  BQ %{MULTIPART_BOUNDARY_QUOTED}, \
+  BW %{MULTIPART_BOUNDARY_WHITESPACE}, \
+  DB %{MULTIPART_DATA_BEFORE}, \
+  DA %{MULTIPART_DATA_AFTER}, \
+  HF %{MULTIPART_HEADER_FOLDING}, \
+  LF %{MULTIPART_LF_LINE}, \
+  SM %{MULTIPART_MISSING_SEMICOLON}, \
+  IQ %{MULTIPART_INVALID_QUOTING}, \
+  IP %{MULTIPART_INVALID_PART}, \
+  IH %{MULTIPART_INVALID_HEADER_FOLDING}, \
+  FL %{MULTIPART_FILE_LIMIT_EXCEEDED}'"
 
-SecRule TX:/^MSC_/ "!@streq 0" "id:'200004',phase:2,t:none,deny,status:500,msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
-
+SecRule TX:/^MSC_/ "!@streq 0" \
+  "id:200005,phase:2,t:none,deny,status:500,\
+  msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
 
 # === ModSecurity Rules 
 #
@@ -235,25 +244,26 @@ SecAction "id:'90014',phase:5,pass,nolog,setvar:TX.ModSecTimestamp5end=%{DURATIO
 
 # === ModSec performance calculations and variable export (ids: 90100 - 90199)
 
-SecAction "id:'90100',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=%{PERF_PHASE1}"
-SecAction "id:'90101',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=+%{PERF_PHASE2}"
-SecAction "id:'90102',phase:5,pass,nolog,setvar:TX.perf_application=%{TX.ModSecTimestamp3start}"
-SecAction "id:'90103',phase:5,pass,nolog,setvar:TX.perf_application=-%{TX.ModSecTimestamp2end}"
-SecAction "id:'90104',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=%{PERF_PHASE3}"
-SecAction "id:'90105',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=+%{PERF_PHASE4}"
-SecAction "id:'90106',phase:5,pass,nolog,setenv:ModSecTimeIn=%{TX.perf_modsecinbound}"
-SecAction "id:'90107',phase:5,pass,nolog,setenv:ApplicationTime=%{TX.perf_application}"
-SecAction "id:'90108',phase:5,pass,nolog,setenv:ModSecTimeOut=%{TX.perf_modsecoutbound}"
-SecAction "id:'90109',phase:5,pass,nolog,setenv:ModSecAnomalyScoreIn=%{TX.inbound_anomaly_score}"
-SecAction "id:'90110',phase:5,pass,nolog,setenv:ModSecAnomalyScoreOut=%{TX.outbound_anomaly_score}"
-
+SecAction "id:90100,phase:5,pass,nolog,\
+  setvar:TX.perf_modsecinbound=%{PERF_PHASE1},\
+  setvar:TX.perf_modsecinbound=+%{PERF_PHASE2},\
+  setvar:TX.perf_application=%{TX.ModSecTimestamp3start},\
+  setvar:TX.perf_application=-%{TX.ModSecTimestamp2end},\
+  setvar:TX.perf_modsecoutbound=%{PERF_PHASE3},\
+  setvar:TX.perf_modsecoutbound=+%{PERF_PHASE4},\
+  setenv:ModSecTimeIn=%{TX.perf_modsecinbound},\
+  setenv:ApplicationTime=%{TX.perf_application},\
+  setenv:ModSecTimeOut=%{TX.perf_modsecoutbound},\
+  setenv:ModSecAnomalyScoreIn=%{TX.inbound_anomaly_score},\
+  setenv:ModSecAnomalyScoreOut=%{TX.outbound_anomaly_score}"
 
 
 SSLCertificateKeyFile   /etc/ssl/private/ssl-cert-snakeoil.key
 SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
 
 SSLProtocol             All -SSLv2 -SSLv3
-SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM !MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
+SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM !MD5 \
+!EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
 SSLHonorCipherOrder     On
 
 SSLRandomSeed           startup file:/dev/urandom 2048
@@ -305,7 +315,7 @@ Auf der nächsten Zeile beginnt die ModSecurity Grundkonfiguration: In diesem Te
 
 Auf der Response-Seite schalten wir den Body-Access auch ein und legen wiederum eine Limite von 10MB fest. Hier gibt es die Unterscheidung in Formular- und File-übertragung nicht; es sind alles Files.
 
-Nun folgt der reservierte Speicher für die _PCRE-Library_. Die ModSecurity-Dokumentation schlägt einen Wert von 1500 Bytes vor. Dies führt in der Praxis aber rasch zu Problemen. Unsere Grundkonfiguration mit einer Limite von 15000 ist etwas robuster. Falls immer noch Probleme auftreten, so sind auch Werte über 100000 gut verkraftbar; der Speicherbedarf wächst einfach ein wenig.
+Nun folgt der reservierte Speicher für die _PCRE-Library_. Die ModSecurity-Dokumentation schlägt einen Wert von 1000 Bytes vor. Dies führt in der Praxis aber rasch zu Problemen. Unsere Grundkonfiguration mit einer Limite von 100000 ist etwas robuster. Falls immer noch Probleme auftreten, so sind auch Werte über 100000 gut verkraftbar; der Speicherbedarf wächst einfach ein wenig.
 
 ModSecurity benötigt drei Verzeichnisse zur Datenablage. Wir legen alle auf das _tmp-Verzeichnis_. Dies ist für einen produktiven Betrieb natürlich der falsche Ort, aber für erste Gehversuche passt es und es ist nicht leicht, allgemeingültige Empfehlungen für die richtige Wahl dieses Verzeichnisses zu geben, denn die lokale Umgebung spielt eine grosse Rolle. Bei den besagten Verzeichnissen geht es um temporäre Daten, dann um Session-Daten die über einen Server-Restart hinaus erhalten bleiben sollen, und schliesslich um eine Zwischenablage für File-Uploads, die während der überprüfung nicht zuviel Hauptspeicher besetzen dürfen und ab einer bestimmten Grösse auf die Festplatte ausgelagert werden.
 
@@ -360,17 +370,19 @@ Die Regel mit der ID 90005 ist auskommentiert. Wir können sie einschalten, um m
 
 Soweit zu diesem Performance Teil. Es folgen nun die Regeln, welche durch das *ModSecurity* Projekt in der Beispielkonfigurationsdatei vorgeschlagen werden. Sie besitzen Regel IDs ab 200'000 und sind nicht sehr zahlreich. Die erste Regel untersucht den _Request Header Content-Type_. Die Regel greift, wenn dieser Header dem Text _text/xml_ entspricht. Sie wird in Phase 1 evaluiert. Nach der Phase folgt die Anweisung _t:none_. Dies bedeutet _Transformation: none_. Wir möchten die Parameter des Requests also vor der Verarbeitung dieser Regel nicht transformieren. Nach _t:none_ kommt eine Transformation mit dem selbsterklärenden Namen _t:lowercase_ auf dem Text zur Anwendung. Mit _t:none_ löschen wir also alle allenfalls vordefinierten Default-Transformationen und führen dann _t:lowercase_ aus. Das heisst, dass wir auf dem _Content-Type_ Header sowohl _text/xml_ als auch _Text/Xml_, _TEXT/XML_ und alle Kombinationen greifen werden. Schlägt diese Regel an, dann führen wir ganz hinten auf der Zeile eine _Control-Action_ durch: Wir wählen _XML_ als Prozessor des _Request Bodys_. Ein Detail bleibt noch zu erklären: Die vorangegangene, auskommentierte Regel führte den Operator _@beginsWith_ ein. Hier ist im Gegensatz dazu kein Operator bezeichnet. Damit kommt der _Default-Operator @rx_ zur Anwedung. Dies ist eine Operator für reguläre Ausdrücke (_RegEx_). _beginsWith_ ist erwartungsgemäss ein sehr schneller Operator; die Arbeit mit Regular Expression ist dem gegenüber sehr schwerfällig und langsam.
 
+Die nächste Regel ist eine beinahe identische Kopie dieser Regel. Sie wendet denselben Mechanism an, um mittels des JSON Prozessors den _Request Body_ zugänglich zu machen. Dies erlaubt uns, die einzelnen Parameter innerhalb der übermittelten Daten anzusprechen.
+
 Die nächste Regel ist wiederum etwas komplizierter. Wir untersuchen die interne Variable *REQBODY_ERROR*. Im Bedingungsteil nehmen wir den numerischen Vergleichsoperator _@eq_. Das vorangestellte Ausrufezeichen negiert seinen Wert. Die Syntax meint also, falls der *REQBODY_ERROR* nicht gleich null ist. Natürlich könnten wir hier auch mit einem regulären Ausdruck arbeiten, aber der _@eq_ Operator ist in der Verarbeitung durch das Modul effizienter. Im Aktions-Teil der Regel kommt erstmals ein _deny_ zur Anwendung. Der Request soll also blockiert werden, falls die Verarbeitung des Request Bodies zu einem Fehler führte. Konkret retournieren wir den HTTP Status Code _400 Bad Request_ (_status:400_). Wir möchten erstmals loggen und geben die Nachricht vor. Zusätzlich loggen wir als weitere Informationen in einem separaten Logfeld namens _logdata_ die genaue Bezeichnung des Fehlers. Diese Information wird sowohl im Error-Log als auch im Audit-Log des Servers auftauchen. Zu guter Letzt wird der Regel die _Severity_, also die _Schwere_, 2 zugewiesen. Dies ist ein Grad für die Wichtigkeit der Regel, was bei der Auswertung von sehr vielen Regelverletzungen genützt werden kann.
 
-Die Regel mit der Identifikation 200002 kümmert sich ebenfalls um Fehler im Request Body. Es geht um _Multipart HTTP Bodies_. Dies kommt dann zum tragen, wenn Dateien via HTTP Requests an den Server übermittelt werden sollen. Dies ist einerseits sehr gebräuchlich, aber andererseits ein grosses Sicherheitsproblem. ModSecurity untersucht _Multipart HTTP Bodies_ deshalb sehr genau. Es besitzt eine interne Variable namens *MULTIPART_STRICT_ERROR*, welche die zahlreichen Checks zusammenfasst. Sollte hier ein anderer Wert als 0 stehen, dann blockieren wir den Request mit dem Status Code 403 (_Forbidden_). In der Logmeldung rapportieren wir dann die Resultate der einzelnen Checks. In der Praxis ist zu wissen, dass diese Rule in sehr seltenen Fällen auch bei legalen Requests anschlagen könnte. Falls dies der Fall ist, muss sie gebenenfalls adaptiert oder als _False Positive_ ausgeschaltet werden. Wir werden weiter unten auf die Ausmerzung von False Positives zurückkommen und in einer späteren Anleitung das Thema im Detail kennenlernen.
+Die Regel mit der Identifikation 200003 kümmert sich ebenfalls um Fehler im Request Body. Es geht um _Multipart HTTP Bodies_. Dies kommt dann zum tragen, wenn Dateien via HTTP Requests an den Server übermittelt werden sollen. Dies ist einerseits sehr gebräuchlich, aber andererseits ein grosses Sicherheitsproblem. ModSecurity untersucht _Multipart HTTP Bodies_ deshalb sehr genau. Es besitzt eine interne Variable namens *MULTIPART_STRICT_ERROR*, welche die zahlreichen Checks zusammenfasst. Sollte hier ein anderer Wert als 0 stehen, dann blockieren wir den Request mit dem Status Code 403 (_Forbidden_). In der Logmeldung rapportieren wir dann die Resultate der einzelnen Checks. In der Praxis ist zu wissen, dass diese Rule in sehr seltenen Fällen auch bei legalen Requests anschlagen könnte. Falls dies der Fall ist, muss sie gebenenfalls adaptiert oder als _False Positive_ ausgeschaltet werden. Wir werden weiter unten auf die Ausmerzung von False Positives zurückkommen und in einer späteren Anleitung das Thema im Detail kennenlernen.
 
 Die Beispielkonfiguration der ModSecurity Distribution weist im Weiteren eine Regel mit der Identifikation 200003 auf. Ich habe sie aber nicht in die Anleitung übernommen, da sie in der Praxis zu viele legitime Anfragen blockiert (_False Positives_). Es wird die Variable *MULTIPART_UNMATCHED_BOUNDARY* überprüft. Dieser Wert, der einen Fehler in der Abgrenzung der Multipart Bodies bezeichnet, ist fehleranfällig und rapportiert häufig Textschnippsel, die keine Abgrenzungen meinen. In der Praxis hat sie sich aus meiner Sicht nicht bewährt.
 
-Mit 200004 folgt eine weitere Regel, welche interne Verarbeitungs-Fehler abfängt. Im Gegensatz zu den vorangegangenen internen Variablen suchen wir hier aber nach einer Gruppe von Variablen, welche dem laufenden Request dynamisch mitgegeben werden. Für jeden Request wird ein Datenblatt namens _TX_ (Transaktion) eröffnet. Im ModSecurity Jargon spricht man von einer _Collection_, also einer Sammlung von Variablen und Werten. Während der Verarbeitung einer Anfrage setzt ModSecurity nun unter Umständen neben den bereits untersuchten Variablen auch noch Werte in der _TX Collection_. Die Namen dieser Variablen beginnen mit dem Prefix *MSC_*. Wir greifen nun parallel auf sämtliche Variablen dieses Musters in der Sammlung zu. Dies geschieht über die Konstruktion *TX:/^MSC_/*. Also die Transaktions-Collection und dann Variable-Namen auf welche der Reguläre Ausdruck *^MSC_* passt: Ein Wortbeginn mit *MSC_*. Sollte eine dieser gefundenen Variablen nicht gleich null sein, dann blockieren wir den Request mit dem HTTP Status 500 (_Internal Server Error_) und rapportieren in der Log-Datei den Variable-Namen.
+Mit 200005 folgt eine weitere Regel, welche interne Verarbeitungs-Fehler abfängt. Im Gegensatz zu den vorangegangenen internen Variablen suchen wir hier aber nach einer Gruppe von Variablen, welche dem laufenden Request dynamisch mitgegeben werden. Für jeden Request wird ein Datenblatt namens _TX_ (Transaktion) eröffnet. Im ModSecurity Jargon spricht man von einer _Collection_, also einer Sammlung von Variablen und Werten. Während der Verarbeitung einer Anfrage setzt ModSecurity nun unter Umständen neben den bereits untersuchten Variablen auch noch Werte in der _TX Collection_. Die Namen dieser Variablen beginnen mit dem Prefix *MSC_*. Wir greifen nun parallel auf sämtliche Variablen dieses Musters in der Sammlung zu. Dies geschieht über die Konstruktion *TX:/^MSC_/*. Also die Transaktions-Collection und dann Variable-Namen auf welche der Reguläre Ausdruck *^MSC_* passt: Ein Wortbeginn mit *MSC_*. Sollte eine dieser gefundenen Variablen nicht gleich null sein, dann blockieren wir den Request mit dem HTTP Status 500 (_Internal Server Error_) und rapportieren in der Log-Datei den Variable-Namen.
 
 Wir haben nun einige Regeln angesehen und das prinzipielle Funktionieren der _WAF_ ModSecurity kennengelernt. Die Regelsprache ist anspruchsvoll, aber sehr systematisch. Die Struktur orientiert sich dabei zwangsläufig an der Struktur von Apache Direktiven. Denn bevor ModSecurity die Direktiven verarbeiten kann, werden sie durch den Konfigurationsparser von Apache eingelesen. Dies bringt auch die Komplexität in der Ausdrucksweise mit sich. Gegenwärtig wird *ModSecurity* in eine Richtung weiterentwickelt, welche das Modul von Apache frei macht. Wir werden hoffentlich via einfacher zu lesende Konfigurationen davon profitieren.
 
-In der Konfigurationsdatei folgt nun ein Kommentar, der den Platz markiert, um weitere Regeln einzugeben. Nach diesem Block, der unter Umständen sehr gross werden kann, folgen noch einige Regeln, welche Performance-Daten für das oben definierte Performance-Log zur Verfügung stellen. Der Block mit den Rule-IDs 90010 bis 90014 speichert den Zeitpunkt des Endes der einzelnen ModSecurity-Phasen ab. Dies korrespondiert mit dem oben kennengelernten Block der IDs 90000 - 90004. Im letzten ModSecurity-Block wird dann mit den erhobenen Performance-Daten gerechnet. Für uns bedeutet dies, dass wir die Zeit, welche Phase 1 und Phase 2 benötigten, zur Variable *perf_modsecinbound* zusammenrechnen. In der Regel mit der ID 90100 wird diese Variable auf die Performance der Phase 1 gesetzt, in der folgenden Regel wird die Performance der Phase 2 hinzuaddiert. Die Variable *perf_application* müssen wir aus den Timestamps herausrechnen. Wir ziehen dazu das Ende der Phase 2 vom Start der Phase 3 ab (Rule ID 90102 und 90103). Dies ist natürlich keine ganz exakte Berechnung der Zeit, welche die Applikation selbst auf dem Server benötigte, denn es spielen je nach dem auch noch andere Apache-Module hinein (die Authentifizierung etwa), aber der Wert ist ein Hinweis, der Aufschluss darüber gibt, ob tatsächlich ModSecurity die Performance einschränkt, oder ob das Problem eher bei der Applikation liegt. In den Rule IDs 90104 und 5 schliesslich noch die Berechnung des Zeitverbrauchs der Phase 3 und 4, analog zu den Phasen 1 und 2. Damit haben wir die drei relevanten Werte, welche die Performance einfach zusammenfassen: *perf_modsecinbound*, *perf_application* und *perf_modsecoutbound*. Sie werden im separaten Performance-Log ausgewiesen. Allerdings haben wir auch im normalen Zugriffslog einen Platz für diese drei Werte vorgesehen. Dort haben wir sie _ModSecTimeIn_, _ApplicationTime_ und _ModSecTimeOut_. In den Regeln 90106 bis 90108 exportieren wir unsere _perf_-Werte in die entsprechenden Umgebungsvariabeln, damit sie im _Access-Log_ angezeigt werden können. Zum Schluss noch die Regeln 90109 und 90110. In diesen Exportieren wir die _OWASP ModSecurity Core Rules_ Anomalie-Werte. Diese Werte werden noch nicht geschrieben, aber da wir diese Regeln in der nächsten Anleitung bereitstellen werden, können wir den Variable-Export hier schon vorbereiten.
+In der Konfigurationsdatei folgt nun ein Kommentar, der den Platz markiert, um weitere Regeln einzugeben. Nach diesem Block, der unter Umständen sehr gross werden kann, folgen noch einige Regeln, welche Performance-Daten für das oben definierte Performance-Log zur Verfügung stellen. Der Block mit den Rule-IDs 90010 bis 90014 speichert den Zeitpunkt des Endes der einzelnen ModSecurity-Phasen ab. Dies korrespondiert mit dem oben kennengelernten Block der IDs 90000 - 90004. Im letzten ModSecurity-Block wird dann mit den erhobenen Performance-Daten gerechnet. Für uns bedeutet dies, dass wir die Zeit, welche Phase 1 und Phase 2 benötigten, zur Variable *perf_modsecinbound* zusammenrechnen. In der Regel mit der ID 90100 wird diese Variable zunächst auf die Performance der Phase 1 gesetzt. Daran anschliessend wird die Performance der Phase 2 hinzuaddiert. Die Variable *perf_application* müssen wir aus den Timestamps herausrechnen. Wir ziehen dazu das Ende der Phase 2 vom Start der Phase 3 ab. Dies ist natürlich keine ganz exakte Berechnung der Zeit, welche die Applikation selbst auf dem Server benötigte, denn es spielen je nach dem auch noch andere Apache-Module hinein (die Authentifizierung etwa), aber der Wert ist ein Hinweis, der Aufschluss darüber gibt, ob tatsächlich ModSecurity die Performance einschränkt, oder ob das Problem eher bei der Applikation liegt. Auf den verbleibenden Zeilen der Regel folgt schliesslich noch die Berechnung des Zeitverbrauchs der Phase 3 und 4, analog zu den Phasen 1 und 2. Damit haben wir die drei relevanten Werte, welche die Performance einfach zusammenfassen: *perf_modsecinbound*, *perf_application* und *perf_modsecoutbound*. Sie werden im separaten Performance-Log ausgewiesen. Allerdings haben wir auch im normalen Zugriffslog einen Platz für diese drei Werte vorgesehen. Dort haben wir sie _ModSecTimeIn_, _ApplicationTime_ und _ModSecTimeOut_ genannt. Wir schreiben nun unsere _perf_-Werte in diese Umgebungsvariabeln, damit sie im _Access-Log_ angezeigt werden können. Zum Schluss exportieren wir die Anomalie-Werte aus dem _OWASP ModSecurity Core Rule Set_. Diese Werte werden noch nicht geschrieben, aber da wir diese Regeln in der nächsten Anleitung bereitstellen werden, können wir den Variable-Export hier schon vorbereiten.
 
 Damit sind wir nun soweit, dass wir das Performance-Log verstehen können. Die obenstehende Definition bringt die folgenden Teile:
 
@@ -395,8 +407,6 @@ Perf-GarbageCollection: %{PERF_GC}M \
 Perf-ModSecLogging: %{PERF_LOGGING}M \
 Perf-ModSecCombined: %{PERF_COMBINED}M" perflog
 ```
-
-
 
    * %{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t meint wie in unserem Standard-Log die Timestamp des Empfangs der Requestzeile in der Genauigkeit von Microsekunden.
    * %{UNIQUE_ID}e : Die Unique-ID des Requests
@@ -474,119 +484,147 @@ Diese Angaben finden wir auch noch ausführlicher im oben besprochenen _Audit-Lo
 
 ###Schritt 8: Einfache Whitelist Regeln schreiben
 
-Mit der im Schritt 7 beschriebenen Regel konnten wir den Zugriff auf eine bestimmte URL verhindern. Nun werden wir den umgekehrten Fall behandeln: Wir möchten sicher stellen, dass nur noch auf eine bestimmte URL zugegriffen werden kann. Darüber hinaus werden wir nur noch vorher bekannte _POST-Parameter_ in einem vorgegebenen Format akzeptieren. Eine solche Whitelist Regel zu schreiben, das geht so:
+Mit der im Schritt 7 beschriebenen Regel konnten wir den Zugriff auf eine bestimmte URL verhindern. Nun werden wir den umgekehrten Fall behandeln: Wir möchten sicher stellen, dass nur noch auf eine bestimmte URL zugegriffen werden kann. Darüber hinaus werden wir nur noch vorher bekannte _POST-Parameter_ in einem vorgegebenen Format akzeptieren. Dies stellt eine sehr strikte Sicherungstechnik dar, die man auch "Positive Sicherheit" (Positive Security) nennt: Nicht mehr länger versuchen wir nach Zeichen eines Angriffes in den Anfragen zu suchen. Nun muss der User uns beweisen, dass seine Anfrage sämtliche unsere Kriterien erfüllt.
+
+Unser Beispiel ist eine Whitelist behandelt ein Login Formular mit der Anzeige des Formulars, der Übermittlung von Usernamen und Passwort sowie dem Logout. Tatsächlich habe wir das entsprechende Login Formular nicht auf dem Server installiert. Dies hindert uns aber nicht, diese hypothetische Anwendung in unserem Labor Setup zu schützen. Und wenn wir einen Login oder eine andere kleine Anwendung haben, die wir schützen möchten, dann eignet sich der Code hier als Vorlage die sich dann anpassen lässt.
+
+Hier sind die Regeln, ich werde Sie danach im Detail erklären:
 
 ```bash
 
-SecMarker "BEGIN_LOGIN_WHITELIST"
+SecMarker BEGIN_WHITELIST_login
 
-SecRule REQUEST_FILENAME     "!@beginsWith /login" "id:10001,phase:1,pass,t:lowercase,\
-                              t:normalisePath,nolog,msg:'Skipping',skipAfter:END_LOGIN_WHITELIST"
-SecRule REQUEST_FILENAME     "!@beginsWith /login" "id:10002,phase:2,pass,t:lowercase,\
-                              t:normalisePath,nolog,msg:'Skipping',skipAfter:END_LOGIN_WHITELIST"
+# Make sure there are no URI evasion attempts
+SecRule REQUEST_URI "!@streq %{REQUEST_URI_RAW}" \
+    "id:10000,phase:1,deny,t:normalizePathWin,log,\
+    msg:'URI evasion attempt'"
 
-SecRule REQUEST_FILENAME     "!^/login/(index.html|login.do)$" \
-                             "id:10003,phase:1,deny,log,msg:'Unknown Login URL',\
-                              tag:'Whitelist Login'"
+# START whitelisting block for URI /login
+SecRule REQUEST_URI "!@beginsWith /login" \
+    "id:10001,phase:1,pass,t:lowercase,nolog,skipAfter:END_WHITELIST_login"
+SecRule REQUEST_URI "!@beginsWith /login" \
+    "id:10002,phase:2,pass,t:lowercase,nolog,skipAfter:END_WHITELIST_login"
 
-SecRule ARGS_GET_NAMES       "!^()$" "id:10004,phase:1,deny,log,\
-                              msg:'Unknown Query-String Parameter',tag:'Whitelist Login'"
-SecRule ARGS_POST_NAMES      "!^(username|password)$" "id:10005,phase:2,deny,log,\
-                              msg:'Unknown Post Parameter',tag:'Whitelist Login'"
+# Validate HTTP method
+SecRule REQUEST_METHOD "!@pm GET HEAD POST OPTIONS" \
+    "id:10100,phase:1,deny,log,tag:'Login Whitelist',\
+    msg:'Method %{MATCHED_VAR} not allowed'"
 
-SecRule &ARGS_POST:username  "@gt 1" "id:10006,phase:2,deny,log,\
-                              msg:'%{MATCHED_VAR_NAME} occurring more than once',\
-                              tag:'Whitelist Login'"
-SecRule &ARGS_POST:password  "@gt 1" "id:10007,phase:2,deny,log,\
-                              msg:'%{MATCHED_VAR_NAME} occurring more than once',\
-                              tag:'Whitelist Login'"
+# Validate URIs
+SecRule REQUEST_FILENAME "@beginsWith /login/static/css" \
+    "id:10200,phase:1,pass,nolog,tag:'Login Whitelist',\
+    skipAfter:END_WHITELIST_URIBLOCK_login"
+SecRule REQUEST_FILENAME "@beginsWith /login/static/img" \
+    "id:10201,phase:1,pass,nolog,tag:'Login Whitelist',\
+    skipAfter:END_WHITELIST_URIBLOCK_login"
+SecRule REQUEST_FILENAME "@beginsWith /login/static/js" \
+    "id:10202,phase:1,pass,nolog,tag:'Login Whitelist',\
+    skipAfter:END_WHITELIST_URIBLOCK_login"
+SecRule REQUEST_FILENAME \
+    "@rx ^/login/(displayLogin|login|logout|).do$" \
+    "id:10250,phase:1,pass,nolog,tag:'Login Whitelist',\
+    skipAfter:END_WHITELIST_URIBLOCK_login"
 
-SecRule ARGS_POST:username   "!^[a-zA-Z0-9_-]{1,16}$" "id:10008,phase:2,deny,log,\
-                              msg:'%{MATCHED_VAR_NAME} parameter does not meet value domain',\
-                              tag:'Whitelist Login'"
-SecRule ARGS_POST:password   "!^[a-zA-Z0-9@#+<>_-]{1,16}$" \
-                             "id:10009,phase:2,deny,log,\
-                              msg:'%{MATCHED_VAR_NAME} parameter does not meet value domain',\
-                              tag:'Whitelist Login'"
+# If we land here, we are facing an unknown URI,
+# which is why we will respond using the 404 status code
+SecAction "id:10299,phase:1,deny,status:404,log,tag:'Login Whitelist',\
+    msg:'Unknown URI %{REQUEST_URI}'"
 
-SecMarker "END_LOGIN_WHITELIST"
+SecMarker END_WHITELIST_URIBLOCK_login
 
+# Validate parameter names
+SecRule ARGS_NAMES "!@rx ^(username|password|sectoken)$" \
+    "id:10300,phase:2,deny,log,tag:'Login Whitelist',\
+    msg:'Unknown parameter: %{MATCHED_VAR_NAME}'"
+
+# Validate each parameter's cardinality
+SecRule &ARGS:username  "@gt 1" \
+    "id:10400,phase:2,deny,log,tag:'Login Whitelist',\
+    msg:'%{MATCHED_VAR_NAME} occurring more than once'"
+SecRule &ARGS:password  "@gt 1" \
+    "id:10401,phase:2,deny,log,tag:'Login Whitelist',\
+    msg:'%{MATCHED_VAR_NAME} occurring more than once'"
+SecRule &ARGS:sectoken  "@gt 1" \
+    "id:10402,phase:2,deny,log,tag:'Login Whitelist',\
+    msg:'%{MATCHED_VAR_NAME} occurring more than once'"
+
+# Check individual parameters
+SecRule ARGS:username "!@rx ^[a-zA-Z0-9.@-]{1,32}$" \
+    "id:10500,phase:2,deny,log,tag:'Login Whitelist',\
+    msg:'Invalid parameter format: %{MATCHED_VAR_NAME} (%{MATCHED_VAR})'"
+SecRule ARGS:sectoken "!@rx ^[a-zA-Z0-9]{32}$" \
+    "id:10501,phase:2,deny,log,tag:'Login Whitelist',\
+    msg:'Invalid parameter format: %{MATCHED_VAR_NAME} (%{MATCHED_VAR})'"
+SecRule ARGS:password "@gt 64" \
+    "id:10502,phase:2,deny,log,t:length,tag:'Login Whitelist',\
+    msg:'Invalid parameter format: %{MATCHED_VAR_NAME} too long (%{MATCHED_VAR} bytes)'"
+SecRule ARGS:password "@validateByteRange 33-244" \
+    "id:10503,phase:2,deny,log,tag:'Login Whitelist',\
+    msg:'Invalid parameter format: %{MATCHED_VAR_NAME} (%{MATCHED_VAR})'"
+
+SecMarker END_WHITELIST_login
 ```
 
-Da es sich um ein mehrzeiliges Regelwerk handelt, begrenzen wir die Gruppe von Regeln mit zwei Markierungen: *BEGIN_LOGIN_WHITELIST* und *END_LOGIN_WHITELIST*. Den ersten Marker benötigen wir nur zur Lesbarkeit, den zweiten als Sprungmarke. Mit der ersten Regel (id 10001) stellen wir nämlich fest, ob unsere Regelgruppe überhaupt betroffen ist. Sollte der kleingeschriebene und normalisierte Pfad nicht mit _/login_ beginnen, so springen wir - ohne Eintrag im Logfile übrigens - zur End-Markierung. Wir umgehen so den ganzen Regelblock. (Es wäre möglich, diesen ganzen Regelblock innerhalb eines Apache *Location*-Blockes zu platzieren. Ich bevorzuge aber die hier vorgestellte Schreibweise). Danach folgen unsere eigentlichen Regeln. Eine HTTP-Anfrage besitzt mehrere Charakteristiken, die für uns von Belang sind: Den Pfad, Query-String Parameter sowie allfällige Post-Parameter (es geht ja um einen Login mittels Benutzername und Passwort). Request-Header inklusive der Cookies lassen wir in diesem Beispiel weg, aber sie könnten je nach Applikation auch zu Schwachstellen werden und sollten dann auch abgefragt werden.
+Da es sich um ein mehrzeiliges Regelwerk handelt begrenzen wir das Rezept mit zwei Markern: *BEGIN_WHITELIST_login* und *END_WHITELIST_login*. Den ersten der beiden Marker setzen wir nur aus Gründen der Lesbarkeit, er wird nicht aktiv verwendet. Beim zweiten ist das anders, er wird als Sprungmarke eingesetzt. Die erste Regel (ID 10000) forciert unsere Maxime zwei aufeinander folgende Punkte in einer URI zu verbieten. Zwei aufeinander folgende Punkte könnten dazu benützt werden, die weiter unten folgenden Pfad-Kriterien zu umgehen. Das heisst, eine URI zu konstruieren, welche auf einen bestimmten Pfad verweist, aber dann weiter hinten in der URI mittels `..` daraus ausbricht, um schlussendlich eben doch auf `/login` zu landen. Diese Regel stellt sicher, dass keines dieser Spielchen auf unserem Server gespielt werden kann.
 
-Zunächst ist nun also der Pfad zu prüfen (id 10002). Wir kennen unter */login* zwei Pfade, die wir akzeptieren: _/login/index.html_ und _/login/login.do_. Alles andere wird an der Regel 10002 scheitern. Anders als bei den _Blacklisting Rules_ brauchen wir uns jetzt nicht mehr um Transformationen zu kümmern. Denn jeder Pfad, der nicht mehr unserem Muster entspricht, wird ohnehin blockiert werden.
+In den folgenden zwei Regeln, (ID 100001 und 10002) überprüfen wir, ob unsere Regeln überhaupt betroffen sind. Falls der in Kleinbuchstaben geschriebene und komplett normalisierte Pfad nicht mit `/login` beginnt, springen wir zur End-Marke unseres Blocks; ohne Eintrag im Logfile. Es wäre möglich, den gesamten Regel Block in einem Apache *Location* Block unterzurbingen. Allerdings bevorzuge ich es, so zu arbeiten wie oben präsentiert. Die Whitelist, welche wir hier konstruieren, ist eine partielle Whitelist, da sie nicht den gesamten Server umfasst. Vielemhr konzentriert sie sich auf den Login, der von anonymen Usern angesprochen werden kann. Sobald diese User die Authentifizierung durchgeführt haben, so haben sie zumindest ihre Credentials belegt und ein gewisses Vertrauen ist etabliert. Der Login ist deshalb ein wahrscheinliches Ziel für anonyme Angreifer und wir möchten ihn besonders gut sichern. Es ist auch anzunehmen, dass jede Applikation auf dem Server komplexer als der Login ist, und das Schreiben eines positiven Regelwerks für so eine fortschrittliche Applikation wäre zu kompliziert für dieses Anleitungsdokument. Aber der limitierte Umfang eines Login macht es überblickbar und insgesamt gut machbar, eine grosse Verbesserung bei der Sicherheit zu erreichen. Das Beispiel eignet sich zudem für weitere partielle Whitelists.
 
-Danach kümmern wir uns um die zugelassenen Query-String- und Post-Parameter (id 10003 und 10004). Wir akzeptieren keine Query-String-Parameter (die entsprechende Rule liesse sich auch einfacher Schreiben, aber so wie sie dasteht ist sie bereit für das Einfüllen von zugelassenen Parametern). Als Post-Parameter kommen nur _username_ und _password_ in Frage. Jeder andere Parameter führt zu einer Blockade. Die Regeln 10005 und 10006 kümmern sich um eine gängige Methode von Angreifern, Sicherheitsregeln zu umgehen: Sie senden einen Parameter mehrmals und hoffen, dass die Web Application Firewall nicht jedes einzelne Vorkommen überprüft und dass es auf dem Applikationsserver zur Anwendung kommt. Wir zählen das Vorkommen der Parameter und stellen sicher, dass sie nie mehr als ein Mal auftauchen.
+Nachdem wir nun festgestellt haben, dass wir es tatsächlich mit einer Login-Anfrage zu tun haben, können wir unsere Regeln, die den Request überprüfen, nacheinander niederschreiben. Ein HTTP Request hat mehrere Charakteristiken die uns betreffen: Die Methode, der Pfad, der Query String Parameter, des weiteren Post Parameter (das betrifft die Übermittlung der Login-Credentials). In unserem Beispiel lassen wir die Request Header und die Cookies weg. Aber tatsächlich könnten sie je nach Applikation zu einer Schwachstelle werden und sollten dann auch überprüft werden.
 
-Damit bleiben die beiden finalen Regeln 10007 und 10008. Sie geben die Muster vor, denen die Parameter _Username_ und _Passwort_ entsprechen müssen. In der Regel 10007 blockieren wir die Nachricht, wenn der Username länger als 16 Zeichen ist und Zeichen jenseits von Buchstaben, Ziffern, "*_*" und dem Bindestrich enthält. Dieses Muster ist natürlich gegebenenfalls anzupassen. Die Regel 10008 erlaubt beim _Passwort-Parameter_ noch einige weitere Zeichen, verhält sich sonst aber identisch.
+Zunächst schauen wir uns in der Regel mit der ID 10100 die HTTP Methode an. Bei der Anzeige des Login Formulars handelt sich um einen _GET_ Request; bei der Übermittlung der Login-Daten handelt es sich um eine _POST_ Request. Manche Clients senden dazwischen bisweilen auch _HEAD_ und _OPTIONS_ Requests, was eigentlich harmlos ist, weshalb wir es gut erlauben können. Alles andere, _PUT_ und _DELETE_ und all die WebDav Methoden, werden durch diese Regel blockiert. Wir testen die vier Methoden mittels dem parallel arbeitenden `@pm` Operator. Er ist schneller als ein regulärer Ausdruck und darüber hinaus auch lesbarer.
 
-Mit diesem Regelblock sind wir nun sicher, dass der Zugriff auf _/login_ nur noch in sehr engen Schranken erlaubt ist. Wir haben damit ein Grundgerüst von Whitelisting Regeln geschrieben, das sich für kompliziertere Applikationsteile wiederverwenden lässt.
+Im Regel Block, der mit der ID 10200 beginnt, untersuchen wir die URI im Detail. Wir definieren drei Verzeichnisse, in denen wir Zugriff auf statische Daten zulassen: `/login/static/css/`, `/login/static/img/` und `/login/static/js/`. Wir haben kein Interesse, die Files in diesen Verzeichnissen im Micromanagement zu verwalten. Deshalb erlauben wir einfach den Zugriff auf diese Verzeichnisse. Bei der Regel mit der ID 10250 ist es anders. Sie definiert die Ziele der dynamischen Zugriffe der User. Wir konstruieren einen regulären Ausdruck, der exakt drei URIs erlaubt: `/login/displayLogin.do`, `/login/login.do` und `/login/logout.do`. Alles ausserhalb dieser Liste ist verboten.
+
+Aber wie wird das alles überprüft? Schliesslich handelt es sich ja um einen komplizierten Satz von Pfaden und alles verteilt sich über mehrere Regeln! Die Regeln 10200, 10201, 10202 und 10250 betrachten die URI. Wenn wir einen Treffer haben, dann blockieren wir aber nicht, sondern springen zum Marker `END_WHITELIST_URIBLICK_login`. Wenn wir bei dieser Sprungmarke ankommen, dann wissen wir, dass es sich um eine URI aus unserer vordefinierten Liste handelt; die Anfrage entspricht unseren Regeln. Wenn wir aber 10250 passiert haben und immer noch kein Treffer uns zur Sprungmarke führte, dann wissen wir, dass der Client eine unbekannte URI aufgerufen hat und wir können ihn sofort blockieren. Dies geschieht in der Fallback Regel mit der ID 10299. Man beachte, dass es sich hierbei nicht mehr länger um eine konditionale _SecRule_ Direktive handelt, sondern um _SecAction_, welche dieselbe Funktionalität erlaubt, aber ohne Operator und ohne Parameter. Die Actions der Regel werden sogleich ausgeführt und blockieren in unserem Fall den Request. Dann gibt es aber noch einen Kniff: Wir teilen dem Client nicht einfach mit, dass sein Request verboten war (HTTP Status _403_, das bei einem Deny eigentlich der Default Status Code wäre). Stattdessen retournieren wir einen HTTP Status 404 und lassen den Client damit im Dunkeln über die Existenz des Regelwerks.
+
+Nun wenden wir uns den Parametern zu. Es gibt Query String und Post Parameter. Wir könnten Sie separat betrachten. Aber es ist einfacher, sie als eine Gruppe zu betrachten. Die POST Parameter werden erst in der zweiten Phase zur Verfügung stehen. Das bedeutet, dass sämtliche Regeln hier bis zum Ende der Whitelist in der Phase 2 funktionieren.
+
+Es gibt drei Dinge, welche wir bei jedem Parameter zu überprüfen haben: der Name (Kennen wir den Parameter?), die Kardinalität (Wurde er mehr als ein Mal übermittelt? Ich werde das in Kürze erklären) und das Format (Folgt der Parameter einem vorgegebenen Muster?).
+Wir führen diese Checks nacheinander in einem Block ab der Regel ID 10300 durch. Hier prüfen wir eine vordefinierte Liste von Parametern nicht mit Hilfe des `@pm` Operators. Wir erwarten drei individuelle Parameter: _username_, password und _sectoken_. Alles ausserhalb dieser Liste ist verboten. Anders als bei der Überprüfung der HTTP Methode benützen wir hier einen regulären Ausdruck, auch wenn die Regel durch Verwendung des `@pm` Operators lesbarer würde. Der Grund ist, dass der parallele Matching Algorithmus unterscheidet nicht zwischen Gross- und Kleinschreibung. Es wäre also möglich, einen Parameter mit Namen _userName_ zu übermitteln und er würde diese Regel passieren. Die folgenden Regeln würden ihn dann aber je nachdem übersehen, da sie nicht mit dem merkwürdigen Grossbuchstaben _N_ rechnen. Bleiben wir hier also bei der RegEx.
+
+Was hat es nun mit der Überprüfung der Kardinalität auf sich? Ich will es so erklären: Nehmen wir an, ein Angreifer übermittelt einen Parameter zwei Mal innerhalb desselben Requests. Was geschieht nun in der Applikation?  Wird die Applikation die erste Version berücksichtigen? Die zweite? Oder beide Versionen zusammenziehen? Um ehrlich zu sein wissen wir es nicht. Deshalb müssen wir das sofort unterbinden: Wir zählen sämtliche Parameter und wenn irgendeiner von Ihnen mehr als einmal erscheint, dann stoppen wir den Request. Es gibt für jeden Parameter eine Regel in einem Block, der bei 10400 beginnt. Wen wir die Regeln genau betrachten, dann sehen wir ein _&_ Zeichen vor jedem _ARGS_. Das bedeutet, dass wir nicht den Parameter selbst betrachten, sondern dass wir sein Vorkommen zählen. Der Operator `@gt` wird immer dann reagieren, wenn die Zahl grösser als 1 ist.
+
+Wir nähern uns nun langsam dem Ende. Bevor wir aber so weit sind, betrachten wir noch die einzelnen Parameter: Entsprechen Sie einem vorgefertigten Muster? Im Fall des Benutzernamens (Regel ID 10500) und des SecTokens (Regel ID 10501) ist der Fall klar: Wir wissen, wie ein Benutzername auszusehen hat und für das maschinengenerierte SecToken ist es sogar noch einfacher. Also benützen wir einfach einen regulärer Ausdruck, um das Format zu überprüfen.
+
+Beim Passwort ist die Sache weniger klar. Offensichtlich möchten wir, dass die User möglichst viele Sonderzeichen verwenden: idealerweise Zeichen ausserhalb des Standard ASCII Bereichs. Aber wie überprüfen wir dann das Format? Wir treffen hier auf eine Limite. Lassen wir den vollen ASCII Umfang zu, dann erlauben wir auch Angriffe und unsere Möglichkeiten mit dem Whitelisting Zugang sind beschränkt. Geben wir aber nicht so schnell auf und setzen wir wenigstens ein Minimum an Regeln. Zuerst schauen wir auf die Länge des Parameters. Längere Parameter bedeutet mehr Raum um einen Angriff zu konstruieren. Wir können das begrenzen, wenn wir die _length_ Transformation zu Hilfe nehmen. Der Operator wird also nicht mehr auf den Parameter selbst, sondern auf seine Länge. Der `@ge` Operator passt ideal dazu. Wenn das Passwort länger als 64 Zeichen ist, dann verweigern wir den Zugriff. In der nächsten und finalen Regel, (ID 10503), wir benützen einen weiteren Operator und validieren die Byte-Range. Da wir Spezialzeichen erwarten, müssen wir die sichtbare UTF-8 erlauben. Dies forciert einen minimalen Standard, es heisst aber auch, dass die Applikation beim Passwort Parameter wachsam bleiben muss, da er nicht auf dieselbe Art und Weise limitiert werden kann wie der Username und das SecToken.
+
+Damit beschliessen wir unser Beispiel einer partiellen Whitelist.
 
 ###Schritt 9: Blockade ausprobieren
 
 Aber funktioniert das auch wirklich? Hier einige Versuche:
 
 ```bash
-$> curl http://localhost/login/index.html
--> OK (ModSecurity erlaubt den Zugriff. Die Seite selbst existiert aber nicht. 
-       Wir erhalten also ein 404, Page not Found)
-$> curl http://localhost/login/index.html?debug=on
+$> curl http://localhost/login/displayLogin.do
+-> OK (ModSecurity erlaubt den Zugriff. Aber die Seite selbst exisiert nicht.
+      Wir erhalten also ein 404, Page not Found)
+$> curl http://localhost/login/displayLogin.do?debug=on
 -> FAIL
 $> curl http://localhost/login/admin.html
+-> FAIL (Wieder 404, aber das Error Log sollte nun einen Security Alert mit dem Status 404 zeigen)
+$> curl -d "username=john&password=test" http://localhost/login/login.do
+-> OK (ModSecurity erlaubt den Zugriff. Aber die Seite selbst existiert nicht.
+   Also erhalten wir ein 404, Page not Found)
+$> curl -d "username=john&password=test&backdoor=1" http://localhost/login/login.do
 -> FAIL
-$> curl -d "username=1234&password=test" http://localhost/login/login.do
--> OK (ModSecurity erlaubt den Zugriff. Die Seite selbst existiert aber nicht. \
-       Wir erhalten also ein 404, Page not Found)
-$> curl -d "username=1234&password=test&backdoor=1" http://localhost/login/login.do
+$> curl -d "username=john5678901234567&password=test" http://localhost/login/login.do
 -> FAIL
-$> curl -d "username=12345678901234567&password=test" http://localhost/login/login.do
+$> curl -d "username=john'&password=test" http://localhost/login/login.do
 -> FAIL
-$> curl -d "username=1234'&password=test" http://localhost/login/login.do
--> FAIL
-$> curl -d "username=1234&username=5678&password=test" http://localhost/login/login.do
+$> curl -d "username=john&username=jack&password=test" http://localhost/login/login.do
 -> FAIL
 ```
 
 Ein Blick in das Error-Log des Servers belegt, dass die Regeln genau so griffen, wie wir sie definiert haben (Auszug gefiltert):
 
 ```bash
-[2015-10-17 05:26:05.396430] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied …
-with code 403 (phase 1). Match of "rx ^()$" against "ARGS_GET_NAMES:debug" required. [file …
-"/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "180"] [id "10003"] [msg "Unknown …
-Query-String Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname …
-"localhost"] [uri "/login/index.html"] [unique_id "UcAVIn8AAQEAAFjeANQAAAAA"]
-[2015-10-17 05:26:07.539846] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with …
-code 403 (phase 1). Match of "rx ^()$" against "ARGS_GET_NAMES:debug" required. [file …
-"/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "180"] [id "10003"] [msg "Unknown …
-Query-String Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] …
-[uri "/login/index.html"] [unique_id "UcAVkH8AAQEAAFjeANYAAAAC"]
-[2015-10-17 05:26:12.345245] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with …
-code 403 (phase 1). Match of "rx ^/login/(index.html|login.do)$" against "REQUEST_FILENAME" …
-required. [file "/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "179"] [id "10002"] …
-[msg "Unknown Login URL"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] …
-[uri "/login/admin.html"] [unique_id "UcAVlH8AAQEAAFjeANcAAAAD"]
-[2015-10-17 05:26:19.976533] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code …
-403 (phase 2). Match of "rx ^(username|password)$" against "ARGS_POST_NAMES:backdoor" required. …
-[file "/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "181"] [id "10004"] [msg "Unknown …
-Post Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri …
-"/login/login.do"] [unique_id "UcAVmn8AAQEAAFjeANkAAAAF"]
-[2015-10-17 05:26:25.165337] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code …
-403 (phase 2). Match of "rx ^[a-zA-Z0-9_-]{1,16}$" against "ARGS_POST:username" required. [file …
-"/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "186"] [id "10007"] [msg …
-"ARGS_POST:username parameter does not meet value domain"] [tag "Local Lab Service"] [tag …
-"Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVnn8AAQEAAFjeANoAAAAG"]
-[2015-10-17 05:26:42.924352] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code …
-403 (phase 2). Match of "rx ^[a-zA-Z0-9_-]{1,16}$" against "ARGS_POST:username" required. [file …
-"/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "186"] [id "10007"] [msg …
-"ARGS_POST:username parameter does not meet value domain"] [tag "Local Lab Service"] [tag …
-"Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id …
-"UcAVon8AAQEAAFjeANsAAAAH"]
-[2015-10-17 05:27:55.853951] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code …
-403 (phase 2). Operator GT matched 1 at ARGS_POST. [file …
-"/opt/apache-2.4.23/conf/httpd.conf_modsec_minimal"] [line "183"] [id "10005"] [msg "ARGS_POST …
-occurring more than once"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] …
-[uri "/login/login.do"] [unique_id "UcAVpn8AAQEAAFjeANwAAAAI"]
+[2015-10-17 05:26:05.396430] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Match of "rx ^()$" against "ARGS_GET_NAMES:debug" required. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "180"] [id "10003"] [msg "Unknown Query-String Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/index.html"] [unique_id "UcAVIn8AAQEAAFjeANQAAAAA"]
+[2015-10-17 05:26:07.539846] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Match of "rx ^()$" against "ARGS_GET_NAMES:debug" required. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "180"] [id "10003"] [msg "Unknown Query-String Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/index.html"] [unique_id "UcAVkH8AAQEAAFjeANYAAAAC"]
+[2015-10-17 05:26:12.345245] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). Match of "rx ^/login/(index.html|login.do)$" against "REQUEST_FILENAME" required. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "179"] [id "10002"] [msg "Unknown Login URL"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/admin.html"] [unique_id "UcAVlH8AAQEAAFjeANcAAAAD"]
+[2015-10-17 05:26:19.976533] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^(username|password)$" against "ARGS_POST_NAMES:backdoor" required. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "181"] [id "10004"] [msg "Unknown Post Parameter"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVmn8AAQEAAFjeANkAAAAF"]
+[2015-10-17 05:26:25.165337] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9_-]{1,16}$" against "ARGS_POST:username" required. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "186"] [id "10007"] [msg "ARGS_POST:username parameter does not meet value domain"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVnn8AAQEAAFjeANoAAAAG"]
+[2015-10-17 05:26:42.924352] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9_-]{1,16}$" against "ARGS_POST:username" required. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "186"] [id "10007"] [msg "ARGS_POST:username parameter does not meet value domain"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVon8AAQEAAFjeANsAAAAH"]
+[2015-10-17 05:27:55.853951] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 2). Operator GT matched 1 at ARGS_POST. [file "/opt/apache-2.4.17/conf/httpd.conf_modsec_minimal"] [line "183"] [id "10005"] [msg "ARGS_POST occurring more than once"] [tag "Local Lab Service"] [tag "Whitelist Login"] [hostname "localhost"] [uri "/login/login.do"] [unique_id "UcAVpn8AAQEAAFjeANwAAAAI"]
 ```
 
 Es funktioniert also von A bis Z.
@@ -597,7 +635,7 @@ Bevor wir zum Ende dieser Anleitung kommen, folgt hier noch ein Tipp, der einem 
 
 ```bash
 SecRule REMOTE_ADDR  "@streq 127.0.0.1"   "id:11000,phase:1,pass,log,auditlog,\
-                                          msg:'Initializing full traffic log'"
+    msg:'Initializing full traffic log'"
 ```
 Wir finden den Verkehr des in der Regel angegebenen Clients 127.0.0.1 dann im Audit-Log.
 
