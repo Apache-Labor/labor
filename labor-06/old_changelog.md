@@ -1,5 +1,6 @@
 ###Changelog
 
+* 6\. Dezember 2016: Update auf CRS3
 * 6\. Oktober 2016: Titel neu formatiert
 * 25\. August 2016: Zeilenumbrüche justiert
 * 25\. März 2016: Rechtschreibung (Darrel Kntuson)
