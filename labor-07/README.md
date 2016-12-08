@@ -1,4 +1,4 @@
-##OWASP ModSecurity Core Rules tunen
+##Fehlalarme im OWASP ModSecurity Core Rule Set behandeln
 
 ###Was machen wir?
 
@@ -6,7 +6,7 @@ Wir reduzieren die *False Positives* einer frischen *OWASP ModSecurity Core Rule
 
 ###Warum tun wir das?
 
-Eine frische *Core Rules* Installation weist typischerweise viele Fehlalarme auf. Das geht gerne in die Tausende. Wir haben in der letzten Lektion verschiedene Techniken gesehen, wie man einzelne Fehlalarme zukünftig unterdrücken kann. Aber aller Anfang ist schwer und was fehlt ist eine Strategie, mit der schieren Menge der Fehlalarme fertig zu werden. Die Reduktion der Fehlalarme ist die Voraussetzung für die Reduktion der Anomalie-Limite der *Core Rules* und dies wiederum ist nötig, um Angreifer mittels *ModSecurity* tatsächlich abzuwehren. Und nur wenn die Fehlalarme wirklich ausgeschaltet oder zumindest sehr weit zurückgedrängt sind, erhalten wir einen Blick auf die tatsächlichen Angreifer.
+Eine frische *Core Rule Set* Installation weist typischerweise einige Fehlalarme auf. In speziellen Fällen, namentlich auf höheren Paranoia Stufen, geht das bisweilen in die Tausende. Wir haben in der letzten Lektion verschiedene Techniken gesehen, wie man einzelne Fehlalarme zukünftig unterdrücken kann. Aber aller Anfang ist schwer und was fehlt ist eine Strategie, mit der schieren Menge der Fehlalarme fertig zu werden. Die Reduktion der Fehlalarme ist die Voraussetzung für die Reduktion der Anomalie-Limite der *Core Rules* und dies wiederum ist nötig, um Angreifer mittels *ModSecurity* tatsächlich abzuwehren. Und nur wenn die Fehlalarme wirklich ausgeschaltet oder zumindest sehr weit zurückgedrängt sind, erhalten wir einen Blick auf die tatsächlichen Angreifer.
 
 ###Voraussetzungen
 
@@ -17,1173 +17,1058 @@ Eine frische *Core Rules* Installation weist typischerweise viele Fehlalarme auf
 * Ein Apache Webserver mit ModSecurity wie in [Anleitung 6 (ModSecurity einbinden)](https://www.netnea.com/cms/apache-tutorial-6-modsecurity-einbinden/)
 * Ein Apache Webserver mit einer Core Rules Installation wie in [Anleitung 7 (Core Rules einbinden)](https://www.netnea.com/cms/apache-tutorial-7-modsecurity-core-rules-einbinden/)
 
+Es gibt keinen Sinn, False Positives auf einem Labor Server ohne jeglichen Verkehr zu bekämpfen. Was wir brauchen, ist ein echter Satz von Fehlalarmen. Damit können wir das Schreiben von Rule Exclusions einüben und die Meldungen nach und nach verschwinden lassen. Ich habe zwei solche Dateien vorbereitet:
 
+* [labor-07-example-access.log](./labor-07-example-access.log)
+* [labor-07-example-error.log](./labor-07-example-error.log)
 
-Ferner macht das natürlich nur Sinn, wenn wir auch eine richtige Applikation haben, die wir schützen können. In der Anleitung 3 haben wir gesehen, wie man einen PHP Applikationsserver aufsetzen kann. In einer späteren Anleitung werden wir einen Reverse Proxy oder Gateway Server einrichten. Eine solche Installation im produktiven Einsatz im Internet wird dann die gewünschte Menge an *Logfile* Einträgen bringen und mit sehr hoher Wahrscheinlichkeit die grosse Zahl von Fehlalarmen, welche die Voraussetzung für diese Anleitung ist.
+Es ist schwierig, reale Logfiles von einem Produktionsserver für eine Übung zu verwenden. Die Menge an sensitiven Daten in den Logs ist einfach zu gross. Deshalb habe ich frische False Positives produziert. Mit dem Core Rule Set 2.2.x wäre das einfach gewesen, aber mit dem Release 3.0 (CRS3) sind die meisten Fehlalarme in der Standardinstallation ausgemerzt. Ich habe deshalb das CRS auf Paranoia Level 4 gesetzt und eine lokale Drupal-Website installiert. Ich habe auf dieser Installation ein paar Artikel publiziert und sie im Browser gelesen. Diesen Vorgang habe ich mehrere Male wiederholt, bis ich 10'000 Requests im Access Log beisammen hatte.
 
-Wo das nicht vorhanden ist, oder wo zu Übungszwecken ein funktionierendes Beispiel gesucht wird, bietet es sich an, mit bestehenden Übungsdaten zu arbeiten. Ich habe dazu zwei *Logfiles* als Übungsdateien zusammengestellt. Zusammengestellt deshalb, weil sie von einem ungetunten, produktiven System stammen, aber für den Einsatz in einer Übung erst anonymisiert werden mussten, indem sämtliche Daten, welche auf das Ursprungssystem hindeuteten, entfernt werden mussten. Ferner musste sicher gestellt werden, dass keine richtigen Angriffe mehr im Logfile vorhanden sind, denn wir möchten ja nur Fehlalarme entfernen und nicht die nötigen, richtigen Alarme unterdrücken.
+Drupal und CRS stehen nicht wirklich in einer liebevollen Beziehung. Immer wenn die beiden Software-Pakete aufeinander treffen, neigen sie dazu, aggressiv aufeinander loszugehen: Das CRS ist so pedantisch und Drupal hat die Gewohnheit Parameternamen in eckige Klammern zu setzen, was das CRS wiederum verrückt macht. Allerdings hat die Sache sich mit CRS3 merklich entspannt und namentlich die neuen, optionalen Ausschlussregeln für Drupal (siehe die Datei "crs-setup.conf" für Details und [diesen Blogpost](/cms/2016/11/22/securing-drupal-with-modsecurity-and-the-core-rule-set-crs3/) als Einführung) lassen die verbleibenden Fehlalarme einer Drupal Core Installation fast alle verschwinden.
 
-* [labor-07-example-access.log](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-07-example-access.log)
-* [labor-07-example-error.log](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-07-example-error.log)
+Aber die Lage sieht gänzlich anders aus, wenn wir diese Rule Exclusions nicht verwenden und wenn wir den Paranoia Level auf 4 erhöhen: Für die 10.000 Anfragen in meinem Testlauf erhielt ich über 27'000 falsche Alarme. Das sollte erst mal reichen für eine Trainingseinheit.
 
-Die Logfiles basieren auf 10'000 Requests. Das scheint mir das Minimum, um wirklich tunen zu können. Tatsächlich sind kleinere Logfiles zu zufällig und geben nur einen Teilaspekt eines Services wieder. Je grösser die Basis zum tunen, desto besser, aber gerade für die ersten Tuning-Schritte reicht es, mit dieser Grösse einzusteigen. Später mag es angezeigt sein, sich grössere Logfiles vorzunehmen um auch noch seltenere Fehlalarme ausmerzen zu können.
+###Schritt 1: Eine Strategie zur Behandlung der Fehlalarme festlegen
 
-###Schritt 1: ModSecurity in Blocking Mode versetzen
+Das Problem mit den False Positives ist, dass sie einen im schlimmsten Fall wie eine Lawine überschwemmen und man nicht weiss, wo man mit dem Aufräumen beginnen soll. Was uns fehlt, ist ein Plan und es gibt keine offizielle Dokumentation, welche einem in diesem Punkt weiterhilft. Hier deshalb ein empfohlenes Vorgehen zur Bekämpfung von Fehlalarmen:
 
-In der letzten Anleitung habe ich bereits darauf hingewiesen, dass nur eine blockierende *Web Application Firewall* getunt wird. *ModSecurity* im *Monitoring Modus* wird beobachtet, einzelne Fehlalarme werden eliminiert und schliesslich gibt der Administrator trotz guten Vorsätzen auf; ohne klares Ziel vor Augen und erschlagen durch die schiere Menge der Fehlalarme.
+* Von Beginn weg im Blocking Mode arbeiten
+* Die Anfragen mit den höchsten Anomalie-Werten kommen zuerst
+* Wir Tunen in mehreren Durchgängen
 
-Dem gegenüber postuliere ich einen klaren Ansatz:
-* ModSecurity in den Blocking Modus versetzen
-* Anomalie-Limiten sehr hoch setzen
-* Relvante Fehlalarme tunen
-* Anomalie-Limite leicht reduzieren
-* Relvante Fehlalarme tunen
-* ...
-* Anomalie-Limite leicht auf einen tiefen Wert wie 5 oder 10 reduzieren
+Was bedeutet das? Die CRS Default-Installation erfolgt bereits im Blocking Mode und mit einem Anomalie Grenzwert von 5 für die ankommenden Anfragen. Das ist in der Tat ein sehr gutes Ziel für unsere Arbeit, aber es ist ein allzusteiler Einstieg auf einem bestehenden Produktionsserver. Das Risiko ist, dass ein False Positive einen Alarm auslöst, der Browser des falschen Kunden gesperrt wird, ein Telefonanruf an den Applikationsverantwortlichen erfolgt und der Administrator gezwungen wird, die Web Application Firewall auszuschalten. In zahlreichen Installationen, die ich gesehen habe, war dies das Ende der Geschichte.
 
-Es handelt sich also um einen iterativen Ansatz, der immer im Blocking Modus arbeitet und durch kleine Schritte eine graduelle Reduktion der Fehlalarme erreicht. In diesem Prozess wächst das Vertrauen in das System, die Reduktion der Fehlalarme und die eigenen Tuning-Fähigkeiten. Wenn wir von Anfang an im *Blocking Mode* arbeiten, brauchen wir uns auch nicht vor dem grossen Tag zu fürchten, wo wir den Hebel vom *Monitoring Modus* in den *Blocking Modus* umlegen. Vielmehr schärfen wir der WAF mit jeder Interaktion die Zähne und wenn wir sauber arbeiten werden dabei keine oder nur wenige legitime Requests blockiert.
+Das muss nicht sein! Stattdessen starten wir mit einer hohen Anomalie-Limite. Sagen wir 1000 für die Anfragen und aus Symmetrie-Gründen auch 1000 für die Antworten (in der Praxis gehen die Responses nicht sehr hoch). Auf diese Weise wissen wir, dass kein Kunde wird jemals durch die Limiten blockiert wird, wir erhalten die Meldungen über Fehlalarme und wir gewinnen Zeit, sie auszumerzen.
 
-###Schritt 2: Angriffsverkehr aus Logfile ausschliessen
+Wenn Sie ein geeignetes Sicherheitsprogramm haben, lässt sich das alles in einer umfangreichen Testphase durchführen, so dass der Service nie ohne strikte Konfiguration in der Produktion eingesetzt wird. Aber wenn Sie mit ModSecurity auf einem bestehenden Produktions-Service beginnen, dann ist der Start mit einem hohen Schwellenwert in der Produktion die bevorzugte Methode mit minimalen Auswirkungen für bestehende Kunden zu einem sauberen Setup zu kommen (null Auswirkungen, wenn wir sauber arbeiten).
 
-*ModSecurity* soll uns helfen, Angreifer und legitime User zu unterscheiden; das ist überhaupt der Zweck der vielen Regeln und des ganzen Tunings. Es dient der Erhöhung der Trennschärfe. Um diesen Prozess aber durchführen zu können brauchen wir - es wurde bereits angesprochen - ein gesäubertes Logfiles. Aber wie erhalten wir dieses, denn in einem ungetunten System sind die Angreifer neben all den Fehlalarmen in den Logdateien nur sehr schwer zu identifizieren.
+Das Problem bei der Integration von ModSecurity in die Produktion ist die Tatsache, dass False Positives und reale Alarme miteinander vermischt werden. Um die Installation zu säubern, müssen die beiden Gruppen getrennt werden, damit wir wirklich mit den False Positives arbeiten können. Das ist nicht immer einfach. Manuelle Überprüfung hilft, eine Beschränkung auf bekannte IP-Adressen, Pre-Authentifizierung, Test / Tuning auf einem vom Internet getrennten Test-System, Filterung des Access-Protokolls mittels GeoIP, etc ... Es ist ein weites Feld und allgemeine Empfehlungen zu machen ist schwierig. Aber die Frage ist wirklich sehr wichtig. Vor Jahren etwa habe ich das Schreiben einer Rule Exclusion in einem Workshop demonstriert. Und wie sich zeigte, war der vermeintliche Fehlalarm, den ich als Beispiel benützte, ein richtiger Angriff. Ich habe meine Lektion gelernt.
 
-Es bieten sich mehrere Verfahren an:
-* Wir arbeiten vor der Live-Schaltung des Services auf einem vom Internet getrennten Test-System.
-* Wir verwenden einen Zugriffsschutz und berücksichtigen nur diejenigen Requests, welche den Schutz passieren.
-* Wir filtern unbekannte IP Adressen aus dem Logfile weg
+Dann gibt es noch eine zweite Frage, die wir aus dem Weg räumen müssen: Führt das Umgehen von Regeln nicht eigentlich zur einer Verminderung der Sicherheit einer online Applikation? Ja das tut es tatsächlich. Aber wir müssen die Sache in der richtigen Perspektive ansehen. In einem idealen Setup sind alle Regeln voll intakt, der Paranoia Level steht auf der höchsten Stufe (also total knapp 200 zum Teil sehr aggressive Regeln) und die Anomalie-Limiten wären sehr niedrig. Und dennoch würde die Anwendung ohne jeglichen Probleme laufen. Aber in der Praxis funktioniert das nur in den seltensten Fälle. Wenn wir die Anomalies Limiten erhöhen, dann sind die Alarme noch da, aber die Angreifer sind nicht mehr betroffen. Wenn wir den Paranoia Level reduzieren, deaktivieren wir Dutzende von Regeln mit dieser Einstellung. Wenn wir mit den Entwicklern über die Änderung ihrer Software sprechen, so dass die False Positives weggehen, verbringen wir viel Zeit, ohne grosse Chancen auf Erfolg (zumindest in meiner Erfahrung). Die Deaktivierung einer einzigen Regel aus einem Satz von 200 Regeln ist die beste aller schlechten Lösungen. Die schlechteste aller schlechten Lösungen wäre es hingegen, ModSecurity insgesamt zu deaktivieren. Und da dies in vielen Organisationen die Realität ist, deaktiviere ich lieber einzelne Regeln aufgrund von Fehlalarmen, als ich das Risiko eingehe, die WAF ganz rausnehmen zu müssen.
 
-In der Praxis verwende ich eine Kombination dieser Verfahren. Das Herkunftsland der IP Adressen ist gerade für lokale Systeme in einem kleinen Land wie der Schweiz ein sehr taugliches Filterkriterium beim Tuning. Oft leite ich auch erfolgreiche Login-Versuche aus dem Logfile ab und eruiere daraus eine Liste von validen IP Adressen, anhand derer ich dann meine Logfiles als Basis für das Tuning zusammenstelle.
+###Schritt 2: Einen Überblick erhalten
 
-Diese Überlegungen führen uns aber weg vom eigentlichen Thema, dem Tuning. Deshalb stehen zumindest für diese Übung die obenstehenden Beispiel-Logfiles zur Verfügung.
+Der Charakter der Anwendung, der Paranoia Level und die Menge des Verkehrs alle beeinflussen die Menge an False Positives, die wir in den Logfiles erhalten. Im ersten Durchlauf reichen ein paar tausend oder maximal hunderttausend Anfragen. Sobald das im Access Log zusammengekommen ist, ist es Zeit, die Einträge zu inspizieren. Verschaffen wir uns also einen Überblick über die Lage: Schauen wir uns die Beispiel-Logs einmal an!
 
-###Schritt 3: Die Zusammenhänge zwischen Access- und Error-Log verstehen
+Man könnte nun meinen, dass das Error Log mit den Alarmen der richtige Ort für den Start sei. Aber wir schauen uns zuerst das Access Log an. Wir haben das Format dieser Datei so definiert, dass sie uns die Anomalie Werte für jede Anfrage liefert. Dies hilft uns mit diesem Schritt.
 
-In den vorangegangenen Anleitungen haben wir das *Access-Log* und das *Error-Log* des Webservers genau inspiziert. Stellen wir sie einmal nebeneinander:
+In der vorherigen Anleitung verwendeten wir das Skript [modsec-positive-stats.rb](https://www.netnea.com/cms/files/modsec-positive-stats.rb). Wir kehren zu diesem Skript mit dem Beispiel Access Log als Parameter zurück:
 
 ```bash
-192.168.146.78 CH - [2015-05-20 15:34:59.211464] "POST /EMail/MailHandler HTTP/1.1" 303 - …
-"https://www.example.com/EMail/newMessage.aspx?msg=new" "Mozilla/5.0 (Windows NT 6.1; WOW64; …
-Trident/7.0; rv:11.0) like Gecko" www.example.com 192.168.34.16 443 proxy-server - + …
-"4a537de2.52283b4e6d77b" ViZDA6wxQzZrjCzQ-t8AAAAt TLSv1.2 ECDHE-RSA-AES128-SHA256 1796 4302 …
--% 1181278 14514 164330 149 18 0
-``` 
-
-In dieser Beispielzeile aus dem *Access-Log* wird eine Anfrage notiert. Es ist ein Postrequest auf die Ressource Email-Handler. Der Referrer weist auf eine Ressource *newMessage.aspx* hin, was dafür spricht, dass unser Request mit dem Versenden eines Emails in Zusammenhang stehen dürfte. Der zweitletzte Wert lautet *18* und bezeichnet den Anomalie-Wert des ankommenden Requests. (Die Antwort bringt 0 Punkte; zuhinterst). Unsere Limite ist noch extrem hoch gesetzt, von daher droht also keine Gefahr. Aber da es sich um gewaschenen respektive gefilterten Traffic handelt, wissen wir bereits, dass es sich um Fehlalarme handelt, welche gemeinsam einen Score von 18 Punkten brachten. Um welche False Positives handelt es sich? Schauen wir nach!
-
-```bash
-$> grep ViZDA6wxQzZrjCzQ-t8AAAAt labor-07-example-error.log
-[2015-05-20 15:34:59.212369] [-:error] - - [client 192.168.146.78] ModSecurity: Warning. …
-Pattern match "\\\\W{4,}" at ARGS:message. [file …
-"/opt/modsecurity-rules/latest/base_rules/modsecurity_crs_40_generic_attacks.conf"] [line "37"] …
-[id "960024"] [rev "2"] [msg "Meta-Character Anomaly Detection Alert - Repetative Non-Word …
-Characters"] [data "..."] [hostname "www.example.com"] [uri "/EMail/MailHandler"] [unique_id …
-"ViZDA6wxQzZrjCzQ-t8AAAAt"]
-[2015-05-20 15:34:59.212639] [-:error] - - [client 192.168.146.78] ModSecurity: Warning. Pattern …
-match "(?:\\\\bhttp\\\\/(?:0\\\\.9|1\\\\.[01])|<(?:html|meta)\\\\b)" at ARGS:message. [file …
-"/opt/modsecurity-rules/latest/base_rules/modsecurity_crs_40_generic_attacks.conf"] [line "136"] …
-[id "950911"] [rev "2"] [msg "HTTP Response Splitting Attack"] [data "..."] [hostname "www.example.com"] …
-[uri "/EMail/MailHandler"] [unique_id "ViZDA6wxQzZrjCzQ-t8AAAAt"]
-[2015-05-20 15:34:59.223143] [-:error] - - [client 192.168.146.78] ModSecurity: Warning. Pattern …
-match "<(a|abbr|acronym|address|applet|area|audioscope|b|base|basefront|bdo|bgsound|big|blackface|…
-blink|blockquote|body|bq|br|button|caption|center|cite|code|col|colgroup|comment|dd|del|dfn|dir|div|…
-dl|dt|em|embed|fieldset|fn|font|form|frame|frameset|h1|head|h ..." at ARGS:message. [file …
-"/opt/modsecurity-rules/latest/base_rules/modsecurity_crs_41_xss_attacks.conf"] [line "301"] [id …
-"973300"] [rev "2"] [msg "Possible XSS Attack Detected - HTML Tag Handler"] [data "..."] [hostname …
-"www.example.com"] [uri "/EMail/MailHandler"] [unique_id "ViZDA6wxQzZrjCzQ-t8AAAAt"]
-[2015-05-20 15:34:59.225529] [-:error] - - [client 192.168.146.78] ModSecurity: Warning. Pattern …
-match "<!(doctype|entity)" at ARGS:message. [file …
-"/opt/modsecurity-rules/latest/base_rules/modsecurity_crs_41_xss_attacks.conf"] [line "464"] [id …
-"973314"] [rev "2"] [msg "XSS Attack Detected"] [data "..."] [hostname "www.example.com"] [uri …
-"/EMail/MailHandler"] [unique_id "ViZDA6wxQzZrjCzQ-t8AAAAt"]
-``` 
-Wir nehmen also die eindeutige *Request-ID* aus dem *Access-Log* und suchen damit im *Error-Log* nach den *False Positives*. Vier davon werden gefunden; etwas unübersichtlich zwar, aber wir wissen uns mit den zur Verfügung stehenden Aliasen zu helfen:
-
-```bash
-$> grep ViZDA6wxQzZrjCzQ-t8AAAAt labor-07-example-error.log | melidmsg
-960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-950911 HTTP Response Splitting Attack
-973300 Possible XSS Attack Detected - HTML Tag Handler
-973314 XSS Attack Detected
-```
-
-So wird ein Schuh draus. Unsere Aufgabe besteht nun darin, für all diese False Positives die genauen Bedingungen zu eruieren und sie zukünftig zu unterdrücken. Machen wir uns im nächsten Schritt ein Bild von dieser Aufgabe.
-
-###Schritt 4: Die False Positives quantifizieren und eine Herangehensweise ableiten
-
-Wir haben das Skript *modsec-positive-stats.rb* schon kennengelernt. Hier können wir es endlich richtig einsetzen:
-
-```bash
-$> cat labor-07-example-access.log | alscores | modsec-positive-stats.rb 
+$> cat tutorial-8-example-access.log | alscores | modsec-positive-stats.rb
 INCOMING                     Num of req. | % of req. |  Sum of % | Missing %
 Number of incoming req. (total) |  10000 | 100.0000% | 100.0000% |   0.0000%
 
 Empty or miss. incoming score   |      0 |   0.0000% |   0.0000% | 100.0000%
-Reqs with incoming score of   0 |   7586 |  75.8600% |  75.8600% |  24.1400%
-Reqs with incoming score of   1 |      0 |   0.0000% |  75.8600% |  24.1400%
-Reqs with incoming score of   2 |      0 |   0.0000% |  75.8600% |  24.1400%
-Reqs with incoming score of   3 |   1638 |  16.3800% |  92.2400% |   7.7600%
-Reqs with incoming score of   4 |      0 |   0.0000% |  92.2400% |   7.7600%
-Reqs with incoming score of   5 |      0 |   0.0000% |  92.2400% |   7.7600%
-Reqs with incoming score of   6 |    676 |   6.7600% |  99.0000% |   1.0000%
-Reqs with incoming score of   7 |      0 |   0.0000% |  99.0000% |   1.0000%
-Reqs with incoming score of   8 |      0 |   0.0000% |  99.0000% |   1.0000%
-Reqs with incoming score of   9 |      5 |   0.0500% |  99.0500% |   0.9500%
-Reqs with incoming score of  10 |      0 |   0.0000% |  99.0500% |   0.9500%
-Reqs with incoming score of  11 |      1 |   0.0100% |  99.0600% |   0.9400%
-Reqs with incoming score of  12 |      0 |   0.0000% |  99.0600% |   0.9400%
-Reqs with incoming score of  13 |      0 |   0.0000% |  99.0600% |   0.9400%
-Reqs with incoming score of  14 |      0 |   0.0000% |  99.0600% |   0.9400%
-Reqs with incoming score of  15 |      0 |   0.0000% |  99.0600% |   0.9400%
-Reqs with incoming score of  16 |      0 |   0.0000% |  99.0600% |   0.9400%
-Reqs with incoming score of  17 |      0 |   0.0000% |  99.0600% |   0.9400%
-Reqs with incoming score of  18 |      7 |   0.0699% |  99.1300% |   0.8700%
-Reqs with incoming score of  19 |      0 |   0.0000% |  99.1300% |   0.8700%
-Reqs with incoming score of  20 |      0 |   0.0000% |  99.1300% |   0.8700%
-Reqs with incoming score of  21 |      2 |   0.0200% |  99.1499% |   0.8501%
-Reqs with incoming score of  22 |      0 |   0.0000% |  99.1499% |   0.8501%
-Reqs with incoming score of  23 |      4 |   0.0400% |  99.1900% |   0.8100%
-Reqs with incoming score of  24 |      0 |   0.0000% |  99.1900% |   0.8100%
-Reqs with incoming score of  25 |      0 |   0.0000% |  99.1900% |   0.8100%
-Reqs with incoming score of  26 |      2 |   0.0200% |  99.2099% |   0.7901%
-Reqs with incoming score of  27 |      0 |   0.0000% |  99.2099% |   0.7901%
-Reqs with incoming score of  28 |      0 |   0.0000% |  99.2099% |   0.7901%
-Reqs with incoming score of  29 |      0 |   0.0000% |  99.2099% |   0.7901%
-Reqs with incoming score of  30 |      0 |   0.0000% |  99.2099% |   0.7901%
-Reqs with incoming score of  31 |      0 |   0.0000% |  99.2099% |   0.7901%
-Reqs with incoming score of  32 |      0 |   0.0000% |  99.2099% |   0.7901%
-Reqs with incoming score of  33 |      3 |   0.0300% |  99.2400% |   0.7600%
-Reqs with incoming score of  34 |      1 |   0.0100% |  99.2500% |   0.7500%
-Reqs with incoming score of  35 |      0 |   0.0000% |  99.2500% |   0.7500%
-Reqs with incoming score of  36 |      0 |   0.0000% |  99.2500% |   0.7500%
-Reqs with incoming score of  37 |      0 |   0.0000% |  99.2500% |   0.7500%
-Reqs with incoming score of  38 |      0 |   0.0000% |  99.2500% |   0.7500%
-Reqs with incoming score of  39 |      0 |   0.0000% |  99.2500% |   0.7500%
-Reqs with incoming score of  40 |      0 |   0.0000% |  99.2500% |   0.7500%
-Reqs with incoming score of  41 |      0 |   0.0000% |  99.2500% |   0.7500%
-Reqs with incoming score of  42 |      0 |   0.0000% |  99.2500% |   0.7500%
-Reqs with incoming score of  43 |      1 |   0.0100% |  99.2600% |   0.7400%
-Reqs with incoming score of  44 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  45 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  46 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  47 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  48 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  49 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  50 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  51 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  52 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  53 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  54 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  55 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  56 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  57 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  58 |      0 |   0.0000% |  99.2600% |   0.7400%
-Reqs with incoming score of  59 |      1 |   0.0100% |  99.2700% |   0.7300%
-Reqs with incoming score of  60 |      0 |   0.0000% |  99.2700% |   0.7300%
-Reqs with incoming score of  61 |      0 |   0.0000% |  99.2700% |   0.7300%
-Reqs with incoming score of  62 |      0 |   0.0000% |  99.2700% |   0.7300%
-Reqs with incoming score of  63 |      0 |   0.0000% |  99.2700% |   0.7300%
-Reqs with incoming score of  64 |      0 |   0.0000% |  99.2700% |   0.7300%
-Reqs with incoming score of  65 |      0 |   0.0000% |  99.2700% |   0.7300%
-Reqs with incoming score of  66 |      1 |   0.0100% |  99.2800% |   0.7200%
-Reqs with incoming score of  67 |      0 |   0.0000% |  99.2800% |   0.7200%
-Reqs with incoming score of  68 |      0 |   0.0000% |  99.2800% |   0.7200%
-Reqs with incoming score of  69 |      1 |   0.0100% |  99.2900% |   0.7100%
-Reqs with incoming score of  70 |      0 |   0.0000% |  99.2900% |   0.7100%
-Reqs with incoming score of  71 |      2 |   0.0200% |  99.3100% |   0.6900%
-Reqs with incoming score of  72 |      0 |   0.0000% |  99.3100% |   0.6900%
-Reqs with incoming score of  73 |      1 |   0.0100% |  99.3200% |   0.6800%
-Reqs with incoming score of  74 |      0 |   0.0000% |  99.3200% |   0.6800%
-Reqs with incoming score of  75 |      0 |   0.0000% |  99.3200% |   0.6800%
-Reqs with incoming score of  76 |      4 |   0.0400% |  99.3600% |   0.6400%
-Reqs with incoming score of  77 |      0 |   0.0000% |  99.3600% |   0.6400%
-Reqs with incoming score of  78 |      0 |   0.0000% |  99.3600% |   0.6400%
-Reqs with incoming score of  79 |      1 |   0.0100% |  99.3700% |   0.6300%
-Reqs with incoming score of  80 |      0 |   0.0000% |  99.3700% |   0.6300%
-Reqs with incoming score of  81 |     25 |   0.2500% |  99.6200% |   0.3800%
-Reqs with incoming score of  82 |      0 |   0.0000% |  99.6200% |   0.3800%
-Reqs with incoming score of  83 |      3 |   0.0300% |  99.6500% |   0.3500%
-Reqs with incoming score of  84 |      1 |   0.0100% |  99.6600% |   0.3400%
-Reqs with incoming score of  85 |      0 |   0.0000% |  99.6600% |   0.3400%
-Reqs with incoming score of  86 |     28 |   0.2799% |  99.9400% |   0.0600%
-Reqs with incoming score of  87 |      0 |   0.0000% |  99.9400% |   0.0600%
-Reqs with incoming score of  88 |      0 |   0.0000% |  99.9400% |   0.0600%
-Reqs with incoming score of  89 |      1 |   0.0100% |  99.9500% |   0.0500%
-Reqs with incoming score of  90 |      0 |   0.0000% |  99.9500% |   0.0500%
-Reqs with incoming score of  91 |      5 |   0.0500% | 100.0000% |   0.0000%
+Reqs with incoming score of   0 |   5583 |  55.8300% |  55.8300% |  44.1700%
+Reqs with incoming score of   1 |      0 |   0.0000% |  55.8300% |  44.1700%
+Reqs with incoming score of   2 |      0 |   0.0000% |  55.8300% |  44.1700%
+Reqs with incoming score of   3 |      0 |   0.0000% |  55.8300% |  44.1700%
+Reqs with incoming score of   4 |      0 |   0.0000% |  55.8300% |  44.1700%
+Reqs with incoming score of   5 |     30 |   0.3000% |  56.1300% |  43.8700%
+Reqs with incoming score of   6 |      0 |   0.0000% |  56.1300% |  43.8700%
+Reqs with incoming score of   7 |      0 |   0.0000% |  56.1300% |  43.8700%
+Reqs with incoming score of   8 |      1 |   0.0100% |  56.1399% |  43.8601%
+Reqs with incoming score of   9 |      0 |   0.0000% |  56.1399% |  43.8601%
+Reqs with incoming score of  10 |   3194 |  31.9400% |  88.0800% |  11.9200%
+Reqs with incoming score of  11 |      0 |   0.0000% |  88.0800% |  11.9200%
+Reqs with incoming score of  12 |      0 |   0.0000% |  88.0800% |  11.9200%
+Reqs with incoming score of  13 |      0 |   0.0000% |  88.0800% |  11.9200%
+Reqs with incoming score of  14 |      0 |   0.0000% |  88.0800% |  11.9200%
+Reqs with incoming score of  15 |      0 |   0.0000% |  88.0800% |  11.9200%
+Reqs with incoming score of  16 |      0 |   0.0000% |  88.0800% |  11.9200%
+Reqs with incoming score of  17 |      0 |   0.0000% |  88.0800% |  11.9200%
+Reqs with incoming score of  18 |      0 |   0.0000% |  88.0800% |  11.9200%
+Reqs with incoming score of  19 |      0 |   0.0000% |  88.0800% |  11.9200%
+Reqs with incoming score of  20 |     56 |   0.5599% |  88.6400% |  11.3600%
+Reqs with incoming score of  21 |      0 |   0.0000% |  88.6400% |  11.3600%
+Reqs with incoming score of  22 |      0 |   0.0000% |  88.6400% |  11.3600%
+Reqs with incoming score of  23 |      0 |   0.0000% |  88.6400% |  11.3600%
+Reqs with incoming score of  24 |      0 |   0.0000% |  88.6400% |  11.3600%
+Reqs with incoming score of  25 |      0 |   0.0000% |  88.6400% |  11.3600%
+Reqs with incoming score of  26 |      0 |   0.0000% |  88.6400% |  11.3600%
+Reqs with incoming score of  27 |      0 |   0.0000% |  88.6400% |  11.3600%
+Reqs with incoming score of  28 |      0 |   0.0000% |  88.6400% |  11.3600%
+Reqs with incoming score of  29 |      0 |   0.0000% |  88.6400% |  11.3600%
+Reqs with incoming score of  30 |     77 |   0.7700% |  89.4100% |  10.5900%
+Reqs with incoming score of  31 |      0 |   0.0000% |  89.4100% |  10.5900%
+Reqs with incoming score of  32 |      0 |   0.0000% |  89.4100% |  10.5900%
+Reqs with incoming score of  33 |      0 |   0.0000% |  89.4100% |  10.5900%
+Reqs with incoming score of  34 |      0 |   0.0000% |  89.4100% |  10.5900%
+Reqs with incoming score of  35 |     77 |   0.7700% |  90.1799% |   9.8201%
+Reqs with incoming score of  36 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  37 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  38 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  39 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  40 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  41 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  42 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  43 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  44 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  45 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  46 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  47 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  48 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  49 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  50 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  51 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  52 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  53 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  54 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  55 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  56 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  57 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  58 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  59 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  60 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  61 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  62 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  63 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  64 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  65 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  66 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  67 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  68 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  69 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  70 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  71 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  72 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  73 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  74 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  75 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  76 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  77 |      0 |   0.0000% |  90.1799% |   9.8201%
+Reqs with incoming score of  78 |     77 |   0.7700% |  90.9499% |   9.0501%
+Reqs with incoming score of  79 |    449 |   4.4900% |  95.4399% |   4.5601%
+Reqs with incoming score of  80 |      0 |   0.0000% |  95.4399% |   4.5601%
+Reqs with incoming score of  81 |      0 |   0.0000% |  95.4399% |   4.5601%
+Reqs with incoming score of  82 |      0 |   0.0000% |  95.4399% |   4.5601%
+Reqs with incoming score of  83 |      0 |   0.0000% |  95.4399% |   4.5601%
+Reqs with incoming score of  84 |      0 |   0.0000% |  95.4399% |   4.5601%
+Reqs with incoming score of  85 |      0 |   0.0000% |  95.4399% |   4.5601%
+Reqs with incoming score of  86 |      0 |   0.0000% |  95.4399% |   4.5601%
+Reqs with incoming score of  87 |      0 |   0.0000% |  95.4399% |   4.5601%
+Reqs with incoming score of  88 |      0 |   0.0000% |  95.4399% |   4.5601%
+Reqs with incoming score of  89 |      0 |   0.0000% |  95.4399% |   4.5601%
+Reqs with incoming score of  90 |      0 |   0.0000% |  95.4399% |   4.5601%
+Reqs with incoming score of  91 |      0 |   0.0000% |  95.4399% |   4.5601%
+Reqs with incoming score of  92 |      0 |   0.0000% |  95.4399% |   4.5601%
+Reqs with incoming score of  93 |      1 |   0.0100% |  95.4499% |   4.5501%
+Reqs with incoming score of  94 |      0 |   0.0000% |  95.4499% |   4.5501%
+Reqs with incoming score of  95 |      0 |   0.0000% |  95.4499% |   4.5501%
+Reqs with incoming score of  96 |      0 |   0.0000% |  95.4499% |   4.5501%
+Reqs with incoming score of  97 |      0 |   0.0000% |  95.4499% |   4.5501%
+Reqs with incoming score of  98 |    448 |   4.4799% |  99.9299% |   0.0701%
+Reqs with incoming score of  99 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 100 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 101 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 102 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 103 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 104 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 105 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 106 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 107 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 108 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 109 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 110 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 111 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 112 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 113 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 114 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 115 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 116 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 117 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 118 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 119 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 120 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 121 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 122 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 123 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 124 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 125 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 126 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 127 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 128 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 129 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 130 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 131 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 132 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 133 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 134 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 135 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 136 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 137 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 138 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 139 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 140 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 141 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 142 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 143 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 144 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 145 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 146 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 147 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 148 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 149 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 150 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 151 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 152 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 153 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 154 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 155 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 156 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 157 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 158 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 159 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 160 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 161 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 162 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 163 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 164 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 165 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 166 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 167 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 168 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 169 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 170 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 171 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 172 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 173 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 174 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 175 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 176 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 177 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 178 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 179 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 180 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 181 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 182 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 183 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 184 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 185 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 186 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 187 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 188 |      0 |   0.0000% |  99.9299% |   0.0701%
+Reqs with incoming score of 189 |      1 |   0.0100% |  99.9400% |   0.0600%
+Reqs with incoming score of 190 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 191 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 192 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 193 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 194 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 195 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 196 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 197 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 198 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 199 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 200 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 201 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 202 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 203 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 204 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 205 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 206 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 207 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 208 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 209 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 210 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 211 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 212 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 213 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 214 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 215 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 216 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 217 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 218 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 219 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 220 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 221 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 222 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 223 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 224 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 225 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 226 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 227 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 228 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 229 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 230 |      0 |   0.0000% |  99.9400% |   0.0600%
+Reqs with incoming score of 231 |      6 |   0.0600% | 100.0000% |   0.0000%
 
-Average:   1.5616        Median   0.0000         Standard deviation   7.3050
+Incoming average:  12.5272    Median   0.0000    Standard deviation  26.2197
 
 
 OUTGOING                     Num of req. | % of req. |  Sum of % | Missing %
 Number of outgoing req. (total) |  10000 | 100.0000% | 100.0000% |   0.0000%
 
 Empty or miss. outgoing score   |      0 |   0.0000% |   0.0000% | 100.0000%
-Reqs with outgoing score of   0 |   9886 |  98.8600% |  98.8600% |   1.1400%
-Reqs with outgoing score of   1 |      0 |   0.0000% |  98.8600% |   1.1400%
-Reqs with outgoing score of   2 |      0 |   0.0000% |  98.8600% |   1.1400%
-Reqs with outgoing score of   3 |    114 |   1.1400% | 100.0000% |   0.0000%
+Reqs with outgoing score of   0 |  10000 | 100.0000% | 100.0000% |   0.0000%
 
-Average:   0.0342        Median   0.0000         Standard deviation   0.3185
+Outgoing average:   0.0000    Median   0.0000    Standard deviation   0.0000
 ```
 
-Bei den eingehenden 10'000 Anfragen haben also knappe 2'500 Anfragen eine oder mehrere Regeln verletzt. Gemeinsam sind dies gut 5'400 Regelverletzungen, was eine sehr grosse Menge darstellt, wenn man sich überlegt, dass wir diese Verletzungen alle behandeln müssen. Bei den Anworten sieht es mit 114 Mal Score 3 besser aus, aber die False Positives auf der Anfrageseite drohen uns zu überfordern. Was wir brauchen ist ein Plan, der das Problem bewältigbar macht. Fangen wir mit einer grafischen Umsetzung der obenstehenden Statistik an. Das ist nicht wirklich nötig, hilft aber bei der folgenden konzeptionellen Überlegung:
+So haben wir 10'000 Requests und ungefähr Hälfte von ihnen passieren das Regel Werk, ohne irgendeinen Alarm auszulösen. Über 3.000 Anfragen kommen mit einem Anomalie Score von 10 daher. Die restlichen Anfragen formen zwei deutliche Cluster um 79 und 98 Punkte. Dann gibt es einen sehr langen Schwanz mit einer von Anfragen die einen Höchstwert von 231 notierte. Das sind mehr als 40 kritische Alarme auf einen einzigen Request (eine kritische Warnung gibt 5 Punkte, 40 kritische Alerts geben somit 200 Punkte). Beeindruckend.
 
-![Verteilung der Anomaly Scores](./incoming-anomaly-scores-distribution.png)
+Visualisieren wir das:
 
-Ich habe eine logarithmische Skala benützt, um die zum Teil kleinen Werte neben den Anfragen ohne Regelverletzung nicht verschwinden zu lassen. Auf der X-Achse sehen wir die Anzahl der Requests, welche einen bestimmten Anomalie-Wert erreichte. Das Gewicht liegt deutlich auf der linken seite, wo über tausend Requests einen Wert von 3 erreichten und dann mehrere hundert einen Wert von 6 etc. In der Menge sind diese Requests unangenehm, aber was die Zahl der Regelverletzungen betrifft, so ist eine 3 beispielsweise durch das Verletzen einer einzigen Regel zu erreichen.
+<img src="/files/tutorial-8-distribution-untuned.png" alt="Untuned Distribution" width="950" height="550" />
 
-Das sieht am rechten Rand der Grafik anders aus. Um einen Wert von gegen 90 zu erreichen sind 15 bis 20 Regelverletzungen nötig. Hier sind also die Zahl der Anfragen insgesamt deutlich kleiner, aber jede für sich genommen verletzte zahlreiche Regeln.
+_Ein rascher Überblick über die oben generierten Statistiken_
 
-Wenn wir die Grafik als Ganzes überblicken, dann dominiert zahlenmässig die linke Seite. Denken wir aber an die Anomalie-Limite, welche wir reduzieren möchten, dann stören uns die Anfragen links kaum, während die rechts abgebildeten Fehlalarme uns daran hindern, die Anomalie-Limite auf einen Wert unter hundert abzusenken. Konkret: Wollen wir die Limite auf 90 senken, müssen wir die fünf Anfragen mit einem Anomalie Wert von 91 behandeln. Wollen wir danach auf 85 gehen, dann müssen wir den Request mit einem Wert von 89 und die 28 Requests mit einem Score von 86 behandeln. Für eine Absenkung auf 80 stehen dann die Anfragen mit Werten von 84, 83 und 81 zur Diskussion. Und so weiter.
+Dieses ist nur ein rasch zusammengeschustertes Diagramm. Aber es zeigt, dass die meisten Anfragen in der Nähe der linken Seite befinden. Sie erzielten keine Treffer, oder sie erzielten genau 10 Punkte. Aber es gibt einige Anfragen mit höheren Punktzahlen und eine Hanvoll Ausreisser sehr weit rechts aussen. Wo fangen wir also an?
 
-Wenn wir auf der rechten Seite der Grafik anfangen, dann können wir uns in überblickbaren Schritten durch die Fehlalarme arbeiten und wir erreichen sofort eine Verbesserung, welche uns ein Absenken der Anomalie-Limiten erlaubt.
+Wir beginnen bei denjenigen Requests, welche die höchsten Punkte erzielten. Wir beginnen auf der rechten Seite des Graphen! Das macht Sinn, weil wir bereits im Blocking Mode arbeiten und wir die Anomalie Limite reduzieren möchten. Die Gruppe von Anfragen, die uns dabei zuerst im Weg stehen sind die sechs Anfragen mit einer Punktzahl von 231 und der Einzelrequest mit einer Punktzahl von 189. Schreiben wir also Rule Exclusions, um die Alarme, die zu diesen Werten führen, zu unterdrücken.
 
-Das heisst, wir brauchen aus dem Wust an Daten fünf Anfragen zu behandeln und können danach bereits die Anomalie-Limite absenken, ohne mit einer Blockade der legitimen User rechnen zu müssen. In der Praxis empfehle ich bei diesem Schritt Vorsicht walten zu lassen (also in unserem Fall nicht etwa die sofortige Absenkung auf 90, aber vielleicht auf 100; etwas Sicherheitsmarge macht Sinn). Selbst wenn es dann zu einzelnen Blockaden kommen sollte, so können wir doch sicher sein, dass sie selten sein werden. Denn die Grosszahl der Requests auf dem zu behandelnden Service bringen deutlich kleinere Anomalie-Werte.
 
-###Schritt 5: Auf verletzte ModSec Core Rules zurückschliessen und Ignore-Rules ableiten
+###Schritt 3: Die erste Gruppe von Regelausschlüssen
 
-Unser Behandlungsziel sind also die fünf Anfragen mit einem Anomalie-Score von 91. Um welche Requests handelt es sich?
-
-```bash
-$> grep -E " 91 [0-9-]+$" labor-07-example-access.log
-192.168.186.76 CH - [2015-05-22 09:25:35.064580] "POST /EMail/MailHandler HTTP/1.1" 303 - …
-"https://www.example.com/EMail/newMessage.aspx?action=reply&mailId=3891_32&folderId=947_65&showPics=false"…
-"Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; rv:11.0) like Gecko" www.example.com …
-192.168.34.16 443 proxy-server - + "b49f5038.522aa9d333675" ViiPb6wxQzZrjBP3RHUAAAAs TLSv1.2 …
-ECDHE-RSA-AES256-SHA384 7969 630 -% 1585494 309159 255001 491 91 0
-192.168.186.76 CH - [2015-05-27 08:43:47.363527] "POST /EMail/MailHandler HTTP/1.1" 303 - …
-"https://www.example.com/EMail/newMessage.aspx?action=reply&mailId=3904_9&folderId=947_65&showPics=false" …
-"Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; rv:11.0) like Gecko" www.example.com …
-192.168.34.16 443 proxy-server - + "8e2ac2ca.52310227db9e9" Vi8rM6wxQzZrjFeGPFsAAAAl TLSv1.2 …
-ECDHE-RSA-AES256-SHA384 7985 630 -% 1413745 303533 90351 179 91 0
-192.168.186.76 CH - [2015-05-29 15:24:59.946738] "POST /EMail/MailHandler HTTP/1.1" 303 - …
-"https://www.example.com/EMail/newMessage.aspx?action=reply&mailId=3920_9&folderId=947_65&showPics=false" …
-"Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; rv:11.0) like Gecko" www.example.com …
-192.168.34.16 443 proxy-server - + "f139da27.52338400e3ec8" VjIsO6wxQzZrjAbVVkAAAABs TLSv1.2 …
-ECDHE-RSA-AES256-SHA384 7831 630 -% 3678101 290095 368102 212 91 0
-192.168.186.76 CH - [2015-05-30 09:52:00.029400] "POST /EMail/MailHandler HTTP/1.1" 303 - …
-"https://www.example.com/EMail/newMessage.aspx?action=reply&mailId=3920_35&folderId=947_65&showPics=false"…
-"Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; rv:11.0) like Gecko" www.example.com …
-192.168.34.16 443 proxy-server - + "280bc544.5234c6c781c1a" VjMvsKwxQzZrjDjiL4UAAAAD TLSv1.2 …
-ECDHE-RSA-AES256-SHA384 8972 4545 -% 1801042 444496 335489 173 91 0
-192.168.186.76 CH - [2015-05-30 11:00:28.476417] "POST /EMail/MailHandler HTTP/1.1" 303 - …
-"https://www.example.com/EMail/newMessage.aspx?action=reply&mailId=3923_2&folderId=947_65&showPics=false" …
-"Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; rv:11.0) like Gecko" www.example.com …
-192.168.34.16 443 proxy-server - + "280bc544.5234c6c781c1a" VjM-vKwxQzZrjDjiMJQAAAAW TLSv1.2 …
-ECDHE-RSA-AES256-SHA384 8375 630 -% 1528716 365798 141645 295 91 0
-```
-Diese Anfragen ähneln sich deutlich. Der Schluss liegt nahe, dass sie alle fünf dieselben Regeln verletzen. Aber welche sind dies? Dazu lesen wir die eindeutige *Request-ID* aus:
+Um herauszufinden, welche Regeln hinter den Anomaliescores 231 und 189 stehen, müssen wir das Access Log mit dem Errror Log verknüpfen. Die Unique ID ist der Link, der uns dabei hilft:
 
 ```bash
-$> grep -E " 91 [0-9-]+$" labor-07-example-access.log | alreqid 
-ViiPb6wxQzZrjBP3RHUAAAAs
-Vi8rM6wxQzZrjFeGPFsAAAAl
-VjIsO6wxQzZrjAbVVkAAAABs
-VjMvsKwxQzZrjDjiL4UAAAAD
-VjM-vKwxQzZrjDjiMJQAAAAW
-$> 
+$> egrep " (231|189) [0-9-]+$" tutorial-8-example-access.log | alreqid | tee ids
+WBuxz38AAQEAAEdWQ5UAAACH
+WBux0H8AAQEAAEdWQ7QAAACT
+WBux0H8AAQEAAEdS9vYAAAAW
+WBux0H8AAQEAAEdWQ7kAAACE
+WBux0H8AAQEAAEdTojoAAABW
+WBux0H8AAQEAAEdS9v4AAAAA
+WBux0H8AAQEAAEdTokEAAABL
 ```
 
-Wir schreiben diese Identifikationsschlüssel nun in eine Datei und benützen sie, um im *Error-Log* nach den korrespondierenden Regelverletzungen zu suchen, die wir sogleich in einem lesbaren Format zusammenfassen.
+Auf diesem Einzeiler greppen wir nach den Anfragen mit der Punktzahl 231 oder 189 bei den Requests. Wir wissen, dass dieser Wert von hinten gezählt der zweite Wert des Access Logs ist. Der letzte Wert ist der Anomale Score der Antwort. In unserem Fall erzielten alle Antworten 0, aber theoretisch könnte dieser Wert eine beliebige Zahl oder undefiniert (-> `-`) annehmen, so dass es im Allgemeinen eine gute Praxis ist, das Muster auf diese Weise zu schreiben. Der Alias *alreqid* extrahiert die eindeutige ID und *tee* zeigt uns die IDs und schreibt sie gleichzeitig in die Datei *ids*.
+
+Wir können dann die IDs aus dieser Datei verwenden, um diejenigen Alarme zu extrahieren, die zu diesen Requests gehören. Wir verwenden `grep -f`, um diesen Schritt auszuführen. Das `-F`-Flag sagt *grep*, dass unsere Musterdatei tatsächlich eine Liste von festen Zeichenketten ist, die durch Zeilenumbrüche getrennt sind. Solchermassen instruiert arbeitet *grep* viel schneller als ohne das Flag. Der *melidmsg*-Alias extrahiert die ID und die Meldung, die den Alert erklärt. Die Kombination von beiden ist sehr hilfreich. Der bereits bekannte *sucs* alias wird dann verwendet, um die einzelnen Meldungen aufzusummieren.
 
 ```bash
-$> grep -E " 91 [0-9-]+$" labor-07-example-access.log | alreqid > ids-score-91
-$> grep -F -f ids-score-91 labor-07-example-error.log | melidmsg | sucs
-      5 950911 HTTP Response Splitting Attack
-      5 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      5 973300 Possible XSS Attack Detected - HTML Tag Handler
-      5 973304 XSS Attack Detected
-      5 973306 XSS Attack Detected
-      5 973314 XSS Attack Detected
-      5 973316 IE XSS Filters - Attack Detected.
-      5 973332 IE XSS Filters - Attack Detected.
-      5 973333 IE XSS Filters - Attack Detected.
-      5 973335 IE XSS Filters - Attack Detected.
-      5 973338 XSS Filter - Category 3: Javascript URI Vector
-      5 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-      5 981231 SQL Comment Sequence Detected.
-      5 981243 Detects classic SQL injection probings 2/2
-      5 981244 Detects basic SQL authentication bypass attempts 1/3
-      5 981245 Detects basic SQL authentication bypass attempts 2/3
-      5 981246 Detects basic SQL authentication bypass attempts 3/3
-      5 981248 Detects chained SQL injection attempts 1/2
-      5 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+$> grep -F -f ids tutorial-8-example-error.log  | melidmsg | sucs
+      7 921180 HTTP Parameter Pollution (ARGS_NAMES:ids[])
+     12 942450 SQL Hex Encoding Identified
+     35 942431 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
+     75 942130 SQL Injection Attack: SQL Tautology Detected.
+    110 920273 Invalid character in request (outside of very strict set)
+    150 942432 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)
 ```
 
-Die Vermutung hat sich also bestätigt: Jede dieser Regeln wurde genau fünf Mal verletzt. Wir haben es also mit sehr hoher Wahrscheinlichkeit mit fünf identischen Requests zu tun, welche dieselbe Gruppe von Regeln verletzte. Es riecht deutlich nach *Cross-Site-Scripting* Attacke und nach dem Versuch einer *SQL Injection*. Aber wir wissen, es sind nur Fehlalarme. Wo traten sie genau auf?
+Das sind also die Bösewichte. Schauen wir sie uns der Reihe nach durch. Die Regel 921180 sucht Parameter, die innerhalb eines Requests mehr als einmal übergeben wird (hier *ids[]*). Es ist eine erweiterte Regel, die im CRS3 zum ersten Mal erschien (basierend auf einer Mechanik, die ich selbst entwickelte). Drupal scheint sich so zu verhalten und wir können es nicht ohne weiteres anweisen, dieses Verhalten zu ändern. 942450 sucht nach Zeichenketten des Musters `0x` mit zwei zusätzlichen Hexadezimalziffern. Dies ist eine hexadezimale Kodierung, die auf einen möglichen Exploit hinweisen kann. Das Problem mit dieser Codierung ist, dass Session-Cookies manchmal dieses Muster enthalten können. Session-Cookies sind zufällig generierte Strings und manchmal enthalten sie genau dieses Muster. In diesem Fall gibt es eine Paranoia Level 2-Regel, die nach Requests Ausschau hält, welche versuchen mittels Hexadezimal-Codierung an unserem Regelwerk vorbei zu schleichen. Wir stehen also vor einem geradezu klassischen False Positive.
+
+Die Regeln 942431 und 942432 sind eng miteinander verwandt. Wir nennen dies Geschwister. Sie bilden eine Familie mit 942430, der Basisregel, die nach 12 Sonderzeichen wie eckigen Klammern, Doppelpunkten, Semikolons, Sternchen usw. Ausschau hält (Paranoia-Ebene 2). 942431 ist eine strengeres Geschwister, die das gleiche tut, aber mit einem Limit von 6 Zeichen auf Paranoia Level 3 und schließlich das neurotische Mitglied der Familie, 942432, die bereits nach dem 2. Sonderzeichen austickt (Paranoia Level 4).
+
+942130 ist eine Regel aus der großen Gruppen von SQL-Injektionsregeln (dies ist ein Feld, in dem das CRS sehr stark ist) und schliesslich 920273 eine weitere paranoide Regel aus Paranoia-Ebene 4, die den Bereich der erlaubten ASCII-Zeichen definiert (dh. `38,44-46,48-58,61,65-90,95,97-122`).
+
+Für jede Warnung müssen wir nun eine Rule Exclusion schreiben und wie wir in der vorangegangenen Anleitung gesehen haben, gibt es mehrere Optionen. Es braucht ein bisschen Erfahrung, um die richtige Wahl zu treffen und sehr oft können mehrere Ansätze geeignet sein. Betrachten wir noch einmal den Spickzettel:
+
+<a href="https://www.netnea.com/cms/rule-exclusion-cheatsheet-download/"><img src="/files/tutorial-7-rule-exclusion-cheatsheet_small.png" alt="Rule Exclusion CheatSheet" width="476" height="673" /></a>
+_Klicken zum Vergrössern_
+
+Beginnen wir mit einem einfachen Fall: 920273. Wir könnten diesen nun sehr genau untersuchen und alle verschiedenen Parameter auswerten, die diese Regel auslösen. Abhängig von der Sicherheitsstufe, die wir für unsere Anwendung erreichen möchten, wäre dies der richtige Ansatz. Aber auf der anderen Seite ist das hier nur eine Übung, so dass wir es uns einfach machen: Werfen wir die Regel komplett raus. Wir entscheiden uns dabei für eine Rule Exclusion zur Startup Time des Servers (die wir nach dem CRS-Include platzieren müssen).
 
 ```bash
-$> grep -F -f ids-score-91 labor-07-example-error.log | melmatch | sucs
-      5 REQUEST_COOKIES:X0_org
-     90 ARGS:message
+# === ModSec Core Rules: Startup Time Rules Exclusions
+
+# ModSec Rule Exclusion: 920273 : Invalid character in request (outside of very strict set)
+SecRuleRemoveById 920273
 ```
 
-Interessant. Es ist also vor allem der Parameter *message*, der zum hohen Score von 91 führte. Die Anfragenzeile unserer fünf Anfragen lautete ja auch `POST /EMail/MailHandler HTTP/1.1`, so dass rasch klar wird, dass wir es mit dem Inhalt eines abzuschickenden Emails zu tun haben. Es liegt auf der Hand, dass in unserem Service auf genau diesem Freitextfeld am ehesten mit Fehlalarmen zu rechnen ist, da unsere Nutzer hier frei Daten eingeben können. Wollen wir die Fehlalarme unterdrücken, müssen wir die betreffenden *Core-Rules* auf genau diesem Pfad und diesem Parameter ausschalten. Dies bedeutet wohlgemerkt, dass wir punktuell Löcher in unsere Schutzmauer boren. Angesichts der über 200 verschiedenen Core-Rules und der insgesamt sehr grossen Zahl gerade von *XSS* und *SQLInjection* sind diese Löcher aber vertretbar und die Voraussetzung dafür, überhaupt mit den *Core Rules* mit harten Limiten arbeiten zu können.
-
-Das Unterdrücken von einzelnen Regeln für einen Paramater auf einem bestimmten Pfad haben wir in der letzten Anleitung bereits kennengelernt. Auf unseren Fall angewendet ergibt das für die erste Regelverletzung folgende *Tuning-Regel* oder *Ignore-Rule*:
+Als nächstes die Alarme für 942432:
 
 ```bash
-SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,t:none,id:10000,\
-                                       ctl:ruleRemoveTargetById=950911;ARGS:message"
+$> grep -F -f ids tutorial-8-example-error.log  | grep 942432 | melmatch | sucs
+     75 ARGS:ids[]
+     75 ARGS_NAMES:ids[]
 ```
 
-Von den 20 oben angeführten Regelverletzungen ist damit eine behandelt. Für die 19 anderen verfahren wir analog. Das ist aber viel Handarbeit, weshalb wir uns mit einem weiteren Skript behelfen, welches das Ableiten in eine Tuning-Regel für uns übernimmt: [modsec-rulereport.rb](https://github.com/Apache-Labor/labor/blob/master/bin/modsec-rulereport.rb)
-
-Dieses Skript ist in der Lage, die *ModSecurity* Alerts zu lesen und zu interpretieren. *-h* liefert einen Überblick über die verschiedenen Benutzungsarten. Wir haben vor allem ein Interesse an der Fähigkeit des Skripts, selbstständig die von uns gewünschten *Ignore-Rules* zu generieren und uns damit viel Arbeit abzunehmen. Die in der letzten Anleitung gesehenen Varianten dieser Regeln sind über die Betriebsmodi *Path*, *Parameter* und *Combined* zugänglich. Einen Modus für die komplizierten Scoring-Unterdrückungsregeln gibt es noch nicht. Hier das Skript in Aktion:
+Drupal verwendet offensichtlich eckige Klammern innerhalb des Parameternamens. Dies ist nicht auf IDs beschränkt. Vielmehr handelt es sich um ein allgemeines Muster. Zwei eckige Klammern reichen aus, um die Regel auszulösen, so dass dies viele Fehlalarme auslöst. All den verschiedenen Situationen mit diesem Muster nachzurennen wäre sehr langweilig, so dass wir diese Regel auch komplett ausschalten (Wie vorhin bemerkt handelt sich um eine Regel auf Paranoia Level 4. Eine etwas entspannterte Variante dieser Regel gibt es bei PL3).
 
 ```bash
-$> grep -F -f ids-score-91 labor-07-example-error.log | modsec-rulereport.rb --mode combined
+# ModSec Rule Exclusion: 942432 : Restricted SQL Character Anomaly Detection (args): 
+# number of special characters exceeded (2)
+SecRuleRemoveById 942432
+```
 
-5 x 950911 HTTP Response Splitting Attack (severity:  NONE/UNKOWN)
-------------------------------------------------------------------
-      # ModSec Rule Exclusion: 950911 : HTTP Response Splitting Attack (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,\
-                               id:10001,ctl:ruleRemoveTargetById=950911;ARGS:message"
+Die nächste ist 942450. Dies ist die Regel, welche sich um die Hex-Codierung kümmert. Dies ist ein merkwürdiger Fall, wie wir leicht sehen können:
 
-5 x 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters (severity:  NONE/UNKOWN)
------------------------------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 960024 : Meta-Character Anomaly Detection Alert - …
-Repetative Non-Word Characters (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10002,…
-ctl:ruleRemoveTargetById=960024;ARGS:message"
+```bash
+$> grep -F -f ids tutorial-8-example-error.log  | grep 942450 | melmatch | sucs
+      6 REQUEST_COOKIES:98febd3dhf84de73ab2e32889dc5f0x032a9
+      6 REQUEST_COOKIES_NAMES:SESS29af1facda0a866a687d5055f0x034ca
+```
 
-5 x 973300 Possible XSS Attack Detected - HTML Tag Handler (severity:  NONE/UNKOWN)
------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 973300 : Possible XSS Attack Detected - HTML Tag Handler…
-(severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10003,ctl:ruleRemoveTargetById=973300;ARGS:message"
+Wie erwartet, ist es ein Session-Cookie, aber unerwarteter Weise hat das Session-Cookie einen dynamischen Namen! Das bedeutet, dass wir das Session-Cookie nicht einfach via seinen Namen ignorieren können, wir müssen sämtliche Cookies ignorieren, deren Name einem bestimmten Muster entspricht und das ist sehr, sehr kompliziert. Und es ist wahrscheinlich nicht der Mühe wert. Der einfachere Ansatz ist, diese Regel für sämtliche Cookies zu ignorieren. Auf diese Weise bleibt die Regel intakt für Post-und Query-String-Parameter-Parameter intakt, aber sie wird keine Alarme für Cookies mehr auslösen.
 
-5 x 973304 XSS Attack Detected (severity:  NONE/UNKOWN)
--------------------------------------------------------
-      # ModSec Rule Exclusion: 973304 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10004,ctl:ruleRemoveTargetById=973304;ARGS:message"
+```bash
+# ModSec Rule Exclusion: 942450 : SQL Hex Encoding Identified (severity: 5 CRITICAL)
+SecRuleUpdateTargetById 942450 "!REQUEST_COOKIES"
+SecRuleUpdateTargetById 942450 "!REQUEST_COOKIES_NAMES"
+```
 
-5 x 973306 XSS Attack Detected (severity:  NONE/UNKOWN)
--------------------------------------------------------
-      # ModSec Rule Exclusion: 973306 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10005,ctl:ruleRemoveTargetById=973306;ARGS:message"
+Noch drei weitere: 921180, 942431 und 943130. Wir starten mit der letzten:
 
-5 x 973314 XSS Attack Detected (severity:  NONE/UNKOWN)
--------------------------------------------------------
-      # ModSec Rule Exclusion: 973314 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10006,ctl:ruleRemoveTargetById=973314;ARGS:message"
+```bash
+$> grep -F -f ids tutorial-8-example-error.log | grep 942130 | melmatch | sucs
+     75 ARGS:ids[]
+```
 
-5 x 973316 IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
----------------------------------------------------------------------
-      # ModSec Rule Exclusion: 973316 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10007,ctl:ruleRemoveTargetById=973316;ARGS:message"
+Es ist also immer derselbe Parameter *ids[]*, den wir bereits kennengelernt haben. Vielleicht lohnt es sich die URI anzuschauen, um herauszufinden, was genau passiert:
 
-5 x 973332 IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
----------------------------------------------------------------------
-      # ModSec Rule Exclusion: 973332 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10008,ctl:ruleRemoveTargetById=973332;ARGS:message"
+```bash
+$> grep -F -f ids tutorial-8-example-error.log  | grep 942130 | meluri | sucs
+     75 /drupal/index.php/contextual/render
+```
 
-5 x 973333 IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
----------------------------------------------------------------------
-      # ModSec Rule Exclusion: 973333 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10009,ctl:ruleRemoveTargetById=973333;ARGS:message"
+Das ist also immer derselbe Pfad. Schliessen wir doch einfach den Parameter *ids[]* von der Behandlung aus, wenn er mit diesem Pfad zusammen auftritt. Dies läuft auf eine Runtime Rule Exclusion hinaus. In der vorangegangenen Anleitung haben wir gesehen, dass das Schreiben dieser Art von Regeln anstrengend und kompliziert ist. Es wäre schön, wenn ein Skript die Arbeit für uns machen würde. So, Ich habe ein solches Skript geschrieben: [modsec-rulereport.rb](https://www.netnea.com/cms/files/modsec-rulereport.rb). Es erwartet eine oder mehrere Alarme (oder das ganze Error Log wenn es sein muss) auf STDIN entgegen und schlägt eine von mehreren möglichen Typen von Rule Exclusions vor (`modsec-rulereport.rb -h` bringt eine Übersicht).
 
-5 x 973335 IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
----------------------------------------------------------------------
-      # ModSec Rule Exclusion: 973335 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10010,ctl:ruleRemoveTargetById=973335;ARGS:message"
+```bash
+$> grep -F -f ids tutorial-8-example-error.log  | grep 942130 | modsec-rulereport.rb --mode combined
 
-5 x 973338 XSS Filter - Category 3: Javascript URI Vector (severity:  NONE/UNKOWN)
-----------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 973338 : XSS Filter - Category 3: Javascript URI Vector (severity: ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10011,ctl:ruleRemoveTargetById=973338;ARGS:message"
+75 x 942130 SQL Injection Attack: SQL Tautology Detected.
+--------------------------------------------------------------------------------
+      # ModSec Rule Exclusion: 942130 : SQL Injection Attack: SQL Tautology Detected.
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=942130;ARGS:ids[]"
+```
 
-5 x 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded ...
------------------------------------------------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981172 : Restricted SQL Character Anomaly Detection Alert - Total # of ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10012,ctl:ruleRemoveTargetById=981172;REQUEST_COOKIES:X0_org"
+Der Modus _combined_ weist das Skript an, eine Regel zu schreiben, die eine Pfadbedingung mit einer Regel-ID und einem bestimmten Parameter kombiniert. Als erstes rapportiert das Skript die Anzahl der Meldungen mit diesem Muster, dann schlägt sie eine Ausschlussregel vor, die wir zusammen mit dem Kommentar eins zu eins in unsere Apache-Konfigurationsdatei kopieren können. Die vorgeschlagene Regel hat eine ID von 10'000. Bei einem nächsten Aufruf des Skripts, müssen wir diese ID selbst bearbeiten, um ID-Kollisionen zu vermeiden, aber das ist eine einfache Aufgabe.
 
-5 x 981231 SQL Comment Sequence Detected. (severity:  NONE/UNKOWN)
-------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981231 : SQL Comment Sequence Detected. (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10013,ctl:ruleRemoveTargetById=981231;ARGS:message"
+Hier steht nun, wie die Konfiguration nach dem Einfügen dieses Konstrukts aussieht (Zeilenumbruch aus Anzeigegründen):
 
-5 x 981243 Detects classic SQL injection probings 2/2 (severity:  NONE/UNKOWN)
-------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981243 : Detects classic SQL injection probings 2/2 (severity: ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10014,ctl:ruleRemoveTargetById=981243;ARGS:message"
+```bash
+# === ModSec Core Rules: Runtime Exclusion Rules (ids: 10000-49999)
 
-5 x 981244 Detects basic SQL authentication bypass attempts 1/3 (severity:  NONE/UNKOWN)
+# ModSec Rule Exclusion: 942130 : SQL Injection Attack: SQL Tautology Detected.
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" \
+    "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=942130;ARGS:ids[]"
+
+```
+
+Dieses Skript ist sehr praktisch. Werden wir mal 942431 hinein und schauen, was passiert:
+
+```bash
+$> grep -F -f ids tutorial-8-example-error.log  | grep 942431 | modsec-rulereport.rb --mode combined
+35 x 942431 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
+----------------------------------------------------------------------------------------------------------------------------
+      # ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=942431;ARGS:ids[]"
+```
+
+Das ist fast dasselbe. Wir können also die ctl-Action (den Teil der Anweisung, welche mit `ctl` beginnt) herausnehmen und an die vorherige Anweisung anhängen:
+
+```bash
+# === ModSec Core Rules: Runtime Exclusion Rules (ids: 10000-49999)
+
+# ModSec Rule Exclusion: 942130 : SQL Injection Attack: SQL Tautology Detected.
+# ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): # of ...
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" \
+    "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=942130;ARGS:ids[],\
+                                 ctl:ruleRemoveTargetById=942431;ARGS:ids[]"
+
+```
+
+Und jetzt 921180:
+
+```bash
+$> grep -F -f ids tutorial-8-example-error.log  | grep 921180 | modsec-rulereport.rb --mode combined
+
+7 x 921180 HTTP Parameter Pollution (ARGS_NAMES:ids[])
+------------------------------------------------------
+      # ModSec Rule Exclusion: 921180 : HTTP Parameter Pollution (ARGS_NAMES:ids[])
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:ids[]"
+```
+
+Dies ist ein Sonderfall. Er passiert so, dass ein einzelner Parameter mehrmals übermittelt wird. Die Regel arbeitet mit einem separaten Zähler, der für jeden Parameter mitgeführt wird. In einer zweiten Regel, 921180, überprüft die Regel den Zähler und schlägt gegebenenfalls Alarm. Wenn wir den Alarm zu unterdrücken wollen, sollten wir am besten die Prüfung dieses Zählers unterdrücken, so wie das Skript es vorschlägt. Wir stehen wieder vor derselben URI, aber ich habe das Gefühl, dass diese Regel auch noch durch weitere Parameter ausgelöst wird. Wir werden sehen.
+
+Das bringt uns zu einem organisatorischen Problem. Wie können wir die Regelausschlüsse am besten organisieren? Vor allem die komplizierten Exclusions zur Laufzeit. Wir können nach Regel-ID, nach URI oder nach Parameter sortieren. Es gibt keine einfache Antwort. Für grosse Webseiten mit mehreren Diensten oder vielen verschiedenen Anwendungspfaden verwende ich den URI, um die Ausschlussregeln nach Zweigen des Dienstes zu gruppieren. Aber mit kleinen Services hat sich die Sortierung nach Regel-ID bewährt.
+
+Wir nehmen jetzt also die vorgeschlagene Regel auf, bereiten den Kommentar für zukünftige Variablen vor, erhöhen die Regel ID um 1 (das verhindert Rule ID Kollisionen) und fügen das alles der Konfiguration hinzu:
+
+```bash
+# ModSec Rule Exclusion: 921180 : HTTP Parameter Pollution (multiple variables)
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" \
+    "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:ids[]"
+```
+
+Damit haben wir die sieben Highscore-Anfragen (189 und 231) abgedeckt. Das Schreiben dieser sechs Regel Ausschlüsse war ein wenig umständlich, aber das Skript scheint eine wirkliche Verbesserung für den Prozess darzustellen. Nun geht es schneller. Versprochen.
+
+###Schritt 4: Verringerung der Anomaly Score Limite
+
+Wir haben die Regeln, die zu den höchsten Anomalie Werten führen, unterdrückt.  Eigentlich ist jetzt alles 100 Punkten weg.  In einem Produktions-Setup, würde ich die aktualisierte Konfiguration installieren und das Verhalten ein wenig beobachten.  Wenn die hohen Werte wirklich weg sind, dann ist es Zeit, die Anomalie Limite zu reduzieren.  Ein typischer erster Schritt ist von 1000 bis 100. Dann setzen wir das Schreiben der Rule Exclusions fort, reduzieren dann auf 50 oder so, dann auf 20, 10 und 5. Tatsächlich ist eine Grenze von 5 wirklich streng (die erste kritische Warnung blockiert damit eine Anfrage),  Aber für Websites mit weniger Sicherheitsbedürfnissen, kann eine Grenze von 10 bereits gut genug sein. Alle Werte darüber blockiert die Angreifer nicht wirklich.
+
+Aber bevor wir dort ankommen, müssen wir noch einige Regelausschlüsse hinzufügen.
+
+###Schritt 5: Die zweite Runde von Rule Exclusions
+
+Nach dem ersten Satz von Regelausschlüssen würden wir den Dienst etwas beobachten. Das bringt uns einen neuen Satz von Logfiles.
+
+* [tutorial-8-example-access-round-2.log](./tutorial-8-example-access-round-2.log)
+* [tutorial-8-example-error-round-2.log](./tutorial-8-example-error-round-2.log)
+
+Wir beginnen erneut mit einem Blick auf die Verteilung der Anomaly Werte:
+
+```bash
+$> cat tutorial-8-example-access-round-2.log | alscores | modsec-positive-stats.rb
+
+INCOMING                     Num of req. | % of req. |  Sum of % | Missing %
+Number of incoming req. (total) |  10000 | 100.0000% | 100.0000% |   0.0000%
+
+Empty or miss. incoming score   |      0 |   0.0000% |   0.0000% | 100.0000%
+Reqs with incoming score of   0 |   8944 |  89.4400% |  89.4400% |  10.5600%
+Reqs with incoming score of   1 |      0 |   0.0000% |  89.4400% |  10.5600%
+Reqs with incoming score of   2 |      0 |   0.0000% |  89.4400% |  10.5600%
+Reqs with incoming score of   3 |      0 |   0.0000% |  89.4400% |  10.5600%
+Reqs with incoming score of   4 |     20 |   0.2000% |  89.6400% |  10.3600%
+Reqs with incoming score of   5 |    439 |   4.3900% |  94.0300% |   5.9700%
+Reqs with incoming score of   6 |      0 |   0.0000% |  94.0300% |   5.9700%
+Reqs with incoming score of   7 |      0 |   0.0000% |  94.0300% |   5.9700%
+Reqs with incoming score of   8 |    368 |   3.6800% |  97.7100% |   2.2900%
+Reqs with incoming score of   9 |      0 |   0.0000% |  97.7100% |   2.2900%
+Reqs with incoming score of  10 |      1 |   0.0100% |  97.7200% |   2.2800%
+Reqs with incoming score of  11 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  12 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  13 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  14 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  15 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  16 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  17 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  18 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  19 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  20 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  21 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  22 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  23 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  24 |      0 |   0.0000% |  97.7200% |   2.2800%
+Reqs with incoming score of  25 |     76 |   0.7600% |  98.4800% |   1.5200%
+Reqs with incoming score of  26 |      0 |   0.0000% |  98.4800% |   1.5200%
+Reqs with incoming score of  27 |      0 |   0.0000% |  98.4800% |   1.5200%
+Reqs with incoming score of  28 |      0 |   0.0000% |  98.4800% |   1.5200%
+Reqs with incoming score of  29 |      0 |   0.0000% |  98.4800% |   1.5200%
+Reqs with incoming score of  30 |     76 |   0.7600% |  99.2400% |   0.7600%
+Reqs with incoming score of  31 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  32 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  33 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  34 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  35 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  36 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  37 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  38 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  39 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  40 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  41 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  42 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  43 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  44 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  45 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  46 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  47 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  48 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  49 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  50 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  51 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  52 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  53 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  54 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  55 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  56 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  57 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  58 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  59 |      0 |   0.0000% |  99.2400% |   0.7600%
+Reqs with incoming score of  60 |     76 |   0.7600% | 100.0000% |   0.0000%
+
+Incoming average:   1.3969    Median   0.0000    Standard deviation   6.3634
+
+
+OUTGOING                     Num of req. | % of req. |  Sum of % | Missing %
+Number of outgoing req. (total) |  10000 | 100.0000% | 100.0000% |   0.0000%
+
+Empty or miss. outgoing score   |      0 |   0.0000% |   0.0000% | 100.0000%
+Reqs with outgoing score of   0 |   9980 |  99.8000% |  99.8000% |   0.2000%
+Reqs with outgoing score of   1 |      0 |   0.0000% |  99.8000% |   0.2000%
+Reqs with outgoing score of   2 |      0 |   0.0000% |  99.8000% |   0.2000%
+Reqs with outgoing score of   3 |      0 |   0.0000% |  99.8000% |   0.2000%
+Reqs with outgoing score of   4 |     20 |   0.2000% | 100.0000% |   0.0000%
+
+Outgoing average:   0.0080    Median   0.0000    Standard deviation   0.1787
+```
+
+Wenn wir dies mit dem ersten Lauf des statistischen Skripts vergleichen, dann haben wir die durchschnittliche Punktzahl von 12,5 auf 1,4 reduziert. Das ist sehr beeindruckend. Denn es bedeutet ja, dass wir trotz der Konzentration auf einige wenige Requests mit hohen Scores den gesamten Service deutlich verbesserten.
+
+Wir könnten erwarten, dass die hohen Scoring-Anfragen von 231 und 189 weg sind, aber interessanterweise ist der Cluster bei 98 auch verschwunden. Wir haben in der ersten Tuning Runde nur 7 Anfragen abgedeckt, aber ein Cluster mit Alerts aus 400 Anfragen ist ebenfalls weg. Und das ist keine Ausnahmeerscheinung. Es ist das Standardverhalten, wenn wir mit dieser Tuning-Methode arbeiten: Einige wenige von den höchsten Werten abgeleitete Rule exceptions lassen die allermeisten Fehlalarme verschwinden.
+
+Unser nächstes Ziel ist die Gruppe von Anfragen mit einer Punktzahl von 60. Extrahieren wir zum Beginn die Regel-IDs und untersuchen wir die Warnungen ein wenig:
+
+```bash
+$> egrep " 60 [0-9-]+$" tutorial-8-example-access-round-2.log | alreqid > ids
+$> grep -F -f ids tutorial-8-example-error-round-2.log | melidmsg | sucs
+     76 921180 HTTP Parameter Pollution (ARGS_NAMES:keys)
+     76 942100 SQL Injection Attack Detected via libinjection
+    152 942190 Detects MSSQL code execution and information gathering attempts
+    152 942200 Detects MySQL comment-/space-obfuscated injections and backtick termination
+    152 942260 Detects basic SQL authentication bypass attempts 2/3
+    152 942270 Looking for basic sql injection. Common attack string for mysql, oracle and others.
+    152 942410 SQL Injection Attack
+$> grep -F -f ids tutorial-8-example-error-round-2.log | meluri | sucs
+    912 /drupal/index.php/search/node
+```
+
+Dies deutet auf ein Suchformular und verschiedene Payloads, die SQL-Injektionen ähneln (auserhalb der ersten Regel 921180, die wir vorher bereits gesehen haben). Wir wir alle wisse zieht ein SQL-Injection-Angriffe geradezu an. Wir aber wissen, dass dies legitimer Verkehr war (ich sandte den Verkehr schliesslich persönlich los, als ich nach SQL-Anweisungen in den veröffentlichten Drupal-Artikeln suchte) und nun stehen wir vor einem Dilemma: Wenn wir die Regeln unterdrücken, öffnen wir eine Tür für SQL-Injections.  Wenn wir die Regeln intakt lassen und die Grenze reduzieren, werden wir einen Teil des legitimen Verkehrs blockieren.  Es ist eine vertretbare Meinung, niemand solle mit dem Suchformular nach SQL-Anweisungen in unseren Artikeln zu suchen. Es wäre aber auch vertretbar zu sagen, Drupal sei klug genug, um SQL-Angriffe über das Suchformular selbst abzuwehren. Da dies eine Übung zum Schreiben von Rule Exclusions ist, werden wir uns diese Position zu eigen machen. Lassen Sie uns diese Regeln ausschliessen. Wir nehmen das Helfer-Script zu Hilfe:
+
+```bash
+$> grep -F -f ids tutorial-8-example-error-round-2.log | modsec-rulereport.rb -m combined
+
+76 x 921180 HTTP Parameter Pollution (ARGS_NAMES:keys)
+------------------------------------------------------
+      # ModSec Rule Exclusion: 921180 : HTTP Parameter Pollution (ARGS_NAMES:keys)
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:keys"
+
+76 x 942100 SQL Injection Attack Detected via libinjection
+----------------------------------------------------------
+      # ModSec Rule Exclusion: 942100 : SQL Injection Attack Detected via libinjection
+  No parameter available to create ignore-rule proposal. Please try and use different mode.
+
+152 x 942190 Detects MSSQL code execution and information gathering attempts
+----------------------------------------------------------------------------
+      # ModSec Rule Exclusion: 942190 : Detects MSSQL code execution and information gathering attempts
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=942190;ARGS:keys"
+
+152 x 942200 Detects MySQL comment-/space-obfuscated injections and backtick termination
 ----------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981244 : Detects basic SQL authentication bypass attempts 1/3 ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10015,ctl:ruleRemoveTargetById=981244;ARGS:message"
+      # ModSec Rule Exclusion: 942200 : Detects MySQL comment-/space-obfuscated injections and backtick termination
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10002,ctl:ruleRemoveTargetById=942200;ARGS:keys"
 
-5 x 981245 Detects basic SQL authentication bypass attempts 2/3 (severity:  NONE/UNKOWN)
-----------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981245 : Detects basic SQL authentication bypass attempts 2/3 ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10016,ctl:ruleRemoveTargetById=981245;ARGS:message"
+152 x 942260 Detects basic SQL authentication bypass attempts 2/3
+-----------------------------------------------------------------
+      # ModSec Rule Exclusion: 942260 : Detects basic SQL authentication bypass attempts 2/3
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10003,ctl:ruleRemoveTargetById=942260;ARGS:keys"
 
-5 x 981246 Detects basic SQL authentication bypass attempts 3/3 (severity:  NONE/UNKOWN)
-----------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981246 : Detects basic SQL authentication bypass attempts 3/3 ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10017,ctl:ruleRemoveTargetById=981246;ARGS:message"
+152 x 942270 Looking for basic sql injection. Common attack string for mysql, oracle and others.
+------------------------------------------------------------------------------------------------
+      # ModSec Rule Exclusion: 942270 : Looking for basic sql injection. Common attack string for mysql, oracle and others.
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10004,ctl:ruleRemoveTargetById=942270;ARGS:keys"
 
-5 x 981248 Detects chained SQL injection attempts 1/2 (severity:  NONE/UNKOWN)
-------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981248 : Detects chained SQL injection attempts 1/2 (severity: ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10018,ctl:ruleRemoveTargetById=981248;ARGS:message"
-
-5 x 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination (severity: ...
----------------------------------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981257 : Detects MySQL comment-/space-obfuscated injections and ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,…
-id:10019,ctl:ruleRemoveTargetById=981257;ARGS:message"
+152 x 942410 SQL Injection Attack
+---------------------------------
+      # ModSec Rule Exclusion: 942410 : SQL Injection Attack
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10005,ctl:ruleRemoveTargetById=942410;ARGS:keys"
 ```
 
-Das Skript listet für jede Regel die totale Anzahl der Regelverletzungen auf und bietet dann einen Vorschlag für eine *Ignore-Rule*, die man in die *Apache-Konfiguration* übernehmen kann; angepasst werden muss allein die *Regel-ID* für die *Ignore-Rule*. Nebeneinander sind die Regeln etwas unübersichtlich; in der Praxis fasse ich es von Hand oft wie folgt zusammen. Wichtig ist dabei, die Kommentare zu den Regeln mitzunehmen, denn die einzelnen Nummern sind ja nicht sehr vielsagend:
+Wir hatten vorher bereits einen Platz für weitere 921180 Ausschlüsse vorbereitet. Wir setzen die erste Regel in diese Position und erhalten damit Folgendes:
 
 ```bash
-# Ignore-Rules for ARGS:message 
-# -----------------------------
-# ModSec Rule Exclusion: 950911 : HTTP Response Splitting Attack (severity:  NONE/UNKOWN)
-# ModSec Rule Exclusion: 960024 : Meta-Character Anomaly Detection Alert - Repetative ...
-# ModSec Rule Exclusion: 973300 : Possible XSS Attack Detected - HTML Tag Handler ...
-# ModSec Rule Exclusion: 973304 : XSS Attack Detected (severity:  NONE/UNKOWN)
-# ModSec Rule Exclusion: 973306 : XSS Attack Detected (severity:  NONE/UNKOWN)
-# ModSec Rule Exclusion: 973314 : XSS Attack Detected (severity:  NONE/UNKOWN)
-# ModSec Rule Exclusion: 973316 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-# ModSec Rule Exclusion: 973332 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-# ModSec Rule Exclusion: 973333 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-# ModSec Rule Exclusion: 973335 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-# ModSec Rule Exclusion: 973338 : XSS Filter - Category 3: Javascript URI Vector (severity:  NONE/UNKOWN)
-# ModSec Rule Exclusion: 981231 : SQL Comment Sequence Detected. (severity:  NONE/UNKOWN)
-# ModSec Rule Exclusion: 981243 : Detects classic SQL injection probings 2/2 (severity:  NONE/UNKOWN)
-# ModSec Rule Exclusion: 981244 : Detects basic SQL authentication bypass attempts 1/3 ...
-# ModSec Rule Exclusion: 981245 : Detects basic SQL authentication bypass attempts 2/3 ...
-# ModSec Rule Exclusion: 981246 : Detects basic SQL authentication bypass attempts 3/3 ...
-# ModSec Rule Exclusion: 981248 : Detects chained SQL injection attempts 1/2 (severity:  NONE/UNKOWN)
-# ModSec Rule Exclusion: 981257 : Detects MySQL comment-/space-obfuscated injections and ...
-SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10000,\
-ctl:ruleRemoveTargetById=950911;ARGS:message,ctl:ruleRemoveTargetById=960024;ARGS:message,\
-ctl:ruleRemoveTargetById=973300;ARGS:message,ctl:ruleRemoveTargetById=973304;ARGS:message,\
-ctl:ruleRemoveTargetById=973306;ARGS:message,ctl:ruleRemoveTargetById=973314;ARGS:message,\
-ctl:ruleRemoveTargetById=973316;ARGS:message,ctl:ruleRemoveTargetById=973332;ARGS:message,\
-ctl:ruleRemoveTargetById=973333;ARGS:message,ctl:ruleRemoveTargetById=973335;ARGS:message,\
-ctl:ruleRemoveTargetById=973338;ARGS:message,ctl:ruleRemoveTargetById=981231;ARGS:message,\
-ctl:ruleRemoveTargetById=981243;ARGS:message,ctl:ruleRemoveTargetById=981244;ARGS:message,\
-ctl:ruleRemoveTargetById=981245;ARGS:message,ctl:ruleRemoveTargetById=981246;ARGS:message,\
-ctl:ruleRemoveTargetById=981248;ARGS:message,ctl:ruleRemoveTargetById=981257;ARGS:message"
+# ModSec Rule Exclusion: 921180 : HTTP Parameter Pollution (multiple variables)
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" \
+    "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:ids[]"
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" \
+    "phase:2,nolog,pass,id:10002,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:keys"
 ```
 
-Das ist nun ein kompakter und vergleichsweise gut lesbarer Block mit *Ignore-Rules*, die alle denselben Parameter auf demselben Pfad betreffen. Aber unsere fünf Requests mit dem Anomalie-Score von 91 weisen noch einen weiteren verletzten Parameter auf, den wir nicht vergessen sollten: REQUEST_COOKIES:X0_org. Dabei zeigt sich die Eleganz des postulierten Ansatzes. Neben den fünf Regelverletzungen, die wir bei diesem Cookie vor uns haben, ist es total für über 2'000 Alarme und damit fast die Hälfte der Regelverletzungen verantwortlich:
-
-```bash
-$> cat labor-07-example-error.log | grep "REQUEST_COOKIES:X0_org" | melidmsg | sucs
-   2113 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-```
-
-Dies ist typisch, denn ein Cookie wird ja je nach *Path-Parameter* des Cookies bei jedem Request mitgeschickt. Besitzt ein Cookie also einen Wert, der eine *False Positive* hervorruft, dann ergeben sich rasant eine Vielzahl von Fehlalarmen. Es wäre nun interessant, den Inhalt des Cookies zu überprüfen, aber bei der Vorbereitung des Beispiel-Logfiles wurden sämtliche Parameterinhalte gelöscht. Es sei hier angemerkt, dass es sich um ein Cookie mit dem Inhalt einer `uuid` handelt und die vier Bindestriche einer `uuid` führen bereits zu einem Fehlalarm. Aber das nur am Rande, kommen wir zur *Ignore-Rule*. Das Skript `modsec-rulereport.rb` kann uns auch hier eine Empfehlung angeben: 
-
-```bash
-$> cat labor-07-example-error.log | grep "REQUEST_COOKIES:X0_org" | modsec-rulereport.rb --mode parameter
-
-2113 x 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters ...
---------------------------------------------------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981172 : Restricted SQL Character Anomaly Detection Alert - Total # ...
-      SecRuleUpdateTargetById 981172 "!REQUEST_COOKIES:X0_org"
-```
-
-Damit haben wir die zwanzig verschiedenen Fehlalarme, welche unsere fünf Requests mit dem Anomalie-Wert von 91 hervorriefen, abgehandelt. Mit den daraus abgeleiteten Ignore-Rules haben wir bereits weit über die Hälfte der Regelverletzungen behandelt:
-
-```bash
-$> (cat labor-07-example-error.log | grep -E "950911|960024|973300|973304|973306|973314|\
-973316|973332|973333|973335|973338|981231|981243|981244|981245|981246|981248|981257" | \
-grep "ARGS:message"; cat labor-07-example-error.log | grep 981172 | grep REQUEST_COOKIES:X0_org) | wc -l
-3415
-```
-
-###Schritt 6: Ignore-Rules in Produktion bringen und Anomalie-Limite reduzieren
-
-Es wäre nun angebracht, diese wenigen Regeln in die Produktion zu bringen und das System einige Zeit zu beobachten. Kommt tatsächlich eine Reduktion der Anomalie-Werte zu Stande? Können wir mit gutem Gewissen die Anomalie-Limite reduzieren? Wenn dies beides der Fall ist, dann könnte die Limite bereits reduziert werden. Wir haben auf Anfragen mit einem Wert von 91 gearbeitet. Ich empfehle grundsätzlich ein konservatives Vorgehen und würde die Regeln in die Produktion bringen und dann ein, zwei Wochen beobachten. Wenn sich keine Überraschungen einstellen, dann würde ich die Limite auf 100 oder sogar 90 reduzieren. Gleichzeitig würde ich aber bereits wieder die nächste Tuning-Runde durchführen und mich wieder um die legitimen Requests mit den höchsten Scores kümmern.
-
-Tatsächlich ist es gut möglich, dass plötzlich neue, ähnlich hohe Werte auftauchen. Dies liegt vor allem daran, dass das ursprüngliche Sample zu wenig gross war, um wirklich alles abzudecken. Das bedeutet, dass man einfach nochmals tunen muss. Erneut nach demselben Muster: Die legitimen Requests mit den höchsten Scores als Gegenstand der Tuning-Runde.
-
-###Schritt 7: Wiederholen der Schritte 5 und 6
-
-Erfolgreiches Tuning der *ModSecurity Core Rules* besteht im iterativen Wiederholen der Schritte: Eine Gruppe von legitimen Requests untersuchen, daraus *Ignore-Rules* ableiten, in die Produktion bringen, beobachten und gegebenenfalls die Anomalie-Limite absenken. Wichtig ist ein systematisches Vorgehen und ein fester Rhythmus, zum Beispiel alle zwei Wochen eine neue Gruppe von *Ignore-Rules* einspielen, einige Tage lang beobachten, dann neue *Ignore-Rules* ableiten und zusammen mit einer tieferen Limite einspielen.
-
-###Schritt 8: Weitere Ignore-Rules ableiten (Scores 50-89)
-
-Weil wir diese Anleitung aber zu Übungszwecken abarbeiten und keine produktive Umgebung vor uns haben, bringen wir die verfertigten *Ignore-Rules* nicht auf den Server, sondern üben uns noch etwas beim Schreiben dieser Regeln. In dieser zweiten Runde nehmen wir uns diejenigen Anfragen vor, die einen Score in den 50er bis 80ern ereichten. Als Basis dient uns ein Beispiel-Logfile aus dem die oben unterdrückten Regeln herausgefiltert wurden ([labor-07-example-error.log-step-7](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-04-example-error.log-step-7)). Regelverletzungen von 50 bis 89 waren in der urspünglichen Statistik sehr viele, aber es wird sich zeigen, dass nicht mehr viel zu unseren bestehenden Regelverletzungen hinzukommt:
-
-```bash
-$> cat labor-07-example-access.log | grep -E "[5-8][0-9] [0-9-]$" | alreqid > ids
-$> grep -F -f ids labor-07-example-error.log-step-7 | melidmsg | sucs
-      1 973300 Possible XSS Attack Detected - HTML Tag Handler
-      1 973304 XSS Attack Detected
-      1 973338 XSS Filter - Category 3: Javascript URI Vector
-      1 981245 Detects basic SQL authentication bypass attempts 2/3
-      1 981249 Detects chained SQL injection attempts 2/2
-      1 981317 SQL SELECT Statement Anomaly Detection Alert
-      2 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      5 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-$> grep -F -f ids labor-07-example-error.log-step-7 | melmatch | sucs
-      1 ARGS:message
-      1 ARGS:subject
-      1 TX:sqli_select_statement_count
-      5 ARGS:attachInfo
-      5 REQUEST_COOKIES:utag_main
-```
-
-Mit *utag_main* haben wir erneut ein Cookie vor uns. Das behandeln wir wieder separat:
-
-```bash
-$> grep -F -f ids labor-07-example-error.log-step-7 | grep "REQUEST_COOKIES:utag_main" | \
-modsec-rulereport.rb -m parameter
-5 x 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded ...
------------------------------------------------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981172 : Restricted SQL Character Anomaly Detection Alert - Total # ...
-      SecRuleUpdateTargetById 981172 "!REQUEST_COOKIES:utag_main"
-```
-
-Das Argument *attachInfo* verletzt mehrere Regeln. Wir lassen uns *Ignore-Rules* vorschlagen und fassen sie dann händisch zusammen:
-
-```bash
-$> grep -F -f ids labor-07-example-error.log-step-7 | grep "ARGS:attachInfo" | modsec-rulereport.rb -m combined
-
-1 x 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters (severity:  NONE/UNKOWN)
------------------------------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 960024 : Meta-Character Anomaly Detection Alert - Repetative Non-Word ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10000,…
-ctl:ruleRemoveTargetById=960024;ARGS:attachInfo"
-
-1 x 973300 Possible XSS Attack Detected - HTML Tag Handler (severity:  NONE/UNKOWN)
------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 973300 : Possible XSS Attack Detected - HTML Tag Handler (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10001,… 
-ctl:ruleRemoveTargetById=973300;ARGS:attachInfo"
-
-1 x 973304 XSS Attack Detected (severity:  NONE/UNKOWN)
--------------------------------------------------------
-      # ModSec Rule Exclusion: 973304 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10002,…
-ctl:ruleRemoveTargetById=973304;ARGS:attachInfo"
-
-1 x 973338 XSS Filter - Category 3: Javascript URI Vector (severity:  NONE/UNKOWN)
-----------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 973338 : XSS Filter - Category 3: Javascript URI Vector (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10003,…
-ctl:ruleRemoveTargetById=973338;ARGS:attachInfo"
-
-1 x 981245 Detects basic SQL authentication bypass attempts 2/3 (severity:  NONE/UNKOWN)
-----------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981245 : Detects basic SQL authentication bypass attempts 2/3 (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10004,…
-ctl:ruleRemoveTargetById=981245;ARGS:attachInfo"
-```
-
-Hier die Zusammenfassung:
+Bei der Regel 942100 bringt das Skript keinen vernünftigen Vorschlag.  Dies liegt daran, dass die Alarmmeldung ein leicht anderes Format aufweist und das Skript noch nicht schlau genug ist, um es korrekt zu analysieren.  Untersuchen wir die Warnmeldung, um den Pfad und den betreffenden Parameter zu finden.  Leider kann *melmatch* auch nicht damit fertig werden.  Also müssen wir dieses Mal von Hand arbeiten:
 
 
 ```bash
-      # Ignore-Rules for ARGS:attachInfo 
-      # --------------------------------
-      # ModSec Rule Exclusion: 960024 : Meta-Character Anomaly Detection Alert - Repetative ...
-      # ModSec Rule Exclusion: 973300 : Possible XSS Attack Detected - HTML Tag Handler ...
-      # ModSec Rule Exclusion: 973304 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973338 : XSS Filter - Category 3: Javascript URI Vector ...
-      # ModSec Rule Exclusion: 981245 : Detects basic SQL authentication bypass attempts 2/3 ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10003,\
-ctl:ruleRemoveTargetById=960024;ARGS:attachInfo,ctl:ruleRemoveTargetById=973300;ARGS:attachInfo,\
-ctl:ruleRemoveTargetById=973304;ARGS:attachInfo,ctl:ruleRemoveTargetById=973338;ARGS:attachInfo,\
-ctl:ruleRemoveTargetById=981245;ARGS:attachInfo"
-
-```
-Wichtig ist es, für diese Regel eine neue ID zu wählen. Das Skript fängt per Default mit seiner Zählung immer bei 10000 an. Hier habe ich die ID von Hand auf 10001 gesetzt.
-
-Damit verbleiben noch drei einzelne zu behandelnde Regelverletzungen in unserer Gruppe:
-
-```bash
-$> grep -F -f ids labor-07-example-error.log-step-7 | grep -E "ARGS:(message|subject)" | \
-modsec-rulereport.rb -m combined
-1 x 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters (severity:  NONE/UNKOWN)
------------------------------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 960024 : Meta-Character Anomaly Detection Alert - Repetative Non-Word ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10000,\
-ctl:ruleRemoveTargetById=960024;ARGS:subject"
-
-1 x 981249 Detects chained SQL injection attempts 2/2 (severity:  NONE/UNKOWN)
-------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981249 : Detects chained SQL injection attempts 2/2 (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10001,\
-ctl:ruleRemoveTargetById=981249;ARGS:message"
+$> grep -F -f ids tutorial-8-example-error-round-2.log | grep 942100 | head -1
+[2016-11-05 09:47:18.423889] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. detected SQLi using libinjection with fingerprint 'UEkn' [file "/apache/conf/owasp-modsecurity-crs-3.0.0-rc1/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf"] [line "67"] [id "942100"] [rev "1"] [msg "SQL Injection Attack Detected via libinjection"] [data "Matched Data: UEkn found within ARGS:keys: union select from users"] [ver "OWASP_CRS/3.0.0"] [maturity "1"] [accuracy "8"] [tag "application-multi"] [tag "language-multi"] [tag "platform-multi"] [tag "attack-sqli"] [tag "OWASP_CRS/WEB_ATTACK/SQL_INJECTION"] [tag "WASCTC/WASC-19"] [tag "OWASP_TOP_10/A1"] [tag "OWASP_AppSensor/CIE1"] [tag "PCI/6.5.2"] [hostname "localhost"] [uri "/drupal/index.php/search/node"] [unique_id "WB2cln8AAQEAAAehPc8AAADK"]
 ```
 
-Damit rückt das Freitextfeld *subject*, das man ebenfalls beim Schreiben einer Email füllt, in den Fokus. Es wurde da nur eine Regelverletzung entdeckt. Wir können aber annehmen, dass auf diesem Freitextfeld generell dieselben Regeln verletzt werden wie auf *message* und dass es bis dato noch nicht vorgekommen ist, zeigt nur dass unser Logfile noch nicht alle Möglichkeiten abdeckt. Wenn wir *subject* ähnlich behandeln möchten wie *message*, dann können wir dazu einen Block von *Ignore-Rules* aus den *message-Ignore-Rules* ableiten. Bevor wir das tun erweitern wir letzteren aber noch um die neue Unterdrückungs-Regel für id `981249`:
+Daraus könnnen wir die folgende Rule Exclusion ableiten:
 
 ```bash
-      # Ignore-Rules for ARGS:subject
-      # -----------------------------
-      # ModSec Rule Exclusion: 950911 : HTTP Response Splitting Attack (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 960024 : Meta-Character Anomaly Detection Alert - Repetative Non-Word ...
-      # ModSec Rule Exclusion: 973300 : Possible XSS Attack Detected - HTML Tag Handler (severity:  ...
-      # ModSec Rule Exclusion: 973304 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973306 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973314 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973316 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973332 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973333 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973335 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973338 : XSS Filter - Category 3: Javascript URI Vector (severity:  ...
-      # ModSec Rule Exclusion: 981231 : SQL Comment Sequence Detected. (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 981243 : Detects classic SQL injection probings 2/2 (severity:  ...
-      # ModSec Rule Exclusion: 981244 : Detects basic SQL authentication bypass attempts 1/3 (severity: ...
-      # ModSec Rule Exclusion: 981245 : Detects basic SQL authentication bypass attempts 2/3 (severity: ...
-      # ModSec Rule Exclusion: 981246 : Detects basic SQL authentication bypass attempts 3/3 (severity: ...
-      # ModSec Rule Exclusion: 981248 : Detects chained SQL injection attempts 1/2 (severity: ...
-      # ModSec Rule Exclusion: 981249 : Detects chained SQL injection attempts 2/2 (severity: ...
-      # ModSec Rule Exclusion: 981257 : Detects MySQL comment-/space-obfuscated injections and backtick ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10001,\
-ctl:ruleRemoveTargetById=950911;ARGS:subject,ctl:ruleRemoveTargetById=960024;ARGS:subject,\
-ctl:ruleRemoveTargetById=973300;ARGS:subject,ctl:ruleRemoveTargetById=973304;ARGS:subject,\
-ctl:ruleRemoveTargetById=973306;ARGS:subject,ctl:ruleRemoveTargetById=973314;ARGS:subject,\
-ctl:ruleRemoveTargetById=973316;ARGS:subject,ctl:ruleRemoveTargetById=973332;ARGS:subject,\
-ctl:ruleRemoveTargetById=973333;ARGS:subject,ctl:ruleRemoveTargetById=973335;ARGS:subject,\
-ctl:ruleRemoveTargetById=973338;ARGS:subject,ctl:ruleRemoveTargetById=981231;ARGS:subject,\
-ctl:ruleRemoveTargetById=981243;ARGS:subject,ctl:ruleRemoveTargetById=981244;ARGS:subject,\
-ctl:ruleRemoveTargetById=981245;ARGS:subject,ctl:ruleRemoveTargetById=981246;ARGS:subject,\
-ctl:ruleRemoveTargetById=981248;ARGS:subject,ctl:ruleRemoveTargetById=981249;ARGS:subject,\
-ctl:ruleRemoveTargetById=981257;ARGS:subject"
-```
-	
-Dabei halten wir *message* und *subject* weiterhin separat. Die Lesbarkeit würde leiden, wenn wir in den Blöcken die Parameter mischten.
-
-In unserer Gruppe von Fehlalarmen bleibt das kryptische Argument *TX:sqli_select_statement_count*. Die komplette Fehlermeldung sieht so aus:
-
-```bash
-[2015-05-26 22:13:36.867916] [-:error] - - [client 192.168.146.78] ModSecurity: Warning. Operator …
-GE matched 3 at TX:sqli_select_statement_count. [file …
-"/opt/modsecurity-rules/latest/base_rules/modsecurity_crs_41_sql_injection_attacks.conf"] [line "108"] …
-[id "981317"] [rev "2"] [msg "SQL SELECT Statement Anomaly Detection Alert"] [data "..."] …
-[hostname "www.example.com"] [uri "/EMail/MailHandler"] [unique_id "Vi6XgKwxQzZrjFreMRsAAAB3"]
+# ModSec Rule Exclusion: 942100 : SQL Injection Attack Detected via libinjection
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" \
+    "phase:2,nolog,pass,id:10003,ctl:ruleRemoveTargetById=942100;ARGS:keys"
 ```
 
-Die Engine zählt also die *SQL Statements* aus, speichert sie in einer internen Transaktionsvariablen ab und wenn sie zu drei oder mehr gelangt, dann gibt das einen Alarm. Erneut sehen wir uns mit dem Pfad */EMail/MailHandler* konfrontiert. Ich schlage vor, die interne Variable wie jedes andere Argument zu behandeln und diesen Zähler - der übrigens sehr selten anschlägt - beim Abfassen von Emails auszuschalten:
+Mit den verbleibenden benützen wir diesen Shortcut:
 
 ```bash
-      # Ignore-Rules for TX:sqli_select_statement_count (SQL Statement counter)
-      # -----------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981317 : SQL SELECT Statement Anomaly Detection Alert (severity: ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10002,\
-ctl:ruleRemoveTargetById=981317;TX:sqli_select_statement_count"
-```
-
-###Schritt 9: Weitere Ignore-Rules ableiten (Scores 10-49)
-
-In diese Gruppe fallen 21 Requests, aber nur eine einzige uns unbekannte Regelverletzung. Ich habe als Basis ([labor-07-example-error.log-step-8](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-04-example-error.log-step-8)) vorbereitet. Es handelt sich um das ursprüngliche Logfile aus dem sämtliche oben unterdrückten Regelverletzungen herausgefiltert wurden:
-
-```bash
-$> cat labor-07-example-access.log | grep -E "[1-4][0-9] [0-9-]$" | alreqid > ids
-$> wc -l ids
-21
-$> grep -F -f ids labor-07-example-error.log-step-8 | melidmsg
-960000 Attempted multipart/form-data bypass
-$> grep -F -f ids labor-07-example-error.log-step-8 | melmatch 
-FILES:upFile
-```
-
-Es schleicht sich nun der Eindruck ein, dass je weiter wir nach unten kommen, desto leichter die Arbeit beim tunen wird: Wir haben in diesem ansehnlich grossen Block von Regelverletzungen tatsächlich nur einen neuen Fehlalarm zu behandeln: Eine Verletzung beim File-Upload. Sie lässt sich leicht mit unserem Skript ableiten.
-
-```bash
-      # Ignore-Rules for FILES:upFile
-      # -----------------------------
-      # ModSec Rule Exclusion: 960000 : Attempted multipart/form-data bypass (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10004,\
-ctl:ruleRemoveTargetById=960000;FILES:upFile"
+$> grep -F -f ids tutorial-8-example-error-round-2.log | grep -v "942100\|921180" | modsec-rulereport.rb -m combined | sort
+...
+      # ModSec Rule Exclusion: 942190 : Detects MSSQL code execution and information gathering attempts
+      # ModSec Rule Exclusion: 942200 : Detects MySQL comment-/space-obfuscated injections and backtick termination
+      # ModSec Rule Exclusion: 942260 : Detects basic SQL authentication bypass attempts 2/3
+      # ModSec Rule Exclusion: 942270 : Looking for basic sql injection. Common attack string for mysql, oracle and others.
+      # ModSec Rule Exclusion: 942410 : SQL Injection Attack
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=942190;ARGS:keys"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=942200;ARGS:keys"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10002,ctl:ruleRemoveTargetById=942260;ARGS:keys"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10003,ctl:ruleRemoveTargetById=942270;ARGS:keys"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10004,ctl:ruleRemoveTargetById=942410;ARGS:keys"
 
 ```
 
-###Schritt 10: Weitere Ignore-Rules ableiten (Scores 1-9)
+Wir können dies in die folgende Regel vereinfachen, die dann an die vorherige Exclusion für 942100 angehängt wird:
 
-Im letzten Block der *Ignore Rules* (die Werte von 1 bis und mit 9) haben wir nun zahlenmässig sehr viele Regelverletzungen vor uns. Aber handelt es sich wirklich um neue Fehlalarme oder kommen wir ähnlich gimpflich davon wie bei den Scores 10-49? Als Basis dient ([labor-07-example-error.log-step-9](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-04-example-error.log-step-9)), das auf den vorangegangenen Schritten aufbaut.
 
 ```bash
-$> cat labor-07-example-access.log | grep -E " [1-9] [0-9-]$" | alreqid > ids
-$> wc -l ids
-2319 ids
-$> grep -F -f ids labor-07-example-error.log-step-9 | melidmsg | sucs
-    114 981000 Possibly malicious iframe tag in output
+# ModSec Rule Exclusion: 942100 : SQL Injection Attack Detected via libinjection
+# ModSec Rule Exclusion: 942190 : Detects MSSQL code execution and information gathering attempts
+# ModSec Rule Exclusion: 942200 : Detects MySQL comment-/space-obfuscated injections and backtick termination
+# ModSec Rule Exclusion: 942260 : Detects basic SQL authentication bypass attempts 2/3
+# ModSec Rule Exclusion: 942270 : Looking for basic sql injection. Common attack string for mysql, oracle and others.
+# ModSec Rule Exclusion: 942410 : SQL Injection Attack
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10004,\
+    ctl:ruleRemoveTargetById=942100;ARGS:keys,\
+    ctl:ruleRemoveTargetById=942190;ARGS:keys,\
+    ctl:ruleRemoveTargetById=942200;ARGS:keys,\
+    ctl:ruleRemoveTargetById=942260;ARGS:keys,\
+    ctl:ruleRemoveTargetById=942270;ARGS:keys,\
+    ctl:ruleRemoveTargetById=942410;ARGS:keys"
 ```
 
-Wir kommen tatsächlich sehr glimpflich davon. Nur noch ein einziges Problem ist zurückgeblieben, zudem scheint es nicht mehr den Input, sondern den Output zu betreffen. Wir verwahren wie bis dato bekannt:
+Und fertig. Dieses Mal haben wir alle Anfragen mit einem Score von über 50 eliminiert. Zeit, die Anomalieschwelle auf 50 zu reduzieren. Lassen wir es ein wenig so laufen und prüfen wir dann die Logfiles für die dritte Charge.
+
+###Step 6: Die dritte Runde mit Rule Exclusions
+
+Hier sind dieselben Übungsfiles. Es ist immer noch derselbe Verkehr, aber dank den oben stehenden Rule Exclusions mit weniger Alarmen.
+
+* [tutorial-8-example-access-round-3.log](./tutorial-8-example-access-round-3.log)
+* [tutorial-8-example-error-round-3.log](./tutorial-8-example-error-round-3.log)
+
+
+Dies führt zu folgenden Statistiken (diesmal nur für die eingehenden Anfragen):
 
 ```bash
-      # Ignore-Rules for RESPONSE_BODY
-      # ------------------------------
-      # ModSec Rule Exclusion: 981000 : Possibly malicious iframe tag in output (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/newMessage.aspx" "phase:2,nolog,pass,id:10005,\
-ctl:ruleRemoveTargetById=981000;RESPONSE_BODY"
+$> cat tutorial-8-example-access-round-3.log | alscores | modsec-positive-stats.rb --incoming
+INCOMING                     Num of req. | % of req. |  Sum of % | Missing %
+Number of incoming req. (total) |  10000 | 100.0000% | 100.0000% |   0.0000%
+
+Empty or miss. incoming score   |      0 |   0.0000% |   0.0000% | 100.0000%
+Reqs with incoming score of   0 |   9192 |  91.9200% |  91.9200% |   8.0800%
+Reqs with incoming score of   1 |      0 |   0.0000% |  91.9200% |   8.0800%
+Reqs with incoming score of   2 |      0 |   0.0000% |  91.9200% |   8.0800%
+Reqs with incoming score of   3 |      0 |   0.0000% |  91.9200% |   8.0800%
+Reqs with incoming score of   4 |      0 |   0.0000% |  91.9200% |   8.0800%
+Reqs with incoming score of   5 |    439 |   4.3900% |  96.3100% |   3.6900%
+Reqs with incoming score of   6 |      0 |   0.0000% |  96.3100% |   3.6900%
+Reqs with incoming score of   7 |      0 |   0.0000% |  96.3100% |   3.6900%
+Reqs with incoming score of   8 |    368 |   3.6800% |  99.9900% |   0.0100%
+Reqs with incoming score of   9 |      0 |   0.0000% |  99.9900% |   0.0100%
+Reqs with incoming score of  10 |      1 |   0.0100% | 100.0000% |   0.0000%
+
+Incoming average:   0.5149    Median   0.0000    Standard deviation   1.7882
 ```
 
-Und damit sind wir am Ende angekommen. Damit haben wir unseren Bestand von 10000 Anfragen und über 5000 Fehlalarmen abschliessend behandelt. Wenn wir diese Regeln in die Produktion bringen, dann müssen wir trotzdem mit einzelnen neuen False-Positives rechnen. Aber wir können sicher sein, dass sie nur noch vereinzelt auftreten werden. Es wäre also verfrüht nun sogleich eine ganz tiefe Anomalie-Limite einzustellen. Aber ein Wert von 5 oder 10, den ich auf produktiven Systemen empfehle, kann in einigen Absenkungsschritten und kleineren dazwischen geschobenen Tuning-Runden gut erreicht werden.
-
-###Schritt 11: Sämtliche Ignore-Rules zusammengefasst
-
-Fassen wir die verschiedenen Regeln zur Unterdrückung der Fehlalarme nochmals zusammen. Die Regeln gliedern sich in der Konfiguration in zwei Blöcke: *Ignore-Rules* vor dem *Include* der *Core-Rules* sowie Regeln nach dem *Include* der *Core-Rules*. Zwischen den beiden Blöcken eingeschoben das *Include-Statement* selbst. Die Regeln und die Zwischentitel sind nun so formatiert, dass sie einfach in eine Konfiguration wie in Anleitung 6 oder 7 eingefügt werden können.
+Erneut sind zahlreiche False Positives verschwunden, obschon wir nur eine kleine Reihe von Ausschlüssen für eine Punktzahl von 60 durchgeführt haben. Für diese Tuning-Runde knüpfen wir uns einsame Anfrage bei 10 und den Cluster bei 8 vor, damit wir die die Anomalie Schwelle auf 10 reduzieren konnen, was schon recht niedrig ist.
 
 ```bash
-      # === ModSecurity Ignore Rules Before Core Rules Inclusion; order by id of ignored rule (ids: 10000-49999)
+$> egrep " (10|8) [0-9-]+$" tutorial-8-example-access-round-3.log | alreqid > ids
+$> grep -F -f ids tutorial-8-example-error-round-3.log | melidmsg | sucs
+      2 932160 Remote Command Execution: Unix Shell Code Found
+    368 921180 HTTP Parameter Pollution (ARGS_NAMES:editors[])
+    368 942431 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
+```
 
-      # Ignore-Rules for ARGS:message 
-      # -----------------------------
-      # ModSec Rule Exclusion: 950911 : HTTP Response Splitting Attack (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 960024 : Meta-Character Anomaly Detection Alert - Repetative Non-Word ...
-      # ModSec Rule Exclusion: 973300 : Possible XSS Attack Detected - HTML Tag Handler (severity: ...
-      # ModSec Rule Exclusion: 973304 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973306 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973314 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973316 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973332 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973333 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973335 : IE XSS Filters - Attack Detected. (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973338 : XSS Filter - Category 3: Javascript URI Vector (severity: ...
-      # ModSec Rule Exclusion: 981231 : SQL Comment Sequence Detected. (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 981243 : Detects classic SQL injection probings 2/2 (severity: ...
-      # ModSec Rule Exclusion: 981244 : Detects basic SQL authentication bypass attempts 1/3 (severity: ...
-      # ModSec Rule Exclusion: 981245 : Detects basic SQL authentication bypass attempts 2/3 (severity: ...
-      # ModSec Rule Exclusion: 981246 : Detects basic SQL authentication bypass attempts 3/3 (severity: ...
-      # ModSec Rule Exclusion: 981248 : Detects chained SQL injection attempts 1/2 (severity: ...
-      # ModSec Rule Exclusion: 981249 : Detects chained SQL injection attempts 2/2 (severity: ...
-      # ModSec Rule Exclusion: 981257 : Detects MySQL comment-/space-obfuscated injections and backtick ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10000,\
-ctl:ruleRemoveTargetById=950911;ARGS:message,ctl:ruleRemoveTargetById=960024;ARGS:message,\
-ctl:ruleRemoveTargetById=973300;ARGS:message,ctl:ruleRemoveTargetById=973304;ARGS:message,\
-ctl:ruleRemoveTargetById=973306;ARGS:message,ctl:ruleRemoveTargetById=973314;ARGS:message,\
-ctl:ruleRemoveTargetById=973316;ARGS:message,ctl:ruleRemoveTargetById=973332;ARGS:message,\
-ctl:ruleRemoveTargetById=973333;ARGS:message,ctl:ruleRemoveTargetById=973335;ARGS:message,\
-ctl:ruleRemoveTargetById=973338;ARGS:message,ctl:ruleRemoveTargetById=981231;ARGS:message,\
-ctl:ruleRemoveTargetById=981243;ARGS:message,ctl:ruleRemoveTargetById=981244;ARGS:message,\
-ctl:ruleRemoveTargetById=981245;ARGS:message,ctl:ruleRemoveTargetById=981246;ARGS:message,\
-ctl:ruleRemoveTargetById=981248;ARGS:message,ctl:ruleRemoveTargetById=981249;ARGS:message,\
-ctl:ruleRemoveTargetById=981257;ARGS:message"
+Der erste Alarm ist merkwürdig: *Remote command execution.* Was hat es damit auf sich?
 
-      # Ignore-Rules for ARGS:subject
-      # -----------------------------
-      # ModSec Rule Exclusion: 950911 : HTTP Response Splitting Attack (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 960024 : Meta-Character Anomaly Detection Alert - Repetative Non-Word ...
-      # ModSec Rule Exclusion: 973300 : Possible XSS Attack Detected - HTML Tag Handler (severity: ...
-      # ModSec Rule Exclusion: 973304 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973306 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973314 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973316 : IE XSS Filters - Attack Detected. (severity: ...
-      # ModSec Rule Exclusion: 973332 : IE XSS Filters - Attack Detected. (severity: ...
-      # ModSec Rule Exclusion: 973333 : IE XSS Filters - Attack Detected. (severity: ...
-      # ModSec Rule Exclusion: 973335 : IE XSS Filters - Attack Detected. (severity: ...
-      # ModSec Rule Exclusion: 973338 : XSS Filter - Category 3: Javascript URI Vector (severity: ...
-      # ModSec Rule Exclusion: 981231 : SQL Comment Sequence Detected. (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 981243 : Detects classic SQL injection probings 2/2 (severity: ...
-      # ModSec Rule Exclusion: 981244 : Detects basic SQL authentication bypass attempts 1/3 (severity: ...
-      # ModSec Rule Exclusion: 981245 : Detects basic SQL authentication bypass attempts 2/3 (severity: ...
-      # ModSec Rule Exclusion: 981246 : Detects basic SQL authentication bypass attempts 3/3 (severity: ...
-      # ModSec Rule Exclusion: 981248 : Detects chained SQL injection attempts 1/2 (severity: ...
-      # ModSec Rule Exclusion: 981249 : Detects chained SQL injection attempts 2/2 (severity: ...
-      # ModSec Rule Exclusion: 981257 : Detects MySQL comment-/space-obfuscated injections and backtick ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10001,\
-ctl:ruleRemoveTargetById=950911;ARGS:subject,ctl:ruleRemoveTargetById=960024;ARGS:subject,\
-ctl:ruleRemoveTargetById=973300;ARGS:subject,ctl:ruleRemoveTargetById=973304;ARGS:subject,\
-ctl:ruleRemoveTargetById=973306;ARGS:subject,ctl:ruleRemoveTargetById=973314;ARGS:subject,\
-ctl:ruleRemoveTargetById=973316;ARGS:subject,ctl:ruleRemoveTargetById=973332;ARGS:subject,\
-ctl:ruleRemoveTargetById=973333;ARGS:subject,ctl:ruleRemoveTargetById=973335;ARGS:subject,\
-ctl:ruleRemoveTargetById=973338;ARGS:subject,ctl:ruleRemoveTargetById=981231;ARGS:subject,\
-ctl:ruleRemoveTargetById=981243;ARGS:subject,ctl:ruleRemoveTargetById=981244;ARGS:subject,\
-ctl:ruleRemoveTargetById=981245;ARGS:subject,ctl:ruleRemoveTargetById=981246;ARGS:subject,\
-ctl:ruleRemoveTargetById=981248;ARGS:subject,ctl:ruleRemoveTargetById=981249;ARGS:subject,\
-ctl:ruleRemoveTargetById=981257;ARGS:subject"
 
-      # Ignore-Rules for TX:sqli_select_statement_count (SQL Statement counter)
-      # -----------------------------------------------------------------------
-      # ModSec Rule Exclusion: 981317 : SQL SELECT Statement Anomaly Detection Alert (severity: ...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10002,\
-ctl:ruleRemoveTargetById=981317;TX:sqli_select_statement_count"
-      
-      # Ignore-Rules for ARGS:attachInfo 
-      # --------------------------------
-      # ModSec Rule Exclusion: 960024 : Meta-Character Anomaly Detection Alert - Repetative Non-Word ...
-      # ModSec Rule Exclusion: 973300 : Possible XSS Attack Detected - HTML Tag Handler (severity: ...
-      # ModSec Rule Exclusion: 973304 : XSS Attack Detected (severity:  NONE/UNKOWN)
-      # ModSec Rule Exclusion: 973338 : XSS Filter - Category 3: Javascript URI Vector (severity: ...
-      # ModSec Rule Exclusion: 981245 : Detects basic SQL authentication bypass attempts 2/3 (...
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10003,\
-ctl:ruleRemoveTargetById=960024;ARGS:attachInfo,ctl:ruleRemoveTargetById=973300;ARGS:attachInfo,\
-ctl:ruleRemoveTargetById=973304;ARGS:attachInfo,ctl:ruleRemoveTargetById=973338;ARGS:attachInfo,\
-ctl:ruleRemoveTargetById=981245;ARGS:attachInfo"
+```bash
+$> grep -F -f ids tutorial-8-example-error-round-3.log | grep 932160 | melmatch
+ARGS:account[pass][pass1]
+ARGS:account[pass][pass2]
+$> grep -F -f ids tutorial-8-example-error-round-3.log | grep 932160 | meldata
+Matched Data: /bin/bash found within ARGS:account[pass
+Matched Data: /bin/bash found within ARGS:account[pass
+```
 
-      # Ignore-Rules for FILES:upFile
-      # -----------------------------
-      # ModSec Rule Exclusion: 960000 : Attempted multipart/form-data bypass (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/MailHandler" "phase:2,nolog,pass,id:10004,\
-ctl:ruleRemoveTargetById=960000;FILES:upFile"
+Aha, es scheint sich um ein Passwort namens `/bin/bash` zu handeln. Das ist wahrscheinlich nicht die klügste Wahl, aber nichts, was uns schaden sollte. Wir können diese Regel für diesen Parameter leicht unterdrücken. Wenn wir aber etwas nach vorne schauen, dann müssen wir damit rechnen, dass andere merkwürdige Passwörter eine ganze Reihe andere Regeln verletzten werden. Tatsächlich ist das Passwort-Feld nicht unbedingt ein typisches Ziel eines Angriffs. Es könnte also eine Situation sein, in der es sinnvoll ist, eine ganze Klasse von Regeln zu deaktivieren.  Wir haben dazu mehrere Möglichkeiten. Wir können durch ein Tag deaktivieren, oder wir können einen ganzen Regel ID Bereich deaktivieren.  Schauen wir uns die verschiedenen Regel-Dateien an:
 
-      # Ignore-Rules for RESPONSE_BODY
-      # ------------------------------
-      # ModSec Rule Exclusion: 981000 : Possibly malicious iframe tag in output (severity:  NONE/UNKOWN)
-      SecRule REQUEST_FILENAME "@beginsWith /EMail/newMessage.aspx" "phase:2,nolog,pass,id:10005,\
-ctl:ruleRemoveTargetById=981000;RESPONSE_BODY"
+```bash
+REQUEST-901-INITIALIZATION.conf
+REQUEST-903.9001-DRUPAL-EXCLUSION-RULES.conf
+REQUEST-903.9002-WORDPRESS-EXCLUSION-RULES.conf
+REQUEST-905-COMMON-EXCEPTIONS.conf
+REQUEST-910-IP-REPUTATION.conf
+REQUEST-911-METHOD-ENFORCEMENT.conf
+REQUEST-912-DOS-PROTECTION.conf
+REQUEST-913-SCANNER-DETECTION.conf
+REQUEST-920-PROTOCOL-ENFORCEMENT.conf
+REQUEST-921-PROTOCOL-ATTACK.conf
+REQUEST-930-APPLICATION-ATTACK-LFI.conf
+REQUEST-931-APPLICATION-ATTACK-RFI.conf
+REQUEST-932-APPLICATION-ATTACK-RCE.conf
+REQUEST-933-APPLICATION-ATTACK-PHP.conf
+REQUEST-941-APPLICATION-ATTACK-XSS.conf
+REQUEST-942-APPLICATION-ATTACK-SQLI.conf
+REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf
+REQUEST-949-BLOCKING-EVALUATION.conf
+RESPONSE-950-DATA-LEAKAGES.conf
+RESPONSE-951-DATA-LEAKAGES-SQL.conf
+RESPONSE-952-DATA-LEAKAGES-JAVA.conf
+RESPONSE-953-DATA-LEAKAGES-PHP.conf
+RESPONSE-954-DATA-LEAKAGES-IIS.conf
+RESPONSE-959-BLOCKING-EVALUATION.conf
+RESPONSE-980-CORRELATION.conf
+```
 
-      # === ModSecurity Core Rules Inclusion
+Wir wollen nicht, dass die Protokoll-Angriffe ignoriert werden. Aber die Angriffe auf die verschiedenen Anwendungen werden vorsichtigerweise ausgeschaltet. Werfen wir also die Regeln von `REQUEST-930-APPLICATION-ATTACK-LFI.conf` bis `REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf` raus.  Dies ist effektiv der Regelbereich von 930'000 bis 943'999.  Wir können die beiden Passwort Parameter für alle diese Regeln mit den folgenden Starup Time Ausschlüssen unterdrücken:
 
-      Include    /modsecurity-core-rules/*.conf
+```bash
+# ModSec Rule Exclusion: 930000 - 943999 : All application rules for password parameters
+SecRuleUpdateTargetById 930000-943999 "!ARGS:account[pass][pass1]"
+SecRuleUpdateTargetById 930000-943999 "!ARGS:account[pass][pass2]"
+```
 
-      # === ModSecurity Ignore Rules After Core Rules Incl.; order by id of ignored rule (ids: 50000-59999)
+Es bleibt eine weitere Instanz von 921180, plus die 942431, die wir schon einmal gesehen haben.  Hier ist das, was das Skript vorschlägt:
 
-      # ModSec Rule Exclusion: 981172 : Restricted SQL Character Anomaly Detection Alert - Total # of ...
-      SecRuleUpdateTargetById 981172 "!REQUEST_COOKIES:X0_org"
+```bash
+$> grep -F -f ids tutorial-8-example-error-round-3.log | grep "921180\|942431" | modsec-rulereport.rb -m combined 
 
-      # ModSec Rule Exclusion: 981172 : Restricted SQL Character Anomaly Detection Alert - Total # of ...
-      SecRuleUpdateTargetById 981172 "!REQUEST_COOKIES:utag_main"
+448 x 921180 HTTP Parameter Pollution (ARGS_NAMES:editors[])
+------------------------------------------------------------
+      # ModSec Rule Exclusion: 921180 : HTTP Parameter Pollution (ARGS_NAMES:editors[])
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/attachments" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:editors[]"
+
+448 x 942431 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
+----------------------------------------------------------------------------------------------------
+      # ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/attachments" "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=942431;ARGS:ajax_page_state[libraries]"
+```
+
+Nun wissen wir schon recht genau, wie das geht: Der erste Vorschlag wird mit den anderen Direktiven zum Ausschluss von 921180 zusammengelegt (vergessen Sie nicht, eine neue Regel-ID auszuwählen) und der zweite Vorschlag wird als neuer Eintrag hinzugefügt:
+
+
+```bash
+# ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/attachments" \
+    "phase:2,nolog,pass,id:10005,ctl:ruleRemoveTargetById=942431;ARGS:ajax_page_state[libraries]"
+```
+
+Zeit, die Limite ein weiteres Mal zu reduzieren (dieses Mal bis auf 10) und zu sehen, was passiert.
+
+
+###Step 7: Die vierte Runde mit Regel-Tunins
+
+Wir haben ein neues Paar mit Logfiles:
+
+* [tutorial-8-example-access-round-4.log](./tutorial-8-example-access-round-4.log)
+* [tutorial-8-example-error-round-4.log](./tutorial-8-example-error-round-4.log)
+
+Hier die Statistik hierzu:
+
+```bash
+$> cat tutorial-8-example-access-round-4.log | alscores | modsec-positive-stats.rb --incoming
+INCOMING                     Num of req. | % of req. |  Sum of % | Missing %
+Number of incoming req. (total) |  10000 | 100.0000% | 100.0000% |   0.0000%
+
+Empty or miss. incoming score   |      0 |   0.0000% |   0.0000% | 100.0000%
+Reqs with incoming score of   0 |   9561 |  95.6100% |  95.6100% |   4.3900%
+Reqs with incoming score of   1 |      0 |   0.0000% |  95.6100% |   4.3900%
+Reqs with incoming score of   2 |      0 |   0.0000% |  95.6100% |   4.3900%
+Reqs with incoming score of   3 |      0 |   0.0000% |  95.6100% |   4.3900%
+Reqs with incoming score of   4 |      0 |   0.0000% |  95.6100% |   4.3900%
+Reqs with incoming score of   5 |    439 |   4.3900% | 100.0000% |   0.0000%
+
+Incoming average:   0.2195    Median   0.0000    Standard deviation   1.0244
+```
+
+Es scheint, wir seien beinahe fertig. Welche Regeln bleiben noch zurück?
+
+
+```bash
+$> cat tutorial-8-example-access-round-4.log | egrep " 5 [0-9-]+$"  | alreqid > ids
+$> grep -F -f ids tutorial-8-example-error-round-4.log  | melidmsg | sucs
+     30 921180 HTTP Parameter Pollution (ARGS_NAMES:op)
+     41 932160 Remote Command Execution: Unix Shell Code Found
+    368 921180 HTTP Parameter Pollution (ARGS_NAMES:fields[])
+```
+
+Unser Freund 921180 ist betreffend zwei anderer Parameter zurück und dazu ein weiteres Shell-Problem.  Möglicherweise ein weiteres Vorkommen des Passwort Parameters. Überprüfen wir das alles mal:
+
+```bash
+$> grep -F -f ids tutorial-8-example-error-round-4.log  | grep 921180 | modsec-rulereport.rb -m combined
+
+398 x 921180 HTTP Parameter Pollution (ARGS_NAMES:op)
+-----------------------------------------------------
+      # ModSec Rule Exclusion: 921180 : HTTP Parameter Pollution (ARGS_NAMES:op)
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/metadata" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:fields[]"
+      SecRule REQUEST_URI "@beginsWith /drupal/core/install.php" "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:op"
+```
+
+Es ist einfach, dies an der üblichen Stelle mit einer neuen Regel ID hinzuzufügen. Und dann noch der letzte Fehlalarm:
+
+```bash
+$> grep -F -f ids tutorial-8-example-error-round-4.log  | grep 932160 | modsec-rulereport.rb -m combined
+
+41 x 932160 Remote Command Execution: Unix Shell Code Found
+-----------------------------------------------------------
+      # ModSec Rule Exclusion: 932160 : Remote Command Execution: Unix Shell Code Found
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/user/login" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=932160;ARGS:pass"
+```
+
+Also ja, wieder das Passwort-Feld.  Ich denke, es ist am besten, den gleichen Prozess ausführen, den wir mit den anderen Vorkommen des Kennworts durchgeführt. Damals war es wohl die Registrierung, diesmal ist es das Login-Formular.
+
+```bash
+SecRuleUpdateTargetById 930000-943999 "!ARGS:pass"
+```
+
+Und damit sind wir fertig. Wir haben erfolgreich alle falschen Positiven eines Content-Management-Systems mit eigenartigen Parameterformaten und einem ModSecurity-Regelsatz, der auf einen wahnsinnig paranoiden Level gehoben wurde, bekämpft.
+
+###Schritt 8: Alle Regel Ausschlüsse nochmals zusammenfassen
+
+Zeit zum Zurückschauen und die Konfigurationsdatei mit allen Regelausschlüssen nochmals sauber zu formatieren. Ich habe alles ein wenig umgruppiert. Dazu habe ich einige Anmerkungen angebracht und die Regel IDs neu vergeben.  Wie bereits erwähnt, ist es nicht offensichtlich, wie die Regeln zu ordnen sind. Hier habe ich sie per ID gruppiert, aber auch einen Block eingefügt, in dem das Suchformular separat abdeckt wird.
+
+```bash
+# === ModSec Core Rules: Runtime Exclusion Rules (ids: 10000-49999)
+
+# ModSec Rule Exclusion: 921180 : HTTP Parameter Pollution (multiple variables)
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" \
+    "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:ids[]"
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" \
+    "phase:2,nolog,pass,id:10002,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:keys"
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/attachments" \
+    "phase:2,nolog,pass,id:10003,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:editors[]"
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/metadata" \
+    "phase:2,nolog,pass,id:10004,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:fields[]"
+SecRule REQUEST_URI "@beginsWith /drupal/core/install.php" \
+    "phase:2,nolog,pass,id:10005,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:op"
+
+# ModSec Rule Exclusion: 942130 : SQL Injection Attack: SQL Tautology Detected.
+# ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6) (severity:  NONE/UNKOWN)
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" \
+    "phase:2,nolog,pass,id:10006,ctl:ruleRemoveTargetById=942130;ARGS:ids[],\
+                                 ctl:ruleRemoveTargetById=942431;ARGS:ids[]"
+
+# ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/attachments" \
+    "phase:2,nolog,pass,id:10007,ctl:ruleRemoveTargetById=942431;ARGS:ajax_page_state[libraries]"
+
+
+# Handling alerts for the search form:
+# ModSec Rule Exclusion: 942100 : SQL Injection Attack Detected via libinjection
+# ModSec Rule Exclusion: 942190 : Detects MSSQL code execution and information gathering attempts
+# ModSec Rule Exclusion: 942200 : Detects MySQL comment-/space-obfuscated injections and backtick termination
+# ModSec Rule Exclusion: 942260 : Detects basic SQL authentication bypass attempts 2/3
+# ModSec Rule Exclusion: 942270 : Looking for basic sql injection. Common attack string for mysql, oracle and others.
+# ModSec Rule Exclusion: 942410 : SQL Injection Attack
+SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10100,\
+   ctl:ruleRemoveTargetById=942100;ARGS:keys,\
+   ctl:ruleRemoveTargetById=942190;ARGS:keys,\
+   ctl:ruleRemoveTargetById=942200;ARGS:keys,\
+   ctl:ruleRemoveTargetById=942260;ARGS:keys,\
+   ctl:ruleRemoveTargetById=942270;ARGS:keys,\
+   ctl:ruleRemoveTargetById=942410;ARGS:keys"
+
+
+# === ModSecurity Core Rules Inclusion
+
+Include    /apache/conf/crs/rules/*.conf
+
+
+# === ModSecurity Ignore Rules After Core Rules Inclusion; order by id of ignored rule (ids: 50000-79999)
+
+# ModSec Rule Exclusion: 942450 : SQL Hex Encoding Identified
+SecRuleUpdateTargetById 942450 "!REQUEST_COOKIES
+SecRuleUpdateTargetById 942450 "!REQUEST_COOKIES_NAMES
+
+
+# ModSec Rule Exclusion: 942432 : Restricted SQL Character Anomaly Detection (args): 
+# number of special characters exceeded (2) (severity:  NONE/UNKOWN)
+SecRuleRemoveById 942432
+SecRuleRemoveById 920273
+
+# ModSec Rule Exclusion: 930000 - 943999 : All application rules for password parameters
+SecRuleUpdateTargetById 930000-943999 "!ARGS:account[pass][pass1]"
+SecRuleUpdateTargetById 930000-943999 "!ARGS:account[pass][pass2]"
+SecRuleUpdateTargetById 930000-943999 "!ARGS:pass"
 
 ```
 
 ###Bonus: Rascher einen Überblick gewinnen
 
-Wenn man neu an einen ungetunten Service herantritt, dann will man sich rasch einen Überblick verschaffen. Da ist es sinnvoll die Verteilung der Scores wie oben beschrieben anzusehen. Ein guter nächster Schritt ist eine Auswertung, wie die einzelnen *Anomaly Scores* genau zu Stande gekommen sind; gleichsam ein Überblick der Regelverletzungen pro Anomalie-Wert. Einen solchen Report generiert das folgende Konstrukt. Auf der ersten Zeile extrahieren wir eine Liste mit Anomalie Werten der eingehenden Requests, die im Logfile tatsächlich vorkommen. Dann bauen wir eine Schleife über diese *Scores*, lesen für jeden *Score* die *Request-ID* aus, speichern sie im File `ids` und machen eine kurze Auswertung auf dem *Error-Log* für diese *IDs*.
+Wenn man das alles zum ersten Mal tut, dann sind all diese vielen Regeln recht einschüchternd. Aber letztlich war es zusammengenommen auch nur Stunde Arbeit, was wiederum vernünftig erscheint. Zudem erstreckt sich das alles ja über mehrere mehrere Iterationen. Es würde aber nicht schaden, etwas Hilfe zu erhalten, um sich schneller einen Überblick über all die Warnungen zu verschaffen. Deshalb ist es eine gute Idee, einen Bericht darüber zu erzeugen, wie genau die *Anomaly Scores* aufgetreten sind. Zum Beispiel eine Übersicht der Regelverletzungen für jeden Anomalie Wert.  Das folgende Konstrukt generiert einen solchen Bericht.  In der ersten Zeile extrahieren wir eine Liste der Anomaliescores aus den eingehenden Anfragen, die tatsächlich in der Protokolldatei erscheinen.  Wir erstellen dann eine Schleife um diese *Scores*, lesen die *request ID* für jeden Wert ein, speichern sie in der Datei `ids` ab und führen eine kurze Analyse für diese *IDs* im Error Log durch.
 
 ```bash
-$> SCORES=$(cat labor-07-example-access.log | alscorein | sort -n | uniq | egrep -v -E "^0" | xargs)
-$> echo $SCORES
-3 6 9 11 18 21 23 26 33 34 43 59 66 69 71 73 76 79 81 83 84 86 89 91
-$> for S in $SCORES; do echo "INCOMING SCORE $S"; grep -E " $S [0-9-]+$" labor-07-example-access.log \
-   | alreqid > ids; grep -F -f ids labor-07-example-error.log | melidmsg | sucs; echo ; done 
-INCOMING SCORE 3
-     40 981000 Possibly malicious iframe tag in output
-   1598 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+$> cat tutorial-8-example-access.log | alscorein | sort -n | uniq | egrep -v -E "^0" > scores
+$> cat scores | while read S; do echo "INCOMING SCORE $S";\
+grep -E " $S [0-9-]+$" tutorial-8-example-access.log \
+| alreqid > ids; grep -F -f ids tutorial-8-example-error.log | melidmsg | sucs; echo ; done 
+INCOMING SCORE 5
+     30 921180 HTTP Parameter Pollution (ARGS_NAMES:op)
 
-INCOMING SCORE 6
-     69 981000 Possibly malicious iframe tag in output
-   1283 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+INCOMING SCORE 8
+      1 920273 Invalid character in request (outside of very strict set)
+      1 942432 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)
 
-INCOMING SCORE 9
-      5 981000 Possibly malicious iframe tag in output
-     10 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+INCOMING SCORE 10
+      4 920273 Invalid character in request (outside of very strict set)
+   6384 942450 SQL Hex Encoding Identified
 
-INCOMING SCORE 11
-      1 960000 Attempted multipart/form-data bypass
-      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+INCOMING SCORE 20
+     56 932160 Remote Command Execution: Unix Shell Code Found
+    168 920273 Invalid character in request (outside of very strict set)
 
-INCOMING SCORE 18
-      7 950911 HTTP Response Splitting Attack
-      7 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      7 973300 Possible XSS Attack Detected - HTML Tag Handler
-      7 973314 XSS Attack Detected
+INCOMING SCORE 30
+     77 920273 Invalid character in request (outside of very strict set)
+     77 942190 Detects MSSQL code execution and information gathering attempts
+     77 942200 Detects MySQL comment-/space-obfuscated injections and backtick termination
+     77 942260 Detects basic SQL authentication bypass attempts 2/3
+     77 942270 Looking for basic sql injection. Common attack string for mysql, oracle and others.
+     77 942410 SQL Injection Attack
 
-INCOMING SCORE 21
-      2 950911 HTTP Response Splitting Attack
-      2 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      2 973300 Possible XSS Attack Detected - HTML Tag Handler
-      2 973314 XSS Attack Detected
-      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+INCOMING SCORE 35
+     77 920273 Invalid character in request (outside of very strict set)
+     77 942100 SQL Injection Attack Detected via libinjection
+     77 942190 Detects MSSQL code execution and information gathering attempts
+     77 942200 Detects MySQL comment-/space-obfuscated injections and backtick termination
+     77 942260 Detects basic SQL authentication bypass attempts 2/3
+     77 942270 Looking for basic sql injection. Common attack string for mysql, oracle and others.
+     77 942410 SQL Injection Attack
 
-INCOMING SCORE 23
-      1 981245 Detects basic SQL authentication bypass attempts 2/3
-      3 981231 SQL Comment Sequence Detected.
-      4 950911 HTTP Response Splitting Attack
-      4 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      4 973300 Possible XSS Attack Detected - HTML Tag Handler
-      4 973314 XSS Attack Detected
-
-INCOMING SCORE 26
-      1 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-      2 950911 HTTP Response Splitting Attack
-      2 973300 Possible XSS Attack Detected - HTML Tag Handler
-      2 973314 XSS Attack Detected
-      2 981245 Detects basic SQL authentication bypass attempts 2/3
-      3 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-
-INCOMING SCORE 33
-      3 950911 HTTP Response Splitting Attack
-      3 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      3 973300 Possible XSS Attack Detected - HTML Tag Handler
-      3 973314 XSS Attack Detected
-      3 981243 Detects classic SQL injection probings 2/2
-      3 981245 Detects basic SQL authentication bypass attempts 2/3
-      3 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
-
-INCOMING SCORE 34
-      1 950911 HTTP Response Splitting Attack
-      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      1 973300 Possible XSS Attack Detected - HTML Tag Handler
-      1 973333 IE XSS Filters - Attack Detected.
-      1 981243 Detects classic SQL injection probings 2/2
-      1 981245 Detects basic SQL authentication bypass attempts 2/3
-      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-
-INCOMING SCORE 43
-      1 950911 HTTP Response Splitting Attack
-      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      1 973300 Possible XSS Attack Detected - HTML Tag Handler
-      1 973304 XSS Attack Detected
-      1 973314 XSS Attack Detected
-      1 973333 IE XSS Filters - Attack Detected.
-      1 981243 Detects classic SQL injection probings 2/2
-      1 981245 Detects basic SQL authentication bypass attempts 2/3
-      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
-
-INCOMING SCORE 59
-      1 950911 HTTP Response Splitting Attack
-      1 973333 IE XSS Filters - Attack Detected.
-      1 973338 XSS Filter - Category 3: Javascript URI Vector
-      1 981243 Detects classic SQL injection probings 2/2
-      2 973300 Possible XSS Attack Detected - HTML Tag Handler
-      2 973304 XSS Attack Detected
-      2 981245 Detects basic SQL authentication bypass attempts 2/3
-      3 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-
-INCOMING SCORE 66
-      1 950911 HTTP Response Splitting Attack
-      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      1 973300 Possible XSS Attack Detected - HTML Tag Handler
-      1 973304 XSS Attack Detected
-      1 973306 XSS Attack Detected
-      1 973314 XSS Attack Detected
-      1 973333 IE XSS Filters - Attack Detected.
-      1 973338 XSS Filter - Category 3: Javascript URI Vector
-      1 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-      1 981231 SQL Comment Sequence Detected.
-      1 981243 Detects classic SQL injection probings 2/2
-      1 981244 Detects basic SQL authentication bypass attempts 1/3
-      1 981245 Detects basic SQL authentication bypass attempts 2/3
-      1 981248 Detects chained SQL injection attempts 1/2
-
-INCOMING SCORE 69
-      1 950911 HTTP Response Splitting Attack
-      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      1 973300 Possible XSS Attack Detected - HTML Tag Handler
-      1 973306 XSS Attack Detected
-      1 973333 IE XSS Filters - Attack Detected.
-      1 973338 XSS Filter - Category 3: Javascript URI Vector
-      1 981231 SQL Comment Sequence Detected.
-      1 981243 Detects classic SQL injection probings 2/2
-      1 981244 Detects basic SQL authentication bypass attempts 1/3
-      1 981245 Detects basic SQL authentication bypass attempts 2/3
-      1 981246 Detects basic SQL authentication bypass attempts 3/3
-      1 981248 Detects chained SQL injection attempts 1/2
-      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
-      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-
-INCOMING SCORE 71
-      1 981246 Detects basic SQL authentication bypass attempts 3/3
-      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
-      2 950911 HTTP Response Splitting Attack
-      2 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      2 973300 Possible XSS Attack Detected - HTML Tag Handler
-      2 973304 XSS Attack Detected
-      2 973306 XSS Attack Detected
-      2 973314 XSS Attack Detected
-      2 973333 IE XSS Filters - Attack Detected.
-      2 973338 XSS Filter - Category 3: Javascript URI Vector
-      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-      2 981231 SQL Comment Sequence Detected.
-      2 981243 Detects classic SQL injection probings 2/2
-      2 981244 Detects basic SQL authentication bypass attempts 1/3
-      2 981245 Detects basic SQL authentication bypass attempts 2/3
-      2 981248 Detects chained SQL injection attempts 1/2
-
-INCOMING SCORE 73
-      1 950911 HTTP Response Splitting Attack
-      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      1 973300 Possible XSS Attack Detected - HTML Tag Handler
-      1 973304 XSS Attack Detected
-      1 973306 XSS Attack Detected
-      1 973314 XSS Attack Detected
-      1 973333 IE XSS Filters - Attack Detected.
-      1 973338 XSS Filter - Category 3: Javascript URI Vector
-      1 981231 SQL Comment Sequence Detected.
-      1 981243 Detects classic SQL injection probings 2/2
-      1 981244 Detects basic SQL authentication bypass attempts 1/3
-      1 981245 Detects basic SQL authentication bypass attempts 2/3
-      1 981246 Detects basic SQL authentication bypass attempts 3/3
-      1 981248 Detects chained SQL injection attempts 1/2
-      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
-
-INCOMING SCORE 76
-      1 981246 Detects basic SQL authentication bypass attempts 3/3
-      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
-      3 973316 IE XSS Filters - Attack Detected.
-      3 973335 IE XSS Filters - Attack Detected.
-      4 950911 HTTP Response Splitting Attack
-      4 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      4 973300 Possible XSS Attack Detected - HTML Tag Handler
-      4 973304 XSS Attack Detected
-      4 973306 XSS Attack Detected
-      4 973314 XSS Attack Detected
-      4 973333 IE XSS Filters - Attack Detected.
-      4 973338 XSS Filter - Category 3: Javascript URI Vector
-      4 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-      4 981231 SQL Comment Sequence Detected.
-      4 981243 Detects classic SQL injection probings 2/2
-      4 981244 Detects basic SQL authentication bypass attempts 1/3
-      4 981245 Detects basic SQL authentication bypass attempts 2/3
-      4 981248 Detects chained SQL injection attempts 1/2
+INCOMING SCORE 78
+     77 921180 HTTP Parameter Pollution (ARGS_NAMES:keys)
+     77 942100 SQL Injection Attack Detected via libinjection
+     77 942432 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)
+    154 942190 Detects MSSQL code execution and information gathering attempts
+    154 942200 Detects MySQL comment-/space-obfuscated injections and backtick termination
+    154 942260 Detects basic SQL authentication bypass attempts 2/3
+    154 942270 Looking for basic sql injection. Common attack string for mysql, oracle and others.
+    154 942410 SQL Injection Attack
+    231 920273 Invalid character in request (outside of very strict set)
 
 INCOMING SCORE 79
-      1 950911 HTTP Response Splitting Attack
-      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      1 973300 Possible XSS Attack Detected - HTML Tag Handler
-      1 973304 XSS Attack Detected
-      1 973306 XSS Attack Detected
-      1 973314 XSS Attack Detected
-      1 973333 IE XSS Filters - Attack Detected.
-      1 973338 XSS Filter - Category 3: Javascript URI Vector
-      1 981231 SQL Comment Sequence Detected.
-      1 981243 Detects classic SQL injection probings 2/2
-      1 981244 Detects basic SQL authentication bypass attempts 1/3
-      1 981245 Detects basic SQL authentication bypass attempts 2/3
-      1 981246 Detects basic SQL authentication bypass attempts 3/3
-      1 981248 Detects chained SQL injection attempts 1/2
-      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
-      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+    448 921180 HTTP Parameter Pollution (ARGS_NAMES:editors[])
+    448 942431 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
+    896 942450 SQL Hex Encoding Identified
+   3144 942432 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)
+   3595 920273 Invalid character in request (outside of very strict set)
 
-INCOMING SCORE 81
-      1 973332 IE XSS Filters - Attack Detected.
-      7 981246 Detects basic SQL authentication bypass attempts 3/3
-     19 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
-     24 973316 IE XSS Filters - Attack Detected.
-     24 973335 IE XSS Filters - Attack Detected.
-     25 950911 HTTP Response Splitting Attack
-     25 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-     25 973300 Possible XSS Attack Detected - HTML Tag Handler
-     25 973304 XSS Attack Detected
-     25 973306 XSS Attack Detected
-     25 973314 XSS Attack Detected
-     25 973333 IE XSS Filters - Attack Detected.
-     25 973338 XSS Filter - Category 3: Javascript URI Vector
-     25 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-     25 981231 SQL Comment Sequence Detected.
-     25 981243 Detects classic SQL injection probings 2/2
-     25 981244 Detects basic SQL authentication bypass attempts 1/3
-     25 981245 Detects basic SQL authentication bypass attempts 2/3
-     25 981248 Detects chained SQL injection attempts 1/2
+INCOMING SCORE 93
+      2 932160 Remote Command Execution: Unix Shell Code Found
+      6 942432 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)
+     13 920273 Invalid character in request (outside of very strict set)
 
-INCOMING SCORE 83
-      3 950911 HTTP Response Splitting Attack
-      3 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      3 973300 Possible XSS Attack Detected - HTML Tag Handler
-      3 973304 XSS Attack Detected
-      3 973306 XSS Attack Detected
-      3 973314 XSS Attack Detected
-      3 973316 IE XSS Filters - Attack Detected.
-      3 973333 IE XSS Filters - Attack Detected.
-      3 973335 IE XSS Filters - Attack Detected.
-      3 973338 XSS Filter - Category 3: Javascript URI Vector
-      3 981231 SQL Comment Sequence Detected.
-      3 981243 Detects classic SQL injection probings 2/2
-      3 981244 Detects basic SQL authentication bypass attempts 1/3
-      3 981245 Detects basic SQL authentication bypass attempts 2/3
-      3 981246 Detects basic SQL authentication bypass attempts 3/3
-      3 981248 Detects chained SQL injection attempts 1/2
-      3 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+INCOMING SCORE 98
+    448 921180 HTTP Parameter Pollution (ARGS_NAMES:fields[])
+    896 942450 SQL Hex Encoding Identified
+   2688 942432 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)
+   5824 920273 Invalid character in request (outside of very strict set)
 
-INCOMING SCORE 84
-      1 950911 HTTP Response Splitting Attack
-      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      1 973300 Possible XSS Attack Detected - HTML Tag Handler
-      1 973304 XSS Attack Detected
-      1 973306 XSS Attack Detected
-      1 973314 XSS Attack Detected
-      1 973332 IE XSS Filters - Attack Detected.
-      1 973333 IE XSS Filters - Attack Detected.
-      1 973338 XSS Filter - Category 3: Javascript URI Vector
-      1 981231 SQL Comment Sequence Detected.
-      1 981243 Detects classic SQL injection probings 2/2
-      1 981244 Detects basic SQL authentication bypass attempts 1/3
-      1 981245 Detects basic SQL authentication bypass attempts 2/3
-      1 981246 Detects basic SQL authentication bypass attempts 3/3
-      1 981248 Detects chained SQL injection attempts 1/2
-      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
-      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
+INCOMING SCORE 189
+      1 921180 HTTP Parameter Pollution (ARGS_NAMES:ids[])
+      5 942431 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
+      9 942130 SQL Injection Attack: SQL Tautology Detected.
+     14 920273 Invalid character in request (outside of very strict set)
+     18 942432 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)
 
-INCOMING SCORE 86
-      1 981249 Detects chained SQL injection attempts 2/2
-      1 981317 SQL SELECT Statement Anomaly Detection Alert
-      2 973332 IE XSS Filters - Attack Detected.
-     26 981246 Detects basic SQL authentication bypass attempts 3/3
-     27 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-     27 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
-     28 950911 HTTP Response Splitting Attack
-     28 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-     28 973300 Possible XSS Attack Detected - HTML Tag Handler
-     28 973304 XSS Attack Detected
-     28 973306 XSS Attack Detected
-     28 973314 XSS Attack Detected
-     28 973316 IE XSS Filters - Attack Detected.
-     28 973333 IE XSS Filters - Attack Detected.
-     28 973335 IE XSS Filters - Attack Detected.
-     28 973338 XSS Filter - Category 3: Javascript URI Vector
-     28 981231 SQL Comment Sequence Detected.
-     28 981243 Detects classic SQL injection probings 2/2
-     28 981244 Detects basic SQL authentication bypass attempts 1/3
-     28 981245 Detects basic SQL authentication bypass attempts 2/3
-     28 981248 Detects chained SQL injection attempts 1/2
-
-INCOMING SCORE 89
-      1 950911 HTTP Response Splitting Attack
-      1 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      1 973300 Possible XSS Attack Detected - HTML Tag Handler
-      1 973304 XSS Attack Detected
-      1 973306 XSS Attack Detected
-      1 973314 XSS Attack Detected
-      1 973316 IE XSS Filters - Attack Detected.
-      1 973333 IE XSS Filters - Attack Detected.
-      1 973335 IE XSS Filters - Attack Detected.
-      1 973338 XSS Filter - Category 3: Javascript URI Vector
-      1 981231 SQL Comment Sequence Detected.
-      1 981243 Detects classic SQL injection probings 2/2
-      1 981244 Detects basic SQL authentication bypass attempts 1/3
-      1 981245 Detects basic SQL authentication bypass attempts 2/3
-      1 981246 Detects basic SQL authentication bypass attempts 3/3
-      1 981248 Detects chained SQL injection attempts 1/2
-      1 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
-      2 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-
-INCOMING SCORE 91
-      5 950911 HTTP Response Splitting Attack
-      5 960024 Meta-Character Anomaly Detection Alert - Repetative Non-Word Characters
-      5 973300 Possible XSS Attack Detected - HTML Tag Handler
-      5 973304 XSS Attack Detected
-      5 973306 XSS Attack Detected
-      5 973314 XSS Attack Detected
-      5 973316 IE XSS Filters - Attack Detected.
-      5 973332 IE XSS Filters - Attack Detected.
-      5 973333 IE XSS Filters - Attack Detected.
-      5 973335 IE XSS Filters - Attack Detected.
-      5 973338 XSS Filter - Category 3: Javascript URI Vector
-      5 981172 Restricted SQL Character Anomaly Detection Alert - Total # of special characters exceeded
-      5 981231 SQL Comment Sequence Detected.
-      5 981243 Detects classic SQL injection probings 2/2
-      5 981244 Detects basic SQL authentication bypass attempts 1/3
-      5 981245 Detects basic SQL authentication bypass attempts 2/3
-      5 981246 Detects basic SQL authentication bypass attempts 3/3
-      5 981248 Detects chained SQL injection attempts 1/2
-      5 981257 Detects MySQL comment-/space-obfuscated injections and backtick termination
+INCOMING SCORE 231
+      6 921180 HTTP Parameter Pollution (ARGS_NAMES:ids[])
+     12 942450 SQL Hex Encoding Identified
+     30 942431 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
+     66 942130 SQL Injection Attack: SQL Tautology Detected.
+     96 920273 Invalid character in request (outside of very strict set)
+    132 942432 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)
 ```
 
-Genau genommen sind für die tiefen *Scores* auch die Fehlermeldungen der Antworten der Anfragen gelistet; in Fällen, wo sie auf Requests ausgelöst wurden, welche auch bei den Anfragen selbst Regelverletzungen mit sich brachten. Dieses Detail tut der Nützlichkeit obenstehenden Konstrukts aber keinen Abbruch. Ein ähnliches, noch etwas ausgebautes Skript gehört zu meinen täglichen Werkzeugen.
+Ich habe gesagt, es seien der die Fehlalarme der Requests, aber genau genommen werden die Antworten auf die Anfragen  bei den niedrigen *Scores* gemeinsam aufgelistet; und zwar in denjenigen Fällen in denen sie auf Anfragen ausgelöst wurden, die wiederum selbst Regelverletzungen nach sich zogen. Dieses Detail ist allerdings nicht sehr relevant, wenn man die Nützlichkeit dieses kleinen Rezeptes betrachtet. Ein ähnliches Skript, das etwas erweitert wurde, ist Teil meiner privaten Toolbox.
 
-Damit sind wir zum Ende des Blockes aus drei *ModSecurity-Anleitungen* gekommen. Als nächstes werden wir uns dem Bau eines *Reverse Proxys* zuwenden.
+Bevor wir mit dieser Anleitung fertig sind, beschreibe ich die hier angewandte Tuning Policy nochmals kurz:
+
+
+* Von Beginn weg im Blocking Mode arbeiten
+* Die Anfragen mit den höchsten Anomalie-Werten kommen zuerst
+* Wir Tunen in mehreren Durchgängen
+
+Mit grösserer Erfahrung kommt man natürlich rascher voran und es lohnt sich, die Anzahl der Iterationen zu reduzieren und mehr Fehlalarme in einem einzigen Durchlauf anzupacken. Oder Sie können sich neu auf diejenigen Regeln konzentrieren, die am häufigsten ausgelöst werden. Das kann auch funktionieren und am Ende, wenn alle Regel Ausschlüsse abgearbeitet sind, sollten Sie mit derselben Konfiguration dastehen. Aber nach meiner Erfahrung ist diese beschriebene Technik mit den drei einfachen Leitlinien die Vorgehensweise mit der höchsten Chance auf Erfolg. Dazu kommt auch die niedrigste Abbrecherquote. Denn das Ziel ist es ja, am Ende mit einem strikten ModSecurity CRS-Setup im Blocking-Modus mit einer niedrigen Anomalie Scoring Limite in der Produktion zu stehen.
+
+Damit haben wir das Ende einer Gruppe von drei Anleitungen erreicht. Das Thema war ModSecurity und seine Konfiguration. Als nächstes wenden wir uns der Einrichtung eines Reverse Proxies zu.
 
 ###Verweise
-- <a href="http://blog.spiderlabs.com/2011/08/modsecurity-advanced-topic-of-the-week-exception-handling.html">Spider Labs Blog Post: Exception Handling
+- [Spider Labs Blog Post: Behandlung von Ausnahmen](http://blog.spiderlabs.com/2011/08/modsecurity-advanced-topic-of-the-week-exception-handling.html)
+- [ModSecurity Reference Manual](https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual)
 
 ### Lizenz / Kopieren / Weiterverwenden
 

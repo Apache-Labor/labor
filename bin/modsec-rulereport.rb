@@ -23,6 +23,10 @@
 # - option to have anomaly scoring checks be included in the rule
 #     (hidden by default)
 # - multiline rules like CRS
+# - distrinction between startup and runtime mode
+# - save last rule ID in ENV variable and use that at next call as base
+#   or in file if env is not possible
+# - also cover 942100 (libinjection)
 
 # -----------------------------------------------------------
 # INIT
