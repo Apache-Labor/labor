@@ -1,6 +1,7 @@
 ###Changelog
 
-* 12\. Dezember 2016: Für CRS3 neu geschrieben
+* 10\. Dezember 2016: Rechtschreibung
+* 8\. Dezember 2016: Für CRS3 neu geschrieben
 * 6\. Oktober 2016: Titel neu formatiert
 * 3\. September 2016: Schritt 8 überarbeitet
 * 25\. August 2016: Zeilenumbrüche justiert
