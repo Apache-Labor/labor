@@ -12,7 +12,7 @@ Die Web Application Firewall ModSecurity, wie wir sie in Anleitung Nummer 6 eing
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
-* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren)
+* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren/)
 * Ein Apache Webserver mit erweitertem Zugriffslog wie in [Anleitung 5 (Das Zugriffslog Ausbauen und Auswerten)](https://www.netnea.com/cms/apache-tutorial-5-zugriffslog-ausbauen/)
 * Ein Apache Webserver mit ModSecurity wie in [Anleitung 6 (ModSecurity einbinden)](https://www.netnea.com/cms/apache-tutorial-6-modsecurity-einbinden/)
 
@@ -407,7 +407,9 @@ Wie vorausgesagt wurden wir nicht blockiert, aber schauen wir uns die Logs einma
 
 ```bash
 $> tail -1 /apache/logs/access.log
-127.0.0.1 - - [2016-10-25 08:40:01.881647] "GET /index.html?exec=/bin/bash HTTP/1.1" 200 48 "-" "curl/7.35.0" localhost 127.0.0.1 40080 - - + "-" WA7@QX8AAQEAABC4maIAAAAV - - 98 234 -% 7672 2569 117 479 5 0
+127.0.0.1 - - [2016-10-25 08:40:01.881647] "GET /index.html?exec=/bin/bash HTTP/1.1" 200 48 "-" …
+"curl/7.35.0" localhost 127.0.0.1 40080 - - + "-" WA7@QX8AAQEAABC4maIAAAAV - - 98 234 -% …
+7672 2569 117 479 5 0
 ```
 
 Es sieht nach einem Standard `GET` Request aus, der den Status 200 retourniert. Der interessante Teil ist das zweite Feld von hinten aus gezählt. In der Anleitung zum Access Log haben wir ein ausführliches Log-Format definiert, in dem wir zwei Positionen für die beiden Anomaly Scores reserviert haben.  Bis dato waren diese Werte leer; jetzt werden sie aber gefüllt. Der erste der beiden Werte ist der Wert für den Request, der zweite den für die Antwort. Unsere Anfrage mit dem Parameter `/bin/bash` gab uns einen Anomalie-Wert von 5. Dies wird vom CRS als kritische Regelverletzung betrachtet. Eine Verletzung der Stufe *Error* ergibt 4 Punkte, eine Warnung 3 und bei einer Notiz sind es noch 2 Punkte. Wenn man die CRS Regeln überblickt, dann zeigt sich, dass die allermeisten eine kritische Verletzung beschreiben und jeweils einen Wert von 5 zuweisen.
@@ -416,9 +418,20 @@ Aber eigentlich möchten wir ja wissen, welche Regel den Alarm auslöste. Wir k�
 
 
 ```bash
-[2016-10-25 08:40:01.881938] [authz_core:debug] 127.0.0.1:42732 WA7@QX8AAQEAABC4maIAAAAV AH01626: authorization result of Require all granted: granted
-[2016-10-25 08:40:01.882000] [authz_core:debug] 127.0.0.1:42732 WA7@QX8AAQEAABC4maIAAAAV AH01626: authorization result of <RequireAny>: granted
-[2016-10-25 08:40:01.884172] [-:error] 127.0.0.1:42732 WA7@QX8AAQEAABC4maIAAAAV [client 127.0.0.1] ModSecurity: Warning. Matched phrase "/bin/bash" at ARGS:exec. [file "/apache/conf/crs/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf"] [line "448"] [id "932160"] [rev "1"] [msg "Remote Command Execution: Unix Shell Code Found"] [data "Matched Data: /bin/bash found within ARGS:exec: /bin/bash"] [severity "CRITICAL"] [ver "OWASP_CRS/3.0.0"] [maturity "1"] [accuracy "8"] [tag "application-multi"] [tag "language-shell"] [tag "platform-unix"] [tag "attack-rce"] [tag "OWASP_CRS/WEB_ATTACK/COMMAND_INJECTION"] [tag "WASCTC/WASC-31"] [tag "OWASP_TOP_10/A1"] [tag "PCI/6.5.2"] [hostname "localhost"] [uri "/index.html"] [unique_id "WA7@QX8AAQEAABC4maIAAAAV"]
+[2016-10-25 08:40:01.881938] [authz_core:debug] 127.0.0.1:42732 WA7@QX8AAQEAABC4maIAAAAV AH01626:…
+authorization result of Require all granted: granted
+[2016-10-25 08:40:01.882000] [authz_core:debug] 127.0.0.1:42732 WA7@QX8AAQEAABC4maIAAAAV AH01626:…
+authorization result of <RequireAny>: granted
+[2016-10-25 08:40:01.884172] [-:error] 127.0.0.1:42732 WA7@QX8AAQEAABC4maIAAAAV …
+[client 127.0.0.1] ModSecurity: Warning. Matched phrase "/bin/bash" at ARGS:exec. …
+[file "/apache/conf/crs/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf"] [line "448"] …
+[id "932160"] [rev "1"] [msg "Remote Command Execution: Unix Shell Code Found"] …
+[data "Matched Data: /bin/bash found within ARGS:exec: /bin/bash"] [severity "CRITICAL"] …
+[ver "OWASP_CRS/3.0.0"] [maturity "1"] [accuracy "8"] [tag "application-multi"] …
+[tag "language-shell"] [tag "platform-unix"] [tag "attack-rce"] …
+[tag "OWASP_CRS/WEB_ATTACK/COMMAND_INJECTION"] [tag "WASCTC/WASC-31"] [tag "OWASP_TOP_10/A1"] …
+[tag "PCI/6.5.2"] [hostname "localhost"] [uri "/index.html"] …
+[unique_id "WA7@QX8AAQEAABC4maIAAAAV"]
 ```
 
 Das Authorisierungsmodul rapportiert zwei Mal im Logfile auf Stufe Debug. Aber auf der dritten Zeile sehen wir den Alarm, den wir suchen. Schauen wir uns das im Detail an. Die CRS Logeinträge enthalten viel mehr Informationen als eine normale Apache Meldung, so dass es sich wirklich lohnt, das Logformat noch einmal im Detail zu betrachten.
@@ -640,7 +653,7 @@ Wir müssen diesen Zusammenhang überwinden: Wir wollen die Trennschärfe erhöh
 
 Um ein solches Ziel zu erreichen, benötigen wir ein oder zwei Werkzeuge, um uns eine gute Basis zu verschaffen. Genauer gesagt, müssen wir mehr über die Zahlen herausfinden. Dann, in einem zweiten Schritt betrachten wir das Error Log, um zu verstehen, welche Regeln genau zu den Alarmen geführt haben. Wir haben gesehen, dass das Zugriffslog die Anomalie-Werte der Anfragen rapporiert. Versuchen wir diese Werte zu extrahieren und sie in einer passenden Form darzustellen.
 
-In der Anleitung 5 arbeiteten wir mit einer Beispielprotokolldatei mit 10'000 Einträgen. Wir verwenden diese Protokolldatei erneut: [tutorial-5-example-access.log](https://www.netnea.com/apache-tutorials/git/laboratory/tutorial-5/tutorial-5-example-access.log). Die Datei kommt von einem echten Server, aber die IP-Adressen, Servernamen und Pfade wurden vereinfacht oder umgeschrieben. Die Informationen, die wir für unsere Analyse benötigen, sind aber noch da. Werfen wir doch mal einen Blick auf die Verteilung der Anomalie-Werte:
+In der Anleitung 5 arbeiteten wir mit einer Beispielprotokolldatei mit 10'000 Einträgen. Wir verwenden diese Protokolldatei erneut: [tutorial-5-example-access.log](https://www.netnea.com/files/tutorial-5-example-access.log). Die Datei kommt von einem echten Server, aber die IP-Adressen, Servernamen und Pfade wurden vereinfacht oder umgeschrieben. Die Informationen, die wir für unsere Analyse benötigen, sind aber noch da. Werfen wir doch mal einen Blick auf die Verteilung der Anomalie-Werte:
 
 ```
 $> egrep -o "[0-9-]+ [0-9-]+$" tutorial-5-example-access.log | cut -d\  -f1 | sucs
@@ -662,7 +675,7 @@ Die Ergebnisse geben uns eine Vorstellung von der Situation: Die überwiegende M
 
 Der Wert 41 erscheint zweimal, was einer hohen Anzahl von schwerwiegenden Regelverletzungen entspricht. Dies ist sehr häufig in der Praxis, denn eine ernsthafte SQL Injection verursacht eine ganze Reihe von Alarmen. In 41 Fällen haben wir keinen Wert für die Antworten des Servers erhalten. Dabei handelt es sich um Protokolleinträge leerer Anfragen, bei denen eine Verbindung zum Client aufgebaut wurde, aber keine Anforderung gestellt wurde. Wir haben diese Möglichkeit im regulären Ausdruck mit *egrep* berücksichtigt, indem auch der Standardwert "-" akzeptiert wird. Neben diesen leeren Eingaben ist nichts anderes auffällig. Dies ist typisch, wenn auch ein Bisschen hoch. In aller Regel sehen wir eine gewisse Anzahl von Verletzungen durch die Requests, aber sehr wenige Einträge aufgrund der Responses.
 
-Aber das gibt uns immer noch nicht die richtige Idee über die Tuning Schritte, welche nötig sind, um diese Installation reibungslos laufen lassen zu können. Um diese Informationen in einer geeigneten Form präsentieren zu könnnen, habe ich ein Skript vorbereitet, das Anomalie-Werte analysiert: `[modsec-positive-stats.rb](https://www.netnea.com/cms/files/modsec-positive-stats.rb)`. Es nimmt die beiden Anomalie-Scores als Eingabe; wir müssen sie allerdings mit einem Strichpunkt trennen, um sie an das Skript übergeben zu können. Das lässt sich wie folgt bewerkstelligen:
+Aber das gibt uns immer noch nicht die richtige Idee über die Tuning Schritte, welche nötig sind, um diese Installation reibungslos laufen lassen zu können. Um diese Informationen in einer geeigneten Form präsentieren zu könnnen, habe ich ein Skript vorbereitet, das Anomalie-Werte analysiert: [modsec-positive-stats.rb](https://www.netnea.com/files/modsec-positive-stats.rb). Es nimmt die beiden Anomalie-Scores als Eingabe; wir müssen sie allerdings mit einem Strichpunkt trennen, um sie an das Skript übergeben zu können. Das lässt sich wie folgt bewerkstelligen:
 
 ```
 $> cat tutorial-5-example-access.log  | egrep -o "[0-9-]+ [0-9-]+$" | tr " " ";" | modsec-positive-stats.rb

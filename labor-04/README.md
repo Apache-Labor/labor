@@ -14,7 +14,7 @@ In der gebräuchlichen Konfiguration des Apache Webservers wird ein Logformat ei
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
-* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren)
+* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren/)
 
 
 ###Schritt 1: Logformat Common verstehen
@@ -205,10 +205,10 @@ Das Resultat könnte dann etwa wie folgt aussehen:
 ```bash
 $> cat logs/access-debug.log
 2015-09-02 11:58:35.654011 VebITcCoAwcAADRophsAAAAX "GET / HTTP/1.1" */* text/html
-2015-09-02 11:58:37.486603 VebIT8CoAwcAADRophwAAAAX "GET /cms/feed/ HTTP/1.1" text/html,application...
-2015-09-02 11:58:39.253209 VebIUMCoAwcAADRoph0AAAAX "GET /cms/2014/04/17/ubuntu-14-04/ HTTP/1.1" */* ...
-2015-09-02 11:58:40.893992 VebIU8CoAwcAADRbdGkAAAAD "GET /cms/2014/05/13/download-softfiles HTTP/1.1" */* ...
-2015-09-02 11:58:43.558478 VebIVcCoAwcAADRbdGoAAAAD "GET /cms/2014/08/25/netcapture-sshargs HTTP/1.1" */* ...
+2015-09-02 11:58:37.486603 VebIT8CoAwcAADRophwAAAAX "GET /cms/feed/ HTTP/1.1" text/html,application …
+2015-09-02 11:58:39.253209 VebIUMCoAwcAADRoph0AAAAX "GET /cms/2014/04/17/ubuntu-14-04/ HTTP/1.1" */* …
+2015-09-02 11:58:40.893992 VebIU8CoAwcAADRbdGkAAAAD "GET /cms/2014/05/13/download-softfiles HTTP/1.1" */* …
+2015-09-02 11:58:43.558478 VebIVcCoAwcAADRbdGoAAAAD "GET /cms/2014/08/25/netcapture-sshargs HTTP/1.1" */* …
 ...
 ```
 
@@ -352,7 +352,7 @@ Soweit zu diesen ersten Fingerübungen. Auf der Basis dieses selbst abgefüllten
 
 Spannender werden die Auswertungen mit einem richtigen Logfile von einem produktiven Server. Hier ist eines, mit 10'000 Anfragen:
 
-[labor-04-example-access.log](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-04/labor-04-example-access.log)
+[labor-04-example-access.log](https://www.netnea.com/files/labor-04-example-access.log)
 
 ```bash
 $> head labor-04-example-access.log
@@ -482,7 +482,7 @@ alias alscores='cut -d\" -f9 | cut -d\  -f12,13 | tr " " ";" | tr "-" "0"'
 
 Die Aliase beginnen alle mit _al_. Dies steht für _ApacheLog_ oder _AccessLog_. Darauf folgt der Feldnahme. Die einzelnen Aliase sind nicht alphabethisch geordnet. Sie folgen vielmehr der Reihenfolge der Felder im Format des Logfiles.
 
-Diese Liste mit Alias-Definitionen befindet sich in der Datei [apache-modsec.alias](https://github.com/Apache-Labor/labor/blob/master/bin/.apache-modsec.alias). Dort liegt sie gemeinsam mit einigen weiteren Aliasen, die wir in späteren Anleitungen definieren werden. Wenn man öfter mit Apache und seinen Logfiles arbeitet, dann bietet es sich an, diese Alias-Definitionen im Heim-Verzeichnis abzulegen und sie beim Einloggen zu laden. Also mittels folgendem Eintrag in der _.bashrc_-Datei oder über einen verwandten Mechanismus.
+Diese Liste mit Alias-Definitionen befindet sich in der Datei [apache-modsec.alias](https://www.netnea.com/files/.apache-modsec.alias). Dort liegt sie gemeinsam mit einigen weiteren Aliasen, die wir in späteren Anleitungen definieren werden. Wenn man öfter mit Apache und seinen Logfiles arbeitet, dann bietet es sich an, diese Alias-Definitionen im Heim-Verzeichnis abzulegen und sie beim Einloggen zu laden. Also mittels folgendem Eintrag in der _.bashrc_-Datei oder über einen verwandten Mechanismus.
 
 ```bash
 test -e ~/.apache-modsec.alias && . ~/.apache-modsec.alias
@@ -527,7 +527,7 @@ $> alias sucspercent='sort | uniq -c | sort -n | $HOME/bin/percent.awk'
 
 Rasche Rechnungen erledigt man in Linux traditionellerweise mit _awk_. Dafür steht neben der oben gelinkten _Alias_-Datei, die _sucspercent_ ebenfalls enthält, zusätzlich
 das _awk_-Skript _percent.awk_ zur Verfügung, das man idealerweise im Unterverzeichnis _bin_ seines Heimverzeichnisses ablegt.
-Das obenstehene _sucspercent_ Alias geht denn auch von diesem Setup aus. Das _awk_-Skript befindet sich [hier](https://github.com/Apache-Labor/labor/blob/master/bin/percent.awk).
+Das obenstehene _sucspercent_ Alias geht denn auch von diesem Setup aus. Das _awk_-Skript befindet sich [hier](https://www.netnea.com/files/percent.awk).
 
 ```bash
 $> cat labor-04-example-access.log | alsslprotocol | sucspercent 
@@ -598,7 +598,7 @@ Mit den verschiedenen Aliasen für die Extraktion von Werten aus dem Logfile und
 
 Bei den Messwerten, die sich nicht mehr wiederholen, also etwa der Dauer eines Requests, oder der Grösse der Antworten, nützen uns die Prozentzahlen aber wenig. Was wir brauchen ist eine einfache statistische Auswertung. Gefragt sind der Durchschnitt, vielleicht der Median, Informationen zu den Ausreissern und sinnvollerweise die Standardabweichung.
 
-Auch ein solches Skript steht zum Download bereit: [basicstats.awk](https://github.com/Apache-Labor/labor/blob/master/bin/basicstats.awk). Es bietet sich an, dieses Skript ähnlich wie percent.awk im privaten _bin_-Verzeichnis abzulegen. Wichtig ist zu wissen, dass das Skript auf einer erweiterten *awk*-Implementation besteht (ja, es gibt mehrere). In der Regel heisst das entsprechende Paket *gawk* und sorgt dafür, dass der Befehl `awk` 
+Auch ein solches Skript steht zum Download bereit: [basicstats.awk](https://www.netnea.com/files/basicstats.awk). Es bietet sich an, dieses Skript ähnlich wie percent.awk im privaten _bin_-Verzeichnis abzulegen. Wichtig ist zu wissen, dass das Skript auf einer erweiterten *awk*-Implementation besteht (ja, es gibt mehrere). In der Regel heisst das entsprechende Paket *gawk* und sorgt dafür, dass der Befehl `awk` 
  die Gnu-awk Implementation benützt.
 
 ```bash
@@ -655,10 +655,10 @@ Damit kommen wir zum Abschluss dieser Anleitung. Ziel war es ein erweitertes Log
 
 * [Dokumentation des Apache-Moduls Log-Config](http://httpd.apache.org/docs/current/mod/mod_log_config.html)
 * [Dokumentation des Apache-Moduls SSL](http://httpd.apache.org/docs/current/mod/mod_ssl.html)
-* [labor-04-example-access.log](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-04/labor-04-example-access.log)
-* [.apache-modsec.alias](https://github.com/Apache-Labor/labor/blob/master/bin/.apache-modsec.alias)
-* [percent.awk](https://github.com/Apache-Labor/labor/blob/master/bin/percent.awk)
-* [basicstats.awk](https://github.com/Apache-Labor/labor/blob/master/bin/basicstats.awk)
+* [labor-04-example-access.log](https://www.netnea.com/files/labor-04-example-access.log)
+* [.apache-modsec.alias](https://www.netnea.com/files/.apache-modsec.alias)
+* [percent.awk](https://www.netnea.com/files/percent.awk)
+* [basicstats.awk](https://www.netnea.com/files/basicstats.awk)
 
 ### Lizenz / Kopieren / Weiterverwenden
 

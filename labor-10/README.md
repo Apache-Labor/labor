@@ -16,7 +16,7 @@ Zu diesem Zweck bedienen wir uns einem wenig bekannten Feature von `Gnuplot`.
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/)
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/)
-* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren)
+* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren/)
 * Ein Apache Webserver mit erweitertem Zugriffslog wie in [Anleitung 5 (Das Zugriffslog Ausbauen und Auswerten)](https://www.netnea.com/cms/apache-tutorial-5-zugriffslog-ausbauen/)
 * Ein Apache Webserver mit ModSecurity wie in [Anleitung 6 (ModSecurity einbinden)](https://www.netnea.com/cms/apache-tutorial-6-modsecurity-einbinden/)
 * Ein Apache Webserver mit einer Core Rules Installation wie in [Anleitung 7 (Core Rules einbinden)](http://www.netnea.com/cms/modsecurity-core-rules-einbinden/)
@@ -27,9 +27,9 @@ Zu diesem Zweck bedienen wir uns einem wenig bekannten Feature von `Gnuplot`.
 Das Aufkommen von Einträgen in Logfiles folgt einem zeitlichen Verlauf. Tatsächlich ist es aber relativ schwierig diesem zeitlichen Verlauf im Textfile selbst zu folgen. Eine Visualisierung des Logfiles schafft Abhilfe. Dashboards wurden schon erwähnt und verschiedene kommerzielle Produkte und Open Source Projekte haben sich in den letzten Jahren etabliert. Diese Werkzeuge sind sehr sinnvoll. Oft sind sie aber nicht einfach zugänglich oder die Logdaten müssen erst importiert, und zum Teil auch konvertiert und indexiert werden. Eine grosse Lücke ist deshalb die Darstellung von Graphen in der Shell. Tatsächlich beherrscht das graphische Werkzeug `gnuplot` auch ASCII und kann komplett von der Kommandozeile aus gesteuert werden.
 
 
-`Gnuplot` ist in der Bedienung und Steuerung anspruchsvoll und wer nur gelegentlich damit arbeitet hat eine wiederkehrende Lernkurve vor sich. Aus diesem Grund habe ich ein Wrapper-Skript namens `arbigraph` entwickelt, das einfache Graphen mit Hilfe von Gnuplot darstellen kann: [arbigraph](https://github.com/Apache-Labor/labor/blob/master/bin/arbigraph) Wir werden dieses Skript in dieser Lektion in verschiedenenen Situationen anwenden und dabei eine Vielzahl von Kommand-Line Optionen kennenlernen. Fangen wir also mit einem einfachen Fall an:
+`Gnuplot` ist in der Bedienung und Steuerung anspruchsvoll und wer nur gelegentlich damit arbeitet hat eine wiederkehrende Lernkurve vor sich. Aus diesem Grund habe ich ein Wrapper-Skript namens `arbigraph` entwickelt, das einfache Graphen mit Hilfe von Gnuplot darstellen kann: [arbigraph](https://www.netnea.com/files/arbigraph) Wir werden dieses Skript in dieser Lektion in verschiedenenen Situationen anwenden und dabei eine Vielzahl von Kommand-Line Optionen kennenlernen. Fangen wir also mit einem einfachen Fall an:
 
-Erzeugen wir einen einfachen Graphen, welcher die Anzahl der Requests pro Stunde in einem zeitlichen Verlauf darstellt. Wir ziehen als Beispiel dazu dasjenige Access-Log heran, das wir beim Tunen von ModSecurity False Positives in einer vorangegangenen Anleitung bereits kennengelernt haben: [labor-07-example-access.log](https://raw.githubusercontent.com/Apache-Labor/labor/master/labor-07/labor-07-example-access.log).
+Erzeugen wir einen einfachen Graphen, welcher die Anzahl der Requests pro Stunde in einem zeitlichen Verlauf darstellt. Wir ziehen als Beispiel dazu dasjenige Access-Log heran, das wir beim Tunen von ModSecurity False Positives in einer vorangegangenen Anleitung bereits kennengelernt haben: [labor-07-example-access.log](https://www.netnea.com/files/labor-07-example-access.log).
 
 Konzentrieren wir uns auf die Einträge vom 20. bis 29. Mai und extrahieren wir daraus die Timestamps:
 
@@ -131,7 +131,10 @@ $> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; d
 Das ist unser Zeitverlauf ohne Lücken. Nehmen wir diese Werte als Grundlage für eine Schleife und suchen zu jedem Wert die Zahl der Requests aus:
 
 ```bash
-$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); echo  "$COUNT $STRING "; done
+$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | \
+   while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); \
+   echo  "$COUNT $STRING "; \
+   done
 0 2015-05-20 00 
 0 2015-05-20 01 
 0 2015-05-20 02 
@@ -198,7 +201,10 @@ Die Lücken sind geschlossen. Kommen wir zur korrekten Beschriftung der X-Achse.
 
 
 ```bash
-$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); echo -e "$STRING\t$COUNT"; done | arbigraph
+$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | \
+   while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); \
+   echo -e "$STRING\t$COUNT"; \
+   done | arbigraph
 
 250 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++Col 1+******++
@@ -269,7 +275,10 @@ $> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; d
 Wir nähern uns dem Ziel. Problematisch ist noch der Umstand, dass die Datum-Stunden-Kombination beim Bindestrich umgebrochen wird und die Stunden komplett fehlen. Wenn wir den Bindestrich ersetzen, tritt dieser Umbruch nicht mehr auf. Nehmen wir dazu `sed` zu Hilfe.
 
 ```bash
-$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); echo -e "$STRING\t$COUNT"; done | sed -e "s/-/./g" | arbigraph --xaxisticsmodulo 24
+$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | \
+   while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); \
+   echo -e "$STRING\t$COUNT"; \
+   done | sed -e "s/-/./g" | arbigraph --xaxisticsmodulo 24
 
 
 
@@ -304,7 +313,11 @@ $> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; d
 Nun sind noch die Stunden unsichtbar. Wie weiter oben sichtbar, sind sie vom Datum mit einem Leerschlag getrennt. Wenn wir diesen Leerschlag durch einen Binde-Strich ersetzen, dann erhalten wir zwischen dem Datum und den Stunden einen Zeilenumbruch.
 
 ```bash
-$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); echo -e "$STRING\t$COUNT"; done | sed -e "s/-/./g" -e "s/ /-/" | arbigraph --xaxisticsmodulo 24
+$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | \
+   while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); \
+   echo -e "$STRING\t$COUNT"; \
+   done | \
+   sed -e "s/-/./g" -e "s/ /-/" | arbigraph --xaxisticsmodulo 24
 250 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++Col 1+******++
     |                                                                            **                                         |
@@ -337,7 +350,10 @@ $> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; d
 Wir beschriften nun also die X-Achse mit jedem 24. Wert und zufällig erhalten wir damit just die 22. Stunde. Wir sollten das schieben. Idealerweise wäre jeder Tag in seiner Mitte, als zur 12. Stunde beschriftet. Wir können so eine Verschiebung bei der Option `--xaxisticsmodulo` mit angeben. Das geschieht wie folgt:
 
 ```bash
-$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); echo -e "$STRING\t$COUNT"; done | sed -e "s/-/./g" -e "s/ /-/" | arbigraph --xaxisticsmodulo 24/10 -w 130
+$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | \
+   while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); \
+   echo -e "$STRING\t$COUNT"; \
+   done | sed -e "s/-/./g" -e "s/ /-/" | arbigraph --xaxisticsmodulo 24/10 -w 130
 
 
 250 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -437,7 +453,12 @@ Wir können also mit `--columnnames` eine Legende anbringen und zusätzlich viel
 
 
 ```bash
-$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); echo -e "$STRING\t$COUNT"; done | sed -e "s/-/./g" -e "s/ /-/" | arbigraph -x 24/10 --columnnames "Num of Reqs/h" --title "Daily Rhythm of Requests in labor-07-example-access.log" --lines
+$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | \
+   while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); \
+   echo -e "$STRING\t$COUNT"; \
+   done | sed -e "s/-/./g" -e "s/ /-/" | \
+   arbigraph -x 24/10 --columnnames "Num of Reqs/h" \
+   --title "Daily Rhythm of Requests in labor-07-example-access.log" --lines
 
 
                                        Daily Rhythm of Requests in labor-07-example-access.log
@@ -474,7 +495,12 @@ $> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; d
 Damit stossen wir langsam an die Grenzen der Fähigkeiten von `arbigraph`. Für das zu Grunde liegende `gnuplot` selbst ist damit noch lange nicht Ende der Fahnenstange. Mittels der Option `--custom` können wir zusätzliche `Gnuplot-Kommandos` übergeben. Oder aber wir benützen `--enablescript` und lassen uns das `Gnuplot-Skript` anzeigen:
 
 ```bash
-for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); echo -e "$STRING\t$COUNT"; done | sed -e "s/-/./g" -e "s/ /-/" | arbigraph -x 24/10 --columnnames "Num of Reqs/h" --title "Daily Rhythm of Requests in labor-07-example-access.log" --lines --enablescript
+$> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; done; done | \
+   while read STRING; do COUNT=$(grep -c "$STRING" labor-07-example-access.log); \
+   echo -e "$STRING\t$COUNT"; \
+   done | sed -e "s/-/./g" -e "s/ /-/" | \
+   arbigraph -x 24/10 --columnnames "Num of Reqs/h" \
+   --title "Daily Rhythm of Requests in labor-07-example-access.log" --lines --enablescript
 
 ...
 
@@ -596,7 +622,7 @@ Mit dem obenstehenden Befehl haben wir die Block-Darstellung durch Linien ersetz
 
 Was uns fehlt ist eine Technik, die in der Statistik `Binning` genannt wird. Der Begriff `Binning` meint die Zusammenfassung von Datenreihen in einer Gruppe. Ein typisches Beispiel ist eine Statistik die besagt, dass von den 20-29 jährigen 45% blabla und von den 30-39 jährigen lediglich 28% blabla. Bei den 40-49 jährigen ...  Die Bins sind hier die Alterskohorten à 10 Jahre. Die Breite des Bins ist frei zu wählen und der Inhalt des Bins ist dann eine Zusammenstellung der Werte.  In unserem Fall unterteilen wir die Zeitdauer des Requests in einzelne Bins und zählen bei jedem Bin, wie viele Requests in diese Gruppe oder eben in diesen Bin fallen.
 
-Zur Durchführung dieses `Binning`-Prozesses steht wiederum ein Tool zur Verfügung: [do-binning.rb](https://github.com/Apache-Labor/labor/blob/master/bin/do-binning.rb).
+Zur Durchführung dieses `Binning`-Prozesses steht wiederum ein Tool zur Verfügung: [do-binning.rb](https://www.netnea.com/files/do-binning.rb).
 
 ```bash
 $> cat labor-07-example-access.log | alduration | do-binning.rb --label
@@ -695,9 +721,12 @@ $> cat labor-07-example-access.log | alduration | do-binning.rb --label -n 25 --
 Das passt und gibt uns eine gute Sicht auf die Verteilung der Duration der verschiedenen Requests. Offensichtlich haben wir einen Peak bei ungefähr einer Sekunde und dann ein Abflachen gegen hinten. Interessant vielleicht auch der kleine Cluster an sehr schnellen Requests links aussen. Machen wir etwas neues: Können wir GET und POST Requests nebeneinander darstellen und sehen wir einen Unterschied?
 
 ```bash
-$> cat labor-07-example-access.log | grep GET | alduration | do-binning.rb --label -n 25 --min 0 --max 2500000.0 > /tmp/tmp.get
-$> cat labor-07-example-access.log | grep POST | alduration | do-binning.rb --label -n 25 --min 0 --max 2500000.0 > /tmp/tmp.post
-$> paste  /tmp/tmp.get /tmp/tmp.post | awk '{ print $1 "\t"  $2 " " $4 }'  | arbigraph -l -2 -c "GET;POST" -x 5/3 -w 130
+$> cat labor-07-example-access.log | grep GET | alduration | \
+   do-binning.rb --label -n 25 --min 0 --max 2500000.0 > /tmp/tmp.get
+$> cat labor-07-example-access.log | grep POST | alduration | \
+   do-binning.rb --label -n 25 --min 0 --max 2500000.0 > /tmp/tmp.post
+$> paste  /tmp/tmp.get /tmp/tmp.post | awk '{ print $1 "\t"  $2 " " $4 }' | \
+   arbigraph -l -2 -c "GET;POST" -x 5/3 -w 130
 
 
 
@@ -750,8 +779,8 @@ Plot written to file /tmp/duration-get-vs-post.png.
 ###Verweise
 
 * [gnuplot](http://www.gnuplot.info)
-* [arbigraph](https://github.com/Apache-Labor/labor/blob/master/bin/arbigraph)
-* [do-binning.rb](https://github.com/Apache-Labor/labor/blob/master/bin/do-binning.rb)
+* [arbigraph](https://www.netnea.com/files/arbigraph)
+* [do-binning.rb](https://www.netnea.com/files/do-binning.rb)
 
 ### Lizenz / Kopieren / Weiterverwenden
 

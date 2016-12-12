@@ -13,7 +13,7 @@ Im Alltag kommt es immer wieder vor, dass beim Betrieb eines Webservers oder ein
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/)
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/)
-* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren)
+* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren/)
 * Ein Apache Webserver mit erweitertem Zugriffslog wie in [Anleitung 5 (Das Zugriffslog Ausbauen und Auswerten)](https://www.netnea.com/cms/apache-tutorial-5-zugriffslog-ausbauen/)
 * Ein Apache Webserver mit ModSecurity wie in [Anleitung 6 (ModSecurity einbinden)](https://www.netnea.com/cms/apache-tutorial-6-modsecurity-einbinden/)
 * Eine OWASP ModSecurity Core Rules Installation wie in [Anleitung 7 (ModSecurity Core Rules einbinden](https://www.netnea.com/cms/apache-tutorial-7-modsecurity-core-rules-einbinden/)
@@ -49,7 +49,8 @@ SecAuditLogParts            "ABFHKZ"
 Hier werden die Request- und Response-Bodies nicht mehr mitgeschrieben. Das spart sehr viel Speicherplatz, was gerade bei schlecht getunten Systemen wichtig ist. Diejenigen Teile der Bodies, welche einzelne Regeln verletzten, werden im Error-Log und im K-Teil dennoch notiert werden. Das reicht in vielen Fällen. Fallweise möchte man aber dennoch den gesamten Body mitschreiben. In diesen Fällen bietet sich eine `ctl`-Direktive für den Action-Teil der `SecRule` an. Mit `auditLogParts` können mehrere zusätzliche Teile angewählt werden:
 
 ```bash
-SecRule REMOTE_ADDR  "@streq 127.0.0.1"   "id:10000,phase:1,pass,log,auditlog,msg:'Initializing full traffic log',ctl:auditLogParts=+EIJ"
+SecRule REMOTE_ADDR  "@streq 127.0.0.1"   \
+    "id:10000,phase:1,pass,log,auditlog,msg:'Initializing full traffic log',ctl:auditLogParts=+EIJ"
 ```
 
 ###Schritt 2 : Mit ModSecurity den vollen Verkehr einer einzigen Session schreiben
@@ -195,19 +196,19 @@ Versuchen wir also das `PCAP`-File zu entschlüsseln. Wir verwenden dazu wieder 
 ```bash
 $> sudo tshark -r /tmp/localhost-port443.pcap -o "ssl.desegment_ssl_records: TRUE" -o "ssl.desegment_ssl_application_data: TRUE" -o "ssl.keys_list: 0.0.0.0,443,http,/etc/ssl/private/ssl-cert-snakeoil.key" -o "ssl.debug_file: /tmp/ssl-debug.log"
 Running as user "root" and group "root". This could be dangerous.
-  1   0.000000    127.0.0.1 -> 127.0.0.1    TCP 74 33517 > https [SYN] Seq=0 Win=43690 Len=0 MSS=65495 ...
-  2   0.000040    127.0.0.1 -> 127.0.0.1    TCP 74 https > 33517 [SYN, ACK] Seq=0 Ack=1 Win=43690 Len=0 ...
-  3   0.000088    127.0.0.1 -> 127.0.0.1    TCP 66 33517 > https [ACK] Seq=1 Ack=1 Win=43776 Len=0 TSval=...
+  1   0.000000    127.0.0.1 -> 127.0.0.1    TCP 74 33517 > https [SYN] Seq=0 Win=43690 Len=0 MSS=65495 …
+  2   0.000040    127.0.0.1 -> 127.0.0.1    TCP 74 https > 33517 [SYN, ACK] Seq=0 Ack=1 Win=43690 Len=0 …
+  3   0.000088    127.0.0.1 -> 127.0.0.1    TCP 66 33517 > https [ACK] Seq=1 Ack=1 Win=43776 Len=0 TSval= …
   4   0.001381    127.0.0.1 -> 127.0.0.1    SSL 161 Client Hello
-  5   0.001470    127.0.0.1 -> 127.0.0.1    TCP 66 https > 33517 [ACK] Seq=1 Ack=96 Win=43776 Len=0 TSval=...
+  5   0.001470    127.0.0.1 -> 127.0.0.1    TCP 66 https > 33517 [ACK] Seq=1 Ack=96 Win=43776 Len=0 TSval= …
   6   0.002338    127.0.0.1 -> 127.0.0.1    TLSv1.2 865 Server Hello, Certificate, Server Hello Done
-  7   0.002417    127.0.0.1 -> 127.0.0.1    TCP 66 33517 > https [ACK] Seq=96 Ack=800 Win=45312 Len=0 TSval=...
+  7   0.002417    127.0.0.1 -> 127.0.0.1    TCP 66 33517 > https [ACK] Seq=96 Ack=800 Win=45312 Len=0 TSval= …
   8   0.004330    127.0.0.1 -> 127.0.0.1    TLSv1.2 408 Client Key Exchange, Change Cipher Spec, Finished
   9   0.018200    127.0.0.1 -> 127.0.0.1    TLSv1.2 141 Change Cipher Spec, Finished
  10   0.019624    127.0.0.1 -> 127.0.0.1    TLSv1.2 199 Application Data
  11   0.028515    127.0.0.1 -> 127.0.0.1    TLSv1.2 428 Application Data, Application Data
  12   0.029827    127.0.0.1 -> 127.0.0.1    TLSv1.2 119 Alert (Level: Warning, Description: Close Notify)
- 13   0.030056    127.0.0.1 -> 127.0.0.1    TCP 66 33517 > https [FIN, ACK] Seq=624 Ack=1237 Win=46976 Len=0 ...
+ 13   0.030056    127.0.0.1 -> 127.0.0.1    TCP 66 33517 > https [FIN, ACK] Seq=624 Ack=1237 Win=46976 Len=0 …
  14   0.037327    127.0.0.1 -> 127.0.0.1    TLSv1.2 119 Alert (Level: Warning, Description: Close Notify)
  15   0.037417    127.0.0.1 -> 127.0.0.1    TCP 54 33517 > https [RST] Seq=625 Win=0 Len=0
 ```

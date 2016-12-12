@@ -15,7 +15,7 @@ Die Anleitung hat etwas pedantisches an sich, denn es geht darin mit vollem Erns
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/)
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/)
-* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren)
+* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren/)
 * Ein Apache Webserver mit erweitertem Zugriffslog wie in [Anleitung 5 (Das Zugriffslog Ausbauen und Auswerten)](https://www.netnea.com/cms/apache-tutorial-5-zugriffslog-ausbauen/)
 * Ein Apache Webserver mit ModSecurity wie in [Anleitung 6 (ModSecurity einbinden)](https://www.netnea.com/cms/apache-tutorial-6-modsecurity-einbinden/)
 * Ein Apache Webserver mit einer Core Rules Installation wie in [Anleitung 7 (Core Rules einbinden)](http://www.netnea.com/cms/modsecurity-core-rules-einbinden/)
@@ -72,7 +72,7 @@ $> sudo ipcs -s | grep www-data | awk '{ print $2 }' | xargs -n 1 sudo ipcrm sem
 
 Mittels `ipcs -s` lesen wir die Liste von Semaphoren aus, selektieren die richtige Zeile über den Usernamen des Webservers, und benützen dann `awk` um die zweite Spalte des Outputs zu selektieren. Dieser Spalte entnehmen wir die Identifikation der Semaphor, welche wir darauf mittels xargs und `ipcrm sem` löschen.
 
-Damit ist dieses Problem in den Griff zu kriegen, aber die Fehlermeldung ist doch ein Ärgernis und das wiederholte Zurückgehen in der History, um den Namen der Konfigurationsdatei nicht neu tippen zu müssen, unnötig. Besser ist es da, beides durch ein Skript erledigen zu lassen: `apachex`. Dieses Skript ist online abrufbar ([apachex](https://github.com/Apache-Labor/labor/blob/master/bin/apachex)).
+Damit ist dieses Problem in den Griff zu kriegen, aber die Fehlermeldung ist doch ein Ärgernis und das wiederholte Zurückgehen in der History, um den Namen der Konfigurationsdatei nicht neu tippen zu müssen, unnötig. Besser ist es da, beides durch ein Skript erledigen zu lassen: `apachex`. Dieses Skript ist online abrufbar ([apachex](https://www.netnea.com/files/apachex)).
 
 ```bash
 $> 
@@ -117,7 +117,7 @@ Bailing out ... ok
 
 ###Schritt 4: lastrequestsummary
 
-Nun fehlt uns noch ein gescheiter Zugang zu den Logfiles. Zwar gibt uns `curl -v` bereits Feedback, über die Resultate eines Requests. Aber gerade bei ModSecurity Regeln ist es wichtig, der Verarbeitung auch serverseitig folgen zu können. Und genau ModSecurity ist mit seinem gesprächigen und unübersichtlichen Logfile-Einträgen eine Herausforderungen, zumal ein einzelner Aufruf rasch mehr Protokoll generiert als in einem Fenster platz findet; zumal uns die meisten Informationen nicht interessieren. Was uns fehlt ist eine Zusammenfassung eines Requests über das `Access-Log` und das `Error-Log` hinweg. Das Skript `lastrequestsummary` bringt so eine Auswertung ([lastrequestsummary](https://github.com/Apache-Labor/labor/blob/master/bin/lastrequestsummary)):
+Nun fehlt uns noch ein gescheiter Zugang zu den Logfiles. Zwar gibt uns `curl -v` bereits Feedback, über die Resultate eines Requests. Aber gerade bei ModSecurity Regeln ist es wichtig, der Verarbeitung auch serverseitig folgen zu können. Und genau ModSecurity ist mit seinem gesprächigen und unübersichtlichen Logfile-Einträgen eine Herausforderungen, zumal ein einzelner Aufruf rasch mehr Protokoll generiert als in einem Fenster platz findet; zumal uns die meisten Informationen nicht interessieren. Was uns fehlt ist eine Zusammenfassung eines Requests über das `Access-Log` und das `Error-Log` hinweg. Das Skript `lastrequestsummary` bringt so eine Auswertung ([lastrequestsummary](https://www.netnea.com/files/lastrequestsummary)):
 
 ```bash
 $> cat lastrequestsummary
@@ -233,7 +233,7 @@ Full Apache Access Log:
 
 Auf der dritten Zeile sehen wir das Timestamp des Requests, den HTTP Status, den ModSecurity Core Rules Incoming Anomaly Score, den Outgoing Anomaly Score, Method, Pfad und schliesslich in Klammern die eindeutige Request-Identifikation. Die übrigen Zeilen erklären sich von selbst und sind einfach ein illustrierendes Beispiel, wie sich so ein Skript umsetzen lässt.
 
-Der Clou besteht nun darin, dieses Skript mittels `watch` in kurzen Abständen regelmässig aufzurufen. Dazu dient ein eigenes Shortcut-Skript namens `watch-lastrequestsummary` ([watch-lastrequestsummary](https://github.com/Apache-Labor/labor/blob/master/bin/watch-lastrequestsummary)):
+Der Clou besteht nun darin, dieses Skript mittels `watch` in kurzen Abständen regelmässig aufzurufen. Dazu dient ein eigenes Shortcut-Skript namens `watch-lastrequestsummary` ([watch-lastrequestsummary](https://www.netnea.com/files/watch-lastrequestsummary)):
 
 ```bash
 $>cat watch-lastrequestsummary 
@@ -269,9 +269,9 @@ Hier ein Bildschirmschnappschuss von meinem Desktop:
 
 ###Verweise
 
-* [apachex](https://github.com/Apache-Labor/labor/blob/master/bin/apachex)
-* [lastrequestsummary](https://github.com/Apache-Labor/labor/blob/master/bin/lastrequestsummary)
-* [watch-lastrequestsummary](https://github.com/Apache-Labor/labor/blob/master/bin/watch-lastrequestsummary)
+* [apachex](https://www.netnea.com/files/apachex)
+* [lastrequestsummary](https://www.netnea.com/files/lastrequestsummary)
+* [watch-lastrequestsummary](https://www.netnea.com/files/watch-lastrequestsummary)
 * [Semaphor](https://de.wikipedia.org/wiki/Semaphor_%28Informatik%29)
 
 ### Lizenz / Kopieren / Weiterverwenden

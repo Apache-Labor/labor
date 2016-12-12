@@ -12,15 +12,15 @@ Eine frische *Core Rule Set* Installation weist typischerweise einige Fehlalarme
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
-* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren)
+* Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren/)
 * Ein Apache Webserver mit erweitertem Zugriffslog wie in [Anleitung 5 (Das Zugriffslog Ausbauen und Auswerten)](https://www.netnea.com/cms/apache-tutorial-5-zugriffslog-ausbauen/)
 * Ein Apache Webserver mit ModSecurity wie in [Anleitung 6 (ModSecurity einbinden)](https://www.netnea.com/cms/apache-tutorial-6-modsecurity-einbinden/)
 * Ein Apache Webserver mit einer Core Rules Installation wie in [Anleitung 7 (Core Rules einbinden)](https://www.netnea.com/cms/apache-tutorial-7-modsecurity-core-rules-einbinden/)
 
 Es macht keinen Sinn, False Positives auf einem Labor Server ohne jeglichen Verkehr zu bekämpfen. Was wir brauchen, ist ein echter Satz von Fehlalarmen. Damit können wir das Schreiben von Rule Exclusions einüben und die Meldungen nach und nach verschwinden lassen. Ich habe zwei solche Dateien vorbereitet:
 
-* [labor-07-example-access.log](./labor-07-example-access.log)
-* [labor-07-example-error.log](./labor-07-example-error.log)
+* [labor-07-example-access.log](https://www.netnea.com/files/labor-07-example-access.log)
+* [labor-07-example-error.log](https://www.netnea.com/files/labor-07-example-error.log)
 
 Es ist schwierig, reale Logfiles von einem Produktionsserver für eine Übung zu verwenden. Die Menge an sensitiven Daten in den Logs ist einfach zu gross. Deshalb habe ich frische False Positives produziert. Mit dem Core Rule Set 2.2.x wäre das einfach gewesen, aber mit dem Release 3.0 (CRS3) sind die meisten Fehlalarme in der Standardinstallation ausgemerzt. Ich habe deshalb das CRS auf Paranoia Level 4 gesetzt und eine lokale Drupal-Website installiert. Ich habe auf dieser Installation ein paar Artikel publiziert und sie im Browser gelesen. Diesen Vorgang habe ich mehrere Male wiederholt, bis ich 10'000 Requests im Access Log beisammen hatte.
 
@@ -52,7 +52,7 @@ Der Charakter der Anwendung, der Paranoia Level und die Menge des Verkehrs alle 
 
 Man könnte nun meinen, dass das Error Log mit den Alarmen der richtige Ort für den Start sei. Aber wir schauen uns zuerst das Access Log an. Wir haben das Format dieser Datei so definiert, dass sie uns die Anomalie Werte für jede Anfrage liefert. Dies hilft uns mit diesem Schritt.
 
-In der vorherigen Anleitung verwendeten wir das Skript [modsec-positive-stats.rb](https://www.netnea.com/cms/files/modsec-positive-stats.rb). Wir kehren zu diesem Skript mit dem Beispiel Access Log als Parameter zurück:
+In der vorherigen Anleitung verwendeten wir das Skript [modsec-positive-stats.rb](https://www.netnea.com/files/modsec-positive-stats.rb). Wir kehren zu diesem Skript mit dem Beispiel Access Log als Parameter zurück:
 
 ```bash
 $> cat tutorial-8-example-access.log | alscores | modsec-positive-stats.rb
@@ -356,6 +356,7 @@ Die Regeln 942431 und 942432 sind eng miteinander verwandt. Wir nennen dies Gesc
 Für jede Warnung müssen wir nun eine Rule Exclusion schreiben. Und wie wir in der vorangegangenen Anleitung gesehen haben, gibt es mehrere Optionen. Es braucht ein bisschen Erfahrung, um die richtige Wahl zu treffen und sehr oft können mehrere Ansätze geeignet sein. Betrachten wir noch einmal den Spickzettel:
 
 <a href="https://www.netnea.com/cms/rule-exclusion-cheatsheet-download/"><img src="/files/tutorial-7-rule-exclusion-cheatsheet_small.png" alt="Rule Exclusion CheatSheet" width="476" height="673" /></a>
+
 _Klicken zum Vergrössern_
 
 Beginnen wir mit einem einfachen Fall: 920273. Wir könnten diesen nun sehr genau untersuchen und alle verschiedenen Parameter auswerten, die diese Regel auslösen. Abhängig von der Sicherheitsstufe, die wir für unsere Anwendung erreichen möchten, wäre dies der richtige Ansatz. Aber auf der anderen Seite ist das hier nur eine Übung, so dass wir es uns einfach machen: Werfen wir die Regel komplett raus. Wir entscheiden uns dabei für eine Rule Exclusion zur Startup Time des Servers (die wir nach dem CRS-Include platzieren müssen).
@@ -413,7 +414,7 @@ $> grep -F -f ids tutorial-8-example-error.log  | grep 942130 | meluri | sucs
      75 /drupal/index.php/contextual/render
 ```
 
-Das ist also immer derselbe Pfad. Schliessen wir doch einfach den Parameter *ids[]* von der Behandlung aus, wenn er mit diesem Pfad zusammen auftritt. Dies läuft auf eine Runtime Rule Exclusion hinaus. In der vorangegangenen Anleitung haben wir gesehen, dass das Schreiben dieser Art von Regeln anstrengend und kompliziert ist. Es wäre schön, wenn ein Skript die Arbeit für uns machen würde. Ich habe ein solches Skript geschrieben: [modsec-rulereport.rb](https://www.netnea.com/cms/files/modsec-rulereport.rb). Es erwartet eine oder mehrere Alarme (oder das ganze Error Log wenn es sein muss) auf STDIN entgegen und schlägt eine von mehreren möglichen Typen von Rule Exclusions vor (`modsec-rulereport.rb -h` bringt eine Übersicht).
+Das ist also immer derselbe Pfad. Schliessen wir doch einfach den Parameter *ids[]* von der Behandlung aus, wenn er mit diesem Pfad zusammen auftritt. Dies läuft auf eine Runtime Rule Exclusion hinaus. In der vorangegangenen Anleitung haben wir gesehen, dass das Schreiben dieser Art von Regeln anstrengend und kompliziert ist. Es wäre schön, wenn ein Skript die Arbeit für uns machen würde. Ich habe ein solches Skript geschrieben: [modsec-rulereport.rb](https://www.netnea.com/files/modsec-rulereport.rb). Es erwartet eine oder mehrere Alarme (oder das ganze Error Log wenn es sein muss) auf STDIN entgegen und schlägt eine von mehreren möglichen Typen von Rule Exclusions vor (`modsec-rulereport.rb -h` bringt eine Übersicht).
 
 ```bash
 $> grep -F -f ids tutorial-8-example-error.log  | grep 942130 | modsec-rulereport.rb --mode combined
@@ -421,7 +422,8 @@ $> grep -F -f ids tutorial-8-example-error.log  | grep 942130 | modsec-rulerepor
 75 x 942130 SQL Injection Attack: SQL Tautology Detected.
 --------------------------------------------------------------------------------
       # ModSec Rule Exclusion: 942130 : SQL Injection Attack: SQL Tautology Detected.
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=942130;ARGS:ids[]"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" \
+          "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=942130;ARGS:ids[]"
 ```
 
 Der Modus _combined_ weist das Skript an, eine Regel zu schreiben, die eine Pfadbedingung mit einer Regel-ID und einem bestimmten Parameter kombiniert. Als erstes rapportiert das Skript die Anzahl der Meldungen mit diesem Muster, dann schlägt sie eine Ausschlussregel vor, die wir zusammen mit dem Kommentar eins zu eins in unsere Apache-Konfigurationsdatei kopieren können. Die vorgeschlagene Regel hat eine ID von 10'000. Bei einem nächsten Aufruf des Skripts müssen wir diese ID selbst neu setzen, um ID-Kollisionen bei 10'000 zu vermeiden, aber das ist eine einfache Aufgabe.
@@ -440,10 +442,12 @@ Dieses Skript ist sehr praktisch. Werfen wir mal 942431 hinein und schauen, was 
 
 ```bash
 $> grep -F -f ids tutorial-8-example-error.log  | grep 942431 | modsec-rulereport.rb --mode combined
-35 x 942431 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
-----------------------------------------------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=942431;ARGS:ids[]"
+35 x 942431 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded…
+---------------------------------------------------------------------------------------------------------
+      # ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): # of …
+        special characters exceeded (6)
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" …
+        "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=942431;ARGS:ids[]"
 ```
 
 Das ist fast dasselbe. Wir können also die ctl-Action (den Teil der Anweisung, welche mit `ctl` beginnt) herausnehmen und an die vorherige Anweisung anhängen:
@@ -452,7 +456,7 @@ Das ist fast dasselbe. Wir können also die ctl-Action (den Teil der Anweisung, 
 # === ModSec Core Rules: Runtime Exclusion Rules (ids: 10000-49999)
 
 # ModSec Rule Exclusion: 942130 : SQL Injection Attack: SQL Tautology Detected.
-# ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): # of ...
+# ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): # of …
 SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" \
     "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=942130;ARGS:ids[],\
                                  ctl:ruleRemoveTargetById=942431;ARGS:ids[]"
@@ -467,7 +471,9 @@ $> grep -F -f ids tutorial-8-example-error.log  | grep 921180 | modsec-rulerepor
 7 x 921180 HTTP Parameter Pollution (ARGS_NAMES:ids[])
 ------------------------------------------------------
       # ModSec Rule Exclusion: 921180 : HTTP Parameter Pollution (ARGS_NAMES:ids[])
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:ids[]"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" …
+          "phase:2,nolog,pass,id:10000, …
+	  ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:ids[]"
 ```
 
 Dies ist nun ein Sonderfall. Er passiert so, dass ein einzelner Parameter mehrmals übermittelt wird. Die Regel arbeitet mit einem separaten Zähler, der für jeden Parameter mitgeführt wird. In einer zweiten Regel, 921180, überprüft die Regel den Zähler und schlägt gegebenenfalls Alarm. Wenn wir den Alarm verhindern wollen, sollten wir am besten die Prüfung dieses Zählers unterdrücken, so wie das Skript es vorschlägt. Wir stehen wieder vor derselben URI, aber ich habe das Gefühl, dass diese Regel auch noch durch weitere Parameter ausgelöst wird. Wir werden sehen.
@@ -479,7 +485,8 @@ Wir nehmen jetzt also die vorgeschlagene Regel auf, bereiten den Kommentar für 
 ```bash
 # ModSec Rule Exclusion: 921180 : HTTP Parameter Pollution (multiple variables)
 SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" \
-    "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:ids[]"
+    "phase:2,nolog,pass,id:10001,\
+    ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:ids[]"
 ```
 
 Damit haben wir die sieben Highscore-Anfragen (189 und 231) abgedeckt. Das Schreiben dieser sechs Regel Ausschlüsse war ein wenig umständlich, aber das Skript scheint eine wirkliche Verbesserung für den Prozess darzustellen. Nun geht es schneller. Versprochen.
@@ -494,8 +501,8 @@ Aber bevor wir dort ankommen, müssen wir noch einige Regelausschlüsse hinzufü
 
 Nach dem ersten Satz von Regelausschlüssen würden wir den Dienst etwas beobachten. Das bringt uns einen neuen Satz von Logfiles.
 
-* [tutorial-8-example-access-round-2.log](./tutorial-8-example-access-round-2.log)
-* [tutorial-8-example-error-round-2.log](./tutorial-8-example-error-round-2.log)
+* [tutorial-8-example-access-round-2.log](https://www.netnea.com/files/tutorial-8-example-access-round-2.log)
+* [tutorial-8-example-error-round-2.log](https://www.netnea.com/files/tutorial-8-example-error-round-2.log)
 
 Wir beginnen erneut mit einem Blick auf die Verteilung der Anomalie Werte:
 
@@ -612,7 +619,9 @@ $> grep -F -f ids tutorial-8-example-error-round-2.log | modsec-rulereport.rb -m
 76 x 921180 HTTP Parameter Pollution (ARGS_NAMES:keys)
 ------------------------------------------------------
       # ModSec Rule Exclusion: 921180 : HTTP Parameter Pollution (ARGS_NAMES:keys)
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:keys"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" …
+      "phase:2,nolog,pass,id:10000, …
+      ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:keys"
 
 76 x 942100 SQL Injection Attack Detected via libinjection
 ----------------------------------------------------------
@@ -622,27 +631,35 @@ $> grep -F -f ids tutorial-8-example-error-round-2.log | modsec-rulereport.rb -m
 152 x 942190 Detects MSSQL code execution and information gathering attempts
 ----------------------------------------------------------------------------
       # ModSec Rule Exclusion: 942190 : Detects MSSQL code execution and information gathering attempts
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=942190;ARGS:keys"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" …
+      "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=942190;ARGS:keys"
 
 152 x 942200 Detects MySQL comment-/space-obfuscated injections and backtick termination
 ----------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 942200 : Detects MySQL comment-/space-obfuscated injections and backtick termination
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10002,ctl:ruleRemoveTargetById=942200;ARGS:keys"
+      # ModSec Rule Exclusion: 942200 : Detects MySQL comment-/space-obfuscated  …
+        injections and backtick termination
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" …
+      "phase:2,nolog,pass,id:10002,ctl:ruleRemoveTargetById=942200;ARGS:keys"
 
 152 x 942260 Detects basic SQL authentication bypass attempts 2/3
 -----------------------------------------------------------------
-      # ModSec Rule Exclusion: 942260 : Detects basic SQL authentication bypass attempts 2/3
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10003,ctl:ruleRemoveTargetById=942260;ARGS:keys"
+      # ModSec Rule Exclusion: 942260 : Detects basic SQL authentication …
+        bypass attempts 2/3
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" …
+      "phase:2,nolog,pass,id:10003,ctl:ruleRemoveTargetById=942260;ARGS:keys"
 
 152 x 942270 Looking for basic sql injection. Common attack string for mysql, oracle and others.
 ------------------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 942270 : Looking for basic sql injection. Common attack string for mysql, oracle and others.
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10004,ctl:ruleRemoveTargetById=942270;ARGS:keys"
+      # ModSec Rule Exclusion: 942270 : Looking for basic sql injection. …
+        Common attack string for mysql, oracle and others.
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" …
+      "phase:2,nolog,pass,id:10004,ctl:ruleRemoveTargetById=942270;ARGS:keys"
 
 152 x 942410 SQL Injection Attack
 ---------------------------------
       # ModSec Rule Exclusion: 942410 : SQL Injection Attack
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10005,ctl:ruleRemoveTargetById=942410;ARGS:keys"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" …
+      "phase:2,nolog,pass,id:10005,ctl:ruleRemoveTargetById=942410;ARGS:keys"
 ```
 
 Wir hatten vorher bereits einen Platz für weitere 921180 Ausschlüsse vorbereitet. Wir setzen die erste Regel in diese Position und erhalten damit Folgendes:
@@ -660,7 +677,15 @@ Bei der Regel 942100 bringt das Skript keinen vernünftigen Vorschlag.  Dies lie
 
 ```bash
 $> grep -F -f ids tutorial-8-example-error-round-2.log | grep 942100 | head -1
-[2016-11-05 09:47:18.423889] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. detected SQLi using libinjection with fingerprint 'UEkn' [file "/apache/conf/owasp-modsecurity-crs-3.0.0-rc1/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf"] [line "67"] [id "942100"] [rev "1"] [msg "SQL Injection Attack Detected via libinjection"] [data "Matched Data: UEkn found within ARGS:keys: union select from users"] [ver "OWASP_CRS/3.0.0"] [maturity "1"] [accuracy "8"] [tag "application-multi"] [tag "language-multi"] [tag "platform-multi"] [tag "attack-sqli"] [tag "OWASP_CRS/WEB_ATTACK/SQL_INJECTION"] [tag "WASCTC/WASC-19"] [tag "OWASP_TOP_10/A1"] [tag "OWASP_AppSensor/CIE1"] [tag "PCI/6.5.2"] [hostname "localhost"] [uri "/drupal/index.php/search/node"] [unique_id "WB2cln8AAQEAAAehPc8AAADK"]
+[2016-11-05 09:47:18.423889] [-:error] - - [client 127.0.0.1] ModSecurity: Warning. detected SQLi using …
+libinjection with fingerprint 'UEkn' …
+[file "/apache/conf/owasp-modsecurity-crs-3.0.0-rc1/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf"] …
+[line "67"] [id "942100"] [rev "1"] [msg "SQL Injection Attack Detected via libinjection"] …
+[data "Matched Data: UEkn found within ARGS:keys: union select from users"] [ver "OWASP_CRS/3.0.0"] …
+[maturity "1"] [accuracy "8"] [tag "application-multi"] [tag "language-multi"] [tag "platform-multi"] …
+[tag "attack-sqli"] [tag "OWASP_CRS/WEB_ATTACK/SQL_INJECTION"] [tag "WASCTC/WASC-19"] …
+[tag "OWASP_TOP_10/A1"] [tag "OWASP_AppSensor/CIE1"] [tag "PCI/6.5.2"] [hostname "localhost"] …
+[uri "/drupal/index.php/search/node"] [unique_id "WB2cln8AAQEAAAehPc8AAADK"]
 ```
 
 Daraus können wir die folgende Rule Exclusion ableiten:
@@ -674,18 +699,24 @@ SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" \
 Bei den verbleibenden Vorschlägen benützen wir diesen Shortcut:
 
 ```bash
-$> grep -F -f ids tutorial-8-example-error-round-2.log | grep -v "942100\|921180" | modsec-rulereport.rb -m combined | sort
+$> grep -F -f ids tutorial-8-example-error-round-2.log | grep -v "942100\|921180" | \
+   modsec-rulereport.rb -m combined | sort
 ...
       # ModSec Rule Exclusion: 942190 : Detects MSSQL code execution and information gathering attempts
-      # ModSec Rule Exclusion: 942200 : Detects MySQL comment-/space-obfuscated injections and backtick termination
+      # ModSec Rule Exclusion: 942200 : Detects MySQL comment-/space-obfuscated injections and backtick …
       # ModSec Rule Exclusion: 942260 : Detects basic SQL authentication bypass attempts 2/3
-      # ModSec Rule Exclusion: 942270 : Looking for basic sql injection. Common attack string for mysql, oracle and others.
+      # ModSec Rule Exclusion: 942270 : Looking for basic sql injection. Common attack string for mysql …
       # ModSec Rule Exclusion: 942410 : SQL Injection Attack
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=942190;ARGS:keys"
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=942200;ARGS:keys"
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10002,ctl:ruleRemoveTargetById=942260;ARGS:keys"
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10003,ctl:ruleRemoveTargetById=942270;ARGS:keys"
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10004,ctl:ruleRemoveTargetById=942410;ARGS:keys"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" …
+      "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=942190;ARGS:keys"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" …
+      "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=942200;ARGS:keys"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" …
+      "phase:2,nolog,pass,id:10002,ctl:ruleRemoveTargetById=942260;ARGS:keys"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" …
+      "phase:2,nolog,pass,id:10003,ctl:ruleRemoveTargetById=942270;ARGS:keys"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" …
+      "phase:2,nolog,pass,id:10004,ctl:ruleRemoveTargetById=942410;ARGS:keys"
 
 ```
 
@@ -695,9 +726,9 @@ Wir können dies in die folgende Regel vereinfachen, die dann an die vorherige E
 ```bash
 # ModSec Rule Exclusion: 942100 : SQL Injection Attack Detected via libinjection
 # ModSec Rule Exclusion: 942190 : Detects MSSQL code execution and information gathering attempts
-# ModSec Rule Exclusion: 942200 : Detects MySQL comment-/space-obfuscated injections and backtick termination
+# ModSec Rule Exclusion: 942200 : Detects MySQL comment-/space-obfuscated injections and backtick …
 # ModSec Rule Exclusion: 942260 : Detects basic SQL authentication bypass attempts 2/3
-# ModSec Rule Exclusion: 942270 : Looking for basic sql injection. Common attack string for mysql, oracle and others.
+# ModSec Rule Exclusion: 942270 : Looking for basic sql injection. Common attack string for mysql …
 # ModSec Rule Exclusion: 942410 : SQL Injection Attack
 SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10004,\
     ctl:ruleRemoveTargetById=942100;ARGS:keys,\
@@ -714,8 +745,8 @@ Und fertig. Dieses Mal haben wir alle Anfragen mit einem Score von über 50 elim
 
 Hier sind dieselben Übungsfiles. Es ist immer noch derselbe Verkehr, aber dank den oben stehenden Rule Exclusions mit weniger Alarmen.
 
-* [tutorial-8-example-access-round-3.log](./tutorial-8-example-access-round-3.log)
-* [tutorial-8-example-error-round-3.log](./tutorial-8-example-error-round-3.log)
+* [tutorial-8-example-access-round-3.log](https://www.netnea.com/files/tutorial-8-example-access-round-3.log)
+* [tutorial-8-example-error-round-3.log](https://www.netnea.com/files/tutorial-8-example-error-round-3.log)
 
 
 Dies führt zu folgenden Statistiken (diesmal nur für die eingehenden Anfragen):
@@ -804,24 +835,29 @@ SecRuleUpdateTargetById 930000-943999 "!ARGS:account[pass][pass2]"
 Es bleibt eine weitere Instanz von 921180, plus die 942431, die wir schon einmal gesehen haben.  Hier ist das, was das Skript vorschlägt:
 
 ```bash
-$> grep -F -f ids tutorial-8-example-error-round-3.log | grep "921180\|942431" | modsec-rulereport.rb -m combined 
+$> grep -F -f ids tutorial-8-example-error-round-3.log | grep "921180\|942431" | \
+   modsec-rulereport.rb -m combined 
 
 448 x 921180 HTTP Parameter Pollution (ARGS_NAMES:editors[])
 ------------------------------------------------------------
       # ModSec Rule Exclusion: 921180 : HTTP Parameter Pollution (ARGS_NAMES:editors[])
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/attachments" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:editors[]"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/attachments" …
+      "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:editors[]"
 
 448 x 942431 Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
 ----------------------------------------------------------------------------------------------------
-      # ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/attachments" "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=942431;ARGS:ajax_page_state[libraries]"
+      # ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): # of
+        special characters exceeded (6)
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/attachments" …
+      "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=942431;ARGS:ajax_page_state[libraries]"
 ```
 
 Nun wissen wir schon recht genau, wie das geht: Der erste Vorschlag wird mit den anderen Direktiven zum Ausschluss von 921180 zusammengelegt (vergessen Sie nicht, eine neue Regel-ID auszuwählen) und der zweite Vorschlag wird als neuer Eintrag hinzugefügt:
 
 
 ```bash
-# ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)
+# ModSec Rule Exclusion: 942431 : Restricted SQL Character Anomaly Detection (args): 
+# # of special characters exceeded (6)
 SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/attachments" \
     "phase:2,nolog,pass,id:10005,ctl:ruleRemoveTargetById=942431;ARGS:ajax_page_state[libraries]"
 ```
@@ -833,8 +869,8 @@ Zeit, die Limite ein weiteres Mal zu reduzieren (dieses Mal bis auf 10) und zu s
 
 Wir haben ein neues Paar Logfiles:
 
-* [tutorial-8-example-access-round-4.log](./tutorial-8-example-access-round-4.log)
-* [tutorial-8-example-error-round-4.log](./tutorial-8-example-error-round-4.log)
+* [tutorial-8-example-access-round-4.log](https://www.netnea.com/files/tutorial-8-example-access-round-4.log)
+* [tutorial-8-example-error-round-4.log](https://www.netnea.com/files/tutorial-8-example-error-round-4.log)
 
 Hier die Statistik hierzu:
 
@@ -868,24 +904,29 @@ $> grep -F -f ids tutorial-8-example-error-round-4.log  | melidmsg | sucs
 Unser Freund 921180 ist betreffend zwei anderer Parameter zurück und dazu ein weiteres Shell-Problem.  Möglicherweise ein weiteres Vorkommen des Passwort Parameters. Überprüfen wir das alles mal:
 
 ```bash
-$> grep -F -f ids tutorial-8-example-error-round-4.log  | grep 921180 | modsec-rulereport.rb -m combined
+$> grep -F -f ids tutorial-8-example-error-round-4.log  | grep 921180 | \
+modsec-rulereport.rb -m combined
 
 398 x 921180 HTTP Parameter Pollution (ARGS_NAMES:op)
 -----------------------------------------------------
       # ModSec Rule Exclusion: 921180 : HTTP Parameter Pollution (ARGS_NAMES:op)
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/metadata" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:fields[]"
-      SecRule REQUEST_URI "@beginsWith /drupal/core/install.php" "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:op"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/metadata" …
+      "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:fields[]"
+      SecRule REQUEST_URI "@beginsWith /drupal/core/install.php" …
+      "phase:2,nolog,pass,id:10001,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:op"
 ```
 
 Es ist einfach, dies an der üblichen Stelle mit einer neuen Regel ID hinzuzufügen. Und dann noch der letzte Fehlalarm:
 
 ```bash
-$> grep -F -f ids tutorial-8-example-error-round-4.log  | grep 932160 | modsec-rulereport.rb -m combined
+$> grep -F -f ids tutorial-8-example-error-round-4.log  | grep 932160 | \
+modsec-rulereport.rb -m combined
 
 41 x 932160 Remote Command Execution: Unix Shell Code Found
 -----------------------------------------------------------
       # ModSec Rule Exclusion: 932160 : Remote Command Execution: Unix Shell Code Found
-      SecRule REQUEST_URI "@beginsWith /drupal/index.php/user/login" "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=932160;ARGS:pass"
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/user/login" \
+      "phase:2,nolog,pass,id:10000,ctl:ruleRemoveTargetById=932160;ARGS:pass"
 ```
 
 Also ja, wieder das Passwort-Feld.  Ich denke, es ist am besten, den gleichen Prozess ausführen, den wir mit den anderen Vorkommen des Kennworts durchgeführt. Damals war es wohl die Registrierung, diesmal ist es das Login-Formular.
@@ -929,9 +970,9 @@ SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/attachments" \
 # Handling alerts for the search form:
 # ModSec Rule Exclusion: 942100 : SQL Injection Attack Detected via libinjection
 # ModSec Rule Exclusion: 942190 : Detects MSSQL code execution and information gathering attempts
-# ModSec Rule Exclusion: 942200 : Detects MySQL comment-/space-obfuscated injections and backtick termination
+# ModSec Rule Exclusion: 942200 : Detects MySQL comment-/space-obfuscated injections and backtick ...
 # ModSec Rule Exclusion: 942260 : Detects basic SQL authentication bypass attempts 2/3
-# ModSec Rule Exclusion: 942270 : Looking for basic sql injection. Common attack string for mysql, oracle and others.
+# ModSec Rule Exclusion: 942270 : Looking for basic sql injection. Common attack string for mysql, ...
 # ModSec Rule Exclusion: 942410 : SQL Injection Attack
 SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,pass,id:10100,\
    ctl:ruleRemoveTargetById=942100;ARGS:keys,\

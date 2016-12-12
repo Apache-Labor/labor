@@ -299,16 +299,16 @@ Registering account
 Registered
 Verify each domain
 Verifing christian-folini.ch
-copying challenge token to /apache/htdocs/.well-known/acme-challenge/xiM4FlHAqxo9fuAG-Ag-BTV_DsUJAbegPoZ6-l_luSA
+copying challenge token to /apache/htdocs/.well-known/acme-challenge/xiM4FlHAqxo9fuAG-Ag-BTV_Ds …
 Pending
 Verified christian-folini.ch
 Verifing www.christian-folini.ch
-copying challenge token to /apache/htdocs/.well-known/acme-challenge/QK4x1EyQ1Su7qZ-XTJL7EIqP6brNCRY8ZcGpZpyEc3E
+copying challenge token to /apache/htdocs/.well-known/acme-challenge/QK4x1EyQ1Su7qZ-XTJL7EIqP6b …
 Verified www.christian-folini.ch
 Verification completed, obtaining certificate.
 Certificate saved in /home/folini/.getssl/christian-folini.ch/christian-folini.ch.crt
 The intermediate CA cert is in /home/folini/.getssl/christian-folini.ch/chain.crt
-getssl: christian-folini.ch - certificate obtained but certificate on server is different from the new certificate
+getssl: christian-folini.ch - certificate obtained but certificate on server is different from …
 ```
 
 Wir sehen schön, wie zunächst ein neuer Schlüssel erstellt wurde. Dann wurde ein `Certificate Signing Request` mit der Datei-Endung `csr` generiert und dann die Testdatei `/apache/htdocs/.well-known/acme-challenge/xiM4FlHAqxo9fuAG-Ag-BTV_DsUJAbegPoZ6-l_luSA` hinterlegt. Darauf folgt der Auftrag zur Überprüfung und Signierung an _Let's Encrypt_. Im Access Log des Servers sehen wir danach den folgenden Eintrag (Die IP Adressen des Validierungsservers und der exakte Dateiname können variieren):

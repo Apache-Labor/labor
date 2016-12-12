@@ -1,4 +1,4 @@
-##### Changelog
+###Changelog
 
 * 25\. August 2016: Zeilenumbrüche justiert
 * 04\. März 2016: Rechtschreibefehler korrigiert

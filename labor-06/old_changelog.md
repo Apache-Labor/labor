@@ -1,5 +1,6 @@
 ###Changelog
 
+* 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt
 * 9\. Dezember 2016: Rechtschreibung
 * 6\. Dezember 2016: Update auf CRS3
 * 6\. Oktober 2016: Titel neu formatiert

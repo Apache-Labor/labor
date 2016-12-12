@@ -1,4 +1,4 @@
-##### Changelog
+###Changelog
 
 * 25\. August 2016: Zeilenumbrüche justiert
 * 16\. Januar 2016: Lizenzhinweis eingefügt

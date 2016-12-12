@@ -1,5 +1,5 @@
-##### Changelog
-
+###Changelog
+* 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt
 * 4\. Dezember 2016: Erklärung zum includeSubDomain Flag des STS Headers
 * 8\. Oktober 2016: Kleine Anpassungen im Test
 * 6\. Oktober 2016: Einführung der CA Let's Encrypt nach Unterstützung durch Luca Käser
