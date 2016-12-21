@@ -1,4 +1,5 @@
 ###Changelog
+* 20\. Dezember 2016: Schreibfehler
 * 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt
 * 04\. Dezember 2016: Zeilenumbrüche, Schreibfehler
 * 03\. September 2016: Unique-ID Modul hinzugefügt

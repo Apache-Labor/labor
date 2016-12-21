@@ -1,5 +1,6 @@
 ###Changelog
 
+* 20\. Dezember 2016: Timeout auf 10 gesetzt, MaxRequest auf 100, Kosmetik
 * 25\. August 2016: Zeilenumbrüche justiert
 * 04\. März 2016: Rechtschreibefehler korrigiert
 * 16\. Januar 2016: Lizenzhinweis eingefügt

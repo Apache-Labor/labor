@@ -1,5 +1,6 @@
 ###Changelog
 
+* 20\. Dezember 2016: tar Optionen mit "-" eingeleitet
 * 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt
 * 25\. August 2016: Zeilenumbrüche justiert
 * 15\. Juli 2016: Apache 2.4.20 -> 2.4.23 (Luca Käser)

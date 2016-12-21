@@ -1,4 +1,5 @@
 ###Changelog
+* 20\. Dezember 2016: Schreibfehler / Kosmetik, id action generell ohne Anführungszeichen, Bugfix in Regex in rule 10250
 * 12\. Dezember 2016: Update der Whitelisting Regel, lokale Links neu alle auf netnea.com gesetzt
 * 6\. Oktober 2016: Titel neu formatiert
 * 3\. September 2016: Fix SecAuditLogParts order of parts in example config

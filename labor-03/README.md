@@ -49,11 +49,11 @@ ServerTokens            Prod
 UseCanonicalName        On
 TraceEnable             Off
 
-Timeout                 5
-MaxRequestWorkers       250
+Timeout                 10
+MaxRequestWorkers       100
 
-Listen                  *:80
-Listen                  *:443
+Listen                  127.0.0.1:80
+Listen                  127.0.0.1:443
 
 LoadModule              mpm_event_module        modules/mod_mpm_event.so
 LoadModule              unixd_module            modules/mod_unixd.so
@@ -179,7 +179,7 @@ Leider waren wir noch nicht erfolgreich. Kein Wunder, denn wir haben einen Serve
 Wir können _curl_ instruieren, den Fehler zu ignorieren und dennoch eine Verbindung herzustellen. Dies geschieht mit dem Flag _--insecure_, respektive _-k_.:
 
 ```bash
-curl -v -k https://127.0.0.1/index.html
+$> curl -v -k https://127.0.0.1/index.html
 * Hostname was NOT found in DNS cache
 *   Trying 127.0.0.1...
 * Connected to 127.0.0.1 (127.0.0.1) port 443 (#0)
@@ -212,6 +212,7 @@ curl -v -k https://127.0.0.1/index.html
 < Date: Thu, 01 Oct 2015 07:48:13 GMT
 * Server Apache is not blacklisted
 < Server: Apache
+< Strict-Transport-Security: max-age=31536000; includeSubDomains
 < Last-Modified: Thu, 24 Sep 2015 11:54:56 GMT
 < ETag: "2d-5207ce664322e"
 < Accept-Ranges: bytes

@@ -1,4 +1,5 @@
 ###Changelog
+* 20\. Dezember 2016: Listener auf localhost fixiert, Timeout auf 10, MaxRequestWorker auf 100, Kosmetik
 * 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt
 * 4\. Dezember 2016: Erklärung zum includeSubDomain Flag des STS Headers
 * 8\. Oktober 2016: Kleine Anpassungen im Test

@@ -585,27 +585,27 @@ SecDefaultAction              "phase:1,pass,log,tag:'Local Lab Service'"
 
 # === ModSec timestamps at the start of each phase (ids: 90000 - 90009)
 
-SecAction "id:'90000',phase:1,nolog,pass,setvar:TX.ModSecTimestamp1start=%{DURATION}"
-SecAction "id:'90001',phase:2,nolog,pass,setvar:TX.ModSecTimestamp2start=%{DURATION}"
-SecAction "id:'90002',phase:3,nolog,pass,setvar:TX.ModSecTimestamp3start=%{DURATION}"
-SecAction "id:'90003',phase:4,nolog,pass,setvar:TX.ModSecTimestamp4start=%{DURATION}"
-SecAction "id:'90004',phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURATION}"
+SecAction "id:90000,phase:1,nolog,pass,setvar:TX.ModSecTimestamp1start=%{DURATION}"
+SecAction "id:90001,phase:2,nolog,pass,setvar:TX.ModSecTimestamp2start=%{DURATION}"
+SecAction "id:90002,phase:3,nolog,pass,setvar:TX.ModSecTimestamp3start=%{DURATION}"
+SecAction "id:90003,phase:4,nolog,pass,setvar:TX.ModSecTimestamp4start=%{DURATION}"
+SecAction "id:90004,phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURATION}"
                       
-# SecRule REQUEST_FILENAME "@beginsWith /" "id:'90005',phase:5,t:none,nolog,noauditlog,pass,\
+# SecRule REQUEST_FILENAME "@beginsWith /" "id:90005,phase:5,t:none,nolog,noauditlog,pass,\
 #                                           setenv:write_perflog"
 
 
 # === ModSec Recommended Rules (in modsec src package) (ids: 200000-200010)
 
-SecRule REQUEST_HEADERS:Content-Type "text/xml" "id:'200000',phase:1,t:none,t:lowercase,pass,\
+SecRule REQUEST_HEADERS:Content-Type "text/xml" "id:200000,phase:1,t:none,t:lowercase,pass,\
                                                  nolog,ctl:requestBodyProcessor=XML"
 
-SecRule REQBODY_ERROR "!@eq 0" "id:'200001',phase:2,t:none,deny,status:400,log,\
+SecRule REQBODY_ERROR "!@eq 0" "id:200001,phase:2,t:none,deny,status:400,log,\
                                 msg:'Failed to parse request body.',\
 logdata:'%{reqbody_error_msg}',severity:2"
 
 SecRule MULTIPART_STRICT_ERROR "!@eq 0" \
-"id:'200002',phase:2,t:none,log,deny,status:403, \
+"id:200002,phase:2,t:none,log,deny,status:403, \
 msg:'Multipart request body failed strict validation: \
 PE %{REQBODY_PROCESSOR_ERROR}, \
 BQ %{MULTIPART_BOUNDARY_QUOTED}, \
@@ -620,7 +620,7 @@ IP %{MULTIPART_INVALID_PART}, \
 IH %{MULTIPART_INVALID_HEADER_FOLDING}, \
 FL %{MULTIPART_FILE_LIMIT_EXCEEDED}'"
 
-SecRule TX:/^MSC_/ "!@streq 0" "id:'200004',phase:2,t:none,deny,status:500,\
+SecRule TX:/^MSC_/ "!@streq 0" "id:200004,phase:2,t:none,deny,status:500,\
                                 msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
 
 
@@ -628,25 +628,25 @@ SecRule TX:/^MSC_/ "!@streq 0" "id:'200004',phase:2,t:none,deny,status:500,\
                 
 # === ModSec Core Rules Base Configuration (ids: 900001-900021)
 
-SecAction "id:'900001',phase:1,t:none, \
+SecAction "id:900001,phase:1,t:none, \
    setvar:tx.critical_anomaly_score=5, \
    setvar:tx.error_anomaly_score=4, \
    setvar:tx.warning_anomaly_score=3, \
    setvar:tx.notice_anomaly_score=2, \
    nolog, pass"
-SecAction "id:'900002',phase:1,t:none,setvar:tx.inbound_anomaly_score_level=10000,\
+SecAction "id:900002,phase:1,t:none,setvar:tx.inbound_anomaly_score_level=10000,\
            setvar:tx.inbound_anomaly_score=0,nolog,pass"
-SecAction "id:'900003',phase:1,t:none,setvar:tx.outbound_anomaly_score_level=10000,\
+SecAction "id:900003,phase:1,t:none,setvar:tx.outbound_anomaly_score_level=10000,\
            setvar:tx.outbound_anomaly_score=0,nolog,pass"
-SecAction "id:'900004',phase:1,t:none,setvar:tx.anomaly_score_blocking=on,nolog,pass"
+SecAction "id:900004,phase:1,t:none,setvar:tx.anomaly_score_blocking=on,nolog,pass"
 
-SecAction "id:'900006',phase:1,t:none,setvar:tx.max_num_args=255,nolog,pass"
-SecAction "id:'900007',phase:1,t:none,setvar:tx.arg_name_length=100,nolog,pass"
-SecAction "id:'900008',phase:1,t:none,setvar:tx.arg_length=400,nolog,pass"
-SecAction "id:'900009',phase:1,t:none,setvar:tx.total_arg_length=64000,nolog,pass"
-SecAction "id:'900010',phase:1,t:none,setvar:tx.max_file_size=10000000,nolog,pass"
-SecAction "id:'900011',phase:1,t:none,setvar:tx.combined_file_sizes=10000000,nolog,pass"
-SecAction "id:'900012',phase:1,t:none, \
+SecAction "id:900006,phase:1,t:none,setvar:tx.max_num_args=255,nolog,pass"
+SecAction "id:900007,phase:1,t:none,setvar:tx.arg_name_length=100,nolog,pass"
+SecAction "id:900008,phase:1,t:none,setvar:tx.arg_length=400,nolog,pass"
+SecAction "id:900009,phase:1,t:none,setvar:tx.total_arg_length=64000,nolog,pass"
+SecAction "id:900010,phase:1,t:none,setvar:tx.max_file_size=10000000,nolog,pass"
+SecAction "id:900011,phase:1,t:none,setvar:tx.combined_file_sizes=10000000,nolog,pass"
+SecAction "id:900012,phase:1,t:none, \
   setvar:'tx.allowed_methods=GET HEAD POST OPTIONS', \
   setvar:'tx.allowed_request_content_type=application/x-www-form-urlencoded|multipart/form-data|\
 text/xml|application/xml|application/x-amf|application/json', \
@@ -660,13 +660,13 @@ text/xml|application/xml|application/x-amf|application/json', \
 /via/ /if/', \
   nolog,pass"
 
-SecRule REQUEST_HEADERS:User-Agent "^(.*)$" "id:'900018',phase:1,t:none,t:sha1,t:hexEncode,\
+SecRule REQUEST_HEADERS:User-Agent "^(.*)$" "id:900018,phase:1,t:none,t:sha1,t:hexEncode,\
   setvar:tx.ua_hash=%{matched_var},nolog,pass"
 SecRule REQUEST_HEADERS:x-forwarded-for "^\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b" \
-  "id:'900019',phase:1,t:none,capture,setvar:tx.real_ip=%{tx.1},nolog,pass"
-SecRule &TX:REAL_IP "!@eq 0" "id:'900020',phase:1,t:none,initcol:global=global,\
+  "id:900019,phase:1,t:none,capture,setvar:tx.real_ip=%{tx.1},nolog,pass"
+SecRule &TX:REAL_IP "!@eq 0" "id:900020,phase:1,t:none,initcol:global=global,\
   initcol:ip=%{tx.real_ip}_%{tx.ua_hash},nolog,pass"
-SecRule &TX:REAL_IP "@eq 0" "id:'900021',phase:1,t:none,initcol:global=global,\
+SecRule &TX:REAL_IP "@eq 0" "id:900021,phase:1,t:none,initcol:global=global,\
   initcol:ip=%{remote_addr}_%{tx.ua_hash},setvar:tx.real_ip=%{remote_addr},nolog,pass"
 
 
@@ -687,26 +687,26 @@ Include    /modsecurity-core-rules/*.conf
 
 # === ModSec Timestamps at the End of Each Phase (ids: 90010 - 90019)
 
-SecAction "id:'90010',phase:1,pass,nolog,setvar:TX.ModSecTimestamp1end=%{DURATION}"
-SecAction "id:'90011',phase:2,pass,nolog,setvar:TX.ModSecTimestamp2end=%{DURATION}"
-SecAction "id:'90012',phase:3,pass,nolog,setvar:TX.ModSecTimestamp3end=%{DURATION}"
-SecAction "id:'90013',phase:4,pass,nolog,setvar:TX.ModSecTimestamp4end=%{DURATION}"
-SecAction "id:'90014',phase:5,pass,nolog,setvar:TX.ModSecTimestamp5end=%{DURATION}"
+SecAction "id:90010,phase:1,pass,nolog,setvar:TX.ModSecTimestamp1end=%{DURATION}"
+SecAction "id:90011,phase:2,pass,nolog,setvar:TX.ModSecTimestamp2end=%{DURATION}"
+SecAction "id:90012,phase:3,pass,nolog,setvar:TX.ModSecTimestamp3end=%{DURATION}"
+SecAction "id:90013,phase:4,pass,nolog,setvar:TX.ModSecTimestamp4end=%{DURATION}"
+SecAction "id:90014,phase:5,pass,nolog,setvar:TX.ModSecTimestamp5end=%{DURATION}"
 
 
 # === ModSec performance calculations and variable export (ids: 90100 - 90199)
 
-SecAction "id:'90100',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=%{PERF_PHASE1}"
-SecAction "id:'90101',phase:5,pass,nolog,setvar:TX.perf_modsecinbound=+%{PERF_PHASE2}"
-SecAction "id:'90102',phase:5,pass,nolog,setvar:TX.perf_application=%{TX.ModSecTimestamp3start}"
-SecAction "id:'90103',phase:5,pass,nolog,setvar:TX.perf_application=-%{TX.ModSecTimestamp2end}"
-SecAction "id:'90104',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=%{PERF_PHASE3}"
-SecAction "id:'90105',phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=+%{PERF_PHASE4}"
-SecAction "id:'90106',phase:5,pass,nolog,setenv:ModSecTimeIn=%{TX.perf_modsecinbound}"
-SecAction "id:'90107',phase:5,pass,nolog,setenv:ApplicationTime=%{TX.perf_application}"
-SecAction "id:'90108',phase:5,pass,nolog,setenv:ModSecTimeOut=%{TX.perf_modsecoutbound}"
-SecAction "id:'90109',phase:5,pass,nolog,setenv:ModSecAnomalyScoreIn=%{TX.inbound_anomaly_score}"
-SecAction "id:'90110',phase:5,pass,nolog,setenv:ModSecAnomalyScoreOut=%{TX.outbound_anomaly_score}"
+SecAction "id:90100,phase:5,pass,nolog,setvar:TX.perf_modsecinbound=%{PERF_PHASE1}"
+SecAction "id:90101,phase:5,pass,nolog,setvar:TX.perf_modsecinbound=+%{PERF_PHASE2}"
+SecAction "id:90102,phase:5,pass,nolog,setvar:TX.perf_application=%{TX.ModSecTimestamp3start}"
+SecAction "id:90103,phase:5,pass,nolog,setvar:TX.perf_application=-%{TX.ModSecTimestamp2end}"
+SecAction "id:90104,phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=%{PERF_PHASE3}"
+SecAction "id:90105,phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=+%{PERF_PHASE4}"
+SecAction "id:90106,phase:5,pass,nolog,setenv:ModSecTimeIn=%{TX.perf_modsecinbound}"
+SecAction "id:90107,phase:5,pass,nolog,setenv:ApplicationTime=%{TX.perf_application}"
+SecAction "id:90108,phase:5,pass,nolog,setenv:ModSecTimeOut=%{TX.perf_modsecoutbound}"
+SecAction "id:90109,phase:5,pass,nolog,setenv:ModSecAnomalyScoreIn=%{TX.inbound_anomaly_score}"
+SecAction "id:90110,phase:5,pass,nolog,setenv:ModSecAnomalyScoreOut=%{TX.outbound_anomaly_score}"
 
 
 # === ModSec finished
@@ -793,8 +793,8 @@ DocumentRoot            /apache/htdocs
 
 ###Verweise
 
-* Apache mod_proxy [https://httpd.apache.org/docs/2.4/mod/mod_proxy.html)](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html)
-* Apache mod_rewrite [https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)](https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)
+* Apache mod_proxy [https://httpd.apache.org/docs/2.4/mod/mod_proxy.html](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html)
+* Apache mod_rewrite [https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html](https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)
 
 ### Lizenz / Kopieren / Weiterverwenden
 

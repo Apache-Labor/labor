@@ -1,5 +1,6 @@
 ###Changelog
 
+* 20\. Dezember 2016: id action generell ohne Anführungszeichen, Kosmetik
 * 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt
 * 6\. Oktober 2016: Titel neu formatiert
 * 2\. September 2016: Zeilenumbruch socat call justiert

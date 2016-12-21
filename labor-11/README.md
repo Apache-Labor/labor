@@ -146,7 +146,7 @@ Alternativ:
 ```bash
 $> sudo tshark -i lo -w /tmp/localhost-port443.pcap -s0 port 443
 tshark: Lua: Error during loading:
- [string "/usr/share/wireshark/init.lua"]:46: dofile has been disabled due to running Wireshark as superuser. See http://wiki.wireshark.org/CaptureSetup/CapturePrivileges for help in running Wireshark as an unprivileged user.
+ [string "/usr/share/wireshark/init.lua"]:46: dofile has been disabled due to running Wireshark as ...
 Running as user "root" and group "root". This could be dangerous.
 Capturing on 'Loopback'
 ...
@@ -194,7 +194,11 @@ tcpdump: listening on lo, link-type EN10MB (Ethernet), capture size 65535 bytes
 Versuchen wir also das `PCAP`-File zu entschlüsseln. Wir verwenden dazu wieder `tshark` aus der `Wireshark`-Suite. Das `GUI` funktioniert natürlich ebenso, ist aber weniger komfortabel. Wichtig ist es nun, dem Tool den Schlüssel, den wir auf dem Server verwendet haben, mitzuübergeben.
 
 ```bash
-$> sudo tshark -r /tmp/localhost-port443.pcap -o "ssl.desegment_ssl_records: TRUE" -o "ssl.desegment_ssl_application_data: TRUE" -o "ssl.keys_list: 0.0.0.0,443,http,/etc/ssl/private/ssl-cert-snakeoil.key" -o "ssl.debug_file: /tmp/ssl-debug.log"
+$> sudo tshark -r /tmp/localhost-port443.pcap \
+-o "ssl.desegment_ssl_records: TRUE" \
+-o "ssl.desegment_ssl_application_data: TRUE" \
+-o "ssl.keys_list: 0.0.0.0,443,http,/etc/ssl/private/ssl-cert-snakeoil.key" \
+-o "ssl.debug_file: /tmp/ssl-debug.log"
 Running as user "root" and group "root". This could be dangerous.
   1   0.000000    127.0.0.1 -> 127.0.0.1    TCP 74 33517 > https [SYN] Seq=0 Win=43690 Len=0 MSS=65495 …
   2   0.000040    127.0.0.1 -> 127.0.0.1    TCP 74 https > 33517 [SYN, ACK] Seq=0 Ack=1 Win=43690 Len=0 …
@@ -398,7 +402,8 @@ Listen	127.0.0.1:8443
         SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
         SSLProtocol             All -SSLv2 -SSLv3
         SSLHonorCipherOrder     On
-        SSLCipherSuite          "AES256-SHA"
+	SSLCipherSuite          'kEECDH+ECDSA kEECDH kEDH HIGH +SHA !aNULL !eNULL !LOW !MEDIUM \
+!MD5 !EXP !DSS !PSK !SRP !kECDH !CAMELLIA !RC4'
 
         <Directory /apache/htdocs>
 
@@ -449,7 +454,7 @@ $> curl -v -k https://localhost:8443/index.html
 < 
 <html><body><h1>It works!</h1></body></html>
 * Connection #0 to host localhost left intact
-$> curl -v -k http://localhost:8000/index.html
+$> curl -v http://localhost:8000/index.html
 * Hostname was NOT found in DNS cache
 *   Trying 127.0.0.1...
 * Connected to localhost (127.0.0.1) port 8000 (#0)

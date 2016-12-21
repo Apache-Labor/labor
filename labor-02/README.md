@@ -30,8 +30,8 @@ ServerTokens            Prod
 UseCanonicalName        On
 TraceEnable             Off
 
-Timeout                 5
-MaxRequestWorkers       250
+Timeout                 10
+MaxRequestWorkers       100
 
 Listen                  127.0.0.1:80
 
@@ -131,7 +131,7 @@ $> sha1sum --check mod_fcgid-2.3.9.tar.gz.sha1
 Wir erwarten wieder ein _OK_. Wenn dies korrekt retourniert wurde, ist es Zeit für das Entpacken, Kompilieren und Installieren.
 
 ```bash
-$> tar xvzf mod_fcgid-2.3.9.tar.gz
+$> tar -xvzf mod_fcgid-2.3.9.tar.gz
 $> cd mod_fcgid-2.3.9
 $> APXS=/apache/bin/apxs ./configure.apxs
 $> make

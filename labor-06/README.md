@@ -24,23 +24,23 @@ Die ModSecurity Core Rules werden unter dem Dach von *OWASP*, dem Open Web Appli
 
 ```
 $> cd /apache/conf
-$> wget https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/v3.0.0-rc3.tar.gz
-$> tar xvzf v3.0.0-rc3.tar.gz
-owasp-modsecurity-crs-3.0.0-rc3/
-owasp-modsecurity-crs-3.0.0-rc3/CHANGES
-owasp-modsecurity-crs-3.0.0-rc3/IDNUMBERING
-owasp-modsecurity-crs-3.0.0-rc3/INSTALL
-owasp-modsecurity-crs-3.0.0-rc3/KNOWN_BUGS
-owasp-modsecurity-crs-3.0.0-rc3/LICENSE
-owasp-modsecurity-crs-3.0.0-rc3/README.md
-owasp-modsecurity-crs-3.0.0-rc3/crs-setup.conf.example
-owasp-modsecurity-crs-3.0.0-rc3/documentation/
-owasp-modsecurity-crs-3.0.0-rc3/documentation/OWASP-CRS-Documentation/
-owasp-modsecurity-crs-3.0.0-rc3/documentation/README
+$> wget https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/v3.0.0.tar.gz
+$> tar -xvzf v3.0.0.tar.gz
+owasp-modsecurity-crs-3.0.0/
+owasp-modsecurity-crs-3.0.0/CHANGES
+owasp-modsecurity-crs-3.0.0/IDNUMBERING
+owasp-modsecurity-crs-3.0.0/INSTALL
+owasp-modsecurity-crs-3.0.0/KNOWN_BUGS
+owasp-modsecurity-crs-3.0.0/LICENSE
+owasp-modsecurity-crs-3.0.0/README.md
+owasp-modsecurity-crs-3.0.0/crs-setup.conf.example
+owasp-modsecurity-crs-3.0.0/documentation/
+owasp-modsecurity-crs-3.0.0/documentation/OWASP-CRS-Documentation/
+owasp-modsecurity-crs-3.0.0/documentation/README
 ...
-$> sudo ln -s owasp-modsecurity-crs-3.0.0-rc3 /apache/conf/crs
+$> sudo ln -s owasp-modsecurity-crs-3.0.0 /apache/conf/crs
 $> cp crs/crs-setup.conf.example crs/crs-setup.conf
-$> rm v3.0.0-rc3.tar.gz
+$> rm v3.0.0.tar.gz
 ```
 
 Dies entpackt den Basis Teil des Core Rule Set im Verzeichnis `/apache/conf/owasp-modsecurity-crs-3.0.0`. Wir kreieren einen Link von `/apache/conf/crs` in dieses Verzeichnis. Dann kopieren wir eine Datei namens `crs-setup.conf.example` und zum Abschluss löschen wir das CRS tar File.
@@ -248,13 +248,13 @@ SecDefaultAction              "phase:1,pass,log,tag:'Local Lab Service'"
 
 # === ModSec timestamps at the start of each phase (ids: 90000 - 90009)
 
-SecAction "id:'90000',phase:1,nolog,pass,setvar:TX.ModSecTimestamp1start=%{DURATION}"
-SecAction "id:'90001',phase:2,nolog,pass,setvar:TX.ModSecTimestamp2start=%{DURATION}"
-SecAction "id:'90002',phase:3,nolog,pass,setvar:TX.ModSecTimestamp3start=%{DURATION}"
-SecAction "id:'90003',phase:4,nolog,pass,setvar:TX.ModSecTimestamp4start=%{DURATION}"
-SecAction "id:'90004',phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURATION}"
+SecAction "id:90000,phase:1,nolog,pass,setvar:TX.ModSecTimestamp1start=%{DURATION}"
+SecAction "id:90001,phase:2,nolog,pass,setvar:TX.ModSecTimestamp2start=%{DURATION}"
+SecAction "id:90002,phase:3,nolog,pass,setvar:TX.ModSecTimestamp3start=%{DURATION}"
+SecAction "id:90003,phase:4,nolog,pass,setvar:TX.ModSecTimestamp4start=%{DURATION}"
+SecAction "id:90004,phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURATION}"
                       
-# SecRule REQUEST_FILENAME "@beginsWith /" "id:'90005',phase:5,t:none,nolog,noauditlog,pass,\
+# SecRule REQUEST_FILENAME "@beginsWith /" "id:90005,phase:5,t:none,nolog,noauditlog,pass,\
 # setenv:write_perflog"
 
 
@@ -262,14 +262,14 @@ SecAction "id:'90004',phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURAT
 # === ModSec Recommended Rules (in modsec src package) (ids: 200000-200010)
 
 SecRule REQUEST_HEADERS:Content-Type "text/xml" \
-  "id:'200000',phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
+  "id:200000,phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
 
 SecRule REQBODY_ERROR "!@eq 0" \
-  "id:'200001',phase:2,t:none,deny,status:400,log,msg:'Failed to parse request body.',\
+  "id:200001,phase:2,t:none,deny,status:400,log,msg:'Failed to parse request body.',\
   logdata:'%{reqbody_error_msg}',severity:2"
 
 SecRule MULTIPART_STRICT_ERROR "!@eq 0" \
-"id:'200002',phase:2,t:none,log,deny,status:403, \
+"id:200002,phase:2,t:none,log,deny,status:403, \
 msg:'Multipart request body failed strict validation: \
 PE %{REQBODY_PROCESSOR_ERROR}, \
 BQ %{MULTIPART_BOUNDARY_QUOTED}, \
@@ -285,7 +285,7 @@ IH %{MULTIPART_INVALID_HEADER_FOLDING}, \
 FL %{MULTIPART_FILE_LIMIT_EXCEEDED}'"
 
 SecRule TX:/^MSC_/ "!@streq 0" \
-  "ID:'200004',phase:2,t:none,deny,status:500,\
+  "ID:200004,phase:2,t:none,deny,status:500,\
   msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
 
 
@@ -318,11 +318,11 @@ Include    /apache/conf/crs/rules/*.conf
 
 # === ModSec Timestamps at the End of Each Phase (ids: 90010 - 90019)
 
-SecAction "id:'90010',phase:1,pass,nolog,setvar:TX.ModSecTimestamp1end=%{DURATION}"
-SecAction "id:'90011',phase:2,pass,nolog,setvar:TX.ModSecTimestamp2end=%{DURATION}"
-SecAction "id:'90012',phase:3,pass,nolog,setvar:TX.ModSecTimestamp3end=%{DURATION}"
-SecAction "id:'90013',phase:4,pass,nolog,setvar:TX.ModSecTimestamp4end=%{DURATION}"
-SecAction "id:'90014',phase:5,pass,nolog,setvar:TX.ModSecTimestamp5end=%{DURATION}"
+SecAction "id:90010,phase:1,pass,nolog,setvar:TX.ModSecTimestamp1end=%{DURATION}"
+SecAction "id:90011,phase:2,pass,nolog,setvar:TX.ModSecTimestamp2end=%{DURATION}"
+SecAction "id:90012,phase:3,pass,nolog,setvar:TX.ModSecTimestamp3end=%{DURATION}"
+SecAction "id:90013,phase:4,pass,nolog,setvar:TX.ModSecTimestamp4end=%{DURATION}"
+SecAction "id:90014,phase:5,pass,nolog,setvar:TX.ModSecTimestamp5end=%{DURATION}"
 
 
 # === ModSec performance calculations and variable export (ids: 90100 - 90199)
@@ -774,7 +774,7 @@ Die Anweisung steht gemeinsam mit einem Kommentar, der beschreibt, was wir über
 
 ```bash
 # ModSec Exclusion Rule: 920300 Request Missing an Accept Header
-SecRuleRemoveByTag "^MISSING_HEADER_ACCEPT$"
+SecRuleRemoveByTag "MISSING_HEADER_ACCEPT$"
 ```
 
 Wie wir sehen, akzeptiert diese Richtlinie reguläre Ausdrücke als Parameter. Leider ist die Unterstützung nicht universell: Zum Beispiel ist die mit einem Pipe-Zeichen ausgedrückte *OR* Funktionalität nicht implementiert. In der Praxis muss man ausprobieren und sehen, was funktioniert und was nicht.
@@ -917,7 +917,7 @@ Ich denke, das Tuning-Konzept und die Theorie sind jetzt ganz klar. In der näch
 
 Es ist vielleicht am besten, die Rule Exclusion Direktiven in einer Grafik zusammenzufassen: Hier ein Cheatsheet für den freien Gebrauch!
 
-<a href="https://www.netnea.com/cms/rule-exclusion-cheatsheet-download/"><img src="/files/tutorial-7-rule-exclusion-cheatsheet_small.png" alt="Rule Exclusion CheatSheet" width="476" height="673" /></a>
+<a href="https://www.netnea.com/cms/rule-exclusion-cheatsheet-download/"><img src="https://www.netnea.com/files/tutorial-7-rule-exclusion-cheatsheet_small.png" alt="Rule Exclusion CheatSheet" width="476" height="673" /></a>
 
 
 

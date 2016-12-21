@@ -19,8 +19,8 @@ Eine frische *Core Rule Set* Installation weist typischerweise einige Fehlalarme
 
 Es macht keinen Sinn, False Positives auf einem Labor Server ohne jeglichen Verkehr zu bekämpfen. Was wir brauchen, ist ein echter Satz von Fehlalarmen. Damit können wir das Schreiben von Rule Exclusions einüben und die Meldungen nach und nach verschwinden lassen. Ich habe zwei solche Dateien vorbereitet:
 
-* [labor-07-example-access.log](https://www.netnea.com/files/labor-07-example-access.log)
-* [labor-07-example-error.log](https://www.netnea.com/files/labor-07-example-error.log)
+* [tutorial-8-example-access.log](https://www.netnea.com/files/tutorial-8-example-access.log)
+* [tutorial-8-example-error.log](https://www.netnea.com/files/tutorial-8-example-error.log)
 
 Es ist schwierig, reale Logfiles von einem Produktionsserver für eine Übung zu verwenden. Die Menge an sensitiven Daten in den Logs ist einfach zu gross. Deshalb habe ich frische False Positives produziert. Mit dem Core Rule Set 2.2.x wäre das einfach gewesen, aber mit dem Release 3.0 (CRS3) sind die meisten Fehlalarme in der Standardinstallation ausgemerzt. Ich habe deshalb das CRS auf Paranoia Level 4 gesetzt und eine lokale Drupal-Website installiert. Ich habe auf dieser Installation ein paar Artikel publiziert und sie im Browser gelesen. Diesen Vorgang habe ich mehrere Male wiederholt, bis ich 10'000 Requests im Access Log beisammen hatte.
 
@@ -355,7 +355,7 @@ Die Regeln 942431 und 942432 sind eng miteinander verwandt. Wir nennen dies Gesc
 
 Für jede Warnung müssen wir nun eine Rule Exclusion schreiben. Und wie wir in der vorangegangenen Anleitung gesehen haben, gibt es mehrere Optionen. Es braucht ein bisschen Erfahrung, um die richtige Wahl zu treffen und sehr oft können mehrere Ansätze geeignet sein. Betrachten wir noch einmal den Spickzettel:
 
-<a href="https://www.netnea.com/cms/rule-exclusion-cheatsheet-download/"><img src="/files/tutorial-7-rule-exclusion-cheatsheet_small.png" alt="Rule Exclusion CheatSheet" width="476" height="673" /></a>
+<a href="https://www.netnea.com/cms/rule-exclusion-cheatsheet-download/"><img src="https://www.netnea.com/files/tutorial-7-rule-exclusion-cheatsheet_small.png" alt="Rule Exclusion CheatSheet" width="476" height="673" /></a>
 
 _Klicken zum Vergrössern_
 
@@ -988,17 +988,18 @@ SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,p
 Include    /apache/conf/crs/rules/*.conf
 
 
-# === ModSecurity Ignore Rules After Core Rules Inclusion; order by id of ignored rule (ids: 50000-79999)
+# === ModSec Core Rules: Startup Time Rules Exclusions
 
 # ModSec Rule Exclusion: 942450 : SQL Hex Encoding Identified
 SecRuleUpdateTargetById 942450 "!REQUEST_COOKIES
 SecRuleUpdateTargetById 942450 "!REQUEST_COOKIES_NAMES
 
 
+# ModSec Rule Exclusion: 920273 : Invalid character in request (outside of very strict set)
 # ModSec Rule Exclusion: 942432 : Restricted SQL Character Anomaly Detection (args): 
 # number of special characters exceeded (2) (severity:  NONE/UNKOWN)
-SecRuleRemoveById 942432
 SecRuleRemoveById 920273
+SecRuleRemoveById 942432
 
 # ModSec Rule Exclusion: 930000 - 943999 : All application rules for password parameters
 SecRuleUpdateTargetById 930000-943999 "!ARGS:account[pass][pass1]"

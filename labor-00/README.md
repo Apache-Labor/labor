@@ -40,7 +40,7 @@ apr-1.5.2.tar.bz2: OK
 Das Überprüfen sollte keine Probleme machen, _OK_. Wir können also mit dem Entpacken, Vorkonfigurieren und dem Kompilieren der _apr_ fortfahren.
 
 ```bash
-$> tar xvjf apr-1.5.2.tar.bz2
+$> tar -xvjf apr-1.5.2.tar.bz2
 $> cd apr-1.5.2
 $> ./configure --prefix=/usr/local/apr/
 ```
@@ -77,7 +77,7 @@ $> wget http://mirror.switch.ch/mirror/apache/dist/apr/apr-util-1.5.4.tar.bz2
 $> wget https://www.apache.org/dist/apr/apr-util-1.5.4.tar.bz2.md5
 $> md5sum --check apr-util-1.5.4.tar.bz2.md5
 apr-util-1.5.4.tar.bz2: OK
-$> tar xvjf apr-util-1.5.4.tar.bz2
+$> tar -xvjf apr-util-1.5.4.tar.bz2
 $> cd apr-util-1.5.4
 $> ./configure --prefix=/usr/local/apr/ --with-apr=/usr/local/apr/
 $> make
@@ -110,7 +110,7 @@ httpd-2.4.23.tar.bz2: OK
 Nach der Überprüfung können wir das Paket entpacken.
 
 ```bash
-$> tar xvjf httpd-2.4.23.tar.bz2
+$> tar -xvjf httpd-2.4.23.tar.bz2
 ```
 
 Das ergibt etwa 38MB.

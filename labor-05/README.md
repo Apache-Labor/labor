@@ -45,7 +45,7 @@ Wir entpacken nun den Sourcecode und leiten die Konfiguration ein. Noch vorher g
 Damit sind die Voraussetzungen geschaffen und wir sind bereit für ModSecurity.
 
 ```bash
-$> tar xvzf modsecurity-2.9.1.tar.gz
+$> tar -xvzf modsecurity-2.9.1.tar.gz
 $> cd modsecurity-2.9.1
 $> ./configure --with-apxs=/apache/bin/apxs \
 --with-apr=/usr/local/apr/bin/apr-1-config \
@@ -185,14 +185,14 @@ SecDefaultAction              "phase:1,pass,log,tag:'Local Lab Service'"
 
 # === ModSec timestamps at the start of each phase (ids: 90000 - 90009)
 
-SecAction "id:'90000',phase:1,nolog,pass,setvar:TX.ModSecTimestamp1start=%{DURATION}"
-SecAction "id:'90001',phase:2,nolog,pass,setvar:TX.ModSecTimestamp2start=%{DURATION}"
-SecAction "id:'90002',phase:3,nolog,pass,setvar:TX.ModSecTimestamp3start=%{DURATION}"
-SecAction "id:'90003',phase:4,nolog,pass,setvar:TX.ModSecTimestamp4start=%{DURATION}"
-SecAction "id:'90004',phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURATION}"
+SecAction "id:90000,phase:1,nolog,pass,setvar:TX.ModSecTimestamp1start=%{DURATION}"
+SecAction "id:90001,phase:2,nolog,pass,setvar:TX.ModSecTimestamp2start=%{DURATION}"
+SecAction "id:90002,phase:3,nolog,pass,setvar:TX.ModSecTimestamp3start=%{DURATION}"
+SecAction "id:90003,phase:4,nolog,pass,setvar:TX.ModSecTimestamp4start=%{DURATION}"
+SecAction "id:90004,phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURATION}"
                       
 # SecRule REQUEST_FILENAME "@beginsWith /" \
-#       "id:'90005',phase:5,t:none,nolog,noauditlog,pass,setenv:write_perflog"
+#       "id:90005,phase:5,t:none,nolog,noauditlog,pass,setenv:write_perflog"
 
 
 
@@ -235,11 +235,11 @@ SecRule TX:/^MSC_/ "!@streq 0" \
 
 # === ModSec timestamps at the end of each phase (ids: 90010 - 90019)
 
-SecAction "id:'90010',phase:1,pass,nolog,setvar:TX.ModSecTimestamp1end=%{DURATION}"
-SecAction "id:'90011',phase:2,pass,nolog,setvar:TX.ModSecTimestamp2end=%{DURATION}"
-SecAction "id:'90012',phase:3,pass,nolog,setvar:TX.ModSecTimestamp3end=%{DURATION}"
-SecAction "id:'90013',phase:4,pass,nolog,setvar:TX.ModSecTimestamp4end=%{DURATION}"
-SecAction "id:'90014',phase:5,pass,nolog,setvar:TX.ModSecTimestamp5end=%{DURATION}"
+SecAction "id:90010,phase:1,pass,nolog,setvar:TX.ModSecTimestamp1end=%{DURATION}"
+SecAction "id:90011,phase:2,pass,nolog,setvar:TX.ModSecTimestamp2end=%{DURATION}"
+SecAction "id:90012,phase:3,pass,nolog,setvar:TX.ModSecTimestamp3end=%{DURATION}"
+SecAction "id:90013,phase:4,pass,nolog,setvar:TX.ModSecTimestamp4end=%{DURATION}"
+SecAction "id:90014,phase:5,pass,nolog,setvar:TX.ModSecTimestamp5end=%{DURATION}"
 
 
 # === ModSec performance calculations and variable export (ids: 90100 - 90199)
@@ -434,12 +434,12 @@ Mit dieser langen Liste von Zahlen lassen sich ModSecurity Performance-Probleme 
 
 ###Schritt 6: Einfache Blacklist Regeln schreiben
 
-Mit der obenstehenden Konfiguration ist ModSecurity aufgesetzt und konfiguriert. Es kann fleissig Performance-Datan loggen, aber auf der Sicherheitsseite sind nur die rudimentären Grundlagen vorhanden. In einer späteren Anleitung werden wir wie angekündigt die _OWASP ModSecurity Core Rules_, eine umfassende Regelsammlung, einbinden. Zunächst ist es aber wichtig, dass wir lernen, selbst Regeln zu schreiben. In der Grundkonfiguration wurden schon einige Regeln erklärt. Von da ist es nur noch ein kleiner Schritt.
+Mit der obenstehenden Konfiguration ist ModSecurity aufgesetzt und konfiguriert. Es kann fleissig Performance-Daten loggen, aber auf der Sicherheitsseite sind nur die rudimentären Grundlagen vorhanden. In einer späteren Anleitung werden wir wie angekündigt die _OWASP ModSecurity Core Rules_, eine umfassende Regelsammlung, einbinden. Zunächst ist es aber wichtig, dass wir lernen, selbst Regeln zu schreiben. In der Grundkonfiguration wurden schon einige Regeln erklärt. Von da ist es nur noch ein kleiner Schritt.
 
 Nehmen wir einen einfachen Fall: Wir möchten sicher stellen, dass der Zugriff auf eine bestimmte URI auf dem Server verboten wird. Wir wollen auf eine solche Anfrage mit einem _HTTP Status 403_ antworten. Die entsprechende Regel schreiben wir in der Konfiguration in den Bereich _ModSecurity Rules_ und teilen ihr die ID 10000 (_service-specific before core-rules_) zu.
 
 ```bash
-SecRule  REQUEST_FILENAME "/phpmyadmin" "id:'10000',phase:1,deny,t:lowercase,t:normalisePath,\
+SecRule  REQUEST_FILENAME "/phpmyadmin" "id:10000,phase:1,deny,t:lowercase,t:normalisePath,\
 msg:'Blocking access to %{MATCHED_VAR}.',tag:'Blacklist Rules'"
 ```
 
@@ -521,7 +521,7 @@ SecRule REQUEST_FILENAME "@beginsWith /login/static/js" \
     "id:10202,phase:1,pass,nolog,tag:'Login Whitelist',\
     skipAfter:END_WHITELIST_URIBLOCK_login"
 SecRule REQUEST_FILENAME \
-    "@rx ^/login/(displayLogin|login|logout|).do$" \
+    "@rx ^/login/(displayLogin|login|logout).do$" \
     "id:10250,phase:1,pass,nolog,tag:'Login Whitelist',\
     skipAfter:END_WHITELIST_URIBLOCK_login"
 
