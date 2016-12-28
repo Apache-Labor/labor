@@ -12,6 +12,8 @@
 #
 # Run with --help to get an usage overview.
 #
+# TODO
+# - option to suppress lines / scores with 0 results / requests
 
 # -----------------------------------------------------------
 # INIT
