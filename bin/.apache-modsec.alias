@@ -79,6 +79,7 @@ alias melmatch='grep -o " at [^\ ]*\. \[file" | sed -e "s/\. \[file//" | cut -b5
 alias melmsg='grep -o "\[msg [^]]*" | cut -d\" -f2 | sed -e "s/(Total .*/(Total ...) .../"'
 alias melsummary='grep -o -E " (at|against) .*\[file.*\[id \"[0-9]+.*\[msg \"[^\"]+" | tr -d \" | sed -e "s/ at the end of input at/ at/" -e "s/ required. /. /" -e "s/\[rev .*\[msg/[msg/" -e "s/\. / /" -e "s/(Total .*/(Total ...) .../" | tr -d \] | cut -d\  -f3,9,11- | sed -e "s/^\([^ ]*\) \([^ ]*\)/\2 \1/" | awk "{ printf \"%+6s %-35s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s\n\", \$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9, \$10, \$11, \$12, \$13, \$14, \$15, \$16, \$17, \$18, \$19, \$20 }" | sed -e "s/\ *$//"'
 # melsummary description: We grep for the various ModSec alert messages and take the content from the at/against via the parameter name, the id up and including the message. tr and sed and again tr are then used to strip this down. Now cut is used to extract (1) the parameter, (2) the id and (3) the message. Then we use sed to swap the position of the parameter and the id. Then we used awk to print the three fields in a clean table. This demands the used of a lot of %s fields, which results in a lot of empty spaces at the end of the line, which are finally removed.
+alias meltags='tr "]" "\n" | tr "[" "\n" | grep "tag \"" | cut -b6- | tr -d "\""'
 alias meltimestamp='cut -b2-25'
 alias melunique_id='grep -o "\[unique_id [^]]*" | cut -d\" -f2'
 alias meluri='grep -o "\[uri [^]]*" | cut -d\" -f2'
