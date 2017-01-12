@@ -1,7 +1,5 @@
 #!/usr/bin/ruby
 #
-# Copyright (c) 2014-2017 netnea AG. (https://www.netnea.com/)
-#
 # A ruby script which extracts ModSec alerts out of an apache
 # error log and displays them in a terse report.
 #
@@ -22,19 +20,6 @@
 # - order by number of hits per rule or rule id
 # - option to have anomaly scoring checks be included in the rule
 #     (hidden by default)
-# - multiline rules like CRS
-# - distrinction between startup and runtime mode
-# - save last rule ID in ENV variable and use that at next call as base
-#   or in file if env is not possible
-# - also cover 942100 (libinjection)
-# - Reorganise options:
-#   --startup
-#   --runtime
-#   --rule
-#   --parameter
-#   --byId
-#   --byTag
-#   optionally --byMsg
 
 # -----------------------------------------------------------
 # INIT
@@ -75,15 +60,14 @@ Severities = {
 }
 
 class Event
-	attr_accessor :id, :unique_id, :ip, :msg, :uri, :severity, :parameter, :hostname, :file, :tags
+	attr_accessor :id, :unique_id, :ip, :msg, :uri, :parameter, :hostname, :file, :tags
 
-	def initialize(id, unique_id, ip, msg, uri, severity, parameter, hostname, file, tags)
+	def initialize(id, unique_id, ip, msg, uri, parameter, hostname, file, tags)
 		@id = id
 		@unique_id = unique_id
 		@ip = ip
 		@msg = msg
 		@uri = uri
-		@severity = severity
 		@parameter = parameter
 		@hostname = hostname
 		@file = file
@@ -165,7 +149,6 @@ def read_file(file)
           unique_id = scan_line(line, "unique_id", "no-id-found")
           msg = scan_line(line, "msg", "none")
 	  uri = scan_line(line, "uri", "/")
-	  severity = scan_line(line, "severity", "NONE/UNKOWN")
 	  hostname = scan_line(line, "hostname", "unknown")
 	  eventfile = scan_line(line, "file", "none")
 
@@ -175,15 +158,25 @@ def read_file(file)
 	  rescue
 	    ip = "0.0.0.0"
 	  end
+
 	  begin
-	    parameter = line.scan(/ (at|against) "?(.*?)"?( required)?\. \[file \"/)[0][1]
+	    if /ModSecurity: Warning. Pattern match/.match(line)
+	    	    # example: standard operator results in:  ModSecurity: Warning. Pattern match "^[\\\\d.:]+$" at REQUEST_HEADERS:Host.
+		    parameter = line.scan(/ (at|against) "?(.*?)"?( required)?\. \[file \"/)[0][1]
+	    elsif /ModSecurity: Warning. detected (SQLi|XSS) using libinjection/.match(line)
+	    	    # example: ModSecurity: Warning. detected SQLi using libinjection with fingerprint 'sos' [file ... ] [data "Matched Data: sos found within ARGS:install[values][GFX][processor_stripColorProfileCommand]:  profile '*'"
+		    parameter = line.scan(/found within ([^ ]*): /)[0][0]
+	    end
 	  rescue
+	    puts "XXXX"
+	    exit
 	    parameter = ""
 	  end
+
 	  # FIXME: read tags
 	  tags = Array.new
 
-	  events << Event.new(id, unique_id, ip, msg, uri, severity, parameter, hostname, eventfile, tags)
+	  events << Event.new(id, unique_id, ip, msg, uri, parameter, hostname, eventfile, tags)
 
         end
   end
@@ -200,7 +193,7 @@ def display_ignore_rule_mode_rule(id, event, events)
   # Remarks: none
 
 	rules = Array.new
-	puts "      # ModSec Rule Exclusion: #{event.id} : #{event.msg} (severity: #{Severities[event.severity].to_s} #{event.severity})"
+	puts "      # ModSec Rule Exclusion: #{event.id} : #{event.msg}"
 	puts "      SecRuleRemoveById #{event.id}"
 	
 end
@@ -223,7 +216,7 @@ def display_ignore_rule_mode_parameter(id, event, events)
 	if parameters.length == 0 or ( parameters.length == 1 and parameters[0] == "" )
 		puts "      No parameter available to create ignore-rule proposal."
 	else
-		puts "      # ModSec Rule Exclusion: #{id} : #{event.msg} (severity: #{Severities[event.severity].to_s} #{event.severity})"
+		puts "      # ModSec Rule Exclusion: #{id} : #{event.msg}"
 
 
 	
@@ -244,7 +237,7 @@ def display_ignore_rule_mode_path(id, event, events)
   # Return : none
   # Remarks: none
 
-	puts "      # ModSec Rule Exclusion: #{id} : #{event.msg} (severity: #{Severities[event.severity].to_s} #{event.severity})"
+	puts "      # ModSec Rule Exclusion: #{id} : #{event.msg}"
 	puts "      SecRule REQUEST_URI \"@beginsWith /foo\" \"phase:1,nolog,pass,id:#{$params[:ruleid]},ctl:ruleRemoveById=#{id}\""
 	$params[:ruleid] = $params[:ruleid] + 1
 
@@ -284,7 +277,7 @@ def display_ignore_rule_mode_path_and_parameter(id, event, events)
   # Return : none
   # Remarks: none
 
-	puts "      # ModSec Rule Exclusion: #{id} : #{event.msg} (severity: #{Severities[event.severity].to_s} #{event.severity})"
+	puts "      # ModSec Rule Exclusion: #{id} : #{event.msg}"
 	items = Array.new
 	dprint "Building list with paths and parameters for this rule / event id:"
 	events.select{|e| e.id == id }.each do |e|
@@ -361,7 +354,7 @@ def display_report(events)
 	len = events.select{|e| e.id == id }.length
 	case $params[:mode]
 		when MODE_SIMPLE
-			out = len.to_s + " x " + id.to_s + " " + event.msg + " (severity: " + Severities[event.severity].to_s + " " + event.severity + ") : " 
+			out = len.to_s + " x " + id.to_s + " " + event.msg + " : " 
 			n = 0
 			events.select{|e| e.id == id }.each do |e|
 				out = out + ", " unless n == 0 
@@ -371,7 +364,7 @@ def display_report(events)
 		when MODE_SUPERSIMPLE
 			out = len.to_s + " x " + id.to_s + " " + event.msg
 		else
-			out = len.to_s + " x " + id.to_s + " " + event.msg + " (severity: " + Severities[event.severity].to_s + " " + event.severity + ")"
+			out = len.to_s + " x " + id.to_s + " " + event.msg
 	end
 	print out + "\n"
 	if $params[:mode] != MODE_SIMPLE and $params[:mode] != MODE_SUPERSIMPLE
