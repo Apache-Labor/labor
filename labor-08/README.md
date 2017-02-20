@@ -553,8 +553,8 @@ SecRequestBodyNoFilesLimit    64000
 SecResponseBodyAccess         On
 SecResponseBodyLimit          10000000
 
-SecPcreMatchLimit             15000
-SecPcreMatchLimitRecursion    15000
+SecPcreMatchLimit             100000
+SecPcreMatchLimitRecursion    100000
 
 SecTmpDir                     /tmp/
 SecDataDir                    /tmp/
@@ -565,7 +565,7 @@ SecDebugLogLevel              0
 
 SecAuditEngine                RelevantOnly
 SecAuditLogRelevantStatus     "^(?:5|4(?!04))"
-SecAuditLogParts              ABIJEFHKZ
+SecAuditLogParts              ABEFHIJKZ
 
 SecAuditLogType               Concurrent
 SecAuditLog                   /apache/logs/modsec_audit.log
@@ -624,68 +624,34 @@ SecRule TX:/^MSC_/ "!@streq 0" "id:200004,phase:2,t:none,deny,status:500,\
                                 msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
 
 
-# === ModSecurity Rules (ids: 900000-999999)
-                
-# === ModSec Core Rules Base Configuration (ids: 900001-900021)
+# === ModSec Core Rules Base Configuration (ids: 900000-900999)
 
-SecAction "id:900001,phase:1,t:none, \
-   setvar:tx.critical_anomaly_score=5, \
-   setvar:tx.error_anomaly_score=4, \
-   setvar:tx.warning_anomaly_score=3, \
-   setvar:tx.notice_anomaly_score=2, \
-   nolog, pass"
-SecAction "id:900002,phase:1,t:none,setvar:tx.inbound_anomaly_score_level=10000,\
-           setvar:tx.inbound_anomaly_score=0,nolog,pass"
-SecAction "id:900003,phase:1,t:none,setvar:tx.outbound_anomaly_score_level=10000,\
-           setvar:tx.outbound_anomaly_score=0,nolog,pass"
-SecAction "id:900004,phase:1,t:none,setvar:tx.anomaly_score_blocking=on,nolog,pass"
+Include    /apache/conf/crs/crs-setup.conf
 
-SecAction "id:900006,phase:1,t:none,setvar:tx.max_num_args=255,nolog,pass"
-SecAction "id:900007,phase:1,t:none,setvar:tx.arg_name_length=100,nolog,pass"
-SecAction "id:900008,phase:1,t:none,setvar:tx.arg_length=400,nolog,pass"
-SecAction "id:900009,phase:1,t:none,setvar:tx.total_arg_length=64000,nolog,pass"
-SecAction "id:900010,phase:1,t:none,setvar:tx.max_file_size=10000000,nolog,pass"
-SecAction "id:900011,phase:1,t:none,setvar:tx.combined_file_sizes=10000000,nolog,pass"
-SecAction "id:900012,phase:1,t:none, \
-  setvar:'tx.allowed_methods=GET HEAD POST OPTIONS', \
-  setvar:'tx.allowed_request_content_type=application/x-www-form-urlencoded|multipart/form-data|\
-text/xml|application/xml|application/x-amf|application/json', \
-  setvar:'tx.allowed_http_versions=HTTP/0.9 HTTP/1.0 HTTP/1.1', \
-  setvar:'tx.restricted_extensions=.asa/ .asax/ .ascx/ .axd/ .backup/ .bak/ .bat/ .cdx/ \
-.cer/ .cfg/ .cmd/ .com/ .config/ .conf/ .cs/ .csproj/ .csr/ .dat/ .db/ .dbf/ .dll/ .dos/ \
-.htr/ .htw/ .ida/ .idc/ .idq/ .inc/ .ini/ .key/ .licx/ .lnk/ .log/ .mdb/ .old/ .pass/ .pdb/ \
-.pol/ .printer/ .pwd/ .resources/ .resx/ .sql/ .sys/ .vb/ .vbs/ .vbproj/ .vsdisco/ .webinfo/ \
-.xsd/ .xsx/', \
-  setvar:'tx.restricted_headers=/Proxy-Connection/ /Lock-Token/ /Content-Range/ /Translate/ \
-/via/ /if/', \
-  nolog,pass"
+SecAction "id:900110,phase:1,pass,nolog,\
+  setvar:tx.inbound_anomaly_score_threshold=5,\
+  setvar:tx.outbound_anomaly_score_threshold=4"
 
-SecRule REQUEST_HEADERS:User-Agent "^(.*)$" "id:900018,phase:1,t:none,t:sha1,t:hexEncode,\
-  setvar:tx.ua_hash=%{matched_var},nolog,pass"
-SecRule REQUEST_HEADERS:x-forwarded-for "^\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b" \
-  "id:900019,phase:1,t:none,capture,setvar:tx.real_ip=%{tx.1},nolog,pass"
-SecRule &TX:REAL_IP "!@eq 0" "id:900020,phase:1,t:none,initcol:global=global,\
-  initcol:ip=%{tx.real_ip}_%{tx.ua_hash},nolog,pass"
-SecRule &TX:REAL_IP "@eq 0" "id:900021,phase:1,t:none,initcol:global=global,\
-  initcol:ip=%{remote_addr}_%{tx.ua_hash},setvar:tx.real_ip=%{remote_addr},nolog,pass"
+SecAction "id:900000,phase:1,pass,nolog,\
+  setvar:tx.paranoia_level=1"
 
 
-# === ModSecurity Ignore Rules Before Core Rules Inclusion; order by id of ignored rule (ids: 10000-49999)
+# === ModSec Core Rules: Runtime Exclusion Rules (ids: 10000-49999)
 
 # ...
 
 
 # === ModSecurity Core Rules Inclusion
 
-Include    /modsecurity-core-rules/*.conf
+Include    /apache/conf/crs/rules/*.conf
 
 
-# === ModSecurity Ignore Rules After Core Rules Inclusion; order by id of ignored rule (ids: 50000-59999)
+# === ModSec Core Rules: Startup Time Rules Exclusions
 
 # ...
 
 
-# === ModSec Timestamps at the End of Each Phase (ids: 90010 - 90019)
+# === ModSec timestamps at the end of each phase (ids: 90010 - 90019)
 
 SecAction "id:90010,phase:1,pass,nolog,setvar:TX.ModSecTimestamp1end=%{DURATION}"
 SecAction "id:90011,phase:2,pass,nolog,setvar:TX.ModSecTimestamp2end=%{DURATION}"
@@ -696,20 +662,21 @@ SecAction "id:90014,phase:5,pass,nolog,setvar:TX.ModSecTimestamp5end=%{DURATION}
 
 # === ModSec performance calculations and variable export (ids: 90100 - 90199)
 
-SecAction "id:90100,phase:5,pass,nolog,setvar:TX.perf_modsecinbound=%{PERF_PHASE1}"
-SecAction "id:90101,phase:5,pass,nolog,setvar:TX.perf_modsecinbound=+%{PERF_PHASE2}"
-SecAction "id:90102,phase:5,pass,nolog,setvar:TX.perf_application=%{TX.ModSecTimestamp3start}"
-SecAction "id:90103,phase:5,pass,nolog,setvar:TX.perf_application=-%{TX.ModSecTimestamp2end}"
-SecAction "id:90104,phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=%{PERF_PHASE3}"
-SecAction "id:90105,phase:5,pass,nolog,setvar:TX.perf_modsecoutbound=+%{PERF_PHASE4}"
-SecAction "id:90106,phase:5,pass,nolog,setenv:ModSecTimeIn=%{TX.perf_modsecinbound}"
-SecAction "id:90107,phase:5,pass,nolog,setenv:ApplicationTime=%{TX.perf_application}"
-SecAction "id:90108,phase:5,pass,nolog,setenv:ModSecTimeOut=%{TX.perf_modsecoutbound}"
-SecAction "id:90109,phase:5,pass,nolog,setenv:ModSecAnomalyScoreIn=%{TX.inbound_anomaly_score}"
-SecAction "id:90110,phase:5,pass,nolog,setenv:ModSecAnomalyScoreOut=%{TX.outbound_anomaly_score}"
-
+SecAction "id:90100,phase:5,pass,nolog,\
+  setvar:TX.perf_modsecinbound=%{PERF_PHASE1},\
+  setvar:TX.perf_modsecinbound=+%{PERF_PHASE2},\
+  setvar:TX.perf_application=%{TX.ModSecTimestamp3start},\
+  setvar:TX.perf_application=-%{TX.ModSecTimestamp2end},\
+  setvar:TX.perf_modsecoutbound=%{PERF_PHASE3},\
+  setvar:TX.perf_modsecoutbound=+%{PERF_PHASE4},\
+  setenv:ModSecTimeIn=%{TX.perf_modsecinbound},\
+  setenv:ApplicationTime=%{TX.perf_application},\
+  setenv:ModSecTimeOut=%{TX.perf_modsecoutbound},\
+  setenv:ModSecAnomalyScoreIn=%{TX.anomaly_score},\
+  setenv:ModSecAnomalyScoreOut=%{TX.outbound_anomaly_score}"
 
 # === ModSec finished
+
 
 RewriteEngine           On
 RewriteOptions          InheritDownBefore
