@@ -509,12 +509,17 @@ Das hat also ganz gut funktioniert. Im `stunnel`-Fenster sehen wir dabei folgend
 2016.03.03 11:03:49 LOG5[5667:140363675346688]: Connection closed: 190 byte(s) sent to SSL, 275 byte(s)...
 ```
 
-`Stunnel` rapport hier also die einkommende Verbindung auf dem `Source-Port` 47818 und dass es selbst eine Verbindung zum 
-Backend Host auf Port 8443 mit dem `Source-Port` 54593 aufgebaut hat; schliesslich noch zwei Zahlen zum Durchsatz.
-Insgesamt können wir damit also schliessen, dass der Setup funktioniert und wir bereit sind für das Sniffen der Verbindung.
-Aktivieren wir `tcpdump` oder `tshark`. Eine Entschlüsselung ist nun nicht mehr nötig, denn die von uns abzuhörende Verbindung 
-zwischen den beiden Localhost `Sockets` ist nun im Klartext mitlesbar. Deshalb ist es beim Aufruf wichtig, dass wir neben 
-der `Snaplength` auch den ASCII-Modus mittels `-A` aktivieren.
+
+`Stunnel` rapportiert hier also die einkommende Verbindung auf dem
+`Source-Port` 47818 und dass es selbst eine Verbindung zum Backend Host auf
+Port 8443 mit dem `Source-Port` 54593 aufgebaut hat; schliesslich noch zwei
+Zahlen zum Durchsatz.  Insgesamt können wir damit also schliessen, dass der
+Setup funktioniert und wir bereit sind für das Sniffen der Verbindung.
+Aktivieren wir `tcpdump` oder `tshark`. Eine Entschlüsselung ist nun nicht mehr
+nötig, denn die von uns abzuhörende Verbindung zwischen den beiden Localhost
+`Sockets` ist nun im Klartext mitlesbar. Deshalb ist es beim Aufruf wichtig,
+dass wir neben der `Snaplength` auch den ASCII-Modus mittels `-A` aktivieren.
+
 
 ```bash
 $> sudo tcpdump -i lo -A -s0 port 8000

@@ -1,4 +1,5 @@
 ###Changelog
+* 16\. Februar 2016: Link in curl-Aufrufen in Schleife auf https angepasst (Osama Elnaggar)
 * 20\. Dezember 2016: Schreibfehler
 * 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt
 * 04\. Dezember 2016: Zeilenumbrüche, Schreibfehler

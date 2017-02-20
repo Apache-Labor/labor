@@ -219,12 +219,12 @@ So lassen sich Logfiles in Apache also sehr frei definieren. Interessanter ist a
 
 Konfigurieren wir das erweiterte Zugriffslog im Format _extended_ wie oben beschrieben und beschäftigen wir den Server etwas!
 
-Wir könnten dazu _Apache Bench_ wie in der zweiten Anleitung zwei beschrieben verwenden, aber das würde ein sehr einförmiges Logfile ergeben. Mit den folgenden beiden Einzeilern bringen wir etwas Abwechslung hinein.
+Wir könnten dazu _Apache Bench_ wie in der zweiten Anleitung zwei beschrieben verwenden, aber das würde ein sehr einförmiges Logfile ergeben. Mit den folgenden beiden Einzeilern bringen wir etwas Abwechslung hinein (man beachte das _insecure_ Flag, das curl instruiert, Zertifikatsprobleme zu ignorieren):
 
 ```bash
-$> for N in {1..100}; do curl --silent http://localhost/index.html?n=${N}a >/dev/null; done
+$> for N in {1..100}; do curl --silent --insecure https://localhost/index.html?n=${N}a >/dev/null; done
 $> for N in {1..100}; do PAYLOAD=$(uuid -n $N | xargs); \
-   curl --silent --data "payload=$PAYLOAD" http://localhost/index.html?n=${N}b >/dev/null; \
+   curl --silent --data "payload=$PAYLOAD" --insecure https://localhost/index.html?n=${N}b >/dev/null; \
    done
 ```
 

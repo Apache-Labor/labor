@@ -1,5 +1,6 @@
 ###Changelog
 
+* 16\. Februar 2016: Fehler in Beschreibung der PCRE Limiten angepasst (Osama Elnaggar)
 * 28\. Dezember 2016: Apache 2.4.23->2.4.25
 * 20\. Dezember 2016: Schreibfehler / Kosmetik, id action generell ohne Anführungszeichen, Bugfix in Regex in rule 10250
 * 12\. Dezember 2016: Update der Whitelisting Regel, lokale Links neu alle auf netnea.com gesetzt

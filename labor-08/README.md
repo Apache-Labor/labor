@@ -365,17 +365,17 @@ Diese Liste macht deutlich, dass RewriteMaps äusserst flexibel sind und in vers
 Zunächst bilden wir aus der IP-Adresse des Clients einen Hashwert. Das heisst, wir verwandeln die IP-Adresse in eine zufällige hexadezimale Zeichenfolge:
 
 ```bash
-SecRule REMOTE_ADDR    "^(.)"   "phase:1,id:50001,capture,nolog,t:sha1,t:hexEncode,setenv:IPHashChar=%{TX.1}"
+SecRule REMOTE_ADDR    "^(.)"   "phase:1,id:50001,capture,nolog,t:sha1,t:hexEncode,setenv:IPHC=%{TX.1}"
 ```
 
-Den mittels der sha1-Funktion generierten binären Hash-Wert haben wir mittels hexEncode in lesbare Zeichen umgewandelt. Auf diesem Wert wenden wir dann den regulären Ausdruck an. "^(.)" meint dabei, dass wir einen Match auf einem beliebigen ersten Zeichen erzielen möchten. Von den darauf folgenden ModSecurity Flags ist namentlich *capture* von Interesse, das den Wert in der Klammer der ersten Transaktionsvariablen *TX.1* zuweist. Aus dieser Variable nehmen wir den Wert dann auf und legen ihn in der Umgebungsvariable IPHashChar.
+Den mittels der sha1-Funktion generierten binären Hash-Wert haben wir mittels hexEncode in lesbare Zeichen umgewandelt. Auf diesem Wert wenden wir dann den regulären Ausdruck an. "^(.)" meint dabei, dass wir einen Match auf einem beliebigen ersten Zeichen erzielen möchten. Von den darauf folgenden ModSecurity Flags ist namentlich *capture* von Interesse, das den Wert in der Klammer der ersten Transaktionsvariablen *TX.1* zuweist. Aus dieser Variable nehmen wir den Wert dann auf und legen ihn in der Umgebungsvariable *IPHC*.
 
-Wenn Unsicherheit besteht, ob dies wirklich funktioniert, dann lässt sich der Inhalt der Variable *IPHashChar* mittels *%{IPHashChar}e* im Access-Log des Servers abbilden und kontrollieren. Damit kommen wir zur RewriteMap und dem Aufruf derselben:
+Wenn Unsicherheit besteht, ob dies wirklich funktioniert, dann lässt sich der Inhalt der Variable *IPHC* mittels *%{IPHC}e* im Access-Log des Servers abbilden und kontrollieren. Damit kommen wir zur RewriteMap und dem Aufruf derselben:
 
 ```bash
 RewriteMap hashchar2backend "txt:/apache/conf/hashchar2backend.txt"
 
-RewriteCond "%{ENV:IPHashChar}"  ^(.)
+RewriteCond "%{ENV:IPHC}"  ^(.)
 RewriteRule ^/service1/(.*)      http://${hashchar2backend:%1|localhost:8000}/service1/$1 [proxy,last]
 
 <Proxy http://localhost:8000/service1>
@@ -397,7 +397,7 @@ RewriteRule ^/service1/(.*)      http://${hashchar2backend:%1|localhost:8000}/se
 </Proxy>
 ```
 
-Wir führen die Map mittels des Befehls RewriteMap ein. Wir teilen ihr einen Namen zu, definieren ihren Typ und den Weg zum File. Der Aufruf der RewriteMap passiert in einer RewriteRule. Bevor wir die Map wirklich aufrufen, schalten wir eine Rewrite Bedingung ein. Dies geschieht mittels dem Befehl *RewriteCond*. Dort referenzieren wir die Umgebungsvariable *IPHashChar* und bestimmen das erste Byte der Variablen. Wir wissen, dass nur ein einziges Byte in der Variante enthalten ist, aber das tut unserem Vorhaben keinen Abbruch. Auf der nächsten Zeile dann der übliche Start der Proxy-Direktive. Anstatt jetzt aber direkt das Backend anzugeben, referenzieren wir die RewriteMap mit dem vorhin vergebenen Namen. Nach dem Doppelpunkt folgt der Parameter für den Aufruf. Interessanterweise sprechen wir die in der Rewrite Bedingung in der Klammer gefangenen Variablen mit *%1* ein. Die Variable der RewriteRule ist davon nicht betroffen und weiterhin über *$1* referenzierbar. Hinter dem *%1* folgt durch das Pipe-Zeichen abgetrennt der Defaultwert. Sollte also beim Aufruf der Map etwas schief gehen, dann wird *localhost* über Port 8000 angesprochen.
+Wir führen die Map mittels des Befehls RewriteMap ein. Wir teilen ihr einen Namen zu, definieren ihren Typ und den Weg zum File. Der Aufruf der RewriteMap passiert in einer RewriteRule. Bevor wir die Map wirklich aufrufen, schalten wir eine Rewrite Bedingung ein. Dies geschieht mittels dem Befehl *RewriteCond*. Dort referenzieren wir die Umgebungsvariable *IPHC* und bestimmen das erste Byte der Variablen. Wir wissen, dass nur ein einziges Byte in der Variante enthalten ist, aber das tut unserem Vorhaben keinen Abbruch. Auf der nächsten Zeile dann der übliche Start der Proxy-Direktive. Anstatt jetzt aber direkt das Backend anzugeben, referenzieren wir die RewriteMap mit dem vorhin vergebenen Namen. Nach dem Doppelpunkt folgt der Parameter für den Aufruf. Interessanterweise sprechen wir die in der Rewrite Bedingung in der Klammer gefangenen Variablen mit *%1* ein. Die Variable der RewriteRule ist davon nicht betroffen und weiterhin über *$1* referenzierbar. Hinter dem *%1* folgt durch das Pipe-Zeichen abgetrennt der Defaultwert. Sollte also beim Aufruf der Map etwas schief gehen, dann wird *localhost* über Port 8000 angesprochen.
 
 Jetzt fehlt uns natürlich noch die RewriteMap. Im Codebeispiel habe wir ein Text-File vorgegeben. Performanter ist natürlich ein dbm-Hash, aber das steht für den Moment nicht im Zentrum. Hier das Map-File `/apache/conf/hashchar2backend.txt`:
 

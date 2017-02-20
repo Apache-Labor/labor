@@ -1,5 +1,6 @@
 ###Changelog
 
+* 16\. Februar 2017: Bugfix im stunnel Kapitel
 * 20\. Dezember 2016: Backend Server Cipher Liste verbessert
 * 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt
 * 6\. Oktober 2016: Titel neu formatiert
