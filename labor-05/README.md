@@ -276,7 +276,6 @@ DocumentRoot            /apache/htdocs
         Require all denied
 
         Options SymLinksIfOwnerMatch
-        AllowOverride None
 
 </Directory>
 
@@ -287,7 +286,6 @@ DocumentRoot            /apache/htdocs
         Require all granted
 
         Options None
-        AllowOverride None
 
       </Directory>
 
@@ -302,7 +300,6 @@ DocumentRoot            /apache/htdocs
               Require all granted
 
               Options None
-              AllowOverride None
 
       </Directory>
 
@@ -439,8 +436,8 @@ Mit der obenstehenden Konfiguration ist ModSecurity aufgesetzt und konfiguriert.
 Nehmen wir einen einfachen Fall: Wir möchten sicher stellen, dass der Zugriff auf eine bestimmte URI auf dem Server verboten wird. Wir wollen auf eine solche Anfrage mit einem _HTTP Status 403_ antworten. Die entsprechende Regel schreiben wir in der Konfiguration in den Bereich _ModSecurity Rules_ und teilen ihr die ID 10000 (_service-specific before core-rules_) zu.
 
 ```bash
-SecRule  REQUEST_FILENAME "/phpmyadmin" "id:10000,phase:1,deny,t:lowercase,t:normalisePath,\
-msg:'Blocking access to %{MATCHED_VAR}.',tag:'Blacklist Rules'"
+SecRule  REQUEST_FILENAME "/phpmyadmin" "id:10000,phase:1,deny,log,t:lowercase,t:normalisePath,\
+  msg:'Blocking access to %{MATCHED_VAR}.',tag:'Blacklist Rules'"
 ```
 
 Die Regel leiten wir mit _SecRule_ ein. Dann sagen wir, dass wir den Pfad der Anfrage, also die Variable *REQUEST_FILENAME* untersuchen möchten. Falls in diesem Pfad irgendwo _/phpmyadmin_ auftaucht, wollen wir ihn gleich schon in der ersten Verarbeitungsphase blockieren. Das Schlüsselwort _deny_ bewerkstelligt dies für uns. Unser Pfad-Kriterium ist in Kleinbuchstaben gehalten. Da wir die Transformation _t:lowercase_ anwenden, erwischen wir damit sämtliche möglichen Gross-Kleinbuchstaben-Kombinationen des Pfades. Der Pfad könnte nun natürlich auch in ein Unterverzeichnis weisen oder auf andere Art und Weise verschleiert werden. Wir helfen dem ab, indem wir die Transformation _t:normalisePath_ einschalten. Damit wird der Pfad transformiert bevor wir unsere Regel anwenden. Im _msg-Teil_ tragen wir eine Nachricht ein, die dann so im _Error-Log_ des Servers auftauchen wird, wenn die Regel zuschlägt. Schliesslich geben wir auch noch einen Tag an. Wir haben dies in der Grundkonfiguration bereits mit _SecDefaultAction_ getan. Hier nun ein weiterer Tag, der sich etwa dazu verwenden lässt, verschiedene Regeln zu gruppieren.
@@ -471,11 +468,11 @@ on this server.</p>
 Sehen wir auch nach, was wir im _Error-Log_ dazu finden:
 
 ```bash
-[2015-10-27 22:43:28.265834] [-:error] - - [client 127.0.0.1] ModSecurity: Access denied with …
-code 403 (phase 1). Pattern match "/phpmyadmin" at REQUEST_FILENAME. [file …
-"/apache/conf/httpd.conf_modsec_minimal"] [line "140"] [id "10000"] [msg "Blocking access to …
-/phpmyadmin."] [tag "Local Lab Service"] [tag "Blacklist Rules"] [hostname "localhost"] [uri …
-"/phpmyadmin"] [unique_id "Vi-wAH8AAQEAABuNHj8AAAAA"]
+[2017-02-25 06:46:29.793701] [-:error] 127.0.0.1:50430 WLEaNX8AAQEAAFZKT5cAAAAA …
+[client 127.0.0.1] ModSecurity: Access denied with code 403 (phase 1). …
+Pattern match "/phpmyadmin" at REQUEST_FILENAME. [file "/apache/conf/httpd.conf_pod_2017-02-25_06:45"] …
+[line "140"] [id "10000"] [msg "Blocking access to /phpmyadmin."] [tag "Blacklist Rules"]  … 
+[hostname "localhost"] [uri "/phpmyadmin"] [unique_id "WLEaNX8AAQEAAFZKT5cAAAAA"]
 ```
 
 _ModSecurity_ beschreibt hier die ausgelöste Regel und die Massnahme, die ergriffen wurde: Zunächst der Zeitstempfel. Dann die durch Apache zugewiesene Schwere des Log-Eintrages. Die Stufe _error_ wird für alle _ModSecurity_ Meldungen vergeben. Dann folgt die IP-Adresse des Clients. Dazwischen einige leere Felder, welche nur mittels "-" bezeichnet werden. Sie bleiben bei Apache 2.4 leer, weil das Logformat sich änderte und *ModSecurity* diese Änderung noch nicht nachvollzogen hat. Danach die eigentliche Meldung, die mit der Massnahme eröffnet: _Access denied with code 403_ und zwar bereits in der Phase 1, also während des Empfangens der Anfrage-Header. Danach sehen wir einen Hinweis auf die Regelverletzung: Der String _"/phpMyAdmin"_ wurde im *REQUEST_FILENAME* gefunden. Dies ist genau das, was wir definiert haben. Die folgenden Informations-Stücke sind in Blöcken aus eckigen Klammern eingebettet. In jedem Block zunächst die Bezeichnung und dann durch einen Leerschlag getrennt die Information. Wir befinden uns mit unserer Regel also in der Datei */apache/conf/httpd.conf_modsec_minimal* auf der Zeile 140. Die Regel besitzt - wie wir wissen - die ID 10000. Unter _msg_ sehen wir die in der Regel definierte Zusammenfassung der Regel, wobei die Variable *MATCHED_VAR* durch den Pfad-Teil der Anfrage ersetzt wurde. Danach der Tag, den wir in der _SecDefaultAction_ gesetzt haben; schliesslich der zusätzliche für diese Regel gesetzte Tag. Schliesslich folgen noch Hostname, URI und die Unique-ID der Anfrage.
@@ -607,7 +604,7 @@ $> curl -d "username=john&password=test" http://localhost/login/login.do
    Also erhalten wir ein 404, Page not Found)
 $> curl -d "username=john&password=test&backdoor=1" http://localhost/login/login.do
 -> FAIL
-$> curl -d "username=john5678901234567&password=test" http://localhost/login/login.do
+$> curl -d "username=john56789012345678901234567890123&password=test" http://localhost/login/login.do
 -> FAIL
 $> curl -d "username=john'&password=test" http://localhost/login/login.do
 -> FAIL

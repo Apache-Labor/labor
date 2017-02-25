@@ -7,7 +7,7 @@ Wir konfigurieren einen minimalen Apache Webserver und sprechen ihn mit curl, de
 ###Warum tun wir das?
 
 Ein sicherer Server ist ein Server, der nur soviel zulässt, wie wirklich benötigt wird. Idealerweise baut man einen Server also auf Basis eines minimalen Systems auf, indem man weitere Features nacheinander einzeln zuschaltet. Dies ist auch aus Verständnisgründen vorzuziehen, denn nur in diesem Fall versteht man, was wirklich konfiguriert ist.
-Ferner ist es bei der Fehlersuche hilfreich, von einem minimalen System auszugehen. Ist der Fehler im minimalen System noch nicht vorhanden, werden die Features einzeln zugeschaltet und neu nach dem Fehler gesucht. Sobald er auftaucht, ist er bei der zuletzt zugeschalteten Konfigurationsdirektive isoliert.
+Ferner ist es bei der Fehlersuche hilfreich, von einem minimalen System auszugehen. Ist der Fehler im minimalen System noch nicht vorhanden, werden die Features einzeln zugeschaltet und neu nach dem Fehler gesucht. Sobald er auftaucht, ist es klar, dass er mit der zuletzt zugeschalteten Konfigurationsdirektive in Verbindung steht.
 
 ###Voraussetzungen
 
@@ -58,7 +58,6 @@ DocumentRoot            /apache/htdocs
 	Require all denied
 
 	Options SymLinksIfOwnerMatch
-	AllowOverride None
 
 </Directory>
 
@@ -69,7 +68,6 @@ DocumentRoot            /apache/htdocs
         Require all granted
 
         Options None
-        AllowOverride None
 
       </Directory>
 
@@ -134,11 +132,9 @@ Nun folgt ein _Directory_-Block. Mit diesem Block verhindern wir, dass Dateien a
 
 Die Direktive _Options_ setzen wir auf _SymLinksIfOwnerMatch_. Mit _Options_ können wir festlegen welche Spezialfeatures beim Ausliefern des Verzeichnisses / beachtet werden sollen. Eigentlich gar keine und in der Produktion würden wir deshalb Options _None_ schreiben. In unserem Fall haben wir aber das _DocumentRoot_ auf einen symbolischen Link gelegt und der wird nur dann gesucht und auch gefunden, wenn wir den Server mit _SymLinksIfOwnerMatch_ anweisen, unterhalb von / auch Symlinks zuzulassen. Zumindest wenn die Besitzverhältnisse sauber sind. Auf produktiven Systemen ist aus Sicherheitsgründen beim Servieren von Files besser auf Symlinks zu verzichten. Aber bei unserem Testsystem geht der Komfort noch vor.
 
-_AllowOverride_ teilt dem Server mit, dass er nicht auf sogenannte _.htaccess_-Dateien zu achten braucht, denn wir planen nicht, damit zu arbeiten. Diese Dateien sind vor allem für Webhoster und Shared-Hosting von Interesse. Dies trifft auf uns eher nicht zu.
-
 Nun eröffnen wir einen _VirtualHost_. Er korrespondiert mit der oben definierten _Listen_-Direktive. Zusammen mit dem eben definierten _Directory_-Block legt er fest, dass unser Webserver per Default gar keinen Zugriff zulässt. Auf der IP-Adresse _127.0.0.1, Port 80_ wollen wir aber Zugriffe zulassen und die werden innerhalb dieses Blocks definiert.
 
-Konkret lassen wir Zugriffe auf unser _DocumentRoot_ zu. Schlüsselanweisung ist hier das _Require all granted_, womit wir im Gegensatz zum Verzeichnis _/_ kompletten Zugriff zulassen. Anders als oben sind ab diesem Pfad nun keine Symlinks mehr vorgesehen und auch sonst keine Spezialfähigkeiten: _Options None_, _AllowOverride None_.
+Konkret lassen wir Zugriffe auf unser _DocumentRoot_ zu. Schlüsselanweisung ist hier das _Require all granted_, womit wir im Gegensatz zum Verzeichnis _/_ kompletten Zugriff zulassen. Anders als oben sind ab diesem Pfad nun keine Symlinks mehr vorgesehen und auch sonst keine Spezialfähigkeiten: _Options None_.
 
 ###Schritt 3: Server starten
 

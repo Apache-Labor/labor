@@ -1,5 +1,7 @@
 ###Changelog
 
+
+* 25\. Februar 2017: AllowOverride komplett entfernt
 * 28\. Dezember 2016: Apache 2.4.23->2.4.25
 * 20\. Dezember 2016: Timeout auf 10 gesetzt, MaxRequest auf 100, Kosmetik
 * 25\. August 2016: Zeilenumbrüche justiert

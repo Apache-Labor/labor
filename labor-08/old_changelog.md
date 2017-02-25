@@ -1,5 +1,6 @@
 ###Changelog
 
+* 25\. Februar 2017: AllowOverride komplett entfernt
 * 18\. Februar 2017: Update von CRS2 auf CRS3
 * 16\. Februar 2017: Variable IPHashChar in IPHC umbenannt
 * 20\. Dezember 2016: id action generell ohne Anführungszeichen, Kosmetik

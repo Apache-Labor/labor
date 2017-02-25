@@ -92,7 +92,6 @@ DocumentRoot            /apache/htdocs
         Require all denied
 
         Options SymLinksIfOwnerMatch
-        AllowOverride None
 
 </Directory>
 
@@ -103,7 +102,6 @@ DocumentRoot            /apache/htdocs
         Require all granted
 
         Options None
-        AllowOverride None
 
       </Directory>
 
@@ -119,7 +117,6 @@ DocumentRoot            /apache/htdocs
             Require all granted
 
             Options None
-            AllowOverride None
 
         </Directory>
 

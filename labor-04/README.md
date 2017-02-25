@@ -183,7 +183,7 @@ _%D_ gibt die komplette Dauer des Requests in Mikrosekunden wieder. Gemessen wir
 
 Wir fahren weiter mit Performance-Daten. Wir werden in Zukunft die Stoppuhr ansetzen und die Anfrage auf dem Weg in den Server hinein, bei der Applikation und während der Verarbeitung der Antwort separat messen. Die entsprechenden Werte werden wir in den Environment Variablen _ModSecTimeIn_, _ApplicationTime_ sowie _ModSecTimeOut_ ablegen.
 
-Und zu guter Letzt noch zwei weitere Werte, die uns _ModSecurity_ in einer späteren Anleitung zur Verfügung stellen wird, nämlich die Anomalie-Punktezahl der Anfrage und der Antwort. Was es damit auf sich hat, ist für den Moment noch unwichtig. Wichtig ist, dass wir mit diesem stark erweiterten Logformat eine Basis gelegt haben, auf die wir zukünftig aufbauen können, ohne das Logformat nochmals anpassen zu müssen.
+Und zu guter Letzt noch zwei weitere Werte, die uns die _OWASP ModSecurity Core Rule Set_ in einer späteren Anleitung zur Verfügung stellen werden, nämlich die Anomalie-Punktezahl der Anfrage und der Antwort. Was es damit auf sich hat, ist für den Moment noch unwichtig. Wichtig ist, dass wir mit diesem stark erweiterten Logformat eine Basis gelegt haben, auf die wir zukünftig aufbauen können, ohne das Logformat nochmals anpassen zu müssen.
 
 
 ###Schritt 6: Weitere Request- und Response-Header in zusätzlichem Logfile mitschreiben

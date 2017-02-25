@@ -1,4 +1,6 @@
 ###Changelog
+
+* 25\. Februar 2017: AllowOverride komplett entfernt
 * 14\. Februar 2017: Beschreibung des Let's Encrypt Mechanismus verbessert. Neuer Link nach 'How it works'
 * 20\. Dezember 2016: Listener auf localhost fixiert, Timeout auf 10, MaxRequestWorker auf 100, Kosmetik
 * 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt

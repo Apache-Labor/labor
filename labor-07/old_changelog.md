@@ -1,5 +1,6 @@
 ###Changelog
 
+* 25\. Februar 2017: Schliessen von Anführungszeichen bei der Regelzusammenfassung
 * 20\. Dezember 2016: BugFix in Regex, Link auf Beispiel Logs korrigiert
 * 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt
 * 10\. Dezember 2016: Rechtschreibung

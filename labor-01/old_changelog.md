@@ -1,5 +1,6 @@
 ###Changelog
 
+* 25\. Februar 2017: Neu-Formulierung eines Satzes in der Einleitung, AllowOverride komplett entfernt
 * 25\. August 2016: Zeilenumbrüche justiert
 * 16\. Januar 2016: Lizenzhinweis eingefügt
 * 14\. September 2015: Rechtschreibung (Benjamin Affolter)

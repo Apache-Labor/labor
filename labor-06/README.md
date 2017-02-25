@@ -358,7 +358,6 @@ DocumentRoot		/apache/htdocs
 	Require all denied
 
 	Options SymLinksIfOwnerMatch
-	AllowOverride None
 
 </Directory>
 
@@ -369,7 +368,6 @@ DocumentRoot		/apache/htdocs
         Require all granted
 
         Options None
-        AllowOverride None
 
       </Directory>
 
@@ -384,7 +382,6 @@ DocumentRoot		/apache/htdocs
               Require all granted
 
               Options None
-              AllowOverride None
 
       </Directory>
 
@@ -675,7 +672,7 @@ Die Ergebnisse geben uns eine Vorstellung von der Situation: Die überwiegende M
 
 Der Wert 41 erscheint zweimal, was einer hohen Anzahl von schwerwiegenden Regelverletzungen entspricht. Dies ist sehr häufig in der Praxis, denn eine ernsthafte SQL Injection verursacht eine ganze Reihe von Alarmen. In 41 Fällen haben wir keinen Wert für die Antworten des Servers erhalten. Dabei handelt es sich um Protokolleinträge leerer Anfragen, bei denen eine Verbindung zum Client aufgebaut wurde, aber keine Anforderung gestellt wurde. Wir haben diese Möglichkeit im regulären Ausdruck mit *egrep* berücksichtigt, indem auch der Standardwert "-" akzeptiert wird. Neben diesen leeren Eingaben ist nichts anderes auffällig. Dies ist typisch, wenn auch ein Bisschen hoch. In aller Regel sehen wir eine gewisse Anzahl von Verletzungen durch die Requests, aber sehr wenige Einträge aufgrund der Responses.
 
-Aber das gibt uns immer noch nicht die richtige Idee über die Tuning Schritte, welche nötig sind, um diese Installation reibungslos laufen lassen zu können. Um diese Informationen in einer geeigneten Form präsentieren zu könnnen, habe ich ein Skript vorbereitet, das Anomalie-Werte analysiert: [modsec-positive-stats.rb](https://www.netnea.com/files/modsec-positive-stats.rb). Es nimmt die beiden Anomalie-Scores als Eingabe; wir müssen sie allerdings mit einem Strichpunkt trennen, um sie an das Skript übergeben zu können. Das lässt sich wie folgt bewerkstelligen:
+Aber das gibt uns immer noch nicht die richtige Idee über die Tuning Schritte, welche nötig sind, um diese Installation reibungslos laufen lassen zu können. Um diese Informationen in einer geeigneten Form präsentieren zu könnnen, habe ich ein Ruby Skript vorbereitet, das Anomalie-Werte analysiert: [modsec-positive-stats.rb](https://www.netnea.com/files/modsec-positive-stats.rb) (Eventuell muss noch das Paket _ruby_ installiert werden, damit es läuft). Es nimmt die beiden Anomalie-Scores als Eingabe; wir müssen sie allerdings mit einem Strichpunkt trennen, um sie an das Skript übergeben zu können. Das lässt sich wie folgt bewerkstelligen:
 
 ```
 $> cat tutorial-5-example-access.log  | egrep -o "[0-9-]+ [0-9-]+$" | tr " " ";" | modsec-positive-stats.rb
