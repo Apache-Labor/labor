@@ -1,5 +1,6 @@
 ###Changelog
 
+* 5\. März 2017: Stdout der curl-Aufrufe aktualisiert, MaxClients Direktive durch MaxRequestWorkers ersetzt; Reihenfolge der ModSec Datenverzeichnisse geändert
 * 25\. Februar 2017: AllowOverride komplett entfernt
 * 18\. Februar 2017: Update von CRS2 auf CRS3
 * 16\. Februar 2017: Variable IPHashChar in IPHC umbenannt

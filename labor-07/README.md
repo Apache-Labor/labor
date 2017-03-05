@@ -626,7 +626,9 @@ $> grep -F -f ids tutorial-8-example-error-round-2.log | modsec-rulereport.rb -m
 76 x 942100 SQL Injection Attack Detected via libinjection
 ----------------------------------------------------------
       # ModSec Rule Exclusion: 942100 : SQL Injection Attack Detected via libinjection
-  No parameter available to create ignore-rule proposal. Please try and use different mode.
+      SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" \
+      "phase:2,nolog,pass,id:10003,ctl:ruleRemoveTargetById=942100;ARGS:keys"
+
 
 152 x 942190 Detects MSSQL code execution and information gathering attempts
 ----------------------------------------------------------------------------
@@ -672,8 +674,7 @@ SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" \
     "phase:2,nolog,pass,id:10002,ctl:ruleRemoveTargetById=921180;TX:paramcounter_ARGS_NAMES:keys"
 ```
 
-Bei der Regel 942100 bringt das Skript keinen vernünftigen Vorschlag.  Dies liegt daran, dass die Alarmmeldung ein leicht anderes Format aufweist und das Skript noch nicht schlau genug ist, um es korrekt zu analysieren.  Untersuchen wir die Warnmeldung, um den Pfad und den betreffenden Parameter zu finden.  Leider kann *melmatch* auch nicht damit fertig werden.  Also müssen wir dieses Mal von Hand arbeiten:
-
+Bei der Regel 942100 lohnt es sich, neben dem Vorschlag des Skriptes auch die ModSecurity Nachricht selbst anzusehen. Dabei sehen wir, dass ModSecurity in diesem Fall keinen regulären Ausdruck verwendete um die SQL Injection zu entdecken, sondern eine separate Bibliothek, welche auf Injection spezialisiert ist:
 
 ```bash
 $> grep -F -f ids tutorial-8-example-error-round-2.log | grep 942100 | head -1
@@ -688,7 +689,7 @@ libinjection with fingerprint 'UEkn' …
 [uri "/drupal/index.php/search/node"] [unique_id "WB2cln8AAQEAAAehPc8AAADK"]
 ```
 
-Daraus können wir die folgende Rule Exclusion ableiten:
+Für die Behandlung der Ausnahme bedeutet dies aber keinen Unterschied. Wir übernehmen den Vorschlag des Skriptes 1:1.
 
 ```bash
 # ModSec Rule Exclusion: 942100 : SQL Injection Attack Detected via libinjection

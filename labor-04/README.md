@@ -94,14 +94,14 @@ _%b_ ist das letzte Element des Logformats _common_. Es gibt die Zahl der im Con
 Das am weitesten verbreitete Logformat _combined_ baut auf dem Logformat _common_ auf und erweitert es um zwei Elemente.
 
 ```bash
-LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combined
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
 ...
 CustomLog logs/access.log combined
 ```
  
 Das Element _"%{Referer}i"_ bezeichnet den Referrer. Er wird in Anführungszeichen wiedergegeben. Der Referrer meint diejenige Ressource, von der aus ursprünglich der jetzt erfolgte Request ausgelöst wurde. Diese komplizierte Umschreibung lässt sich an einem Beispiel besser illustrieren. Wenn man in einer Suchmaschine einen Link anklickt, um auf _www.example.com_ zu gelangen und dort automatisch auf _shop.example.com_ weitergeleitet wird, dann wird der Logeintrag auf dem Server _shop.example.com_ den Referrer auf die Suchmaschine tragen und nicht den Verweis auf _www.example.com_. Wenn dann aber von _shop.example.com_ eine abhängige CSS-Datei geladen wird, dann geht der Referrer normalerweise auf _shop.example.com_. Bei alledem ist aber zu beachten, dass der Referrer ein Teil der Anfrage des Clients ist. Der Client ist angehalten, sich an das Protokoll und die Konventionen zu halten, tatsächlich kann er aber beliebige Informationen senden, weshalb man sich in Sicherheitsfragen nicht auf Header wie diesen verlassen darf.
 
-_"%{User-agent}i"_ schliesslich meint den sogenannten User-Agent des Clients, der wiederum in Anführungszeichen gesetzt wird. Auch dies ist wieder ein Wert, der durch den Client kontrolliert wird und auf den wir uns nicht zu sehr verlassen sollten. Mit dem User-Agent ist die Browser-Software des Clients gemeint; normalerweise angereichert um die Version, die Rendering Engine, verschiedene Kompatibilitätsangaben mit anderen Browsern und diverse installierte Plugins. Das führt zu sehr langen User-Agent-Einträgen und kann im Einzelfall so viele Informationen enthalten, dass ein individueller Client sich darüber eindeutig identifizieren lässt, weil er eine besondere Kombination von verschiedenen Zusatzmodulen in bestimmten Versionen besitzt.
+_"%{User-Agent}i"_ schliesslich meint den sogenannten User-Agent des Clients, der wiederum in Anführungszeichen gesetzt wird. Auch dies ist wieder ein Wert, der durch den Client kontrolliert wird und auf den wir uns nicht zu sehr verlassen sollten. Mit dem User-Agent ist die Browser-Software des Clients gemeint; normalerweise angereichert um die Version, die Rendering Engine, verschiedene Kompatibilitätsangaben mit anderen Browsern und diverse installierte Plugins. Das führt zu sehr langen User-Agent-Einträgen und kann im Einzelfall so viele Informationen enthalten, dass ein individueller Client sich darüber eindeutig identifizieren lässt, weil er eine besondere Kombination von verschiedenen Zusatzmodulen in bestimmten Versionen besitzt.
 
 
 ###Schritt 3: Module Logio und Unique-ID aktivieren

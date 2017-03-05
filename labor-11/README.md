@@ -158,22 +158,26 @@ Mit diesen Befehlen ist das Protokoll gestartet und wir können nun den Verkehr 
 
 ```bash
 $> curl -v --ciphers AES256-SHA -k https://127.0.0.1:443/index.html
-* Hostname was NOT found in DNS cache
+* Rebuilt URL to: https://localhost:443/
 *   Trying 127.0.0.1...
-* Connected to 127.0.0.1 (127.0.0.1) port 443 (#0)
-* successfully set certificate verify locations:
-*   CAfile: none
-  CApath: /etc/ssl/certs
-* SSLv3, TLS handshake, Client hello (1):
-* SSLv3, TLS handshake, Server hello (2):
-* SSLv3, TLS handshake, CERT (11):
-* SSLv3, TLS handshake, Server finished (14):
-* SSLv3, TLS handshake, Client key exchange (16):
-* SSLv3, TLS change cipher, Client hello (1):
-* SSLv3, TLS handshake, Finished (20):
-* SSLv3, TLS change cipher, Client hello (1):
-* SSLv3, TLS handshake, Finished (20):
-* SSL connection using AES256-SHA
+* Connected to localhost (127.0.0.1) port 443 (#0)
+* found 173 certificates in /etc/ssl/certs/ca-certificates.crt
+* found 697 certificates in /etc/ssl/certs
+* ALPN, offering http/1.1
+* SSL connection using TLS1.2 / RSA_AES_256_CBC_SHA1
+*        server certificate verification SKIPPED
+*        server certificate status verification SKIPPED
+*        common name: ubuntu (does not match 'localhost')
+*        server certificate expiration date OK
+*        server certificate activation date OK
+*        certificate public key: RSA
+*        certificate version: #3
+*        subject: CN=ubuntu
+*        start date: Mon, 27 Feb 2017 20:46:21 GMT
+*        expire date: Thu, 25 Feb 2027 20:46:21 GMT
+*        issuer: CN=ubuntu
+*        compression: NULL
+* ALPN, server accepted to use http/1.1
 ...
 
 ```

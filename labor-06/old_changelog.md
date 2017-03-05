@@ -1,5 +1,6 @@
 ###Changelog
 
+* 5\. März 2017: MaxClients Direktive durch MaxRequestWorkers ersetzt, Paketliste neu Bullet List; Reihenfolge der ModSec Datenverzeichnisse geändert
 * 25\. Februar 2017: AllowOverride komplett entfernt, Ruby erwähnt.
 * 20\. Dezember 2016: id action generell ohne Anführungszeichen, Hinweise auf "rc3" entfernt, Kosmetik
 * 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt

@@ -153,7 +153,7 @@ UseCanonicalName  On
 TraceEnable       Off
 
 Timeout           10
-MaxClients        100
+MaxRequestWorkers 100
 
 Listen            127.0.0.1:80
 Listen            127.0.0.1:443
@@ -219,8 +219,8 @@ SecPcreMatchLimit             100000
 SecPcreMatchLimitRecursion    100000
 
 SecTmpDir                     /tmp/
-SecDataDir                    /tmp/
 SecUploadDir                  /tmp/
+SecDataDir                    /tmp/
 
 SecDebugLog                   /apache/logs/modsec_debug.log
 SecDebugLogLevel              0
