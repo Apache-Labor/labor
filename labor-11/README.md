@@ -359,6 +359,10 @@ Zunächst die Konfiguration des Reverse Proxies:
 
         <Proxy http://localhost:8000/>
 
+            Require all granted
+
+            Options None
+
         </Proxy>
 
 	...

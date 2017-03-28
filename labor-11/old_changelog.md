@@ -1,5 +1,6 @@
 ###Changelog
 
+* 28\. März 2017: Publikation
 * 5\. März 2017: Default Direktiven in Proxy Stanza eingefügt
 * 16\. Februar 2017: Bugfix im stunnel Kapitel
 * 20\. Dezember 2016: Backend Server Cipher Liste verbessert
