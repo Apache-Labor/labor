@@ -455,7 +455,7 @@ Connection: close
 
 Die verschiedenen erweiterten Header-Zeilen werden also nacheinander aufgeführt und wo vorhanden mit Werten gefüllt.
 
-###Schritt 11 (Bonus): Die Konfiguration des kompletten Reverse Proxy-Servers inklusive der vorangegangenen Lektionen
+###Schritt 11 (Bonus): Die Konfiguration des kompletten Reverse Proxy-Servers
 
 Mit dieser kleinen Erweiterung kommen wir zum Abschluss dieser Anleitung und auch zum Ende des Basis-Blockes der verschiedenen Anleitungen. Wir haben in mehreren Lektionen den Aufbau eines Apache Webservers von der Kompilierung über die Grundkonfiguration, das Tuning von ModSecurity bis zur Konfiguration eine Reverse Proxies gesehen und so einen vertieften Einblick in die Funktionsweise des Servers und seiner wichtigsten Module erhalten.
 

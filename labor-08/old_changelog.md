@@ -1,5 +1,6 @@
 ###Changelog
 
+* 25\. September 2017: Titel von Schritt 11 verkürzt
 * 5\. März 2017: Stdout der curl-Aufrufe aktualisiert, MaxClients Direktive durch MaxRequestWorkers ersetzt; Reihenfolge der ModSec Datenverzeichnisse geändert
 * 25\. Februar 2017: AllowOverride komplett entfernt
 * 18\. Februar 2017: Update von CRS2 auf CRS3
