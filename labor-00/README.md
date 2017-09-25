@@ -25,23 +25,23 @@ Seit dem Erscheinen von Apache 2.4 wird der Apache Webserver ohne zwei wichtige 
 Beginnen wir mit _apr_ und laden das Paket herunter:
 
 ```bash
-$> wget http://mirror.switch.ch/mirror/apache/dist/apr/apr-1.5.2.tar.bz2
+$> wget https://mirror.switch.ch/mirror/apache/dist/apr/apr-1.6.2.tar.bz2
 ```
 
 Nun laden wir die Checksum der Sourcecodedatei direkt von Apache herunter. Leider bietet _www.apache.org_ nur eine md5-Checksum für `apr` an. Wir testen sie dennoch. Sicherheitshalber verwenden wir beim Herunterladen eine gesicherte Verbindung. Ohne https macht diese Überprüfung keinen grossen Sinn. Beide Files, der Sourcecode und die kleine Prüfsummendatei, sollten nebeneinander in `/usr/src/apache` liegen. Dann lässt sich die Prüfsumme testen:
 
 
 ```bash
-$> wget https://www.apache.org/dist/apr/apr-1.5.2.tar.bz2.md5
-$> md5sum --check apr-1.5.2.tar.bz2.md5
-apr-1.5.2.tar.bz2: OK
+$> wget https://www.apache.org/dist/apr/apr-1.6.2.tar.bz2.md5
+$> md5sum --check apr-1.6.2.tar.bz2.md5
+apr-1.6.2.tar.bz2: OK
 ```
 
 Das Überprüfen sollte keine Probleme machen, _OK_. Wir können also mit dem Entpacken, Vorkonfigurieren und dem Kompilieren der _apr_ fortfahren.
 
 ```bash
-$> tar -xvjf apr-1.5.2.tar.bz2
-$> cd apr-1.5.2
+$> tar -xvjf apr-1.6.2.tar.bz2
+$> cd apr-1.6.2
 $> ./configure --prefix=/usr/local/apr/
 ```
 
@@ -73,12 +73,12 @@ Wenn dies erfolgreich geschehen ist, verfahren wir mit den _apr-util_ analog.
 
 ```bash
 $> cd /usr/src/apache
-$> wget http://mirror.switch.ch/mirror/apache/dist/apr/apr-util-1.5.4.tar.bz2
-$> wget https://www.apache.org/dist/apr/apr-util-1.5.4.tar.bz2.md5
-$> md5sum --check apr-util-1.5.4.tar.bz2.md5
-apr-util-1.5.4.tar.bz2: OK
-$> tar -xvjf apr-util-1.5.4.tar.bz2
-$> cd apr-util-1.5.4
+$> wget https://mirror.switch.ch/mirror/apache/dist/apr/apr-util-1.6.0.tar.bz2
+$> wget https://www.apache.org/dist/apr/apr-util-1.6.0.tar.bz2.md5
+$> md5sum --check apr-util-1.6.0.tar.bz2.md5
+apr-util-1.6.0.tar.bz2: OK
+$> tar -xvjf apr-util-1.6.0.tar.bz2
+$> cd apr-util-1.6.0
 $> ./configure --prefix=/usr/local/apr/ --with-apr=/usr/local/apr/
 $> make
 $> sudo make install
@@ -92,7 +92,7 @@ Jetzt laden wir den Programmcode vom Netz herunter. Man kann das mit dem Browser
 
 ```bash
 $> cd /usr/src/apache
-$> wget http://mirror.switch.ch/mirror/apache/dist/httpd/httpd-2.4.25.tar.bz2
+$> wget https://mirror.switch.ch/mirror/apache/dist/httpd/httpd-2.4.27.tar.bz2
 ```
 
 Der gepackte Sourcecode hat etwa eine Grösse von 5MB.
@@ -100,9 +100,9 @@ Der gepackte Sourcecode hat etwa eine Grösse von 5MB.
 Nun laden wir die Checksum der Sourcecodedatei direkt von Apache herunter. Dankenswerterweise steht sie immerhin als _sha1-Checksum_ zur Verfügung. Sicherheitshalber verwenden wir dazu wieder eine gesicherte Verbindung. Ohne https macht diese Überprüfung keinen Sinn.
 
 ```bash
-$> wget https://www.apache.org/dist/httpd/httpd-2.4.25.tar.bz2.sha1
-$> sha1sum --check httpd-2.4.25.tar.bz2.sha1 
-httpd-2.4.25.tar.bz2: OK
+$> wget https://www.apache.org/dist/httpd/httpd-2.4.27.tar.bz2.sha1
+$> sha1sum --check httpd-2.4.27.tar.bz2.sha1 
+httpd-2.4.27.tar.bz2: OK
 ```
 
 ###Schritt 4: Entpacken und Compiler konfigurieren
@@ -110,7 +110,7 @@ httpd-2.4.25.tar.bz2: OK
 Nach der Überprüfung können wir das Paket entpacken.
 
 ```bash
-$> tar -xvjf httpd-2.4.25.tar.bz2
+$> tar -xvjf httpd-2.4.27.tar.bz2
 ```
 
 Das ergibt etwa 38MB.
@@ -118,8 +118,8 @@ Das ergibt etwa 38MB.
 Wir gehen nun in das Verzeichnis und konfigurieren den Compiler mit unseren Eingaben und mit Informationen zu unserem System. Anders als bei _apr_ sind unsere Eingaben sehr umfangreich.
 
 ```bash
-$> cd httpd-2.4.25
-$> ./configure --prefix=/opt/apache-2.4.25 --with-apr=/usr/local/apr/bin/apr-1-config \
+$> cd httpd-2.4.27
+$> ./configure --prefix=/opt/apache-2.4.27 --with-apr=/usr/local/apr/bin/apr-1-config \
 --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared=event \
 --enable-mods-shared=all --enable-nonportable-atomics=yes
 ```
@@ -161,13 +161,13 @@ $> sudo make install
 Auch die Installation dauert eine Weile.
 
 ```bash
-$> sudo chown -R `whoami` /opt/apache-2.4.25
+$> sudo chown -R `whoami` /opt/apache-2.4.27
 ```
 
 Und jetzt noch ein Kniff: Wenn man professionell mit Apache arbeitet, dann hat man oft mehrere verschiedene Versionen nebeneinander auf der Testmaschine. Verschiedene Versionen, verschiedene Patches, andere Module etc. führen zu recht mühsamen und langen Pfaden mit Versionsnummern und weiteren Beschreibungen. Ich mache es dann jeweils so, dass ich einen Softlink von `/apache` auf den aktuellen Apache Webserver lege. Dabei ist darauf zu achten, dass auch der Softlink uns und nicht dem root-User gehört (dies wird bei der Konfiguration des Servers wichtig).
 
 ```bash
-$> sudo ln -s /opt/apache-2.4.25 /apache
+$> sudo ln -s /opt/apache-2.4.27 /apache
 $> sudo chown `whoami` --no-dereference /apache
 $> cd /apache
 ```
@@ -218,11 +218,11 @@ $> sudo ./bin/httpd -V
 ```
 
 ```bash
-Server version: Apache/2.4.25 (Unix)
+Server version: Apache/2.4.27 (Unix)
 Server built:   Dec 28 2016 06:09:49
 Server's Module Magic Number: 20120211:47
-Server loaded:  APR 1.5.2, APR-UTIL 1.5.4
-Compiled using: APR 1.5.2, APR-UTIL 1.5.4
+Server loaded:  APR 1.6.2, APR-UTIL 1.6.0
+Compiled using: APR 1.6.2, APR-UTIL 1.6.0
 Architecture:   64-bit
 Server MPM:     event
   threaded:     yes (fixed thread count)
@@ -237,8 +237,8 @@ Server compiled with....
  -D APR_HAS_OTHER_CHILD
  -D AP_HAVE_RELIABLE_PIPED_LOGS
  -D DYNAMIC_MODULE_LIMIT=256
- -D HTTPD_ROOT="/opt/apache-2.4.25"
- -D SUEXEC_BIN="/opt/apache-2.4.25/bin/suexec"
+ -D HTTPD_ROOT="/opt/apache-2.4.27"
+ -D SUEXEC_BIN="/opt/apache-2.4.27/bin/suexec"
  -D DEFAULT_PIDLOG="logs/httpd.pid"
  -D DEFAULT_SCOREBOARD="logs/apache_runtime_status"
  -D DEFAULT_ERRORLOG="logs/error_log"

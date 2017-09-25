@@ -1,5 +1,6 @@
 ###Changelog
 
+* 25\. September 2017: Update of apr (1.6.2), apr-util (1.6.0) and apache (2.4.27)
 * 28\. Dezember 2016: Apache 2.4.23->2.4.25
 * 20\. Dezember 2016: tar Optionen mit "-" eingeleitet
 * 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt
