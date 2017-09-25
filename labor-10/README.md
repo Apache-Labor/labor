@@ -768,7 +768,9 @@ Wir arbeiten nun also mit zwei separaten Datenfiles, welche wir mittels dem Unix
 `Arbigraph` passt sich bei der Ausgabe der Breite des Terminals an. Wenn es schmaler sein soll, dann lässt sich dies mittels der Option `--width` kontrollieren. Auch die Höhe lässt sich mittels `--height` einstellen. Auch eine Ausgabe in ein PNG Bild ist im Skript bereits enthalten. Die Ausgabe ist dabei noch recht rudimentär, lässt sich aber vielleicht bereits in einem Bericht einsetzen. 
 
 ```bash
-$> paste  /tmp/tmp.get /tmp/tmp.post | awk '{ print  $2 " " $4 }'  | arbigraph -l -2 -c "GET;POST" -t "Duration of Requests:\n GET vs. POST" --output /tmp/duration-get-vs-post.png
+$> paste  /tmp/tmp.get /tmp/tmp.post | awk '{ print  $2 " " $4 }'  | \
+   arbigraph -l -2 -c "GET;POST" -t "Duration of Requests:\n GET vs. POST" \
+   --output /tmp/duration-get-vs-post.png
 ...
 Plot written to file /tmp/duration-get-vs-post.png.
 ```

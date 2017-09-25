@@ -1,5 +1,6 @@
 ###Changelog
 
+* 25\. September 2017: Zeilenumbruch beim Schritt 11
 * 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt
 * 6\. Oktober 2016: Titel neu formatiert
 * 2\. September 2016: Output eines Skripts korrigiert
