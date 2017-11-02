@@ -599,7 +599,7 @@ Mit den verschiedenen Aliasen für die Extraktion von Werten aus dem Logfile und
 Bei den Messwerten, die sich nicht mehr wiederholen, also etwa der Dauer eines Requests, oder der Grösse der Antworten, nützen uns die Prozentzahlen aber wenig. Was wir brauchen ist eine einfache statistische Auswertung. Gefragt sind der Durchschnitt, vielleicht der Median, Informationen zu den Ausreissern und sinnvollerweise die Standardabweichung.
 
 Auch ein solches Skript steht zum Download bereit: [basicstats.awk](https://www.netnea.com/files/basicstats.awk). Es bietet sich an, dieses Skript ähnlich wie percent.awk im privaten _bin_-Verzeichnis abzulegen. Wichtig ist zu wissen, dass das Skript auf einer erweiterten *awk*-Implementation besteht (ja, es gibt mehrere). In der Regel heisst das entsprechende Paket *gawk* und sorgt dafür, dass der Befehl `awk` 
- die Gnu-awk Implementation benützt.
+ die GNU-awk Implementation benützt.
 
 ```bash
 $> cat labor-04-example-access.log | alioout | basicstats.awk

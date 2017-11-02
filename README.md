@@ -11,7 +11,7 @@ ModSecurity, Logfile Visualisierung.
 ## Vorbedingungen
 Für diese Labors benötigt man eine Linux Installation (vorzugsweise aus der
 Debian-Familie, wie bzw. Ubuntu) und minimale Linux Shell Kenntnisse.
-Andere Gnu/Linux Derivate sind ebenfalls geeignet; einzig die Paketnamen dürften von
+Andere GNU/Linux Derivate sind ebenfalls geeignet; einzig die Paketnamen dürften von
 den im Text verwendeten Paketnamen abweichen.
 
 
