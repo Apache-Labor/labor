@@ -1,8 +1,9 @@
 ###Changelog
 
-* 5\. März 2016: User-agent -> User-Agent
-* 25\. Februar 2016: Erwähnung von CRS in Schritt 5
-* 16\. Februar 2016: Link in curl-Aufrufen in Schleife auf https angepasst (Osama Elnaggar)
+* 3\. November 2017: Gnu -> GNU
+* 5\. März 2017: User-agent -> User-Agent
+* 25\. Februar 2017: Erwähnung von CRS in Schritt 5
+* 16\. Februar 2017: Link in curl-Aufrufen in Schleife auf https angepasst (Osama Elnaggar)
 * 20\. Dezember 2016: Schreibfehler
 * 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt
 * 04\. Dezember 2016: Zeilenumbrüche, Schreibfehler
