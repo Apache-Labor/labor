@@ -491,6 +491,7 @@ LoadModule        authn_core_module       modules/mod_authn_core.so
 LoadModule        authz_core_module       modules/mod_authz_core.so
 
 LoadModule        ssl_module              modules/mod_ssl.so
+LoadModule        headers_module          modules/mod_headers.so
 
 LoadModule        unique_id_module        modules/mod_unique_id.so
 LoadModule        security2_module        modules/mod_security2.so
@@ -717,6 +718,7 @@ DocumentRoot            /apache/htdocs
 <VirtualHost 127.0.0.1:443>
     
     SSLEngine On
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 
     ProxyTimeout              60
     ProxyErrorOverride        On

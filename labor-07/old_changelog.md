@@ -1,5 +1,6 @@
 ###Changelog
 
+* 17\. Dezember 2017: Einige Links gefixt
 * 5. März 2017: Update der Besprechung der Regel 942100
 * 25\. Februar 2017: Schliessen von Anführungszeichen bei der Regelzusammenfassung
 * 20\. Dezember 2016: BugFix in Regex, Link auf Beispiel Logs korrigiert

@@ -56,6 +56,7 @@ Sachen, die typischerweise fehlen, sind folgende:
 
 Und wenn wir schon dabei sind, nützen wir doch die Gelegenheit und installieren sämtliche weitere Pakete, welche wir in diesem und den folgenden Tutorials benötigen:
 
+* gawk
 * libexpat1-dev
 * libpcre3-dev
 * libssl-dev
@@ -200,7 +201,8 @@ Die Maschine läuft jetzt. Aber funktioniert sie auch? Zeit für den Funktionste
 
 Da erwarten wir dann Folgendes.
 
-![Screenshot: It works!](./apache-tutorial-1-screenshot-it-works.png)
+
+![Screenshot: It works!](https://www.netnea.com/files/apache-tutorial-1-screenshot-it-works.png)
 
 Im Browser zeigt der Apache ein erstes Lebenszeichen.
 

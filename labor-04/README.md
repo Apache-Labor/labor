@@ -514,12 +514,12 @@ $> cat labor-04-example-access.log | alsslprotocol | sucs
    8150 TLSv1.2
 ```
 
-Das ist nun ein einfacher Aufruf, den man sich gut merken kann und der leicht zu schreiben ist. Wir blicken nun auf ein Zahlenverhältnis von 1764 zu 8150. Total haben wier hier genau 10'000 Anfragen vor uns; die Prozentwerte sind von Auge abzuleiten. In der Praxis dürften die Logfiles aber kaum so schön aufgehen, wir benötigen also Hilfe beim Ausrechnen der Prozentzahlen.
+Das ist nun ein einfacher Aufruf, den man sich gut merken kann und der leicht zu schreiben ist. Wir blicken nun auf ein Zahlenverhältnis von 1764 zu 8150. Total haben wir hier genau 10'000 Anfragen vor uns; die Prozentwerte sind von Auge abzuleiten. In der Praxis dürften die Logfiles aber kaum so schön aufgehen, wir benötigen also Hilfe beim Ausrechnen der Prozentzahlen.
 
 
 ###Schritt 10: Auswertungen mit Prozentzahlen und einfache Statistik
 
-Was uns fehlt ist ein Befehl, der ähnlich wie der Alias _sucs_ funktioniert, aber im selben Durchlauf die Zahlenwerte in Prozentzahlen verwandelt: _sucspercent_.
+Was uns fehlt ist ein Befehl, der ähnlich wie der Alias _sucs_ funktioniert, aber im selben Durchlauf die Zahlenwerte in Prozentzahlen verwandelt: _sucspercent_. Wichtig ist zu wissen, dass das Skript auf einer erweiterten *awk*-Implementation besteht (ja, es gibt mehrere). In der Regel heisst das entsprechende Paket *gawk* und sorgt dafür, dass der Befehl `awk` die GNU-awk Implementation benützt.
 
 ```bash
 $> alias sucspercent='sort | uniq -c | sort -n | $HOME/bin/percent.awk'
@@ -598,13 +598,12 @@ Mit den verschiedenen Aliasen für die Extraktion von Werten aus dem Logfile und
 
 Bei den Messwerten, die sich nicht mehr wiederholen, also etwa der Dauer eines Requests, oder der Grösse der Antworten, nützen uns die Prozentzahlen aber wenig. Was wir brauchen ist eine einfache statistische Auswertung. Gefragt sind der Durchschnitt, vielleicht der Median, Informationen zu den Ausreissern und sinnvollerweise die Standardabweichung.
 
-Auch ein solches Skript steht zum Download bereit: [basicstats.awk](https://www.netnea.com/files/basicstats.awk). Es bietet sich an, dieses Skript ähnlich wie percent.awk im privaten _bin_-Verzeichnis abzulegen. Wichtig ist zu wissen, dass das Skript auf einer erweiterten *awk*-Implementation besteht (ja, es gibt mehrere). In der Regel heisst das entsprechende Paket *gawk* und sorgt dafür, dass der Befehl `awk` 
- die GNU-awk Implementation benützt.
+Auch ein solches Skript steht zum Download bereit: [basicstats.awk](https://www.netnea.com/files/basicstats.awk). Es bietet sich an, dieses Skript ähnlich wie percent.awk im privaten _bin_-Verzeichnis abzulegen.
 
 ```bash
 $> cat labor-04-example-access.log | alioout | basicstats.awk
 Num of values:          10'000.00
-      Average:          15'375.98
+         Mean:          15'375.98
        Median:           6'646.00
           Min:               0.00
           Max:         340'179.00
@@ -619,7 +618,7 @@ Wie sieht es mit der Dauer der Anfragen aus. Haben wir dort ein ähnlich homogen
 ```bash
 $> cat labor-04-example-access.log | alduration | basicstats.awk
 Num of values:          10'000.00
-      Average:          91'306.41
+         Mean:          91'306.41
        Median:           2'431.50
           Min:              18.00
           Max:     301'455'050.00
@@ -627,12 +626,12 @@ Num of values:          10'000.00
 Std deviation:       3'023'884.17
 ```
 
-Hier ist es zunächst wichtig, sich zu vergegenwärtigen, dass wir es mit Mikrosekunden zu tun haben. Der Median liegt bei 2400 Mikroekunden, das sind gut 2 Millisekunden. Der Durschschnitt ist mit 91 Millisekunden viel grösser, offensichtlich haben wir zahlreiche Ausreisser, welche den Schnitt in die Höhe gezogen haben. Tatsächlich  haben wir einen Maximalwert von 301 Sekunden und wenig überraschend eine Standardabweichung von 3 Sekunden. Das Bild ist also weniger homogen und wir haben zumindest einige Requests, die wir untersuchen sollten. Das wird nun aber etwas komplizierter. Das vorgeschlagene Vorgehen ist nur ein mögliches und es steht hier als Vorschlag und als Inspiration für die weitere Arbeit mit dem Logfile:
+Hier ist es zunächst wichtig, sich zu vergegenwärtigen, dass wir es mit Mikrosekunden zu tun haben. Der Median liegt bei 2400 Mikrosekunden, das sind gut 2 Millisekunden. Der Durchschnitt ist mit 91 Millisekunden viel grösser, offensichtlich haben wir zahlreiche Ausreisser, welche den Schnitt in die Höhe gezogen haben. Tatsächlich  haben wir einen Maximalwert von 301 Sekunden und wenig überraschend eine Standardabweichung von 3 Sekunden. Das Bild ist also weniger homogen und wir haben zumindest einige Requests, die wir untersuchen sollten. Das wird nun aber etwas komplizierter. Das vorgeschlagene Vorgehen ist nur ein mögliches und es steht hier als Vorschlag und als Inspiration für die weitere Arbeit mit dem Logfile:
 
 ```bash
 $> cat labor-04-example-access.log | grep "\"GET " | aluri | cut -d\/ -f1,2,3 | sort | \
-uniq | while read P; do  AVG=$(grep "GET $P" labor-04-example-access.log | alduration | \
-basicstats.awk | grep Average | sed 's/.*: //'); echo "$AVG $P"; done  | sort -n
+uniq | while read P; do  MEAN=$(grep "GET $P" labor-04-example-access.log | alduration | \
+basicstats.awk | grep Mean | sed 's/.*: //'); echo "$MEAN $P"; done  | sort -n
 ...
        97459 /cms/
        97840 /cms/application-download-soft
@@ -646,7 +645,7 @@ basicstats.awk | grep Average | sed 's/.*: //'); echo "$AVG $P"; done  | sort -n
 
 Was passiert hier nacheinander? Wir filtern mittels _grep_ nach _GET_-Requests. Wir ziehen die _URI_ heraus und zerschneiden sie mittels _cut_. Uns interessieren nur die ersten Abschnitte des Pfades. Wir beschränken uns hier, um eine vernünftige Gruppierung zu erhalten, denn zu viele verschiedene Pfade bringen hier wenig Mehrwert. Die so erhaltene Pfadliste sortieren wir alphabetisch und reduzieren sie mittels _uniq_. Das ist die Hälfte der Arbeit.
 
-Nun lesen wir die Pfade nacheinander in die Variable _P_ und bauen darüber mit _while_ eine Schleife. Innerhalb der Schleife berechnen wir für den in _P_ abgespeicherten Pfad die Basisstatistiken und filtern die Ausgabe auf den Durschnitt, wobei wir mit _sed_ so filtern, dass die Variable _AVG_ nur die Zahl und nicht auch noch die Bezeichnung _Average:_ enthält. Nun geben wir diesen Durchschnittswert und den Pfadnamen aus. Ende der Schleife. Zu guter letzt sortieren wir alles noch numerisch und erhalten damit eine Übersicht, welche Pfade zu Request…s mit längeren Antwortzeiten geführt haben. Offenbar schiesst ein Pfad namens _/cms/download-softfiles_ obenaus. Das Stichwort _download_ lässt dies plausibel erscheinen.
+Nun lesen wir die Pfade nacheinander in die Variable _P_ und bauen darüber mit _while_ eine Schleife. Innerhalb der Schleife berechnen wir für den in _P_ abgespeicherten Pfad die Basisstatistiken und filtern die Ausgabe auf den Durschnitt, wobei wir mit _sed_ so filtern, dass die Variable _MEAN_ nur die Zahl und nicht auch noch die Bezeichnung _Mean:_ enthält. Nun geben wir diesen Durchschnittswert und den Pfadnamen aus. Ende der Schleife. Zu guter letzt sortieren wir alles noch numerisch und erhalten damit eine Übersicht, welche Pfade zu Request…s mit längeren Antwortzeiten geführt haben. Offenbar schiesst ein Pfad namens _/cms/download-softfiles_ obenaus. Das Stichwort _download_ lässt dies plausibel erscheinen.
 
 Damit kommen wir zum Abschluss dieser Anleitung. Ziel war es ein erweitertes Logformat einzuführen und die Arbeit mit den Logfiles zu demonstrieren. Dabei kommen wiederkehrend eine Reihe von Aliasen und zwei _awk_-Skripts zum Einsatz, die sich sehr flexibel hintereinander reihen lassen. Mit diesen Werkzeugen und der nötigen Erfahrung in deren Handhabung ist man in der Lage, rasch auf die in den Logfiles zur Verfügung stehenden Informationen zuzugreifen.
 

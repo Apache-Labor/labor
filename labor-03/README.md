@@ -673,7 +673,7 @@ Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance. Allerd
 
 Jetzt, da wir sicher sind, dass wir ein offiziell signiertes Zertifikat mit einer gültigen Vertrauenskette besitzen und auch die weitere Konfiguration im Detail verstanden haben, können wir uns dem Browser zuwenden und die konfigurierte Domain dort aufrufen. In meinem Fall ist das [https://www.christian-folini.ch](https://www.christian-folini.ch).
 
-![Screenshot: christian-folini.ch](./apache-tutorial-03-screenshot-christian-folini.ch.png)
+![Screenshot: christian-folini.ch](https://www.netnea.com/files/apache-tutorial-03-screenshot-christian-folini.ch.png)
 
 Der Browser bewertet die Verbindung als sicher.
 
@@ -707,7 +707,7 @@ Interessanterweise gibt es im Internet so etwas wie eine Bewertungsinstanz, was 
 
 Ivan Ristić, der oben erwähnte Autor von mehreren Büchern über Apache und SSL, hat einen Dienst zur Überprüfung von _SSL-Webservern_ aufgebaut. Diesen Service hat er inzwischen ans Qualys weiterverkauft, wo er weiterhin gepflegt und laufend erweitert wird. Er befindet sich unter [www.ssllabs.com](https://www.ssllabs.com/ssldb/index.html). Ein Webserver wie oben konfiguriert brachte mir im Test die Höchstnote von _A+_ ein.
 
-![Screenshot: SSLLabs](./apache-tutorial-03-screenshot-ssllabs.png)
+![Screenshot: SSLLabs](https://www.netnea.com/files/apache-tutorial-03-screenshot-ssllabs.png)
 
 Die Höchstnote ist mit dieser Anleitung in Reichweite.
 

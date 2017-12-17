@@ -1,5 +1,6 @@
 ###Changelog
 
+* 17\. Dezember 2017: Updated Apache auf Version 2.4.29, einige Links gefixt
 * 25\. September 2017: Update of apr (1.6.2), apr-util (1.6.0) and apache (2.4.27)
 * 25\. Februar 2017: AllowOverride komplett entfernt
 * 28\. Dezember 2016: Apache 2.4.23->2.4.25

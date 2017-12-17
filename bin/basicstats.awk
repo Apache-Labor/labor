@@ -9,7 +9,7 @@
 #Typical Output:
 #
 # Num of values:        10000
-#       Average:        91306
+#          Mean:        91306
 #        Median:         2431
 #           Min:           18
 #           Max:    301455050
@@ -51,7 +51,7 @@ END{
     }
     if(N>0) {
                 printf "%14s %'18.2f\n", "Num of values:" ,N
-                printf "%14s %'18.2f\n", "Average:", sum/N
+                printf "%14s %'18.2f\n", "Mean:", sum/N
                 printf "%14s %'18.2f\n", "Median:", median
                 printf "%14s %'18.2f\n", "Min:", min
                 printf "%14s %'18.2f\n", "Max:", max

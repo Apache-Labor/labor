@@ -265,7 +265,7 @@ Dieser zyklische Arbeitsablauf ist sehr schlank gehalten. Er erlaubt mir, in ein
 
 Hier ein Bildschirmschnappschuss von meinem Desktop:
 
-![Screenshot: 4 Shells](./4-shells-screenshot.png)
+![Screenshot: 4 Shells](https://www.netnea.com/files/4-shells-screenshot.png)
 
 ###Verweise
 

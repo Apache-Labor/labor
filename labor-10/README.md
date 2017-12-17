@@ -775,7 +775,7 @@ $> paste  /tmp/tmp.get /tmp/tmp.post | awk '{ print  $2 " " $4 }'  | \
 Plot written to file /tmp/duration-get-vs-post.png.
 ```
 
-![Graph: Gnuplot with PNG Terminal](./duration-get-vs-post.png)
+![Graph: Gnuplot mit  PNG Terminal](https://www.netnea.com/files/duration-get-vs-post.png)
 
 
 ###Verweise

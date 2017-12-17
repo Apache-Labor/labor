@@ -101,11 +101,11 @@ Der in Lektion 2 konfigurierte Webserver läuft als Benutzer _www-data_ oder je 
 Begeben wir uns ins Verzeichnis mit dem Apache Quelltext und kompilieren den Server neu. 
 
 ```bash
-$> cd /usr/src/apache/httpd-2.4.27
-$> ./configure --prefix=/opt/apache-2.4.27 --enable-mods-shared=all \
+$> cd /usr/src/apache/httpd-2.4.29
+$> ./configure --prefix=/opt/apache-2.4.29 --enable-mods-shared=all \
 --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config \
 --enable-mpms-shared="event worker" --enable-nonportable-atomics=yes \
---enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.4.27/bin && \
+--enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.4.29/bin && \
 make && sudo make install
 ```
 
@@ -218,7 +218,7 @@ $> sudo ./bin/httpd -X -f conf/httpd.conf_fastcgid
 
 Erreichbar ist unser Testskript unter der URL [http://localhost/info.php](http://localhost/info.php).
 
-![Screenshot: phpinfo()!](./apache-tutorial-3-screenshot-phpinfo.png)
+![Screenshot: phpinfo()!](https://www.netnea.com/files/apache-tutorial-3-screenshot-phpinfo.png)
 Im Browser zeigt phpinfo einen umfassenden Statusbericht.
 
 Ergibt der Start des Servers oder der Aufruf der URL eine Fehlermeldung, dann weiss das _Fehler-Log_ des Servers oder das separate _Suexec-Log_ unter _logs/suexec_log_ Abhilfe. Typische Fehler betreffen Besitz und Zugriffsrechte auf Verzeichnisse und Files.

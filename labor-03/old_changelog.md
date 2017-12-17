@@ -1,5 +1,6 @@
 ###Changelog
 
+* 17\. Dezember 2017: Einige Links gefixt
 * 4\. März 2017: IP Adressen des VirtualHosts auf 127.0.0.1 fixiert, Stdout der curl-Aufrufe aktualisiert
 * 25\. Februar 2017: AllowOverride komplett entfernt
 * 14\. Februar 2017: Beschreibung des Let's Encrypt Mechanismus verbessert. Neuer Link nach 'How it works'

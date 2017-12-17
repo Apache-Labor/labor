@@ -1,5 +1,6 @@
 ###Changelog
 
+* 17\. Dezember 2017: Einige Links gefixt, Begriff Average durch Mean ersetzt
 * 3\. November 2017: Gnu -> GNU
 * 5\. März 2017: User-agent -> User-Agent
 * 25\. Februar 2017: Erwähnung von CRS in Schritt 5

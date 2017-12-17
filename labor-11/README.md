@@ -404,7 +404,7 @@ Listen	127.0.0.1:8443
 
         SSLEngine               On
         RewriteEngine           On
-
+        Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 
         SSLCertificateKeyFile   /etc/ssl/private/ssl-cert-snakeoil.key
         SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
