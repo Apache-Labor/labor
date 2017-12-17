@@ -29,7 +29,7 @@ if [ ! -f "$ERRORLOG" ]; then
 fi
 
 ACCESSLINE=$(tail -200 $ACCESSLOG | grep -E -v "$ACCESS_IGNORE_REGEX" | tail -1)
-ID=$(echo "$ACCESSLINE" | egrep -o " [a-zA-Z0-9@-]{24} " | tr -d " ")
+ID=$(echo "$ACCESSLINE" | egrep -o " [a-zA-Z0-9@-]{24,27} " | tr -d " ")
 METHOD_PATH=$(echo "$ACCESSLINE" | cut -d\  -f6,7 | cut -b2-)
 STATUS=$(echo "$ACCESSLINE" | cut -d\  -f9)
 SCORES=$(echo "$ACCESSLINE" | egrep -o "[0-9-]+ [0-9-]+$")
