@@ -866,7 +866,7 @@ SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/attachments" \
 Zeit, die Limite ein weiteres Mal zu reduzieren (dieses Mal bis auf 10) und zu sehen, was passiert.
 
 
-###Schritt 7: Die vierte Runde mit Regel-Tunins
+###Schritt 7: Die vierte Runde mit Regel-Tunings
 
 Wir haben ein neues Paar Logfiles:
 

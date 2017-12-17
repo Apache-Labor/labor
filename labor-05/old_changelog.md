@@ -1,8 +1,6 @@
 ###Changelog
 
-* 17\. Dezember 2017: Installieren von Paketen umformuliert; STS Header gesetzt
-* 17\. Dezember 2017: Installieren von Paketen umformuliert
-* 17\. Dezember 2017: Installieren von Paketen umformuliert
+* 17\. Dezember 2017: Installieren von Paketen umformuliert; STS Header gesetzt; Regel 200000 angepasst; Updated whitelist Error Log; Regel 200004->200005 umnummeriert
 * 25\. September 2017: Update of apr (1.6.2), apr-util (1.6.0), apache (2.4.27) and ModSecurity (2.9.2)
 * 5\. März 2017: MaxClients Direktive durch MaxRequestWorkers ersetzt; Reihenfolge der ModSec Datenverzeichnisse geändert
 * 25\. Februar 2017: AllowOverride komplett entfernt, Bugfix in Logfile Schritt 7 und curl Aufruf Schritt 9

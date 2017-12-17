@@ -590,12 +590,12 @@ SecAction "id:90004,phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURATIO
 
 # === ModSec Recommended Rules (in modsec src package) (ids: 200000-200010)
 
-SecRule REQUEST_HEADERS:Content-Type "text/xml" "id:200000,phase:1,t:none,t:lowercase,pass,\
-                                                 nolog,ctl:requestBodyProcessor=XML"
+SecRule REQUEST_HEADERS:Content-Type "(?:application(?:/soap\+|/)|text/)xml" \
+  "id:200000,phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
 
-SecRule REQBODY_ERROR "!@eq 0" "id:200001,phase:2,t:none,deny,status:400,log,\
-                                msg:'Failed to parse request body.',\
-logdata:'%{reqbody_error_msg}',severity:2"
+SecRule REQBODY_ERROR "!@eq 0" \
+  "id:200001,phase:2,t:none,deny,status:400,log,msg:'Failed to parse request body.',\
+  logdata:'%{reqbody_error_msg}',severity:2"
 
 SecRule MULTIPART_STRICT_ERROR "!@eq 0" \
 "id:200002,phase:2,t:none,log,deny,status:403, \
@@ -613,8 +613,9 @@ IP %{MULTIPART_INVALID_PART}, \
 IH %{MULTIPART_INVALID_HEADER_FOLDING}, \
 FL %{MULTIPART_FILE_LIMIT_EXCEEDED}'"
 
-SecRule TX:/^MSC_/ "!@streq 0" "id:200004,phase:2,t:none,deny,status:500,\
-                                msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
+SecRule TX:/^MSC_/ "!@streq 0" \
+  "id:200005,phase:2,t:none,deny,status:500,\
+  msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
 
 
 # === ModSec Core Rules Base Configuration (ids: 900000-900999)

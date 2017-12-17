@@ -24,26 +24,26 @@ Die ModSecurity Core Rules werden unter dem Dach von *OWASP*, dem Open Web Appli
 
 ```
 $> cd /apache/conf
-$> wget https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/v3.0.0.tar.gz
-$> tar -xvzf v3.0.0.tar.gz
-owasp-modsecurity-crs-3.0.0/
-owasp-modsecurity-crs-3.0.0/CHANGES
-owasp-modsecurity-crs-3.0.0/IDNUMBERING
-owasp-modsecurity-crs-3.0.0/INSTALL
-owasp-modsecurity-crs-3.0.0/KNOWN_BUGS
-owasp-modsecurity-crs-3.0.0/LICENSE
-owasp-modsecurity-crs-3.0.0/README.md
-owasp-modsecurity-crs-3.0.0/crs-setup.conf.example
-owasp-modsecurity-crs-3.0.0/documentation/
-owasp-modsecurity-crs-3.0.0/documentation/OWASP-CRS-Documentation/
-owasp-modsecurity-crs-3.0.0/documentation/README
+$> wget https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/v3.0.2.tar.gz
+$> tar -xvzf v3.0.2.tar.gz
+owasp-modsecurity-crs-3.0.2/
+owasp-modsecurity-crs-3.0.2/CHANGES
+owasp-modsecurity-crs-3.0.2/IDNUMBERING
+owasp-modsecurity-crs-3.0.2/INSTALL
+owasp-modsecurity-crs-3.0.2/KNOWN_BUGS
+owasp-modsecurity-crs-3.0.2/LICENSE
+owasp-modsecurity-crs-3.0.2/README.md
+owasp-modsecurity-crs-3.0.2/crs-setup.conf.example
+owasp-modsecurity-crs-3.0.2/documentation/
+owasp-modsecurity-crs-3.0.2/documentation/OWASP-CRS-Documentation/
+owasp-modsecurity-crs-3.0.2/documentation/README
 ...
-$> sudo ln -s owasp-modsecurity-crs-3.0.0 /apache/conf/crs
+$> sudo ln -s owasp-modsecurity-crs-3.0.2 /apache/conf/crs
 $> cp crs/crs-setup.conf.example crs/crs-setup.conf
-$> rm v3.0.0.tar.gz
+$> rm v3.0.2.tar.gz
 ```
 
-Dies entpackt den Basis Teil des Core Rule Set im Verzeichnis `/apache/conf/owasp-modsecurity-crs-3.0.0`. Wir kreieren einen Link von `/apache/conf/crs` in dieses Verzeichnis. Dann kopieren wir eine Datei namens `crs-setup.conf.example` und zum Abschluss löschen wir das CRS tar File.
+Dies entpackt den Basis Teil des Core Rule Set im Verzeichnis `/apache/conf/owasp-modsecurity-crs-3.0.2`. Wir kreieren einen Link von `/apache/conf/crs` in dieses Verzeichnis. Dann kopieren wir eine Datei namens `crs-setup.conf.example` und zum Abschluss löschen wir das CRS tar File.
 
 Dieses Setup File erlaubt es uns, mit mehreren verschiedenen Einstellungen herumzuspielen. Es lohnt sich einen Blick darauf zu werfen; und sei es nur um zu sehen, was es alles gibt. Für den Moment sind wir aber mit den Basis-Einstellungen zufrieden und werden die Datei nicht anfassen; wir werden einfach sicher stellen, dass es unter dem neuen Dateinamen `crs-setup.conf` zur Verfügung steht. Dann können wir das Apache Konfigurationsfile anpassen und die Regeln einbinden.
 
@@ -262,7 +262,7 @@ SecAction "id:90004,phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURATIO
 
 # === ModSec Recommended Rules (in modsec src package) (ids: 200000-200010)
 
-SecRule REQUEST_HEADERS:Content-Type "text/xml" \
+SecRule REQUEST_HEADERS:Content-Type "(?:application(?:/soap\+|/)|text/)xml" \
   "id:200000,phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
 
 SecRule REQBODY_ERROR "!@eq 0" \
@@ -286,7 +286,7 @@ IH %{MULTIPART_INVALID_HEADER_FOLDING}, \
 FL %{MULTIPART_FILE_LIMIT_EXCEEDED}'"
 
 SecRule TX:/^MSC_/ "!@streq 0" \
-  "ID:200004,phase:2,t:none,deny,status:500,\
+  "ID:200005,phase:2,t:none,deny,status:500,\
   msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
 
 
@@ -395,7 +395,7 @@ Wir haben das CRS eingebettet und sind nun für den Testbetrieb bereit. Die Rege
 
 ###Schritt 4: Zu Testzwecken Alarme auslösen
 
-Zum Start machen wir etwas Einfaches. Es ist ein Rquest, der exakt eine Regel auslöst, wenn wir auf einfachste Art und Weise versuchen, eine Bash Shell aufzurufen. Wir wissen natürlich, dass unser Labor-Server gegenüber so einer dummen Attacke nicht verwundbar ist. ModSecurity weiss das aber nicht und wird immer noch versuchen uns zu schützen:
+Zum Start machen wir etwas Einfaches. Es ist ein Request, der exakt eine Regel auslöst, wenn wir auf einfachste Art und Weise versuchen, eine Bash Shell aufzurufen. Wir wissen natürlich, dass unser Labor-Server gegenüber so einer dummen Attacke nicht verwundbar ist. ModSecurity weiss das aber nicht und wird immer noch versuchen uns zu schützen:
 
 ```bash
 $> curl localhost/index.html?exec=/bin/bash
