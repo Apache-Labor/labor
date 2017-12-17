@@ -1,5 +1,7 @@
 ###Changelog
 
+* 17\. Dezember 2017: Wechsel des Apache Mirrors (www-eu.apache.org), Update apr (1.6.3), apr-util (1.6.1) und Apache (2.4.29); Paketinstallationen neu arrangiert, Screenshot ausgewechselt
+* 17\. Dezember 2017: Wechsel des Apache Mirrors (www-eu.apache.org), Update apr (1.6.3), apr-util (1.6.1) und Apache (2.4.29)
 * 25\. September 2017: Update of apr (1.6.2), apr-util (1.6.0) and apache (2.4.27)
 * 28\. Dezember 2016: Apache 2.4.23->2.4.25
 * 20\. Dezember 2016: tar Optionen mit "-" eingeleitet

@@ -25,23 +25,23 @@ Seit dem Erscheinen von Apache 2.4 wird der Apache Webserver ohne zwei wichtige 
 Beginnen wir mit _apr_ und laden das Paket herunter:
 
 ```bash
-$> wget https://mirror.switch.ch/mirror/apache/dist/apr/apr-1.6.2.tar.bz2
+$> wget https://www-eu.apache.org/dist/apr/apr-1.6.3.tar.bz2
 ```
 
 Nun laden wir die Checksum der Sourcecodedatei direkt von Apache herunter. Leider bietet _www.apache.org_ nur eine md5-Checksum für `apr` an. Wir testen sie dennoch. Sicherheitshalber verwenden wir beim Herunterladen eine gesicherte Verbindung. Ohne https macht diese Überprüfung keinen grossen Sinn. Beide Files, der Sourcecode und die kleine Prüfsummendatei, sollten nebeneinander in `/usr/src/apache` liegen. Dann lässt sich die Prüfsumme testen:
 
 
 ```bash
-$> wget https://www.apache.org/dist/apr/apr-1.6.2.tar.bz2.md5
-$> md5sum --check apr-1.6.2.tar.bz2.md5
-apr-1.6.2.tar.bz2: OK
+$> wget https://www.apache.org/dist/apr/apr-1.6.3.tar.bz2.md5
+$> md5sum --check apr-1.6.3.tar.bz2.md5
+apr-1.6.3.tar.bz2: OK
 ```
 
 Das Überprüfen sollte keine Probleme machen, _OK_. Wir können also mit dem Entpacken, Vorkonfigurieren und dem Kompilieren der _apr_ fortfahren.
 
 ```bash
-$> tar -xvjf apr-1.6.2.tar.bz2
-$> cd apr-1.6.2
+$> tar -xvjf apr-1.6.3.tar.bz2
+$> cd apr-1.6.3
 $> ./configure --prefix=/usr/local/apr/
 ```
 
@@ -50,9 +50,20 @@ Der Configure-Befehl beschwert sich oft über fehlende Komponenten. Ist klar: Oh
 
 Sachen, die typischerweise fehlen, sind folgende:
 
-- build-essential
-- binutils
-- gcc
+* build-essential
+* binutils
+* gcc
+
+Und wenn wir schon dabei sind, nützen wir doch die Gelegenheit und installieren sämtliche weitere Pakete, welche wir in diesem und den folgenden Tutorials benötigen:
+
+* libexpat1-dev
+* libpcre3-dev
+* libssl-dev
+* libxml2-dev
+* libyajl-dev
+* zlibc
+* zlib1g-dev
+
 
 Das sind die Paket-Namen auf einer debian-basierten Distribution. Andernorts mögen die Pakete anders heissen.
 Das Fehlen lässt sich leicht beheben, indem man sie mit den Hilfsmitteln der eigenen Distribution nachinstalliert. Danach _configure_ neu ausführen, eventuell nochmals etwas nachinstallieren und irgendwann läuft das Skript dann erfolgreich durch (einzelne Warnungen mitten drin spielen bei _configure_ übrigens keine Rolle. Wichtig ist, dass das Skript nicht mitten drin abbricht).
@@ -73,12 +84,12 @@ Wenn dies erfolgreich geschehen ist, verfahren wir mit den _apr-util_ analog.
 
 ```bash
 $> cd /usr/src/apache
-$> wget https://mirror.switch.ch/mirror/apache/dist/apr/apr-util-1.6.0.tar.bz2
-$> wget https://www.apache.org/dist/apr/apr-util-1.6.0.tar.bz2.md5
-$> md5sum --check apr-util-1.6.0.tar.bz2.md5
-apr-util-1.6.0.tar.bz2: OK
-$> tar -xvjf apr-util-1.6.0.tar.bz2
-$> cd apr-util-1.6.0
+$> wget https://www-eu.apache.org/dist/apr/apr-util-1.6.1.tar.bz2
+$> wget https://www.apache.org/dist/apr/apr-util-1.6.1.tar.bz2.md5
+$> md5sum --check apr-util-1.6.1.tar.bz2.md5
+apr-util-1.6.1.tar.bz2: OK
+$> tar -xvjf apr-util-1.6.1.tar.bz2
+$> cd apr-util-1.6.1
 $> ./configure --prefix=/usr/local/apr/ --with-apr=/usr/local/apr/
 $> make
 $> sudo make install
@@ -92,7 +103,7 @@ Jetzt laden wir den Programmcode vom Netz herunter. Man kann das mit dem Browser
 
 ```bash
 $> cd /usr/src/apache
-$> wget https://mirror.switch.ch/mirror/apache/dist/httpd/httpd-2.4.27.tar.bz2
+$> wget https://www-eu.apache.org/dist//httpd/httpd-2.4.29.tar.bz2
 ```
 
 Der gepackte Sourcecode hat etwa eine Grösse von 5MB.
@@ -100,9 +111,9 @@ Der gepackte Sourcecode hat etwa eine Grösse von 5MB.
 Nun laden wir die Checksum der Sourcecodedatei direkt von Apache herunter. Dankenswerterweise steht sie immerhin als _sha1-Checksum_ zur Verfügung. Sicherheitshalber verwenden wir dazu wieder eine gesicherte Verbindung. Ohne https macht diese Überprüfung keinen Sinn.
 
 ```bash
-$> wget https://www.apache.org/dist/httpd/httpd-2.4.27.tar.bz2.sha1
-$> sha1sum --check httpd-2.4.27.tar.bz2.sha1 
-httpd-2.4.27.tar.bz2: OK
+$> wget https://www.apache.org/dist/httpd/httpd-2.4.29.tar.bz2.sha1
+$> sha1sum --check httpd-2.4.29.tar.bz2.sha1 
+httpd-2.4.29.tar.bz2: OK
 ```
 
 ###Schritt 4: Entpacken und Compiler konfigurieren
@@ -110,7 +121,7 @@ httpd-2.4.27.tar.bz2: OK
 Nach der Überprüfung können wir das Paket entpacken.
 
 ```bash
-$> tar -xvjf httpd-2.4.27.tar.bz2
+$> tar -xvjf httpd-2.4.29.tar.bz2
 ```
 
 Das ergibt etwa 38MB.
@@ -118,8 +129,8 @@ Das ergibt etwa 38MB.
 Wir gehen nun in das Verzeichnis und konfigurieren den Compiler mit unseren Eingaben und mit Informationen zu unserem System. Anders als bei _apr_ sind unsere Eingaben sehr umfangreich.
 
 ```bash
-$> cd httpd-2.4.27
-$> ./configure --prefix=/opt/apache-2.4.27 --with-apr=/usr/local/apr/bin/apr-1-config \
+$> cd httpd-2.4.29
+$> ./configure --prefix=/opt/apache-2.4.29 --with-apr=/usr/local/apr/bin/apr-1-config \
 --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared=event \
 --enable-mods-shared=all --enable-nonportable-atomics=yes
 ```
@@ -127,18 +138,6 @@ $> ./configure --prefix=/opt/apache-2.4.27 --with-apr=/usr/local/apr/bin/apr-1-c
 Hier bestimmen wir das Zielverzeichnis für den zukünftigen Apache Webserver; wieder konform mit dem _FHS_. Darauf folgen zwei Optionen, um die beiden als Vorbedingung installierten Bibliotheken anzubinden. Mittels `--enable-mpms-shared` wählen wir ein sogenanntes Prozessmodell des Servers aus. Das ist – vereinfacht gesagt – so etwas wie der Motorentyp der Maschine: Benzin oder Diesel. In unserem Fall stehen `event`, `worker`, `prefork` und ein paar experimentelle Motoren zur Verfügung. Wir nehmen hier das Modell `event`, das unter 2.4 den neuen Standard darstellt und deutlich performanter ist als die übrigen Architekturen. In den Versionslinien 2.0 und 2.2 gab es bei diesem Entscheid deutlich mehr als nur die Performance zu bedenken, aber seit 2.4 hat sich die Problematik deutlich entschärft und wir fahren nun mit `event` am besten. Mehr Infos zu den verschiedenen Prozessmodellen (_MPMs_) liefert das Apache Projekt.
 
 Dann bestimmen wir, dass wir alle (_all_) Module mitkompilieren möchten. Dabei ist zu berücksichtigen, dass _all_ hier nicht wirklich alle bedeutet. Aus historischen Gründen meint _all_ nur sämtliche Kern-Module, was auch schon eine ganze Menge ist. Das Schlüsselwort _shared_ besagt, dass wir die Module separat kompiliert haben möchten, um sie dann einzeln als optionale Module einbinden zu können. Zu guter Letzt folgt mit `enable-nonportable-atomics` ein Compiler-Flag, das den Compiler instruiert, besondere Optionen zu verwenden, welche nur auf modernen x86-Prozessoren zur Verfügung stehen und sich günstig auf die Performance auswirken.
-
-Beim _configure_-Befehl des Webservers kann es nun sein, dass weitere Pakete nachinstalliert werden müssen. Dazu zählen etwa die folgenden.
-
-- libpcre3-dev
-- libssl-dev
-- zlibc
-- zlib1g-dev
-
-Je nach Distribution mag das eine oder andere Paket anders heissen.
-
-Generell kommt es beim Kompilieren immer wieder vor, dass Bestandteile fehlen. Bisweilen ist das Nachinstallieren von Paketen schwieriger als in unserem Fall und im schlimmsten Fall kann es sein, dass Versionen inkompatibel sind. Oft findet man im Internet eine Lösung für das Problem, aber bisweilen muss man sich selbst ziemlich tief in das System eingraben, um die Wurzel der Schwierigkeiten zu beseitigen.  In unserem einfachen Fall, sollte das aber kein Thema sein.
-
 
 ###Schritt 5: Kompilieren
 
@@ -161,13 +160,13 @@ $> sudo make install
 Auch die Installation dauert eine Weile.
 
 ```bash
-$> sudo chown -R `whoami` /opt/apache-2.4.27
+$> sudo chown -R `whoami` /opt/apache-2.4.29
 ```
 
 Und jetzt noch ein Kniff: Wenn man professionell mit Apache arbeitet, dann hat man oft mehrere verschiedene Versionen nebeneinander auf der Testmaschine. Verschiedene Versionen, verschiedene Patches, andere Module etc. führen zu recht mühsamen und langen Pfaden mit Versionsnummern und weiteren Beschreibungen. Ich mache es dann jeweils so, dass ich einen Softlink von `/apache` auf den aktuellen Apache Webserver lege. Dabei ist darauf zu achten, dass auch der Softlink uns und nicht dem root-User gehört (dies wird bei der Konfiguration des Servers wichtig).
 
 ```bash
-$> sudo ln -s /opt/apache-2.4.27 /apache
+$> sudo ln -s /opt/apache-2.4.29 /apache
 $> sudo chown `whoami` --no-dereference /apache
 $> cd /apache
 ```
@@ -218,11 +217,11 @@ $> sudo ./bin/httpd -V
 ```
 
 ```bash
-Server version: Apache/2.4.27 (Unix)
-Server built:   Dec 28 2016 06:09:49
+Server version: Apache/2.4.29 (Unix)
+Server built:   Dec 17 2017 06:09:49
 Server's Module Magic Number: 20120211:47
-Server loaded:  APR 1.6.2, APR-UTIL 1.6.0
-Compiled using: APR 1.6.2, APR-UTIL 1.6.0
+Server loaded:  APR 1.6.3, APR-UTIL 1.6.1
+Compiled using: APR 1.6.3, APR-UTIL 1.6.1
 Architecture:   64-bit
 Server MPM:     event
   threaded:     yes (fixed thread count)
@@ -237,8 +236,8 @@ Server compiled with....
  -D APR_HAS_OTHER_CHILD
  -D AP_HAVE_RELIABLE_PIPED_LOGS
  -D DYNAMIC_MODULE_LIMIT=256
- -D HTTPD_ROOT="/opt/apache-2.4.27"
- -D SUEXEC_BIN="/opt/apache-2.4.27/bin/suexec"
+ -D HTTPD_ROOT="/opt/apache-2.4.29"
+ -D SUEXEC_BIN="/opt/apache-2.4.29/bin/suexec"
  -D DEFAULT_PIDLOG="logs/httpd.pid"
  -D DEFAULT_SCOREBOARD="logs/apache_runtime_status"
  -D DEFAULT_ERRORLOG="logs/error_log"
