@@ -1,5 +1,6 @@
 ###Changelog
 
+* 8\. Februar 2018: Typo
 * 17\. Dezember 2017: STS Header gesetzt; Regel 200000 angepasst; Regel 200004->200005 umnummeriert; Typo Rquest -> Request; CRS update to 3.0.2
 * 5\. März 2017: MaxClients Direktive durch MaxRequestWorkers ersetzt, Paketliste neu Bullet List; Reihenfolge der ModSec Datenverzeichnisse geändert
 * 25\. Februar 2017: AllowOverride komplett entfernt, Ruby erwähnt.
