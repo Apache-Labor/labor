@@ -75,7 +75,7 @@ DocumentRoot            /apache/htdocs
 
         Options          ExecCGI
 
-        FCGIWrapper      /apache/bin/php-fcgi-starter/php-fcgi-starter .php
+        FCGIWrapper      /apache/bin/php-fcgi-starter/php-fcgi-starter
 
       </Directory>
 
@@ -104,7 +104,7 @@ Begeben wir uns ins Verzeichnis mit dem Apache Quelltext und kompilieren den Ser
 $> cd /usr/src/apache/httpd-2.4.29
 $> ./configure --prefix=/opt/apache-2.4.29 --enable-mods-shared=all \
 --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config \
---enable-mpms-shared="event worker" --enable-nonportable-atomics=yes \
+--enable-mpms-shared="event" --enable-nonportable-atomics=yes \
 --enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.4.29/bin && \
 make && sudo make install
 ```
@@ -151,7 +151,7 @@ $> sudo chown www-data:www-data /apache/logs/fcgidsock
 
 ###Schritt 4: PHP installieren und vorkonfigurieren
 
-Bislang haben wir die ganze Software Stück für Stück selbst kompiliert. Beim ganzen PHP-Stack ist aber eine Grenze erreicht. Es soll niemandem verwehrt werden, PHP selbst zu kompilieren, hier konzentrieren wir uns aber auf den Webserver und übernehmen dieses Stück Software deshalb aus der Linux-Distribution. In Debian/Ubuntu heisst das entsprechende Paket _php5-cgi_ und es zieht _php5-common_ nach sich.
+Bislang haben wir die ganze Software Stück für Stück selbst kompiliert. Beim ganzen PHP-Stack ist aber eine Grenze erreicht. Es soll niemandem verwehrt werden, PHP selbst zu kompilieren, hier konzentrieren wir uns aber auf den Webserver und übernehmen dieses Stück Software deshalb aus der Linux-Distribution. In Debian/Ubuntu heisst das entsprechende Paket _php7.0-cgi_ und es zieht _php7.0-common_ nach sich.
 
 _PHP_ richtig zu konfigurieren ist ein weites Feld und ich empfehle die einschlägigen Seiten zu konsultieren, denn ein falsch konfiguriertes _PHP_ kann ein grosses Sicherheitsproblem darstellen. Hier möchte ich nicht mehr Informationen dazu geben, da es von unserem eigentlichen Thema, dem einfachen Applikationsserver, wegführen würde. Für den Betrieb im Internet, also nicht mehr im heimischen Laborbereich, ist es aber deutlich angezeigt, sich mit den relevanten PHP-Sicherheitseinstellungen vertraut zu machen.
 
@@ -182,7 +182,7 @@ Wir müssen nun in diesem Verzeichnis ein Starter-Skript platzieren. Da wir das 
 ```bash
 $> sudo sh -c "cat > php-fcgi-starter/php-fcgi-starter"
 #!/bin/sh
-export PHPRC=/etc/php5/cgi/
+export PHPRC=/etc/php/7.0/cgi/
 export PHP_FCGI_MAX_REQUESTS=5000
 export PHP_FCGI_CHILDREN=5
 exec /usr/lib/cgi-bin/php

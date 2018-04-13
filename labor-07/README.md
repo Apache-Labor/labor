@@ -362,7 +362,7 @@ _Klicken zum Vergrössern_
 Beginnen wir mit einem einfachen Fall: 920273. Wir könnten diesen nun sehr genau untersuchen und alle verschiedenen Parameter auswerten, die diese Regel auslösen. Abhängig von der Sicherheitsstufe, die wir für unsere Anwendung erreichen möchten, wäre dies der richtige Ansatz. Aber auf der anderen Seite ist das hier nur eine Übung, so dass wir es uns einfach machen: Werfen wir die Regel komplett raus. Wir entscheiden uns dabei für eine Rule Exclusion zur Startup Time des Servers (die wir nach dem CRS-Include platzieren müssen).
 
 ```bash
-# === ModSec Core Rules: Startup Time Rules Exclusions
+# === ModSec Core Rules: Config Time Exclusion Rules (no ids)
 
 # ModSec Rule Exclusion: 920273 : Invalid character in request (outside of very strict set)
 SecRuleRemoveById 920273
@@ -989,7 +989,7 @@ SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,p
 Include    /apache/conf/crs/rules/*.conf
 
 
-# === ModSec Core Rules: Startup Time Rules Exclusions
+# === ModSec Core Rules: Config Time Exclusion Rules (no ids)
 
 # ModSec Rule Exclusion: 942450 : SQL Hex Encoding Identified
 SecRuleUpdateTargetById 942450 "!REQUEST_COOKIES"

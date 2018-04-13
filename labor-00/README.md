@@ -10,7 +10,7 @@ Im professionellen Einsatz des Webservers geschieht es regelmässig, dass besond
 
 ###Schritt 1: Bereitmachen des Verzeichnisbaumes für den Sourcecode
 
-Prinzipiell spielt es keine grosse Rolle, wo der Sourcecode liegt. Das Folgende ist ein Vorschlag, der sich am [File Hierarchy Standard](http://www.pathname.com/fhs/) orientiert. Der FHS definiert den Pfadbaum eines Unix-Systems; also die Ablagestruktur für sämtliche Dateien.
+Prinzipiell spielt es keine grosse Rolle, wo der Sourcecode liegt. Das Folgende ist ein Vorschlag, der sich am [File Hierarchy Standard](http://www.pathname.com/fhs/) orientiert. Der FHS definiert den Pfadbaum eines Unix-Systems; also die Ablagestruktur für sämtliche Dateien. Das `` `whoami` `` auf der zweiten Zeile ergibt als Resultat übrigens unseren User und nicht etwas `root` (trotz `sudo`).
 
 ```bash
 $> sudo mkdir /usr/src/apache

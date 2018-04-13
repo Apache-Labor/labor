@@ -15,8 +15,8 @@ Ferner ist es bei der Fehlersuche hilfreich, von einem minimalen System auszugeh
 
 ###Schritt 1: Minimale Konfiguration erstellen
 
-Unser Webserver ist auf dem Dateisystem unter `/apache` abgelegt. Unter `/apache/conf/httpd.conf` liegt seine Standard-Konfiguration. Diese ist sehr umfangreich und nur schwer zu verstehen. Ein Problem, das auch die Standard-Konfigurationen in den gängigen Linux-Distrubutionen im nochmals verstärkten Mass mit sich bringen.
-Wir ersetzen diese Konfigurationsdatei mit der folgenden stark vereinfachten Konfiguration.
+Unser Webserver ist auf dem Dateisystem unter `/apache` abgelegt. Unter `/apache/conf/httpd.conf` liegt seine Standard-Konfiguration. Diese ist sehr umfangreich und nur schwer zu verstehen. Aber zumindest ist alles noch in einer einzigen Datei. Für die Apache Versionen in der verschiedenen Linux-Distributionen ist die Standardkonfiguration nicht nur sehr kompliziert, sie ist auch in verschiedenste separate Dateien fragmentiert. Diese sind über mehrere Verzeichnisse verteilt. Dies kann es schwierig machen, einen guten Überblick darüber zu bekommen, was tatsächlich vor sich geht.
+Zur Vereinfachung werden wir diese umfangreiche Konfigurationsdatei durch die folgende, stark vereinfachte Konfiguration ersetzen.
 
 ```bash
 ServerName              localhost

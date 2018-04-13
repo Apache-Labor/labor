@@ -500,97 +500,97 @@ SecMarker BEGIN_WHITELIST_login
 
 # Make sure there are no URI evasion attempts
 SecRule REQUEST_URI "!@streq %{REQUEST_URI_RAW}" \
-    "id:10000,phase:1,deny,t:normalizePathWin,log,\
+    "id:11000,phase:1,deny,t:normalizePathWin,log,\
     msg:'URI evasion attempt'"
 
 # START whitelisting block for URI /login
 SecRule REQUEST_URI "!@beginsWith /login" \
-    "id:10001,phase:1,pass,t:lowercase,nolog,skipAfter:END_WHITELIST_login"
+    "id:11001,phase:1,pass,t:lowercase,nolog,skipAfter:END_WHITELIST_login"
 SecRule REQUEST_URI "!@beginsWith /login" \
-    "id:10002,phase:2,pass,t:lowercase,nolog,skipAfter:END_WHITELIST_login"
+    "id:11002,phase:2,pass,t:lowercase,nolog,skipAfter:END_WHITELIST_login"
 
 # Validate HTTP method
 SecRule REQUEST_METHOD "!@pm GET HEAD POST OPTIONS" \
-    "id:10100,phase:1,deny,log,tag:'Login Whitelist',\
+    "id:11100,phase:1,deny,log,tag:'Login Whitelist',\
     msg:'Method %{MATCHED_VAR} not allowed'"
 
 # Validate URIs
 SecRule REQUEST_FILENAME "@beginsWith /login/static/css" \
-    "id:10200,phase:1,pass,nolog,tag:'Login Whitelist',\
+    "id:11200,phase:1,pass,nolog,tag:'Login Whitelist',\
     skipAfter:END_WHITELIST_URIBLOCK_login"
 SecRule REQUEST_FILENAME "@beginsWith /login/static/img" \
-    "id:10201,phase:1,pass,nolog,tag:'Login Whitelist',\
+    "id:11201,phase:1,pass,nolog,tag:'Login Whitelist',\
     skipAfter:END_WHITELIST_URIBLOCK_login"
 SecRule REQUEST_FILENAME "@beginsWith /login/static/js" \
-    "id:10202,phase:1,pass,nolog,tag:'Login Whitelist',\
+    "id:11202,phase:1,pass,nolog,tag:'Login Whitelist',\
     skipAfter:END_WHITELIST_URIBLOCK_login"
 SecRule REQUEST_FILENAME \
     "@rx ^/login/(displayLogin|login|logout).do$" \
-    "id:10250,phase:1,pass,nolog,tag:'Login Whitelist',\
+    "id:11250,phase:1,pass,nolog,tag:'Login Whitelist',\
     skipAfter:END_WHITELIST_URIBLOCK_login"
 
 # If we land here, we are facing an unknown URI,
 # which is why we will respond using the 404 status code
-SecAction "id:10299,phase:1,deny,status:404,log,tag:'Login Whitelist',\
+SecAction "id:11299,phase:1,deny,status:404,log,tag:'Login Whitelist',\
     msg:'Unknown URI %{REQUEST_URI}'"
 
 SecMarker END_WHITELIST_URIBLOCK_login
 
 # Validate parameter names
 SecRule ARGS_NAMES "!@rx ^(username|password|sectoken)$" \
-    "id:10300,phase:2,deny,log,tag:'Login Whitelist',\
+    "id:11300,phase:2,deny,log,tag:'Login Whitelist',\
     msg:'Unknown parameter: %{MATCHED_VAR_NAME}'"
 
 # Validate each parameter's cardinality
 SecRule &ARGS:username  "@gt 1" \
-    "id:10400,phase:2,deny,log,tag:'Login Whitelist',\
+    "id:11400,phase:2,deny,log,tag:'Login Whitelist',\
     msg:'%{MATCHED_VAR_NAME} occurring more than once'"
 SecRule &ARGS:password  "@gt 1" \
-    "id:10401,phase:2,deny,log,tag:'Login Whitelist',\
+    "id:11401,phase:2,deny,log,tag:'Login Whitelist',\
     msg:'%{MATCHED_VAR_NAME} occurring more than once'"
 SecRule &ARGS:sectoken  "@gt 1" \
-    "id:10402,phase:2,deny,log,tag:'Login Whitelist',\
+    "id:11402,phase:2,deny,log,tag:'Login Whitelist',\
     msg:'%{MATCHED_VAR_NAME} occurring more than once'"
 
 # Check individual parameters
 SecRule ARGS:username "!@rx ^[a-zA-Z0-9.@-]{1,32}$" \
-    "id:10500,phase:2,deny,log,tag:'Login Whitelist',\
+    "id:11500,phase:2,deny,log,tag:'Login Whitelist',\
     msg:'Invalid parameter format: %{MATCHED_VAR_NAME} (%{MATCHED_VAR})'"
 SecRule ARGS:sectoken "!@rx ^[a-zA-Z0-9]{32}$" \
-    "id:10501,phase:2,deny,log,tag:'Login Whitelist',\
+    "id:11501,phase:2,deny,log,tag:'Login Whitelist',\
     msg:'Invalid parameter format: %{MATCHED_VAR_NAME} (%{MATCHED_VAR})'"
 SecRule ARGS:password "@gt 64" \
-    "id:10502,phase:2,deny,log,t:length,tag:'Login Whitelist',\
+    "id:11502,phase:2,deny,log,t:length,tag:'Login Whitelist',\
     msg:'Invalid parameter format: %{MATCHED_VAR_NAME} too long (%{MATCHED_VAR} bytes)'"
 SecRule ARGS:password "@validateByteRange 33-244" \
-    "id:10503,phase:2,deny,log,tag:'Login Whitelist',\
+    "id:11503,phase:2,deny,log,tag:'Login Whitelist',\
     msg:'Invalid parameter format: %{MATCHED_VAR_NAME} (%{MATCHED_VAR})'"
 
 SecMarker END_WHITELIST_login
 ```
 
-Da es sich um ein mehrzeiliges Regelwerk handelt begrenzen wir das Rezept mit zwei Markern: *BEGIN_WHITELIST_login* und *END_WHITELIST_login*. Den ersten der beiden Marker setzen wir nur aus Gründen der Lesbarkeit, er wird nicht aktiv verwendet. Beim zweiten ist das anders, er wird als Sprungmarke eingesetzt. Die erste Regel (ID 10000) forciert unsere Maxime zwei aufeinander folgende Punkte in einer URI zu verbieten. Zwei aufeinander folgende Punkte könnten dazu benützt werden, die weiter unten folgenden Pfad-Kriterien zu umgehen. Das heisst, eine URI zu konstruieren, welche auf einen bestimmten Pfad verweist, aber dann weiter hinten in der URI mittels `..` daraus ausbricht, um schlussendlich eben doch auf `/login` zu landen. Diese Regel stellt sicher, dass keines dieser Spielchen auf unserem Server gespielt werden kann.
+Da es sich um ein mehrzeiliges Regelwerk handelt begrenzen wir das Rezept mit zwei Markern: *BEGIN_WHITELIST_login* und *END_WHITELIST_login*. Den ersten der beiden Marker setzen wir nur aus Gründen der Lesbarkeit, er wird nicht aktiv verwendet. Beim zweiten ist das anders, er wird als Sprungmarke eingesetzt. Die erste Regel (ID 11000) forciert unsere Maxime zwei aufeinander folgende Punkte in einer URI zu verbieten. Zwei aufeinander folgende Punkte könnten dazu benützt werden, die weiter unten folgenden Pfad-Kriterien zu umgehen. Das heisst, eine URI zu konstruieren, welche auf einen bestimmten Pfad verweist, aber dann weiter hinten in der URI mittels `..` daraus ausbricht, um schlussendlich eben doch auf `/login` zu landen. Diese Regel stellt sicher, dass keines dieser Spielchen auf unserem Server gespielt werden kann.
 
-In den folgenden zwei Regeln, (ID 100001 und 10002) überprüfen wir, ob unsere Regeln überhaupt betroffen sind. Falls der in Kleinbuchstaben geschriebene und komplett normalisierte Pfad nicht mit `/login` beginnt, springen wir zur End-Marke unseres Blocks; ohne Eintrag im Logfile. Es wäre möglich, den gesamten Regel Block in einem Apache *Location* Block unterzurbingen. Allerdings bevorzuge ich es, so zu arbeiten wie oben präsentiert. Die Whitelist, welche wir hier konstruieren, ist eine partielle Whitelist, da sie nicht den gesamten Server umfasst. Vielemhr konzentriert sie sich auf den Login, der von anonymen Usern angesprochen werden kann. Sobald diese User die Authentifizierung durchgeführt haben, so haben sie zumindest ihre Credentials belegt und ein gewisses Vertrauen ist etabliert. Der Login ist deshalb ein wahrscheinliches Ziel für anonyme Angreifer und wir möchten ihn besonders gut sichern. Es ist auch anzunehmen, dass jede Applikation auf dem Server komplexer als der Login ist, und das Schreiben eines positiven Regelwerks für so eine fortschrittliche Applikation wäre zu kompliziert für dieses Anleitungsdokument. Aber der limitierte Umfang eines Login macht es überblickbar und insgesamt gut machbar, eine grosse Verbesserung bei der Sicherheit zu erreichen. Das Beispiel eignet sich zudem für weitere partielle Whitelists.
+In den folgenden zwei Regeln, (ID 110001 und 11002) überprüfen wir, ob unsere Regeln überhaupt betroffen sind. Falls der in Kleinbuchstaben geschriebene und komplett normalisierte Pfad nicht mit `/login` beginnt, springen wir zur End-Marke unseres Blocks; ohne Eintrag im Logfile. Es wäre möglich, den gesamten Regel Block in einem Apache *Location* Block unterzurbingen. Allerdings bevorzuge ich es, so zu arbeiten wie oben präsentiert. Die Whitelist, welche wir hier konstruieren, ist eine partielle Whitelist, da sie nicht den gesamten Server umfasst. Vielemhr konzentriert sie sich auf den Login, der von anonymen Usern angesprochen werden kann. Sobald diese User die Authentifizierung durchgeführt haben, so haben sie zumindest ihre Credentials belegt und ein gewisses Vertrauen ist etabliert. Der Login ist deshalb ein wahrscheinliches Ziel für anonyme Angreifer und wir möchten ihn besonders gut sichern. Es ist auch anzunehmen, dass jede Applikation auf dem Server komplexer als der Login ist, und das Schreiben eines positiven Regelwerks für so eine fortschrittliche Applikation wäre zu kompliziert für dieses Anleitungsdokument. Aber der limitierte Umfang eines Login macht es überblickbar und insgesamt gut machbar, eine grosse Verbesserung bei der Sicherheit zu erreichen. Das Beispiel eignet sich zudem für weitere partielle Whitelists.
 
 Nachdem wir nun festgestellt haben, dass wir es tatsächlich mit einer Login-Anfrage zu tun haben, können wir unsere Regeln, die den Request überprüfen, nacheinander niederschreiben. Ein HTTP Request hat mehrere Charakteristiken die uns betreffen: Die Methode, der Pfad, der Query String Parameter, des weiteren Post Parameter (das betrifft die Übermittlung der Login-Credentials). In unserem Beispiel lassen wir die Request Header und die Cookies weg. Aber tatsächlich könnten sie je nach Applikation zu einer Schwachstelle werden und sollten dann auch überprüft werden.
 
-Zunächst schauen wir uns in der Regel mit der ID 10100 die HTTP Methode an. Bei der Anzeige des Login Formulars handelt sich um einen _GET_ Request; bei der Übermittlung der Login-Daten handelt es sich um eine _POST_ Request. Manche Clients senden dazwischen bisweilen auch _HEAD_ und _OPTIONS_ Requests, was eigentlich harmlos ist, weshalb wir es gut erlauben können. Alles andere, _PUT_ und _DELETE_ und all die WebDav Methoden, werden durch diese Regel blockiert. Wir testen die vier Methoden mittels dem parallel arbeitenden `@pm` Operator. Er ist schneller als ein regulärer Ausdruck und darüber hinaus auch lesbarer.
+Zunächst schauen wir uns in der Regel mit der ID 11100 die HTTP Methode an. Bei der Anzeige des Login Formulars handelt sich um einen _GET_ Request; bei der Übermittlung der Login-Daten handelt es sich um eine _POST_ Request. Manche Clients senden dazwischen bisweilen auch _HEAD_ und _OPTIONS_ Requests, was eigentlich harmlos ist, weshalb wir es gut erlauben können. Alles andere, _PUT_ und _DELETE_ und all die WebDav Methoden, werden durch diese Regel blockiert. Wir testen die vier Methoden mittels dem parallel arbeitenden `@pm` Operator. Er ist schneller als ein regulärer Ausdruck und darüber hinaus auch lesbarer.
 
-Im Regel Block, der mit der ID 10200 beginnt, untersuchen wir die URI im Detail. Wir definieren drei Verzeichnisse, in denen wir Zugriff auf statische Daten zulassen: `/login/static/css/`, `/login/static/img/` und `/login/static/js/`. Wir haben kein Interesse, die Files in diesen Verzeichnissen im Micromanagement zu verwalten. Deshalb erlauben wir einfach den Zugriff auf diese Verzeichnisse. Bei der Regel mit der ID 10250 ist es anders. Sie definiert die Ziele der dynamischen Zugriffe der User. Wir konstruieren einen regulären Ausdruck, der exakt drei URIs erlaubt: `/login/displayLogin.do`, `/login/login.do` und `/login/logout.do`. Alles ausserhalb dieser Liste ist verboten.
+Im Regel Block, der mit der ID 11200 beginnt, untersuchen wir die URI im Detail. Wir definieren drei Verzeichnisse, in denen wir Zugriff auf statische Daten zulassen: `/login/static/css/`, `/login/static/img/` und `/login/static/js/`. Wir haben kein Interesse, die Files in diesen Verzeichnissen im Micromanagement zu verwalten. Deshalb erlauben wir einfach den Zugriff auf diese Verzeichnisse. Bei der Regel mit der ID 11250 ist es anders. Sie definiert die Ziele der dynamischen Zugriffe der User. Wir konstruieren einen regulären Ausdruck, der exakt drei URIs erlaubt: `/login/displayLogin.do`, `/login/login.do` und `/login/logout.do`. Alles ausserhalb dieser Liste ist verboten.
 
-Aber wie wird das alles überprüft? Schliesslich handelt es sich ja um einen komplizierten Satz von Pfaden und alles verteilt sich über mehrere Regeln! Die Regeln 10200, 10201, 10202 und 10250 betrachten die URI. Wenn wir einen Treffer haben, dann blockieren wir aber nicht, sondern springen zum Marker `END_WHITELIST_URIBLICK_login`. Wenn wir bei dieser Sprungmarke ankommen, dann wissen wir, dass es sich um eine URI aus unserer vordefinierten Liste handelt; die Anfrage entspricht unseren Regeln. Wenn wir aber 10250 passiert haben und immer noch kein Treffer uns zur Sprungmarke führte, dann wissen wir, dass der Client eine unbekannte URI aufgerufen hat und wir können ihn sofort blockieren. Dies geschieht in der Fallback Regel mit der ID 10299. Man beachte, dass es sich hierbei nicht mehr länger um eine konditionale _SecRule_ Direktive handelt, sondern um _SecAction_, welche dieselbe Funktionalität erlaubt, aber ohne Operator und ohne Parameter. Die Actions der Regel werden sogleich ausgeführt und blockieren in unserem Fall den Request. Dann gibt es aber noch einen Kniff: Wir teilen dem Client nicht einfach mit, dass sein Request verboten war (HTTP Status _403_, das bei einem Deny eigentlich der Default Status Code wäre). Stattdessen retournieren wir einen HTTP Status 404 und lassen den Client damit im Dunkeln über die Existenz des Regelwerks.
+Aber wie wird das alles überprüft? Schliesslich handelt es sich ja um einen komplizierten Satz von Pfaden und alles verteilt sich über mehrere Regeln! Die Regeln 11200, 11201, 11202 und 11250 betrachten die URI. Wenn wir einen Treffer haben, dann blockieren wir aber nicht, sondern springen zum Marker `END_WHITELIST_URIBLICK_login`. Wenn wir bei dieser Sprungmarke ankommen, dann wissen wir, dass es sich um eine URI aus unserer vordefinierten Liste handelt; die Anfrage entspricht unseren Regeln. Wenn wir aber 11250 passiert haben und immer noch kein Treffer uns zur Sprungmarke führte, dann wissen wir, dass der Client eine unbekannte URI aufgerufen hat und wir können ihn sofort blockieren. Dies geschieht in der Fallback Regel mit der ID 11299. Man beachte, dass es sich hierbei nicht mehr länger um eine konditionale _SecRule_ Direktive handelt, sondern um _SecAction_, welche dieselbe Funktionalität erlaubt, aber ohne Operator und ohne Parameter. Die Actions der Regel werden sogleich ausgeführt und blockieren in unserem Fall den Request. Dann gibt es aber noch einen Kniff: Wir teilen dem Client nicht einfach mit, dass sein Request verboten war (HTTP Status _403_, das bei einem Deny eigentlich der Default Status Code wäre). Stattdessen retournieren wir einen HTTP Status 404 und lassen den Client damit im Dunkeln über die Existenz des Regelwerks.
 
 Nun wenden wir uns den Parametern zu. Es gibt Query String und Post Parameter. Wir könnten Sie separat betrachten. Aber es ist einfacher, sie als eine Gruppe zu betrachten. Die POST Parameter werden erst in der zweiten Phase zur Verfügung stehen. Das bedeutet, dass sämtliche Regeln hier bis zum Ende der Whitelist in der Phase 2 funktionieren.
 
 Es gibt drei Dinge, welche wir bei jedem Parameter zu überprüfen haben: der Name (Kennen wir den Parameter?), die Kardinalität (Wurde er mehr als ein Mal übermittelt? Ich werde das in Kürze erklären) und das Format (Folgt der Parameter einem vorgegebenen Muster?).
-Wir führen diese Checks nacheinander in einem Block ab der Regel ID 10300 durch. Hier prüfen wir eine vordefinierte Liste von Parametern. Wir erwarten drei individuelle Parameter: _username_, password und _sectoken_. Alles ausserhalb dieser Liste ist verboten. Anders als bei der Überprüfung der HTTP Methode benützen wir hier einen regulären Ausdruck, auch wenn die Regel durch Verwendung des `@pm` Operators lesbarer würde. Der Grund ist, dass der parallele Matching Algorithmus unterscheidet nicht zwischen Gross- und Kleinschreibung. Es wäre also möglich, einen Parameter mit Namen _userName_ zu übermitteln und er würde diese Regel passieren. Die folgenden Regeln würden ihn dann aber je nachdem übersehen, da sie nicht mit dem merkwürdigen Grossbuchstaben _N_ rechnen. Bleiben wir hier also bei der RegEx.
+Wir führen diese Checks nacheinander in einem Block ab der Regel ID 11300 durch. Hier prüfen wir eine vordefinierte Liste von Parametern. Wir erwarten drei individuelle Parameter: _username_, password und _sectoken_. Alles ausserhalb dieser Liste ist verboten. Anders als bei der Überprüfung der HTTP Methode benützen wir hier einen regulären Ausdruck, auch wenn die Regel durch Verwendung des `@pm` Operators lesbarer würde. Der Grund ist, dass der parallele Matching Algorithmus unterscheidet nicht zwischen Gross- und Kleinschreibung. Es wäre also möglich, einen Parameter mit Namen _userName_ zu übermitteln und er würde diese Regel passieren. Die folgenden Regeln würden ihn dann aber je nachdem übersehen, da sie nicht mit dem merkwürdigen Grossbuchstaben _N_ rechnen. Bleiben wir hier also bei der RegEx.
 
-Was hat es nun mit der Überprüfung der Kardinalität auf sich? Ich will es so erklären: Nehmen wir an, ein Angreifer übermittelt einen Parameter zwei Mal innerhalb desselben Requests. Was geschieht nun in der Applikation?  Wird die Applikation die erste Version berücksichtigen? Die zweite? Oder beide Versionen zusammenziehen? Um ehrlich zu sein wissen wir es nicht. Deshalb müssen wir das sofort unterbinden: Wir zählen sämtliche Parameter und wenn irgendeiner von Ihnen mehr als einmal erscheint, dann stoppen wir den Request. Es gibt für jeden Parameter eine Regel in einem Block, der bei 10400 beginnt. Wen wir die Regeln genau betrachten, dann sehen wir ein _&_ Zeichen vor jedem _ARGS_. Das bedeutet, dass wir nicht den Parameter selbst betrachten, sondern dass wir sein Vorkommen zählen. Der Operator `@gt` wird immer dann reagieren, wenn die Zahl grösser als 1 ist.
+Was hat es nun mit der Überprüfung der Kardinalität auf sich? Ich will es so erklären: Nehmen wir an, ein Angreifer übermittelt einen Parameter zwei Mal innerhalb desselben Requests. Was geschieht nun in der Applikation?  Wird die Applikation die erste Version berücksichtigen? Die zweite? Oder beide Versionen zusammenziehen? Um ehrlich zu sein wissen wir es nicht. Deshalb müssen wir das sofort unterbinden: Wir zählen sämtliche Parameter und wenn irgendeiner von Ihnen mehr als einmal erscheint, dann stoppen wir den Request. Es gibt für jeden Parameter eine Regel in einem Block, der bei 11400 beginnt. Wen wir die Regeln genau betrachten, dann sehen wir ein _&_ Zeichen vor jedem _ARGS_. Das bedeutet, dass wir nicht den Parameter selbst betrachten, sondern dass wir sein Vorkommen zählen. Der Operator `@gt` wird immer dann reagieren, wenn die Zahl grösser als 1 ist.
 
-Wir nähern uns nun langsam dem Ende. Bevor wir aber so weit sind, betrachten wir noch die einzelnen Parameter: Entsprechen Sie einem vorgefertigten Muster? Im Fall des Benutzernamens (Regel ID 10500) und des SecTokens (Regel ID 10501) ist der Fall klar: Wir wissen, wie ein Benutzername auszusehen hat und für das maschinengenerierte SecToken ist es sogar noch einfacher. Also benützen wir einfach einen regulärer Ausdruck, um das Format zu überprüfen.
+Wir nähern uns nun langsam dem Ende. Bevor wir aber so weit sind, betrachten wir noch die einzelnen Parameter: Entsprechen Sie einem vorgefertigten Muster? Im Fall des Benutzernamens (Regel ID 11500) und des SecTokens (Regel ID 11501) ist der Fall klar: Wir wissen, wie ein Benutzername auszusehen hat und für das maschinengenerierte SecToken ist es sogar noch einfacher. Also benützen wir einfach einen regulärer Ausdruck, um das Format zu überprüfen.
 
-Beim Passwort ist die Sache weniger klar. Offensichtlich möchten wir, dass die User möglichst viele Sonderzeichen verwenden: idealerweise Zeichen ausserhalb des Standard ASCII Bereichs. Aber wie überprüfen wir dann das Format? Wir treffen hier auf eine Limite. Lassen wir den vollen ASCII Umfang zu, dann erlauben wir auch Angriffe und unsere Möglichkeiten mit dem Whitelisting Zugang sind beschränkt. Geben wir aber nicht so schnell auf und setzen wir wenigstens ein Minimum an Regeln. Zuerst schauen wir auf die Länge des Parameters. Längere Parameter bedeutet mehr Raum um einen Angriff zu konstruieren. Wir können das begrenzen, wenn wir die _length_ Transformation zu Hilfe nehmen. Der Operator wird also nicht mehr auf den Parameter selbst, sondern auf seine Länge. Der `@ge` Operator passt ideal dazu. Wenn das Passwort länger als 64 Zeichen ist, dann verweigern wir den Zugriff. In der nächsten und finalen Regel, (ID 10503), wir benützen einen weiteren Operator und validieren die Byte-Range. Da wir Spezialzeichen erwarten, müssen wir die sichtbare UTF-8 erlauben. Dies forciert einen minimalen Standard, es heisst aber auch, dass die Applikation beim Passwort Parameter wachsam bleiben muss, da er nicht auf dieselbe Art und Weise limitiert werden kann wie der Username und das SecToken.
+Beim Passwort ist die Sache weniger klar. Offensichtlich möchten wir, dass die User möglichst viele Sonderzeichen verwenden: idealerweise Zeichen ausserhalb des Standard ASCII Bereichs. Aber wie überprüfen wir dann das Format? Wir treffen hier auf eine Limite. Lassen wir den vollen ASCII Umfang zu, dann erlauben wir auch Angriffe und unsere Möglichkeiten mit dem Whitelisting Zugang sind beschränkt. Geben wir aber nicht so schnell auf und setzen wir wenigstens ein Minimum an Regeln. Zuerst schauen wir auf die Länge des Parameters. Längere Parameter bedeutet mehr Raum um einen Angriff zu konstruieren. Wir können das begrenzen, wenn wir die _length_ Transformation zu Hilfe nehmen. Der Operator wird also nicht mehr auf den Parameter selbst, sondern auf seine Länge. Der `@ge` Operator passt ideal dazu. Wenn das Passwort länger als 64 Zeichen ist, dann verweigern wir den Zugriff. In der nächsten und finalen Regel, (ID 11503), wir benützen einen weiteren Operator und validieren die Byte-Range. Da wir Spezialzeichen erwarten, müssen wir die sichtbare UTF-8 erlauben. Dies forciert einen minimalen Standard, es heisst aber auch, dass die Applikation beim Passwort Parameter wachsam bleiben muss, da er nicht auf dieselbe Art und Weise limitiert werden kann wie der Username und das SecToken.
 
 Damit beschliessen wir unser Beispiel einer partiellen Whitelist.
 
@@ -625,32 +625,32 @@ Ein Blick in das Error-Log des Servers belegt, dass die Regeln genau so griffen,
 [2017-12-17 16:04:06.363090] [-:error] 127.0.0.1:53482 WjaHZrq3BsfzODHx0EBwoQAAAAM [client 127.0.0.1] …
 ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^(username|password|sectoken)$" …
 against "ARGS_NAMES:debug" required. [file "/apache/conf/httpd.conf_pod_2017-12-17_12:10"] [line "227"] …
-[id "10300"] [msg "Unknown parameter: ARGS_NAMES:debug"] [tag "Login Whitelist"] [hostname "localhost"] …
+[id "11300"] [msg "Unknown parameter: ARGS_NAMES:debug"] [tag "Login Whitelist"] [hostname "localhost"] …
 [uri "/login/displayLogin.do"] [unique_id "WjaHZrq3BsfzODHx0EBwoQAAAAM"]
 [2017-12-17 16:04:13.818721] [-:error] 127.0.0.1:53694 WjaHbbq3BsfzODHx0EBwogAAAAU [client 127.0.0.1] …
 ModSecurity: Access denied with code 404 (phase 1). Unconditional match in SecAction. [file …
-"/apache/conf/httpd.conf_pod_2017-12-17_12:10"] [line "220"] [id "10299"] …
+"/apache/conf/httpd.conf_pod_2017-12-17_12:10"] [line "220"] [id "11299"] …
 [msg "Unknown URI /login/admin.html"] [tag "Login Whitelist"] [hostname "localhost"] …
 [uri "/login/admin.html"] [unique_id "WjaHbbq3BsfzODHx0EBwogAAAAU"]
 [2017-12-17 16:04:27.427211] [-:error] 127.0.0.1:54314 WjaHe7q3BsfzODHx0EBwpAAAAAk [client 127.0.0.1] …
 ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^(username|password|sectoken)$" …
 against "ARGS_NAMES:backdoor" required. [file "/apache/conf/httpd.conf_pod_2017-12-17_12:10"] …
-[line "227"] [id "10300"] [msg "Unknown parameter: ARGS_NAMES:backdoor"] [tag "Login Whitelist"] …
+[line "227"] [id "11300"] [msg "Unknown parameter: ARGS_NAMES:backdoor"] [tag "Login Whitelist"] …
 [hostname "localhost"] [uri "/login/login.do"] [unique_id "WjaHe7q3BsfzODHx0EBwpAAAAAk"]
 [2017-12-17 16:04:34.347509] [-:error] 127.0.0.1:54616 WjaHgrq3BsfzODHx0EBwpQAAAAo [client 127.0.0.1] …
 ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9.@-]{1,32}$" against …
 "ARGS:username" required. [file "/apache/conf/httpd.conf_pod_2017-12-17_12:10"] [line "243"] [id …
-"10500"] [msg "Invalid parameter format: ARGS:username (john56789012345678901234567890123)"] [tag …
+"11500"] [msg "Invalid parameter format: ARGS:username (john56789012345678901234567890123)"] [tag …
 "Login Whitelist"] [hostname "localhost"] [uri "/login/login.do"] …
 [unique_id "WjaHgrq3BsfzODHx0EBwpQAAAAo"]
 [2017-12-17 16:04:42.069838] [-:error] 127.0.0.1:54850 WjaHirq3BsfzODHx0EBwpgAAAAw [client 127.0.0.1] …
 ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9.@-]{1,32}$" against …
 "ARGS:username" required. [file "/apache/conf/httpd.conf_pod_2017-12-17_12:10"] [line "243"] …
-[id "10500"] [msg "Invalid parameter format: ARGS:username (john')"] [tag "Login Whitelist"] …
+[id "11500"] [msg "Invalid parameter format: ARGS:username (john')"] [tag "Login Whitelist"] …
 [hostname "localhost"] [uri "/login/login.do"] [unique_id "WjaHirq3BsfzODHx0EBwpgAAAAw"]
 [2017-12-17 16:04:55.542582] [-:error] 127.0.0.1:55288 WjaHl7q3BsfzODHx0EBwpwAAAAs [client 127.0.0.1] …
 ModSecurity: Access denied with code 403 (phase 2). Operator GT matched 1 at ARGS. [file …
-"/apache/conf/httpd.conf_pod_2017-12-17_12:10"] [line "232"] [id "10400"] [msg "ARGS occurring …
+"/apache/conf/httpd.conf_pod_2017-12-17_12:10"] [line "232"] [id "11400"] [msg "ARGS occurring …
 more than once"] [tag "Login Whitelist"] [hostname "localhost"] [uri "/login/login.do"] …
 [unique_id "WjaHl7q3BsfzODHx0EBwpwAAAAs"]
 ```
