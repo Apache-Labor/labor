@@ -28,7 +28,7 @@ BEGIN{  printf "%30s        Count Percent\n", "Entry";
 
 END{
         for (j=1; j<=i; j++) {
-                printf "%30s %'12i %6.2f%%\n", country[j], count[j], count[j] * 100 / sum
+                printf "%30s %12i %6.2f%%\n", country[j], count[j], count[j] * 100 / sum
         }
         print "---------------------------------------------------"
         printf "                         Total %12i 100.00%%\n", sum
