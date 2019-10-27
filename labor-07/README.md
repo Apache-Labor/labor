@@ -1,14 +1,14 @@
-##Fehlalarme im OWASP ModSecurity Core Rule Set behandeln
+## Fehlalarme im OWASP ModSecurity Core Rule Set behandeln
 
-###Was machen wir?
+### Was machen wir?
 
 Wir reduzieren die *False Positives* einer frischen *OWASP ModSecurity Core Rules* Installation und setzen dabei die Anomalie-Limite Schritt um Schritt tiefer, um Angreifer erfolgreich abzuwehren.
 
-###Warum tun wir das?
+### Warum tun wir das?
 
 Eine frische *Core Rule Set* Installation weist typischerweise einige Fehlalarme auf. In speziellen Fällen, namentlich auf höheren Paranoia Stufen, geht das bisweilen in die Tausende. Wir haben in der letzten Lektion verschiedene Techniken gesehen, wie man einzelne Fehlalarme zukünftig unterdrücken kann. Aber aller Anfang ist schwer und was fehlt ist eine Strategie, mit der schieren Menge der Fehlalarme fertig zu werden. Die Reduktion der Fehlalarme ist die Voraussetzung für die Reduktion der Anomalie-Limite der *Core Rules* und dies wiederum ist nötig, um Angreifer mittels *ModSecurity* tatsächlich abzuwehren. Und nur wenn die Fehlalarme wirklich ausgeschaltet oder zumindest sehr weit zurückgedrängt sind, erhalten wir einen Blick auf die tatsächlichen Angreifer.
 
-###Voraussetzungen
+### Voraussetzungen
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
@@ -26,9 +26,9 @@ Es ist schwierig, reale Logfiles von einem Produktionsserver für eine Übung zu
 
 Drupal und CRS stehen nicht wirklich in einer liebevollen Beziehung. Immer wenn die beiden Software-Pakete aufeinander treffen, neigen sie dazu, aggressiv aufeinander loszugehen: Das CRS ist so pedantisch und Drupal hat unter anderem die Gewohnheit, Parameternamen in eckige Klammern zu setzen, was das CRS wiederum verrückt macht. Allerdings hat die Sache sich mit CRS3 merklich entspannt und namentlich die neuen, optionalen Ausschlussregeln für Drupal (siehe die Datei "crs-setup.conf" für Details und [diesen Blogpost](https://www.netnea.com/cms/2016/11/22/securing-drupal-with-modsecurity-and-the-core-rule-set-crs3/) als Einführung) lassen die verbleibenden Fehlalarme einer Drupal Core Installation fast alle verschwinden.
 
-Aber die Lage sieht gänzlich anders aus, wenn wir diese Rule Exclusions nicht verwenden und wenn wir den Paranoia Level auf 4 erhöhen: Für die 10.000 Anfragen in meinem Testlauf erhielt ich über 27'000 falsche Alarme. Das sollte erst mal reichen für eine Trainingseinheit.
+Aber die Lage sieht gänzlich anders aus, wenn wir diese Rule Exclusions nicht verwenden und wenn wir den Paranoia Level auf 4 erhöhen: Für die 10'000 Anfragen in meinem Testlauf erhielt ich über 27'000 falsche Alarme. Das sollte erst mal reichen für eine Trainingseinheit.
 
-###Schritt 1: Eine Strategie zur Behandlung der Fehlalarme festlegen
+### Schritt 1: Eine Strategie zur Behandlung der Fehlalarme festlegen
 
 Das Problem mit den False Positives ist, dass sie einen im schlimmsten Fall wie eine Lawine überschwemmen und man nicht weiss, wo man mit dem Aufräumen beginnen soll. Was uns fehlt, ist ein Plan und es gibt keine offizielle Dokumentation, welche einem in diesem Punkt weiterhilft. Hier deshalb ein empfohlenes Vorgehen zur Bekämpfung von Fehlalarmen:
 
@@ -38,7 +38,7 @@ Das Problem mit den False Positives ist, dass sie einen im schlimmsten Fall wie 
 
 Was bedeutet das? Die CRS Default-Installation erfolgt bereits im Blocking Mode und mit einem Anomalie Grenzwert von 5 für die ankommenden Anfragen. Das ist in der Tat ein sehr gutes Ziel für unsere Arbeit, aber es ist ein allzu steiler Einstieg auf einem bestehenden Produktionsserver. Das Risiko ist, dass ein False Positive einen Alarm auslöst, der Browser des falschen Kunden gesperrt wird, ein Telefonanruf an den Applikationsverantwortlichen erfolgt und der Administrator gezwungen wird, die Web Application Firewall auszuschalten. In zahlreichen Installationen, die ich gesehen habe, war dies das Ende der Geschichte.
 
-Das muss nicht sein! Stattdessen starten wir mit einer hohen Anomalie-Limite. Sagen wir 1000 für die Anfragen und aus Symmetrie-Gründen auch 1000 für die Antworten (in der Praxis gehen die Responses nicht sehr hoch). Auf diese Weise wissen wir, dass kein Kunde jemals durch die Limiten blockiert wird, wir erhalten die Meldungen betreffend der Fehlalarme und wir gewinnen Zeit, sie auszumerzen.
+Das muss nicht sein! Stattdessen starten wir mit einer hohen Anomalie-Limite. Sagen wir 10'000 für die Anfragen und aus Symmetrie-Gründen auch 10'000 für die Antworten (in der Praxis gehen die Responses nicht sehr hoch). Auf diese Weise wissen wir, dass kein Kunde jemals durch die Limiten blockiert wird, wir erhalten die Meldungen betreffend der Fehlalarme und wir gewinnen Zeit, sie auszumerzen.
 
 Wenn man ein geeignetes Sicherheitsprogramm haben, lässt sich das alles in einer umfangreichen Testphase durchführen, so dass der Service nie ohne strikte Konfiguration in der Produktion eingesetzt wird. Aber wenn man mit ModSecurity auf einem bestehenden Produktions-Service beginnt, dann ist der Start mit einem hohen Schwellenwert in der Produktion die bevorzugte Methode mit minimalen Auswirkungen für bestehende Kunden zu einem sauberen Setup zu kommen (null Auswirkungen, wenn wir sauber arbeiten).
 
@@ -46,7 +46,7 @@ Das Problem bei der Integration von ModSecurity in die Produktion ist die Tatsac
 
 Dann gibt es noch eine zweite Frage, die wir aus dem Weg räumen müssen: Führt das Umgehen von Regeln nicht eigentlich zur einer Verminderung der Sicherheit einer online Applikation? Ja das tut es tatsächlich. Aber wir müssen die Sache in der richtigen Perspektive betrachten. In einem idealen Setup sind alle Regeln voll intakt, der Paranoia Level steht auf der höchsten Stufe (es sind also total knapp 200 zum Teil sehr aggressive Regeln aktiv) und die Anomalie-Limiten wären sehr niedrig. Und dennoch würde die Anwendung ohne jegliche Probleme laufen. Aber in der Praxis funktioniert das nur in den seltensten Fälle. Wenn wir die Anomalies Limiten erhöhen, dann sind die Alarme noch da, aber die Angreifer sind nicht mehr betroffen. Wenn wir den Paranoia Level reduzieren, deaktivieren wir Dutzende von Regeln mit dieser Einstellung. Wenn wir mit den Entwicklern über die Änderung ihrer Software sprechen, so dass die False Positives weggehen, verbringen wir viel Zeit, ohne grosse Chancen auf Erfolg (zumindest in meiner Erfahrung). Die Deaktivierung einer einzigen Regel aus einem Satz von 200 Regeln ist die beste aller schlechten Lösungen. Die schlechteste aller schlechten Lösungen wäre es hingegen, ModSecurity insgesamt zu deaktivieren. Und da dies in vielen Organisationen die Realität ist, deaktiviere ich lieber einzelne Regeln aufgrund von Fehlalarmen, als ich das Risiko eingehe, die WAF ganz rausnehmen zu müssen.
 
-###Schritt 2: Einen Überblick erhalten
+### Schritt 2: Einen Überblick erhalten
 
 Der Charakter der Anwendung, der Paranoia Level und die Menge des Verkehrs alle beeinflussen die Menge an False Positives, die wir in den Logfiles erhalten. Im ersten Durchlauf reichen ein paar tausend oder maximal hunderttausend Anfragen. Sobald das im Access Log zusammengekommen ist, ist es Zeit, die Einträge zu inspizieren. Verschaffen wir uns also einen Überblick über die Lage: Schauen wir uns die Beispiel-Logs einmal an!
 
@@ -318,7 +318,7 @@ Dieses ist nur ein rasch zusammengeschustertes Diagramm. Aber es zeigt, dass die
 Wir beginnen bei denjenigen Requests, welche die höchsten Punkte erzielten. Wir beginnen auf der rechten Seite des Graphen! Das macht Sinn, weil wir bereits im Blocking Mode arbeiten und wir die Anomalie Limite reduzieren möchten. Die Gruppe von Anfragen, die uns dabei zuerst im Weg stehen, sind die sechs Anfragen mit einer Punktzahl von 231 und der Einzelrequest mit einer Punktzahl von 189. Schreiben wir also Rule Exclusions, um die Alarme, die zu diesen Werten führen, zu unterdrücken.
 
 
-###Schritt 3: Die erste Gruppe von Regelausschlüssen
+### Schritt 3: Die erste Gruppe von Regelausschlüssen
 
 Um herauszufinden, welche Regeln hinter den Anomaliescores 231 und 189 stehen, müssen wir das Access Log mit dem Error Log verknüpfen. Die Unique ID ist der Link, der uns dabei hilft:
 
@@ -491,13 +491,13 @@ SecRule REQUEST_URI "@beginsWith /drupal/index.php/contextual/render" \
 
 Damit haben wir die sieben Highscore-Anfragen (189 und 231) abgedeckt. Das Schreiben dieser sechs Regel Ausschlüsse war ein wenig umständlich, aber das Skript scheint eine wirkliche Verbesserung für den Prozess darzustellen. Nun geht es schneller. Versprochen.
 
-###Schritt 4: Verringerung der Anomaly Score Limite
+### Schritt 4: Verringerung der Anomaly Score Limite
 
-Wir haben die Regeln, die zu den höchsten Anomalie Werten führen, unterdrückt.  Eigentlich ist jetzt alles jenseits von 100 Punkten weg.  In einem Produktions-Setup würde ich die aktualisierte Konfiguration installieren und das Verhalten ein wenig beobachten.  Wenn die hohen Werte wirklich weg sind, dann ist es Zeit, die Anomalie Limite zu reduzieren.  Ein typischer erster Schritt ist von 1000 bis 100. Dann setzen wir das Schreiben der Rule Exclusions fort, reduzieren dann auf 50 oder so, dann auf 20, 10 und 5. Tatsächlich ist eine Grenze von 5 wirklich streng (die erste kritische Warnung blockiert damit eine Anfrage),  Aber für Websites mit weniger Sicherheitsbedürfnissen kann eine Grenze von 10 bereits gut genug sein. Alle Werte darüber behindern Angreifer nicht wirklich.
+Wir haben die Regeln, die zu den höchsten Anomalie Werten führen, unterdrückt.  Eigentlich ist jetzt alles jenseits von 100 Punkten weg.  In einem Produktions-Setup würde ich die aktualisierte Konfiguration installieren und das Verhalten ein wenig beobachten.  Wenn die hohen Werte wirklich weg sind, dann ist es Zeit, die Anomalie Limite zu reduzieren.  Ein typischer erster Schritt ist von 10'000 bis 100. Dann setzen wir das Schreiben der Rule Exclusions fort, reduzieren dann auf 50 oder so, dann auf 20, 10 und 5. Tatsächlich ist eine Grenze von 5 wirklich streng (die erste kritische Warnung blockiert damit eine Anfrage),  Aber für Websites mit weniger Sicherheitsbedürfnissen kann eine Grenze von 10 bereits gut genug sein. Alle Werte darüber behindern Angreifer nicht wirklich.
 
 Aber bevor wir dort ankommen, müssen wir noch einige Regelausschlüsse hinzufügen.
 
-###Schritt 5: Die zweite Runde von Rule Exclusions
+### Schritt 5: Die zweite Runde von Rule Exclusions
 
 Nach dem ersten Satz von Regelausschlüssen würden wir den Dienst etwas beobachten. Das bringt uns einen neuen Satz von Logfiles.
 
@@ -742,7 +742,7 @@ SecRule REQUEST_URI "@beginsWith /drupal/index.php/search/node" "phase:2,nolog,p
 
 Und fertig. Dieses Mal haben wir alle Anfragen mit einem Score von über 50 eliminiert. Zeit, die Anomalieschwelle auf 50 zu reduzieren. Lassen wir es ein wenig so laufen und prüfen wir dann die Logfiles für die dritte Charge.
 
-###Schritt 6: Die dritte Runde mit Rule Exclusions
+### Schritt 6: Die dritte Runde mit Rule Exclusions
 
 Hier sind dieselben Übungsfiles. Es ist immer noch derselbe Verkehr, aber dank den oben stehenden Rule Exclusions mit weniger Alarmen.
 
@@ -866,7 +866,7 @@ SecRule REQUEST_URI "@beginsWith /drupal/index.php/quickedit/attachments" \
 Zeit, die Limite ein weiteres Mal zu reduzieren (dieses Mal bis auf 10) und zu sehen, was passiert.
 
 
-###Schritt 7: Die vierte Runde mit Regel-Tunings
+### Schritt 7: Die vierte Runde mit Regel-Tunings
 
 Wir haben ein neues Paar Logfiles:
 
@@ -938,7 +938,7 @@ SecRuleUpdateTargetById 930000-943999 "!ARGS:pass"
 
 Und damit sind wir fertig. Wir haben erfolgreich alle falschen Positiven eines Content-Management-Systems mit eigenartigen Parameterformaten und einem ModSecurity-Regelsatz, der auf einen wahnsinnig paranoiden Level gehoben wurde, bekämpft.
 
-###Schritt 8: Alle Regel Ausschlüsse nochmals zusammenfassen
+### Schritt 8: Alle Regel Ausschlüsse nochmals zusammenfassen
 
 Zeit zum Zurückschauen und die Konfigurationsdatei mit allen Regelausschlüssen nochmals sauber zu formatieren. Ich habe alles ein wenig umgruppiert. Dazu habe ich einige Anmerkungen angebracht und die Regel IDs neu vergeben.  Wie bereits erwähnt, ist es nicht offensichtlich, wie die Regeln zu ordnen sind. Hier habe ich sie per ID gruppiert, aber auch einen Block eingefügt, in dem das Suchformular separat abdeckt wird.
 
@@ -1009,7 +1009,7 @@ SecRuleUpdateTargetById 930000-943999 "!ARGS:pass"
 
 ```
 
-###Bonus: Rascher einen Überblick gewinnen
+### Bonus: Rascher einen Überblick gewinnen
 
 Wenn man das alles zum ersten Mal tut, dann sind all diese vielen Regeln recht einschüchternd. Aber letztlich war es zusammengenommen auch nur eine Stunde Arbeit, was wiederum vernünftig erscheint. Zudem erstreckt sich das alles ja über mehrere Iterationen. Es würde aber nicht schaden, etwas Hilfe zu erhalten, um sich schneller einen Überblick über all die Warnungen zu verschaffen. Deshalb ist es eine gute Idee, einen Bericht darüber zu erzeugen, wie genau die *Anomaly Scores* aufgetreten sind. Zum Beispiel eine Übersicht der Regelverletzungen für jeden Anomalie Wert.  Das folgende Konstrukt generiert einen solchen Bericht.  In der ersten Zeile extrahieren wir eine Liste der Anomaliescores aus den eingehenden Anfragen, die tatsächlich in der Protokolldatei erscheinen.  Wir erstellen dann eine Schleife um diese *Scores*, lesen die *request ID* für jeden Wert ein, speichern sie in der Datei `ids` ab und führen eine kurze Analyse für diese *IDs* im Error Log durch.
 
@@ -1108,7 +1108,7 @@ Mit grösserer Erfahrung kommt man natürlich rascher voran und es lohnt sich, d
 
 Damit haben wir das Ende einer Gruppe von drei Anleitungen erreicht. Das Thema war ModSecurity und seine Konfiguration. Als nächstes wenden wir uns der Einrichtung eines Reverse Proxies zu.
 
-###Verweise
+### Verweise
 - [Spider Labs Blog Post: Behandlung von Ausnahmen](http://blog.spiderlabs.com/2011/08/modsecurity-advanced-topic-of-the-week-exception-handling.html)
 - [ModSecurity Reference Manual](https://github.com/SpiderLabs/ModSecurity/wiki/Reference-Manual)
 

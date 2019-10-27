@@ -1,15 +1,15 @@
-##Den vollen Verkehr mitschreiben und entschlüsseln
+## Den vollen Verkehr mitschreiben und entschlüsseln
 
-###Was machen wir?
+### Was machen wir?
 
 Wir schreiben den vollen HTTP Verkehr mit. Dazu entschlüsseln wir wo nötig den Verkehr.
 
-###Warum tun wir das?
+### Warum tun wir das?
 
 
 Im Alltag kommt es immer wieder vor, dass beim Betrieb eines Webservers oder eines Reverse Proxies Fehler auftreten, die nur mit Mühe bearbeitet werden können. In zahlreichen Fällen fehlt die Klarheit, was genau durch die Leitung ging, oder es herrscht Uneinigkeit, welcher Kommunikationsteilnehmer den Fehler genau verursacht hat. In diesen Fällen ist es wichtig, den gesamten Verkehr mitschreiben zu können, um auf dieser Basis den Fehler zu isolieren.
 
-###Voraussetzungen
+### Voraussetzungen
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/)
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/)
@@ -19,7 +19,7 @@ Im Alltag kommt es immer wieder vor, dass beim Betrieb eines Webservers oder ein
 * Eine OWASP ModSecurity Core Rules Installation wie in [Anleitung 7 (ModSecurity Core Rules einbinden](https://www.netnea.com/cms/apache-tutorial-7-modsecurity-core-rules-einbinden/)
 * Ein Reverse Proxy wie in [Anleitung 9 (Reverse Proxy einrichten)](https://www.netnea.com/cms/apache-tutorial-9-reverse-proxy-einrichten/)
 
-###Schritt 1 : Mit ModSecurity den vollen Verkehr mitschreiben
+### Schritt 1 : Mit ModSecurity den vollen Verkehr mitschreiben
 
 Wir haben in der Anleitung 6 gesehen, wie wir ModSecurity konfigurieren können, damit es den gesamten Verkehr einer einzigen Client IP Adresse mitschreibt. Je nach Settings der Direktive `SecAuditLogParts` werden aber nicht sämtliche Teile der Anfragen festgehalten. Schauen wir uns die verschiedenen Optionen dieser Direktive an: Die Audit-Engine von ModSecurity bezeichnet verschiedene Teile des Audit-Logs mit verschiedenen Buchstabenkürzeln. Sie lauten wie folgt:
 
@@ -53,7 +53,7 @@ SecRule REMOTE_ADDR  "@streq 127.0.0.1"   \
     "id:10000,phase:1,pass,log,auditlog,msg:'Initializing full traffic log',ctl:auditLogParts=+EIJ"
 ```
 
-###Schritt 2 : Mit ModSecurity den vollen Verkehr einer einzigen Session schreiben
+### Schritt 2 : Mit ModSecurity den vollen Verkehr einer einzigen Session schreiben
 
 Der erste Schritt erlaubte die dynamische Veränderung der Audit-Log-Teile für eine bekannte IP-Adresse. Was aber, wenn wir
 das Logging dynamisch für ausgewählte Sessions dauerhaft einschalten und wie im obigen Beispiel gezeigt, auf den vollen Request ausdehnen möchten?
@@ -101,7 +101,7 @@ Request noch gar nicht aktiviert. Das holen wir mit dieser Regel nach.
 Gemeinsam erlauben uns diese drei Regeln einen auffälligen Client über einen einzelnen verdächtigen Request hinaus genau
 zu beobachten und ab dem Einsetzen des Verdachts den gesamten Verkehr dieses Clients im Audit-Log mitzuprotokollieren.
 
-###Schritt 3 : Verkehr des Clients mit dem Server / Reverse Proxy mithören
+### Schritt 3 : Verkehr des Clients mit dem Server / Reverse Proxy mithören
 
 Der Verkehr zwischen einem Client und dem Reverse Proxy lässt sich mit den oben geschilderten Techniken in aller Regel gut dokumentieren. Dazu kommen die Möglichkeiten auf dem Client den Verkehr zu dokumentieren. Die modernen Browser bringen dazu verschiedene Möglichkeiten und sie scheinen mir alle adäquat zu sein. Allerdings kommt es in der Praxis vor, dass Komplikationen das Mitschreiben des Verkehrs erschweren oder verunmöglichen. Sei es, dass ein Fat Client ausserhalb eines Browsers verwendet wird, der Client lediglich auf einem mobilen Gerät zum Einsatz kommt, ein zwischengeschalteter Proxy den Verkehr in die eine oder andere Richtung verändert, dass der Verkehr nach dem Verlassen von ModSecurity durch ein weiteres Modul nochmals verändert wird oder aber dass ModSecurity gar keinen Zugriff auf den Verkehr erhält. Letzteres ist ein einzelnen Fällen tatsächlich ein Problem, da ein Apache Modul die weitere Verarbeitung eines Requests abbrechen und damit den Zugriff durch ModSecurity unterdrücken kann.
 
@@ -130,7 +130,7 @@ In der vierten Anleitung haben wir den lokalen Labor-Service mit dem lokal vorha
 
 ```
 
-###Schritt 4 : Verschlüsselten Verkehr des Clients mit dem Server / Reverse Proxy mitschreiben
+### Schritt 4 : Verschlüsselten Verkehr des Clients mit dem Server / Reverse Proxy mitschreiben
 
 
 Mit den obenstehenden Erklärungen haben wir die Grundlagen geschaffen, um den Verkehr mitzuschreiben und dann zu dechiffrieren. Wir machen das in zwei Schritten, also zunächst das Protokollieren des Verkehrs und dann die Entschlüsselung des Protokolls. Das Mitschreiben nennt man auch `ein PCAP ziehen`. Das heisst, wir stellen ein `PCAP`-File, also ein Netwerkverkehrsprotokoll im `PCAP`-Format. `PCAP` steht dabei für `Packet Capture`. Wir benützen dazu entweder das verbreitete Hilfsmittel `tcpdump` oder `tshark` aus der `Wireshark`-Suite. Es ist aber auch möglich, gleich in der grafischen `Wireshark`-Oberfläche zu arbeiten.
@@ -193,7 +193,7 @@ tcpdump: listening on lo, link-type EN10MB (Ethernet), capture size 65535 bytes
 0 packets dropped by kernel
 ```
 
-###Schritt 5 : Verkehr entschlüsseln
+### Schritt 5 : Verkehr entschlüsseln
 
 Versuchen wir also das `PCAP`-File zu entschlüsseln. Wir verwenden dazu wieder `tshark` aus der `Wireshark`-Suite. Das `GUI` funktioniert natürlich ebenso, ist aber weniger komfortabel. Wichtig ist es nun, dem Tool den Schlüssel, den wir auf dem Server verwendet haben, mitzuübergeben.
 
@@ -301,7 +301,7 @@ ssl_decrypt_record found padding 8 final len 247
 Damit ist der HTTP Verkehr lesbar, wenn auch in einem etwas schwierigen Format.
 
 
-###Schritt 6 : Verkehr des Reverse Proxies mit dem Applikationsserver mithören
+### Schritt 6 : Verkehr des Reverse Proxies mit dem Applikationsserver mithören
 
 Das Audit-Log von ModSecurity wird nach dem Versand der Antwort eines Requests geschrieben. Das macht bereits deutlich, dass das Audit-Log sich vor allem für die möglichst finale Version der Antwort interessiert. Auf einem Reverse Proxy wird diese Version der Anfrage und vor allem der Antwort nicht zwingend dem entsprechen, was auch wirklich vom Backend-System geschickt wurde, denn die verschiedenen Apache-Module haben je nachdem bereits in den Verkehr eingegriffen. Um diesen Verkehr mitschreiben zu können, benötigen wir andere Mittel. In der Entwicklungsschiene des Apache Webservers liegt das Modul `mod_firehose` vor. Damit lässt sich an beinahe beliebigem Ort im Verkehr ein Protokoll mitschreiben. Allerdings wurde von der Entwickler-Gemeinschaft entschieden, das Modul für Apache 2.4 nicht zur Verfügung zu stellen, sondern einer späteren Version vorzubehalten.
 
@@ -610,7 +610,7 @@ E..4..@.@.\............@...........^.(.....
 
 Geschafft! Wir lesen die Verbindungen zum Backend mit und sind nun sicher, was die beiden Server an Verkehr austauschen. In der Praxis, ist es oft unklar, ob ein Fehler wirklich auf dem Applikationsserver oder vielleicht eben doch auf dem Reverse Proxy verursacht wird. Mit diesem Konstrukt, das die SSL-Konfiguration des Backend Servers nicht berührt, haben wir ein Hilfsmittel, um in diesen relativ häufigen Fällen die endgültige Antwort zu geben.
 
-###Verweise
+### Verweise
 
 * [Ivan Ristić: ModSecurity Handbook](https://www.feistyduck.com/books/modsecurity-handbook/)
 * [Mod_firehose](http://httpd.apache.org/docs/trunk/de/mod/mod_firehose.html)

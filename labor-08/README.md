@@ -1,16 +1,16 @@
-##Einen Reverse Proxy Server aufsetzen
+## Einen Reverse Proxy Server aufsetzen
 
-###Was machen wir?
+### Was machen wir?
 
 Wir konfigurieren einen *Reverse Proxy* oder *Gateway Server*, der den Zugriff zur Applikation schützt und den Applikationsserver vom Internet abschirmt. Dabei lernen wir mehrere Arten der Konfiguration kennen und arbeiten auch erstmals mit *ModRewrite*.
 
-###Warum tun wir das?
+### Warum tun wir das?
 
 Eine moderne Applikationsarchitektur weist mehrere Schichten auf. Gegenüber dem Internet wird nur der *Reverse Proxy* exponiert. Er führt eine Sicherheitsprüfung auf der Applikationsebene durch und leitet die von ihm für gut befundenen Anfragen an den Applikationsserver in der zweiten Schicht weiter. Dieser wiederum ist an einen Datenbankserver angebunden, der in einer weiteren Schicht steht. Man spricht von einem Drei-Schichtenmodell (engl. *Three-Tier-Model*). In einer gestaffelten Verteidigung über die drei Schichten hinweg bietet der *Reverse Proxy* oder technisch korrekt der *Gateway Server* einen ersten Einblick in die verschlüsselten Anfragen. Auf dem Rückweg ist er wiederum die letzte Instanz, welche die Antworten noch ein letztes Mal überprüfen kann.
 
 Es gibt verschiedene Arten, Apache zu einem *Reverse Proxy* umzubauen. Vor allem gibt es mehrere Methoden mit den Applikationsservern zu kommunizieren. Wir beschränken uns in dieser Anleitung auf das normale, auf *HTTP* basierende *mod_proxy_http*. Weitere Kommunikationsarten wie *FastCGI-Proxy* oder *AJP* behandeln wir hier nicht. Auch auf Apache gibt es mehrere Arten, wie der Proxy-Vorgang angestossen werden kann. Wir betrachten zunächst die normale Konstruktion via *ProxyPass*, besprechen, danach aber auch mehrere Varianten mit Hilfe von *mod_rewrite*.
 
-###Voraussetzungen
+### Voraussetzungen
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/)
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/)
@@ -19,7 +19,7 @@ Es gibt verschiedene Arten, Apache zu einem *Reverse Proxy* umzubauen. Vor allem
 * Ein Apache Webserver mit ModSecurity wie in [Anleitung 6 (ModSecurity einbinden)](https://www.netnea.com/cms/apache-tutorial-6-modsecurity-einbinden/)
 * Ein Apache Webserver mit einer Core Rules Installation wie in [Anleitung 7 (Core Rules einbinden)](http://www.netnea.com/cms/modsecurity-core-rules-einbinden/)
 
-###Schritt 1: Backend bereitstellen
+### Schritt 1: Backend bereitstellen
 
 Der Zweck eines Reverse Proxies ist es, einen Applikationsserver vor direkten Zugriffen aus dem Internet abzuschirmen. Quasi als Voraussetzung für eine diesbezügliche Anleitung benötigen wir also einen solchen Backend-Server.
 Prinzipiell bietet sich eine beliebige HTTP Applikation für so eine Installation an und wir könnten gut den Applikationserver aus der dritten Anleitung anwenden. Allerdings scheint es mir gelegen, einen ganz simplen Ansatz zu demonstrieren. Dabei benützen wir das Hilfsmittel *socat*; kurz für *SOcket CAt*. 
@@ -51,7 +51,7 @@ Server response, port 8000
 
 Damit haben wir ein Backend-System mit einfachsten Mitteln aufgesetzt. So einfach, dass wir zukünftig vielleicht einmal froh sein werden, diese Technik zu kennen, wenn rasch das Funktionieren eines Proxy Servers belegen möchten, bevor das richtige Backend bereits läuft.
 
-###Schritt 2: Das Proxy-Modul laden
+### Schritt 2: Das Proxy-Modul laden
 
 Um Apache als *Proxy Server* einsetzen zu können, sind mehrere Module nötig. Wir haben sie in der ersten Anleitung mitkompiliert und können sie nun einfach dazuladen.
 
@@ -70,7 +70,7 @@ ProxyRequests Off
 
 Diese Direktive meint tatsächlich nur das Weiterleiten von Requests an Server im Internet, auch wenn der Name auf eine generellere Einstellung hindeutet. Wie erwähnt ist die Direktive auf Apache 2.4 aber korrekt voreingestellt und sie wird hier nur deshalb erwähnt, um Fragen oder zukünftigen Fehleinstellungen vorzubeugen.
 
-###Schritt 3: ProxyPass
+### Schritt 3: ProxyPass
 
 Wir kommen damit zu den eigentlichen *Proxying* Einstellungen: Es gibt mehrere Arten, wie wir Apache instruieren können, einen Request an eine Backend-Applikation weiterzureichen. Wir schauen die Varianten nacheinander an. Die gängige Variante um Anfragen zu proxen basiert auf der Direktive *ProxyPass*. Sie wird wie folgt verwendet:
 
@@ -91,13 +91,13 @@ Der wichtigste Befehl ist hier *ProxyPass*. Er definiert einen Pfad `/service1` 
 
 Auf der nächsten Zeile kommt eine verwandte Direktive, die trotz ähnlichem Namen nur eine kleine Hilfsfunktion übernimmt. *Redirect-Responses* vom Backend sind in *http-konformer* Ausprägung voll-qualifiziert. Also etwa `https://backend.example.com/service1`. Für den Client ist diese Adresse aber nicht erreichbar. Aus diesem Grund muss der *Reverse Proxy* den sogenannten *Location-Header* des Backends umschreiben, `backend.example.com` durch seinen eigenen Namen ersetzen und damit in seinen eigenen *Namespace* zurückmappen. *ProxyPassReverse*, das so einen vollmundigen Namen besitzt, hat in Wahrheit also nur eine einfache Suchen-Ersetzen Funktion, die auf *Location-Header* greift. Wie schon bei der *Proxy-Pass* Direktive zeigt sich das symmetrische *Proxying*: Die Pfade werden 1:1 übersetzt. Wir sind frei, uns nicht an diese Regel zu halten, aber ich rate dringend dazu diese Regel einzuhalten, denn jenseits davon lauern Missverständnisse und Verwirrung. Neben dem Zugriff auf den *Location-Header* gibt es eine Reihe von weiteren *Reverse-Direktiven*, die sich etwa um Cookies etc. kümmern. Dies kann fallweise hilfreich sein.
 
-###Schritt 4: Proxy Stanza
+### Schritt 4: Proxy Stanza
 
 Weiter in der Konfiguration: Nun folgt der *Proxy-Block*, wo die Verbindung zum Backend genauer definiert wird. Namentlich Authentisierung und Autorisierung eines Requests finden hier statt. Weiter unten in der Anleitung werden wir aber auch einen *Load-Balancer* in diesem Block unterbringen.
 
-Der *Proxy-Block* entspricht dem *Location-* und dem *Directory-Block*, die wir in unserer Konfiguration bereits früher kennengelernt haben. Es handelt sich dabei um sogenannte *Container*. *Container* geben dem Webserver an, wie er die Arbeit strukturieren soll. Sobald er in der Konfiguration einen *Container* antrifft, bereitet er dafür eine Verarbeitungsstruktur vor. Im Fall von *mod_proxy* kann das Backend auch ohne *Proxy-Container* erreicht werden. Der Zugriffsschutz bleibt dabei aber unberücksichtigt und auch weitere Direktiven besitzen damit keinen Ort mehr in den sie eingebracht werden können. Ohne *Proxy-Block* bleibt die Verarbeitung bei komplexeren Servern immer etwas zufällig und wir tun gut daran, diesen Teil mitzukonfigurieren. Mittels der Direktive *ProxySet* können wir dann hier noch weiter eingreifen und etwa das Verbindungsverhalten vorgeben. Mit *min*, *max* und *smax* können die Anzahl Threads, die dem Proxy Connection Pool zugewiesen werden, spezifiziert werden. Dies kann fallweise die Performance beeinflussen. Das *Keepalive Verhalten* der Proxy-Verbindung lässt sich beeinflussen und auch verschiedene *Timeout*-Werte sind so zu definieren. Weitere Informationen dazu finden sich in der Dokumentation des Apache Projektes.
+Der *Proxy-Block* entspricht dem *Location-* und dem *Directory-Block*, die wir in unserer Konfiguration bereits früher kennengelernt haben. Es handelt sich dabei um sogenannte *Container*. *Container* geben dem Webserver an, wie er die Arbeit strukturieren soll. Sobald er in der Konfiguration einen *Container* antrifft, bereitet er dafür eine Verarbeitungsstruktur vor. Im Fall von *mod_proxy* kann das Backend auch ohne *Proxy-Container* erreicht werden. Der Zugriffsschutz bleibt dabei aber unberücksichtigt und auch weitere Direktiven besitzen damit keinen Ort mehr in den sie eingebracht werden können. Ohne *Proxy-Block* bleibt die Verarbeitung bei komplexeren Servern immer etwas zufällig und wir tun gut daran, diesen Teil mitzukonfigurieren. Mittels der Direktive *ProxySet* könnten wir dann hier noch weiter eingreifen und etwa das Verbindungsverhalten vorgeben. Mit *min*, *max* und *smax* können die Anzahl Threads, die dem Proxy Connection Pool zugewiesen werden, spezifiziert werden. Dies kann fallweise die Performance beeinflussen. Das *Keepalive Verhalten* der Proxy-Verbindung lässt sich beeinflussen und auch verschiedene *Timeout*-Werte sind so zu definieren. Weitere Informationen dazu finden sich in der Dokumentation des Apache Projektes.
 
-###Schritt 5: Ausnahmen beim Proxying definieren und weitere Einstellungen vornehmen
+### Schritt 5: Ausnahmen beim Proxying definieren und weitere Einstellungen vornehmen
 
 Die von uns verwendete _ProxyPass_ Direktive hat die Gesamtheit der Requests für `/service1` an das Backend weitergegeben. In der Praxis kommt es aber oft vor, dass man nicht ganz alles weitergeben möchte. Stellen wir uns vor, dass es den Pfad `/service1/admin` gibt, den wir nicht im Internet exponieren möchten. Dies lässt sich ebenfalls mit Hilfe der richtigen _ProxyPass_ Einstellung verhindern, wobei die Ausnahme mittels des Ausrufezeichens initiiert wird. Wichtig ist es, die Ausnahme zu definieren, bevor der eigentliche Proxy-Befehl konfiguriert wird:
 
@@ -127,7 +127,7 @@ Backend-Systeme achten oft weniger auf die Sicherheit als ein Reverse Proxy. Ein
 ProxyErrorOverride	On
 ```
 
-###Schritt 6: ModRewrite
+### Schritt 6: ModRewrite
 
 Neben der Direktive _ProxyPass_ kann auch das *Rewrite-Modul* eingesetzt werden, um die *Reverse Proxy*-Funktionalität auszulösen. Gegenüber dem *ProxyPass* erlaubt dies eine flexiblere Konfiguration. Wir haben *ModRewrite* bis dato nicht gesehen. Da es sich dabei um ein sehr wichtiges Modul handelt, sollten wir es gründlich studieren.
 
@@ -135,7 +135,6 @@ Neben der Direktive _ProxyPass_ kann auch das *Rewrite-Modul* eingesetzt werden,
 
 ```bash
 LoadModule              rewrite_module          modules/mod_rewrite.so
-LoadModule              headers_module          modules/mod_headers.so
 
 ...
 
@@ -201,7 +200,7 @@ Das gewünschte Schema ist nun klar. Aber links davon ist ein neues Element hinz
 
 Damit ist *ModRewrite* eingeführt. Für weitere Beispiele sei hier auf die Dokumentation verwiesen oder die nachfolgenden Kapitel dieser Anleitung, wo wir noch weitere Rezepte kennenlernen werden.
 
-###Schritt 7: ModRewrite [Proxy]
+### Schritt 7: ModRewrite [Proxy]
 
 Wir haben gesehen wie eine *RewriteEngine* initialisiert wird und wie man einfache und etwas komplexere Redirects auslösen kann. Nun werden wir mit diesen Mitteln einen *Reverse Proxy* konfigurieren. Das machen wir wie folgt:
 
@@ -222,17 +221,19 @@ Wir haben gesehen wie eine *RewriteEngine* initialisiert wird und wie man einfac
 
         Options none
 
+	ProxySet enableruse=on
+
     </Proxy>
 
 ```
 
-Die Instruktion folgt einem ähnlichen Muster wie die Variante mit ProxyPass. Allerdings wird hier der hintere Teil des Pfades explizit mittels einer Klammer eingefangen und wie oben bereits gesehen durch "$1" wieder ausgedrückt. Anstatt dem vorangegangenen *Redirect-Flag* kommt nun *proxy* zur Anwendung. *ProxyPassReverse* und die Proxy-Stanza bleiben dann identisch zum Setup via *ProxyPass*.
+Die Anweisung folgt einem ähnlichen Muster wie die Variation mit ProxyPass. Hier muss jedoch der letzte Teil des Weges explizit mit einer Klammer abgefangen und wieder mit "$1" angezeigt werden, wie wir oben gesehen haben. Anstelle des vorgeschlagenen Redirect-Flags wird hier das Schlüsselwort *Proxy* verwendet. *ProxyPassReverse* und der Proxy-Container bleiben nahezu identisch mit dem Setup über *ProxyPass*. Es gibt jedoch eine zusätzliche Anweisung: *ProxySet*. Dies ist aus Performance-Gründen und einem etwas seltsamen Verhalten des Apache Webservers unerlässlich: Wenn wir Proxying über ProxyPass definieren, richtet der Apache implizit einen Ressourcenpool für die Backend-Verbindung ein. Dieser Ressourcenpool ermöglicht es, HTTP keep-alive auf der Backend-Verbindung zu erhalten. Mit dem RewriteRule-Proxy-Konstrukt wird dieser Ressourcenpool nicht automatisch angelegt. Tatsächlich wird er nur vorbereitet, wenn wir eine ProxySet-Anweisung ausgeben. Die genaue Art der Aussage spielt keine Rolle. Tatsächlich ist enablereuse=on der Standardwert, aber er kommt erst zum Einsatz, wenn der Ressourcenpool eingerichtet ist, und das geschieht nur mit dem ProxySet. Also verwenden wir *enablereuse=on* als Dummy und aktivieren HTTP keep-alive auf diese Weise.
 
 Soweit die einfache Konfiguration mittels einer RewriteRule. Sie bringt noch keinen wirklichen Vorteil über die *ProxyPass*-Syntax. Die Referenzierung von Pfadteilen mittels *$1*, *$2* etc. bringt etwas an Flexibilität. Aber wenn wir ohnehin mit RewriteRules arbeiten, dann stellen wir durch das RewriteRule-Proxying sicher, dass sich RewriteRule und ProxyPass nicht in die Quere kommen, indem sie denselben Request berühren und sich gegenseitig beeinflussen.
 
 Nun kann es aber sein, dass wir mit einem einzelnen Reverse Proxy mehrere Backends zusammenfassen oder die Last auf mehrere Server verteilen möchten. Ein eigentlicher LoadBalancer ist dazu gefragt. Das sehen wir uns im nächsten Abschnitt an:
 
-###Schritt 8: Balancer [proxy]
+### Schritt 8: Balancer [proxy]
 
 Den Apache Loadbalancer müssen wir zunächst als Modul laden:
 
@@ -267,6 +268,8 @@ Damit sind wir bereit für die Konfiguration des Loadbalancers. Wir können ihn 
         Require all granted
 
         Options none
+
+	ProxySet enableruse=on
 
     </Proxy>
 ```
@@ -332,7 +335,7 @@ In diesem etwas ungewohnten Aufruf werden zwei identische Requests mit einem ein
 
 ```bash
 127.0.0.1 - - [2015-12-10 06:42:14.390998] "GET /service1/index.html HTTP/1.1" 200 28 "-" …
-"curl/7.35.0" localhost 127.0.0.1 443 proxy-server backend-port-8000 + "-" VmkQtn8AAQEAAH@M3zAAAAAN …
+"Lcurl/7.35.0" localhost 127.0.0.1 443 proxy-server backend-port-8000 + "-" VmkQtn8AAQEAAH@M3zAAAAAN …
 TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 538 1402 -% 7856 1216 3708 381 0 0
 127.0.0.1 - - [2015-12-10 06:42:14.398995] "GET /service1/index.html HTTP/1.1" 200 28 "-" …
 "curl/7.35.0" localhost 127.0.0.1 443 proxy-server backend-port-8001 + "-" VmkQtn8AAQEAAH@M3zEAAAAN …
@@ -340,10 +343,10 @@ TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 121 202 -% 7035 1121 3752 354 0 0
 ```
 
 Neben dem erwähnten Keep-Alive ist der Request-Handler von Interesse. Der Request wurde also vom _proxy-server Handler_ bearbeitet. Auch bei der Route sehen wir Einträge, nämlich die oben definierten Werte _backend-port-8000_ und _backend-port-8001_. So ist es uns also möglich, im Access-Log des Servers festzustellen, welche Route ein Request genau genommen hat.
-
+L
 In einer späteren Anleitung werden wir sehen, dass sich der Proxy-Balancer auch in anderen Situationen anwenden lässt. Für den Moment begnügen wir uns aber mit dem Gesehenen und wenden uns den RewriteMaps zu. Bei RewriteMaps handelt es sich um eine Hilfskonstruktion, welche die Mächtigkeit von ModRewrite nochmals erhöht. Wenn wir es mit dem Proxy-Server kombinieren, dann erhöht sich die Flexibilität massiv.
 
-###Schritt 9: RewriteMap [proxy]
+### Schritt 9: RewriteMap [proxy]
 
 RewriteMaps kommen in verschiedenen Ausprägungen vor. Ihre Funktion besteht darin, bei jedem Aufruf einem Schlüssel-Paramter einen Wert zuzuordnen. Eine Hash-Tabelle ist ein einfaches Beispiel. Dann ist es aber auch möglich, externe Skripte als programmierbare RewriteMap zu konfigurieren. Die folgenden Typen von Maps sind möglich:
 
@@ -378,6 +381,8 @@ RewriteRule ^/service1/(.*)      http://${hashchar2backend:%1|localhost:8000}/se
 
     Options none
 
+    ProxySet enableruse=on
+
 </Proxy>
 
 <Proxy http://localhost:8001/service1>
@@ -385,6 +390,8 @@ RewriteRule ^/service1/(.*)      http://${hashchar2backend:%1|localhost:8000}/se
     Require all granted
 
     Options none
+
+    ProxySet enableruse=on
 
 </Proxy>
 ```
@@ -417,7 +424,7 @@ f	localhost:8001
 
 Wir unterscheiden zwei Backends und können hier die Verteilung beliebig vornehmen. Gemeinsam bedeutet dieses eher komplexe Rezept nun, dass wir aus der jeweiligen IP-Adresse einen Hash bilden und daraus das erste Zeichen benützen, um in der eben geschriebenen Hash-Tabelle auf eines von zwei Backends zu schliessen. Solange die IP-Adresse des Clients konstant bleibt (was in der Praxis durchaus nicht immer der Fall sein muss), wird das Resultat dieses Lookups immer dasselbe sein. Das heisst, der Client wird immer auf demselben Backend landen. Man nennt dies IP-Stickyness. Da es sich aber um eine Hash-Operation und nicht um einen simplen IP-Adressen-Lookup handelt, werden zwei Clients mit einer ähnlichen IP-Adresse einen gänzlich anderen Hash erhalten und nicht zwingend auf demselben Backend landen. Wir gewinnen damit eine einigermassen flache Verteilung der Requests und sind dennoch sicher, dass bestimmte Clients bis zu einem Wechsel der IP-Adresse immer auf demselben Backend landen werden.
 
-###Schritt 10: Weiterleiten von Informationen an die Backend-Systeme
+### Schritt 10: Weiterleiten von Informationen an die Backend-Systeme
 
 Der *Reverse Proxy*-Server schirmt den Applikationsserver vom direkten Zugriff durch den Client ab. Dies bedeutet aber auch, dass der Applikationsserver gewisse Informationen zum Client und seiner Verbindung zum *Reverse Proxy* nicht mehr sehen kann. Zur Kompensation dieses Verlustes setzt das Proxy-Modul drei HTTP Request Header-Zeilen, welche den *Reverse Proxy* beschreiben:
 
@@ -455,7 +462,7 @@ Connection: close
 
 Die verschiedenen erweiterten Header-Zeilen werden also nacheinander aufgeführt und wo vorhanden mit Werten gefüllt.
 
-###Schritt 11 (Bonus): Die Konfiguration des kompletten Reverse Proxy-Servers
+### Schritt 11 (Bonus): Die Konfiguration des kompletten Reverse Proxy-Servers
 
 Mit dieser kleinen Erweiterung kommen wir zum Abschluss dieser Anleitung und auch zum Ende des Basis-Blockes der verschiedenen Anleitungen. Wir haben in mehreren Lektionen den Aufbau eines Apache Webservers von der Kompilierung über die Grundkonfiguration, das Tuning von ModSecurity bis zur Konfiguration eine Reverse Proxies gesehen und so einen vertieften Einblick in die Funktionsweise des Servers und seiner wichtigsten Module erhalten.
 
@@ -485,7 +492,6 @@ LoadModule        unixd_module            modules/mod_unixd.so
 LoadModule        log_config_module       modules/mod_log_config.so
 LoadModule        logio_module            modules/mod_logio.so
 LoadModule        rewrite_module          modules/mod_rewrite.so
-LoadModule        headers_module          modules/mod_headers.so
 
 LoadModule        authn_core_module       modules/mod_authn_core.so
 LoadModule        authz_core_module       modules/mod_authz_core.so
@@ -505,9 +511,11 @@ LoadModule        slotmem_shm_module      modules/mod_slotmem_shm.so
 
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
 LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \
-\"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" \
-%{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% %D %{ModSecTimeIn}e \
-%{ApplicationTime}e %{ModSecTimeOut}e %{ModSecAnomalyScoreIn}e %{ModSecAnomalyScoreOut}e" extended
+\"%{Referer}i\" \"%{User-Agent}i\" \"%{Content-Type}i\" %{remote}p %v %A %p %R \
+%{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" %{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x \
+%I %O %{ratio}n%% %D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e \
+%{ModSecAnomalyScoreInPLs}e %{ModSecAnomalyScoreOutPLs}e \
+%{ModSecAnomalyScoreIn}e %{ModSecAnomalyScoreOut}e" extended
 
 LogFormat "[%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] %{UNIQUE_ID}e %D \
 PerfModSecInbound: %{TX.perf_modsecinbound}M \
@@ -564,7 +572,7 @@ SecAuditLogType               Concurrent
 SecAuditLog                   /apache/logs/modsec_audit.log
 SecAuditLogStorageDir         /apache/logs/audit/
 
-SecDefaultAction              "phase:1,pass,log,tag:'Local Lab Service'"
+SecDefaultAction              "phase:2,pass,log,tag:'Local Lab Service'"
 
 
 # == ModSec Rule ID Namespace Definition
@@ -593,12 +601,15 @@ SecAction "id:90004,phase:5,nolog,pass,setvar:TX.ModSecTimestamp5start=%{DURATIO
 SecRule REQUEST_HEADERS:Content-Type "(?:application(?:/soap\+|/)|text/)xml" \
   "id:200000,phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=XML"
 
+SecRule REQUEST_HEADERS:Content-Type "application/json" \
+  "id:200001,phase:1,t:none,t:lowercase,pass,nolog,ctl:requestBodyProcessor=JSON"
+
 SecRule REQBODY_ERROR "!@eq 0" \
-  "id:200001,phase:2,t:none,deny,status:400,log,msg:'Failed to parse request body.',\
+  "id:200002,phase:2,t:none,deny,status:400,log,msg:'Failed to parse request body.',\
   logdata:'%{reqbody_error_msg}',severity:2"
 
 SecRule MULTIPART_STRICT_ERROR "!@eq 0" \
-"id:200002,phase:2,t:none,log,deny,status:403, \
+"id:200003,phase:2,t:none,log,deny,status:403, \
 msg:'Multipart request body failed strict validation: \
 PE %{REQBODY_PROCESSOR_ERROR}, \
 BQ %{MULTIPART_BOUNDARY_QUOTED}, \
@@ -666,6 +677,8 @@ SecAction "id:90100,phase:5,pass,nolog,\
   setenv:ModSecTimeIn=%{TX.perf_modsecinbound},\
   setenv:ApplicationTime=%{TX.perf_application},\
   setenv:ModSecTimeOut=%{TX.perf_modsecoutbound},\
+  setenv:ModSecAnomalyScoreInPLs=%{tx.anomaly_score_pl1}-%{tx.anomaly_score_pl2}-%{tx.anomaly_score_pl3}-%{tx.anomaly_score_pl4},\
+  setenv:ModSecAnomalyScoreOutPLs=%{tx.outbound_anomaly_score_pl1}-%{tx.outbound_anomaly_score_pl2}-%{tx.outbound_anomaly_score_pl3}-%{tx.outbound_anomaly_score_pl4},\
   setenv:ModSecAnomalyScoreIn=%{TX.anomaly_score},\
   setenv:ModSecAnomalyScoreOut=%{TX.outbound_anomaly_score}"
 
@@ -736,6 +749,8 @@ DocumentRoot            /apache/htdocs
 
         Options none
 
+        ProxySet enableruse=on
+
     </Proxy>
 
     <Directory /apache/htdocs>
@@ -749,7 +764,7 @@ DocumentRoot            /apache/htdocs
 </VirtualHost>
 ```
 
-###Verweise
+### Verweise
 
 * Apache mod_proxy [https://httpd.apache.org/docs/2.4/mod/mod_proxy.html](https://httpd.apache.org/docs/2.4/mod/mod_proxy.html)
 * Apache mod_rewrite [https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html](https://httpd.apache.org/docs/2.4/mod/mod_rewrite.html)

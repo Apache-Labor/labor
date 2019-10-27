@@ -1,10 +1,10 @@
-##Apache und ModSecurity Logfiles visualisieren
+## Apache und ModSecurity Logfiles visualisieren
 
-###Was machen wir?
+### Was machen wir?
 
 Wir werten Logfiles visuell aus.
 
-###Warum tun wir das?
+### Warum tun wir das?
 
 In den vorangegangenen Lektionen haben wir das Apache Logformat angepasst und verschiedene statistische Auswertungen durchgeführt. Wir haben es bis anhin aber unterlassen, die gewonnenen Zahlen grafisch darzustellen. Tatsächlich bietet aber die Visualisierung von Daten eine grosse Hilfe beim Erkennen von Problemen. Namentlich Zeitreihen sind sehr aufschlussreich und auch Performance-Probleme lassen sich visuell viel besser quantifizieren und isolieren. Daneben bietet aber auch die graphische Darstellung von False-Positives in der Menge der ModSecurity Alarme interessante Aufschlüsse.
 
@@ -12,7 +12,7 @@ Der Wert von Visualisierung liegt auf der Hand und tatsächlich sind Graphen mit
 
 Zu diesem Zweck bedienen wir uns einem wenig bekannten Feature von `Gnuplot`. 
 
-###Voraussetzungen
+### Voraussetzungen
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/)
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/)
@@ -22,7 +22,7 @@ Zu diesem Zweck bedienen wir uns einem wenig bekannten Feature von `Gnuplot`.
 * Ein Apache Webserver mit einer Core Rules Installation wie in [Anleitung 7 (Core Rules einbinden)](http://www.netnea.com/cms/modsecurity-core-rules-einbinden/)
 * Das `gnuplot` Paket; so wie in der `Ubuntu` Distribution vorhandenen.
 
-###Schritt 1 : Graphische Darstellung von Zeitreihen in der Shell
+### Schritt 1 : Graphische Darstellung von Zeitreihen in der Shell
 
 Das Aufkommen von Einträgen in Logfiles folgt einem zeitlichen Verlauf. Tatsächlich ist es aber relativ schwierig diesem zeitlichen Verlauf im Textfile selbst zu folgen. Eine Visualisierung des Logfiles schafft Abhilfe. Dashboards wurden schon erwähnt und verschiedene kommerzielle Produkte und Open Source Projekte haben sich in den letzten Jahren etabliert. Diese Werkzeuge sind sehr sinnvoll. Oft sind sie aber nicht einfach zugänglich oder die Logdaten müssen erst importiert, und zum Teil auch konvertiert und indexiert werden. Eine grosse Lücke ist deshalb die Darstellung von Graphen in der Shell. Tatsächlich beherrscht das graphische Werkzeug `gnuplot` auch ASCII und kann komplett von der Kommandozeile aus gesteuert werden.
 
@@ -107,7 +107,7 @@ lediglich die Zeilennummer des Wertes auf der Y-Achse.
 Da wir bei der Datenbasis ja Lücken im Datenset haben, können wir innerhalb des Graphen von der Zeilenzahl und mithin von der X-Achse nicht mehr
 auf den Zeitpunkt eines Wertes zurückschliessen. Zunächst müssen wir diese Lücken schliessen, dann schauen wir uns das X-Achsen Problem genauer an.
 
-###Schritt 2 : Füllen der Lücken in der Timeline
+### Schritt 2 : Füllen der Lücken in der Timeline
 
 Das Problem mit den Lücken ist, dass wir im Logfile in machen Stunden keinen einzigen Request haben. Das Logfile stammt einfach von einem Server mit relativ wenig Verkehr. Aber auch auf einem Server mit deutlich mehr Verkehr führt das Filtern des Logfiles nach einem Fehler dazu, dass Lücken in der Timeline auftauchen. Wir müssen dieses also grundsätzlich schliessen. Bis dato haben wir das Datum und die Zeit aus dem Logfile gezogen. Dieser Ansatz erweist sich nun als unzulänglich: 
 Anstatt dass wir die Datums- und Stundenfolge aus dem Logfile ableiten bauen wir sie neu selbst auf und suchen zu jeder Datums-Stunden-Kombination die Anzahl der Anfragen im Logfile. Das repetitive `grep` auf demselben Logfile ist dabei etwas ineffizient, aber für die vorliegende Grösse des Logfiles durchaus tauglich. Für grössere Files müsste man den Ansatz optimieren.
@@ -195,7 +195,7 @@ $> for DAY in {20..29}; do for HOUR in {00..23}; do echo "2015-05-$DAY $HOUR"; d
 Nun erscheint eine gewisse Regelmässigkeit, denn je 24 Werte machen einen ganzen Tag aus. Mit diesem Wissen sehen wir den Tagesrhythmus, können Samstag und Sonntag vermuten und sehen eventuell sogar eine gewisse Mittagspause angedeutet.
 
 
-###Schritt 3 : X-Axis Label
+### Schritt 3 : X-Axis Label
 
 Die Lücken sind geschlossen. Kommen wir zur korrekten Beschriftung der X-Achse. `Arbigraph` ist in der Lage Beschriftungen aus dem Input herauszulesen. Es identifiziert die Beschriftungen selbst; zu diesem Zweck müssen sie aber mittels einem Tabulator von den eigentlichen Daten abgetrennt werden. `Echo` übernimmt das für uns, wenn wir das `Escape-Flag` setzen.
 
@@ -392,7 +392,7 @@ Damit haben wir den gewünschten Graphen. Ein Detail sind die vielen Kreuze oben
 
 
 
-###Schritt 4 : Weitere Label
+### Schritt 4 : Weitere Label
 
 `Arbigraph` bietet einige Einflussmöglichkeiten auf den Graphen. Schauen wir uns die Optionen mal an:
 
@@ -548,7 +548,7 @@ $> cat gnuplot-script.gp | gnuplot
 Auf dieser Basis kann man nun - die entsprechenden Gnuplot-Kenntnisse vorausgesetzt - weiterarbeiten und eine "reportfähige" Grafik erzeugen.
 
 
-###Schritt 5 : Graphische Darstellung einer Werte-Verteilung in der Shell
+### Schritt 5 : Graphische Darstellung einer Werte-Verteilung in der Shell
 
 Neben Zeitreihen vermag unser Skript `arbigraph` im Verbund mit `gnuplot` aber auch Verteilungen von Werten gut visuell zu übersetzen. Schauen wir uns zum Beispiel die im Wert Duration dokumentierte Dauer der verschiedenen Requests an.
 
@@ -763,7 +763,7 @@ $> paste  /tmp/tmp.get /tmp/tmp.post | awk '{ print $1 "\t"  $2 " " $4 }' | \
 Wir arbeiten nun also mit zwei separaten Datenfiles, welche wir mittels dem Unix-Commando `paste` separieren. Danach benützen wir `awk` und den Tabulator für die Beschriftungen in die Daten hineinzukriegen und die in der 3. Spalte der Daten wiederholte Beschriftung zu entfernen. Die Darstellung von zwei Werten funktioniert nicht mehr im Block-Modus, weshalb wir erneut zu Linien greifen.  Die beiden Linien sind auf unterschiedlichen Skalen
 übereinander gezeichnet. Damit lassen sie sich sehr gut vergleichen. Wenig überraschend dauern POST Anfragen etwas länger. Überraschend ist vielmehr, dass sie so wenig länger dauern als die GET Requests. 
 
-###Bonus : Ausgabe in verschiedenen Breiten und als PNG
+### Bonus : Ausgabe in verschiedenen Breiten und als PNG
 
 `Arbigraph` passt sich bei der Ausgabe der Breite des Terminals an. Wenn es schmaler sein soll, dann lässt sich dies mittels der Option `--width` kontrollieren. Auch die Höhe lässt sich mittels `--height` einstellen. Auch eine Ausgabe in ein PNG Bild ist im Skript bereits enthalten. Die Ausgabe ist dabei noch recht rudimentär, lässt sich aber vielleicht bereits in einem Bericht einsetzen. 
 
@@ -778,7 +778,7 @@ Plot written to file /tmp/duration-get-vs-post.png.
 ![Graph: Gnuplot mit  PNG Terminal](https://www.netnea.com/files/duration-get-vs-post.png)
 
 
-###Verweise
+### Verweise
 
 * [gnuplot](http://www.gnuplot.info)
 * [arbigraph](https://www.netnea.com/files/arbigraph)

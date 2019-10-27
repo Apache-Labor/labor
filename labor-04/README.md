@@ -1,23 +1,23 @@
-##Das Zugriffslog Ausbauen und Auswerten
+## Das Zugriffslog Ausbauen und Auswerten
 
-###Was machen wir?
+### Was machen wir?
 
 Wir definieren ein stark erweitertes Logformat, um den Verkehr besser überwachen zu können.
 
 
-###Warum tun wir das?
+### Warum tun wir das?
 
 In der gebräuchlichen Konfiguration des Apache Webservers wird ein Logformat eingesetzt, das nur die nötigsten Informationen zu den Zugriffen der verschiedenen Clients mitschreibt. In der Praxis werden oft zusätzliche Informationen benötigt, die sich leicht im Zugriffslog (Accesslog) des Servers notieren lassen. 
 
 
-###Voraussetzungen
+### Voraussetzungen
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
 * Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren/)
 
 
-###Schritt 1: Logformat Common verstehen
+### Schritt 1: Logformat Common verstehen
 
 Das Logformat _Common_ ist ein sehr simples Format, das nurmehr sehr selten eingesetzt wird. Es hat den Vorteil, sehr platzsparend zu sein und kaum überflüssige Informationen zu schreiben.
 
@@ -86,10 +86,10 @@ Ein typisches Beispiel wäre ein Aufruf, der auf dem Server zu einem Fehler füh
 %<s %>s
 ```
 
-_%b_ ist das letzte Element des Logformats _common_. Es gibt die Zahl der im Content-Length Response Headers angekündigten Bytes wieder. Bei einer Anfrage an _http://www.example.com/index.html_ entspricht dieser Wert der Grösse der Datei _index.html_. Die ebenfalls übertragenen _Response-Header_ werden nicht mitgezählt. Dazu kommt, dass diese Zahl nur eine Ankündigung wiedergibt und keine Garantie darstellt, dass diese Daten auch wirklich übertragen wurden.
+_%b_ ist das letzte Element des Logformats _common_. Es gibt die Zahl der im Content-Length Response Headers angekündigten Bytes wieder. Bei einer Anfrage an _http://www.example.com/index.html_ entspricht dieser Wert der Grösse der Datei _index.html_. Die ebenfalls übertragenen _Response-Header_ werden nicht mitgezählt. Dazu kommt, dass diese Zahl nur eine Berechnung der geplanten Übertragung darstellt und keine Garantie darstellt, dass diese Daten auch wirklich übertragen wurden.
 
 
-###Schritt 2: Logformat Combined verstehen
+### Schritt 2: Logformat Combined verstehen
 
 Das am weitesten verbreitete Logformat _combined_ baut auf dem Logformat _common_ auf und erweitert es um zwei Elemente.
 
@@ -104,7 +104,7 @@ Das Element _"%{Referer}i"_ bezeichnet den Referrer. Er wird in Anführungszeich
 _"%{User-Agent}i"_ schliesslich meint den sogenannten User-Agent des Clients, der wiederum in Anführungszeichen gesetzt wird. Auch dies ist wieder ein Wert, der durch den Client kontrolliert wird und auf den wir uns nicht zu sehr verlassen sollten. Mit dem User-Agent ist die Browser-Software des Clients gemeint; normalerweise angereichert um die Version, die Rendering Engine, verschiedene Kompatibilitätsangaben mit anderen Browsern und diverse installierte Plugins. Das führt zu sehr langen User-Agent-Einträgen und kann im Einzelfall so viele Informationen enthalten, dass ein individueller Client sich darüber eindeutig identifizieren lässt, weil er eine besondere Kombination von verschiedenen Zusatzmodulen in bestimmten Versionen besitzt.
 
 
-###Schritt 3: Module Logio und Unique-ID aktivieren
+### Schritt 3: Module Logio und Unique-ID aktivieren
 
 Mit dem _combined_ Format haben wir das am weitesten verbreitete Apache Logformat kennengelernt. Um die alltägliche Arbeit zu erleichtern, reichen die dargestellten Werte aber nicht. Weitere Informationen werden deshalb mit Vorteil im Logfile mitgeschrieben.
 
@@ -122,7 +122,7 @@ LoadModule              unique_id_module        modules/mod_unique_id.so
 Wir benötigen das erste der beiden Module um zwei Werte mitschreiben zu können. _IO-In_ und _IO-Out_. Also die totale Zahl der Bytes des HTTP-Requests inklusive Header-Zeilen und die totale Zahl der Bytes in der Antwort, wiederum inklusive Header-Zeilen. Das Unique-ID Modul berechnet für jeden Request eine eindeutige Kennzeichnung. Wir kommen später nochmals darauf zurück.
 
 
-###Schritt 4: Neues Logformat Extended konfigurieren
+### Schritt 4: Neues Logformat Extended konfigurieren
 
 Damit sind wir bereit für ein neues, sehr umfassendes Logformat. Das Format umfasst auch Werte, die der Server mit den bis hierhin definierten Modulen noch nicht kennt. Er wird sie leer lassen, respektive durch einen Strich _"-"_ darstellen. Nur mit dem eben aktivierten Modul _Logio_ klappt das nicht. Wenn wir dessen Werte ansprechen, ohne dass sie vorhanden wären, stürzt der Server ab.
 
@@ -135,9 +135,10 @@ Wir definieren das Logformat wie folgt:
 ```bash
 
 LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \
-\"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" \
-%{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% \
-%D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e \
+\"%{Referer}i\" \"%{User-Agent}i\" \"%{Content-Type}i\" %{remote}p %v %A %p %R \
+%{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" %{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x \
+%I %O %{ratio}n%% %D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e \
+%{ModSecAnomalyScoreInPLs}e %{ModSecAnomalyScoreOutPLs}e \
 %{ModSecAnomalyScoreIn}e %{ModSecAnomalyScoreOut}e" extended
 
 ...
@@ -147,15 +148,19 @@ CustomLog		logs/access.log extended
 ```
 
 
-###Schritt 5: Neues Logformat Extended verstehen
+### Schritt 5: Neues Logformat Extended verstehen
 
-Das neue Logformat erweitert die Zugriffsprotokolle um 19 Werte. Das sieht auf den ersten Blick übertrieben aus, tatsächlich hat das aber alles seine Berechtigung und im täglichen Einsatz ist man um jeden dieser Werte froh, gerade wenn man einem Fehler auf der Spur ist.
+Das neue Logformat erweitert die Zugriffsprotokolle um 23 Werte. Das sieht auf den ersten Blick übertrieben aus, tatsächlich hat das aber alles seine Berechtigung und im täglichen Einsatz ist man um jeden dieser Werte froh, gerade wenn man einem Fehler auf der Spur ist.
 
 Schauen wir uns die Werte nacheinander an.
 
 In der Erklärung zum Log-Format _common_ haben wir gesehen, dass der zweite Wert, der Eintrag _logname_ gleich nach der IP-Adresse des Clients ein unbenutztes Artefakt darstellt. Wir ersetzen diese Position im Logfile mit dem Country-Code der IP-Adresse des Clients. Das macht Sinn, weil dieser Country-Code eine IP-Adresse stark charakterisiert. (In vielen Fällen macht es einen grossen Unterschied, ob die Anfrage aus dem Inland oder aus der Südsee stammt). Praktisch ist es nun, sie gleich neben die IP-Adresse zu stellen und der nichtssagenden Nummer ein Mehr an Information zuzugesellen.
 
 Danach das bereits in der Anleitung 2 definierte Zeitformat, das sich am Zeitformat des Error-Logs orientiert und nun mit diesem kongruent ist. Wir bilden die Mikrosekunden auch ab und erhalten so sehr präzise Timing-Informationen. Die nächsten Werte sind bekannt.
+
+_\"%Content-Type}i\"_ beschreibt den Content-Type der Anfrage. Dieser Wert ist normalerweise leer. Anfragen mit der HTTP-Methode POST, die zum Senden von Formularen oder zum Hochladen von Daten verwendet werden, verwenden diesen Header aber. Zu einem späteren Zeitpunkt planen wir, ModSecurity in unseren Service aufzunehmen. Dabei werden Informationen über die Art des Request Bodies sehr wichtig, da sich das Verhalten der ModSecurity-Engine je nach Header stark ändert.
+
+_%{remote}p_ ist der nächste Zusatz. Es steht für die Portnummer des Clients. Wann immer ein Client also eine TCP-Verbindung zu einer Serveradresse und einem Port öffnet, verwendet er einen seiner eigenen Ports. Informationen über diesen Port können uns sagen, wie viele Verbindungen ein Client zu unserem Server öffnet. Und in einer Situation, in der sich mehrere Clients über dieselbe IP-Adresse verbinden (dank Network Address Translation NAT), kann es helfen, die Clients voneinander zu unterscheiden.
 
 _%v_ bezeichnet den kanonischen Servernamen, der den Request bearbeitet hat. Falls wir den Server mittels eines Alias ansprechen, wird hier nicht dieses Alias geschrieben, sondern der eigentliche Name des Servers. In einem Virtual-Host Setup sind die Servernamen der Virtual-Hosts auch kanonisch. Sie werden hier also auftauchen und wir können sie in der Logdatei unterscheiden.
 
@@ -186,7 +191,7 @@ Wir fahren weiter mit Performance-Daten. Wir werden in Zukunft die Stoppuhr anse
 Und zu guter Letzt noch zwei weitere Werte, die uns die _OWASP ModSecurity Core Rule Set_ in einer späteren Anleitung zur Verfügung stellen werden, nämlich die Anomalie-Punktezahl der Anfrage und der Antwort. Was es damit auf sich hat, ist für den Moment noch unwichtig. Wichtig ist, dass wir mit diesem stark erweiterten Logformat eine Basis gelegt haben, auf die wir zukünftig aufbauen können, ohne das Logformat nochmals anpassen zu müssen.
 
 
-###Schritt 6: Weitere Request- und Response-Header in zusätzlichem Logfile mitschreiben
+### Schritt 6: Weitere Request- und Response-Header in zusätzlichem Logfile mitschreiben
 
 Im Arbeitsalltag ist man oft nach bestimmten Requests auf der Suche oder man ist sich nicht sicher, welche Requests einen Fehler verursachen. Da erweist es sich oft als hilfreich, wenn man bestimmte zusätzliche Werte mit ins Logfile schreiben kann. Beliebige Request- und Response-Header sowie Umgebungs-Variabeln lassen sich sehr leicht mitschreiben. Unser Logformat macht davon rege Gebrauch.
 
@@ -215,7 +220,7 @@ $> cat logs/access-debug.log
 So lassen sich Logfiles in Apache also sehr frei definieren. Interessanter ist aber die Auswertung der Daten. Dazu benötigen wir erst einige Daten.
 
 
-###Schritt 7: Ausprobieren und Logdatei füllen
+### Schritt 7: Ausprobieren und Logdatei füllen
 
 Konfigurieren wir das erweiterte Zugriffslog im Format _extended_ wie oben beschrieben und beschäftigen wir den Server etwas!
 
@@ -235,68 +240,64 @@ Aneinandergehängt erhalten wir eine Menge Daten. (Falls es zu einer Fehlermeldu
 Die Bearbeitung dieser Zeile dürfte einen Moment dauern. Als Resultat sehen wir folgendes im Logfile:
 
 ```bash
-127.0.0.1 - - [2015-10-03 05:54:09.090117] "GET /index.html?n=1a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 534 1485 -% 446 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.133625] "GET /index.html?n=2a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 534 1485 -% 436 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.179561] "GET /index.html?n=3a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 534 1485 -% 411 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.223015] "GET /index.html?n=4a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 534 1485 -% 413 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.266520] "GET /index.html?n=5a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 534 1485 -% 413 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.310221] "GET /index.html?n=6a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 534 1485 -% 413 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.353847] "GET /index.html?n=7a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 534 1485 -% 421 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.397234] "GET /index.html?n=8a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 534 1485 -% 408 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.440755] "GET /index.html?n=9a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 534 1485 -% 406 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.484324] "GET /index.html?n=10a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 535 1485 -% 413 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.527460] "GET /index.html?n=11a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 535 1485 -% 411 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.570871] "GET /index.html?n=12a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 535 1485 -% 412 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.614222] "GET /index.html?n=13a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 535 1485 -% 413 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.657637] "GET /index.html?n=14a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 535 1485 -% 445 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:09.701005] "GET /index.html?n=15a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 535 1485 -% 412 - - - - -
+127.0.0.1 - - [2019-01-31 05:59:35.594159] "GET /index.html?n=1a HTTP/1.1" 200 45 "-" "curl/7.58.0" … 
+"-" 53252 localhost 127.0.0.1 443 - - + "-" XFKAt7evwRxnTvzP--AjEAAAAAI TLSv1.2 … 
+ECDHE-RSA-AES256-GCM-SHA384 422 1463 -% 97 - - - - - - -
+127.0.0.1 - - [2019-01-31 05:59:35.612331] "GET /index.html?n=2a HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"-" 53254 localhost 127.0.0.1 443 - - + "-" XFKAt7evwRxnTvzP--AjEQAAAAg TLSv1.2 …
+ECDHE-RSA-AES256-GCM-SHA384 422 1463 -% 123 - - - - - - -
+127.0.0.1 - - [2019-01-31 05:59:35.634044] "GET /index.html?n=3a HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"-" 53256 localhost 127.0.0.1 443 - - + "-" XFKAt7evwRxnTvzP--AjEgAAAAc TLSv1.2 …
+ECDHE-RSA-AES256-GCM-SHA384 422 1463 -% 136 - - - - - - -
+127.0.0.1 - - [2019-01-31 05:59:35.652333] "GET /index.html?n=4a HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"-" 53258 localhost 127.0.0.1 443 - - + "-" XFKAt7evwRxnTvzP--AjEwAAAAs TLSv1.2 …
+ECDHE-RSA-AES256-GCM-SHA384 422 1463 -% 100 - - - - - - -
+127.0.0.1 - - [2019-01-31 05:59:35.669342] "GET /index.html?n=5a HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"-" 53260 localhost 127.0.0.1 443 - - + "-" XFKAt7evwRxnTvzP--AjFAAAAA4 TLSv1.2 …
+ECDHE-RSA-AES256-GCM-SHA384 422 1463 -% 101 - - - - - - -
+127.0.0.1 - - [2019-01-31 05:59:35.686449] "GET /index.html?n=6a HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"-" 53262 localhost 127.0.0.1 443 - - + "-" XFKAt7evwRxnTvzP--AjFQAAABA TLSv1.2 …
+ECDHE-RSA-AES256-GCM-SHA384 422 1463 -% 102 - - - - - - -
+127.0.0.1 - - [2019-01-31 05:59:35.703428] "GET /index.html?n=7a HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"-" 53264 localhost 127.0.0.1 443 - - + "-" XFKAt7evwRxnTvzP--AjFgAAABQ TLSv1.2 …
+ECDHE-RSA-AES256-GCM-SHA384 422 1463 -% 101 - - - - - - -
 ...
-127.0.0.1 - - [2015-10-03 05:54:13.520931] "GET /index.html?n=98a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 535 1485 -% 431 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:13.568819] "GET /index.html?n=99a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 535 1485 -% 453 - - - - -
-127.0.0.1 - - [2015-10-03 05:54:13.613138] "GET /index.html?n=100a HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 536 1485 -% 470 - - - - -
-127.0.0.1 - - [2015-10-03 05:55:08.192381] "POST /index.html?n=1b HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 648 1485 -% 431 - - - - -
-127.0.0.1 - - [2015-10-03 05:55:08.244061] "POST /index.html?n=2b HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 685 1485 -% 418 - - - - -
-127.0.0.1 - - [2015-10-03 05:55:08.294934] "POST /index.html?n=3b HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 723 1485 -% 428 - - - - -
-127.0.0.1 - - [2015-10-03 05:55:08.345959] "POST /index.html?n=4b HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 760 1485 -% 466 - - - - -
-127.0.0.1 - - [2015-10-03 05:55:08.396783] "POST /index.html?n=5b HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 797 1485 -% 418 - - - - -
-127.0.0.1 - - [2015-10-03 05:55:08.447396] "POST /index.html?n=6b HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 834 1485 -% 423 - - - - -
+127.0.0.1 - - [2019-01-31 05:59:48.060573] "POST /index.html?n=1b HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"application/x-www-form-urlencoded" 53452 localhost 127.0.0.1 443 - - + "-" XFKAxLevwRxnTvzP--AjdAAAAAE …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 536 1463 -% 97 - - - - - - -
+127.0.0.1 - - [2019-01-31 05:59:48.080029] "POST /index.html?n=2b HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"application/x-www-form-urlencoded" 53454 localhost 127.0.0.1 443 - - + "-" XFKAxLevwRxnTvzP--AjdQAAAAU …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 573 1463 -% 113 - - - - - - -
+127.0.0.1 - - [2019-01-31 05:59:48.100103] "POST /index.html?n=3b HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"application/x-www-form-urlencoded" 53456 localhost 127.0.0.1 443 - - + "-" XFKAxLevwRxnTvzP--AjdgAAAAQ …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 611 1463 -% 105 - - - - - - -
+127.0.0.1 - - [2019-01-31 05:59:48.119907] "POST /index.html?n=4b HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"application/x-www-form-urlencoded" 53458 localhost 127.0.0.1 443 - - + "-" XFKAxLevwRxnTvzP--AjdwAAAAo …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 648 1463 -% 93 - - - - - - -
+127.0.0.1 - - [2019-01-31 05:59:48.137620] "POST /index.html?n=5b HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"application/x-www-form-urlencoded" 53460 localhost 127.0.0.1 443 - - + "-" XFKAxLevwRxnTvzP--AjeAAAAA0 …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 685 1463 -% 98 - - - - - - -
+127.0.0.1 - - [2019-01-31 05:59:48.155453] "POST /index.html?n=6b HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"application/x-www-form-urlencoded" 53462 localhost 127.0.0.1 443 - - + "-" XFKAxLevwRxnTvzP--AjeQAAABE …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 722 1463 -% 97 - - - - - - -
+127.0.0.1 - - [2019-01-31 05:59:48.174826] "POST /index.html?n=7b HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"application/x-www-form-urlencoded" 53464 localhost 127.0.0.1 443 - - + "-" XFKAxLevwRxnTvzP--AjegAAABM …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 759 1463 -% 95 - - - - - - -
 ...
-127.0.0.1 - - [2015-10-03 05:55:13.400345] "POST /index.html?n=99b HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 4328 1539 -% 878 - - - - -
-127.0.0.1 - - [2015-10-03 05:55:13.453047] "POST /index.html?n=100b HTTP/1.1" 200 45 "-" "curl/7.35.0" …
- www.example.com 127.0.0.1 443 - - "-" - TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 4366 1539 -% 910 - - - - -
+127.0.0.1 - - [2019-01-31 05:59:50.533651] "POST /index.html?n=99b HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"application/x-www-form-urlencoded" 53648 localhost 127.0.0.1 443 - - + "-" XFKAxrevwRxnTvzP--Aj1gAAABM …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 4216 1517 -% 1740 - - - - - - -
+127.0.0.1 - - [2019-01-31 05:59:50.555242] "POST /index.html?n=100b HTTP/1.1" 200 45 "-" "curl/7.58.0" …
+"application/x-www-form-urlencoded" 53650 localhost 127.0.0.1 443 - - + "-" XFKAxrevwRxnTvzP--Aj1wAAABc …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 4254 1517 -% 264 - - - - - - -
 ```
 
 Wie oben vorhergesagt sind noch sehr viele Werte leer oder durch _-_ gekennzeichnet. Aber wir sehen, dass wir den Server _www.example.com_ auf Port 443 angesprochen haben und dass die Grösse des Requests mit jedem _POST_-Request zunahm, wobei sie zuletzt beinahe 4K, also 4096 Bytes, betrug. Mit diesem einfachen Logfile lassen sich bereits einfache Auswertungen durchführen.
 
 
-###Schritt 8: Einfache Auswertungen mit dem Logformat Extended durchführen
+### Schritt 8: Einfache Auswertungen mit dem Logformat Extended durchführen
 
-Wer das Beispiel-Logfile genau ansieht, wird erkennen, dass die Dauer der Requests nicht ganz sauber verteilt ist. Es gibt zwei Ausreisser. Wir können das wie folgt identifizieren:
+Wer das Beispiel-Logfile genau ansieht, wird erkennen, dass die Dauer der Requests nicht ganz sauber verteilt ist. Es gibt einen Ausreisser. Wir können ihn wie folgt identifizieren:
 
 ```bash
 $> egrep -o "\% [0-9]+ " logs/access.log | cut -b3- | tr -d " " | sort -n
@@ -307,18 +308,16 @@ Ein Detail, das uns zukünftige Fehler verhindern hilft, ist das Leerzeichen nac
 
 ```bash
 ...
-925
-932
-935
-939
-958
-1048
-1093
-1393
-3937
+354
+355
+357
+363
+363
+363
+1740
 ```
 
-In unserem Beispiel stechen vier Werte mit einer Dauer von über 1000 Mikrosekunden, also mehr als einer Millisekunde heraus, drei davon sind noch im Rahmen, aber einer ist mit 4 Millisekunden klar ein statistischer Ausreisser und steht den anderen Werten gegenüber klar im Abseits.
+In unserem Beispiel wurden fast alle Anfragen sehr schnell bearbeitet. Dennoch gibt es einen einzigen mit einer Dauer von über 1.000 Mikrosekunden oder mehr als einer Millisekunde. Dies ist immer noch in angemessenem Rahmen, aber interessant zu sehen, wie sich diese Anfrage als statistischer Ausreißer von den anderen Werten abhebt.
 
 Wir wissen, dass wir je 100 GET und 100 POST Requests gestellt haben. Aber zählen wir sie übungshalber dennoch einmal aus:
 
@@ -348,7 +347,7 @@ Hier filtern wir die GET und die POST Requests anhand der Methode, die auf ein A
 Soweit zu diesen ersten Fingerübungen. Auf der Basis dieses selbst abgefüllten Logfiles ist das leider noch nicht sehr spanned. Nehmen wir uns also ein richtiges Logfile von einem Produktionsserver vor.
 
 
-###Schritt 9: Tiefer gehende Auswertungen auf einem Beispiel-Logfile
+### Schritt 9: Tiefer gehende Auswertungen auf einem Beispiel-Logfile
 
 Spannender werden die Auswertungen mit einem richtigen Logfile von einem produktiven Server. Hier ist eines, mit 10'000 Anfragen:
 
@@ -356,89 +355,103 @@ Spannender werden die Auswertungen mit einem richtigen Logfile von einem produkt
 
 ```bash
 $> head labor-04-example-access.log
-75.249.65.145 US - [2015-09-02 10:42:51.003372] "GET /cms/tina-access-editor-for-download/ … 
-HTTP/1.1" 200 7113 "-" "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" … 
-www.example.com 124.165.3.7 443 redirect-handler - + "-" Vea2i8CoAwcAADevXAgAAAAB TLSv1.2 … 
-ECDHE-RSA-AES128-GCM-SHA256 701 12118 -% 88871 803 0 0 0 0
-71.180.228.107 US - [2015-09-02 11:14:02.800605] "GET …
-/cms/application_3_applikationsserver_aufsetzen/?q=application_2_tina_minimal_konfigurieren …
-HTTP/1.1" 200 12962 "-" "Mozilla/5.0 (compatible; Yahoo! Slurp; …
-http://help.yahoo.com/help/us/ysearch/slurp)" www.example.com 124.165.3.7 443 redirect-handler … 
-- + "-" Vea92sCoAwcAADRophUAAAAX TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 700 17946 -% 77038 1669 0 0 0 0
-5.45.105.71 DE - [2015-09-02 11:32:39.371240] "GET /cms/feed/ HTTP/1.1" 200 35422 "-" "Tiny Tiny … 
-RSS/1.15.3 (http://tt-rss.org/)" www.example.com 124.165.3.7 443 redirect-handler - + "-" …
-VebCN8CoAwcAADRcb14AAAAE TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 671 40343 -% 144443 791 0 0 0 0
-155.80.44.115 IT - [2015-09-02 11:58:35.654011] "GET /robots.txt HTTP/1.0" 404 21023 "-" …
-"Mozilla/5.0 (compatible; MJ12bot/v1.4.5; http://www.majestic12.co.uk/bot.php?+)" …
-www.example.com 124.165.3.7 443 redirect-handler - - "-" VebIS8CoAwcAABx@Xo4AAAAJ …
-TLSv1 AES256-SHA 894 25257 -% 68856 836 0 0 0 0
-155.80.44.115 IT - [2015-09-02 11:58:37.486603] "GET /cms/2013/09/23/ HTTP/1.1" 200 22822 …
-"-" "Mozilla/5.0 (compatible; MJ12bot/v1.4.5; http://www.majestic12.co.uk/bot.php?+)" …
-www.example.com 124.165.3.7 443 redirect-handler - + "-" VebITcCoAwcAADRophsAAAAX TLSv1 …
-AES256-SHA 627 23702 -% 75007 805 0 0 0 0
-155.80.44.115 IT - [2015-09-02 11:58:39.253209] "GET …
-/cms/2013/09/23/convert-from-splashid-safe-to-keepass-password-safe/ HTTP/1.1" 200 6450 …
-"-" "Mozilla/5.0 (compatible; MJ12bot/v1.4.5; http://www.majestic12.co.uk/bot.php?+)" …
-www.example.com 124.165.3.7 443 redirect-handler - + "-" VebIT8CoAwcAADRophwAAAAX …
-TLSv1 AES256-SHA 485 6900 -% 79458 808 0 0 0 0
-155.80.44.115 IT - [2015-09-02 11:58:40.893992] …
-"GET /cms/2013/09/23/convert-from-splashid-safe-to-keepass-password-safe/feed/ …
-HTTP/1.1" 200 463 "-" "Mozilla/5.0 (compatible; MJ12bot/v1.4.5; …
-http://www.majestic12.co.uk/bot.php?+)" www.example.com 124.165.3.7 443 …
-redirect-handler - + "-" VebIUMCoAwcAADRoph0AAAAX TLSv1 AES256-SHA 485 991 -% …
-25378 798 0 0 0 0
-155.80.44.115 IT - [2015-09-02 11:58:43.558478] "GET /cms/2013/10/21/ HTTP/1.1" …
-200 6171 "-" "Mozilla/5.0 (compatible; MJ12bot/v1.4.5; …
-http://www.majestic12.co.uk/bot.php?+)" www.example.com 124.165.3.7 443 redirect-handler - …
-+ "-" VebIU8CoAwcAADRbdGkAAAAD TLSv1 AES256-SHA 611 6702 -% 78686 816 0 0 0 0
-155.80.44.115 IT - [2015-09-02 11:58:45.287565] "GET …
-/cms/2013/10/21/nftables-to-replace-iptables-firewall-facility-in-upcoming-linux-kernel/ …
-HTTP/1.1" 200 6492 "-" "Mozilla/5.0 (compatible; MJ12bot/v1.4.5; …
-http://www.majestic12.co.uk/bot.php?+)" www.example.com 124.165.3.7 443 redirect-handler …
-- + "-" VebIVcCoAwcAADRbdGoAAAAD TLSv1 AES256-SHA 501 6932 -% 82579 769 0 0 0 0
-155.80.44.115 IT - [2015-09-02 11:58:49.801640] "GET …
-/cms/2013/10/21/nftables-to-replace-iptables-firewall-facility-in-upcoming-linux-kernel/feed/ …
-HTTP/1.1" 200 475 "-" "Mozilla/5.0 (compatible; MJ12bot/v1.4.5;…
-http://www.majestic12.co.uk/bot.php?+)" www.example.com 124.165.3.7 443 redirect-handler - + …
-"-" VebIWcCoAwcAADRbdGsAAAAD TLSv1 AES256-SHA 501 1007 -% 23735 833 0 0 0 0
+192.31.242.0 US - [2019-01-21 23:51:44.365656] "GET …
+/cds/2016/10/16/using-ansible-to-fetch-information-from-ios-devices/ HTTP/1.1" 200 10273 …
+"https://www.google.com/" "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, …
+like Gecko) Chrome/71.0.3578.98 Safari/537.36" "-" 13258 www.example.com 192.168.3.7 443 …
+redirect-handler - + "ReqID--" XEZNAMCoAwcAAAxAiBgAAAAA TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 …
+776 14527 -% 360398 2128 0 0 0-0-0-0 0-0-0-0 0 0
+192.31.242.0 US - [2019-01-21 23:51:44.943942] "GET …
+/cds/snippets/themes/customizr/assets/shared/fonts/fa/css/fontawesome-all.min.css?ver=4.1.12 …
+HTTP/1.1" 200 7439 …
+"https://www.example.com/cds/2016/10/16/using-ansible-to-fetch-information-from-ios-devices/" …
+"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 …
+Safari/537.36" "-" 13258 www.example.com 192.168.3.7 443 - - + "ReqID--" XEZNAMCoAwcAAAxAiBkAAAAA …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 507 7950 -% 2509 1039 0 164 0-0-0-0 0-0-0-0 0 0
+192.31.242.0 US - [2019-01-21 23:51:44.947470] "GET …
+/cds/snippets/themes/customizr/inc/assets/css/tc_common.min.css?ver=4.1.12 HTTP/1.1" 200 28225 …
+"https://www.example.com/cds/2016/10/16/using-ansible-to-fetch-information-from-ios-devices/" …
+"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 …
+Safari/537.36" "-" 32554 www.example.com 192.168.3.7 443 - - + "ReqID--" XEZNAMCoAwcAAAxDkkUAAAAD …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 754 32406 -% 6714 1338 0 168 0-0-0-0 0-0-0-0 0 0
+212.147.59.0 CH - [2019-01-21 23:51:44.849966] "GET /cds/ HTTP/1.1" 200 31332 "-" "check_http/v2.1.4 …
+(nagios-plugins 2.1.4)" "-" 16291 www.example.com 192.168.3.7 443 application/x-httpd-php - - …
+"ReqID--" XEZNAMCoAwcAAAxEZFIAAAAE TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 586 35548 -% 144762 1180 0 …
+13771 0-0-0-0 0-0-0-0 0 0
+192.31.242.0 US - [2019-01-21 23:51:45.143819] "GET …
+/cds/snippets/themes/customizr-child/inc/assets/css/neagreen.min.css?ver=4.1.12 HTTP/1.1" 200 2458 …
+"https://www.example.com/cds/2016/10/16/using-ansible-to-fetch-information-from-ios-devices/" …
+"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 …
+Safari/537.36" "-" 13258 www.example.com 192.168.3.7 443 - - + "ReqID--" XEZNAcCoAwcAAAxAiBoAAAAA …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 494 2969 -% 1946 1070 0 141 0-0-0-0 0-0-0-0 0 0
+192.31.242.0 US - [2019-01-21 23:51:45.269615] "GET …
+/cds/snippets/themes/customizr-child/style.css?ver=4.1.12 HTTP/1.1" 200 483 …
+"https://www.example.com/cds/2016/10/16/using-ansible-to-fetch-information-from-ios-devices/" …
+"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 …
+Safari/537.36" "-" 22078 www.example.com 192.168.3.7 443 - - + "ReqID--" XEZNAcCoAwcAAAxBiDkAAAAB …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 737 4544 -% 4237 2221 0 241 0-0-0-0 0-0-0-0 0 0
+192.31.242.0 US - [2019-01-21 23:51:45.309680] "GET …
+/cds/snippets/themes/customizr/assets/front/js/libs/fancybox/jquery.fancybox-1.3.4.min.css?ver=4.9.8 …
+HTTP/1.1" 200 981 …
+"https://www.example.com/cds/2016/10/16/using-ansible-to-fetch-information-from-ios-devices/" …
+"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 …
+Safari/537.36" "-" 32554 www.example.com 192.168.3.7 443 - - + "ReqID--" XEZNAcCoAwcAAAxDkkYAAAAD …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 515 1461 -% 2830 1656 0 200 0-0-0-0 0-0-0-0 0 0
+192.31.242.0 US - [2019-01-21 23:51:45.467686] "GET …
+/cds/includes/js/jquery/jquery-migrate.min.js?ver=1.4.1 HTTP/1.1" 200 4014 …
+"https://www.example.com/cds/2016/10/16/using-ansible-to-fetch-information-from-ios-devices/" …
+"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 …
+Safari/537.36" "-" 35193 www.example.com 192.168.3.7 443 - - + "ReqID--" XEZNAcCoAwcAAAyCROcAAAAF …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 721 8120 -% 3238 1536 0 142 0-0-0-0 0-0-0-0 0 0
+192.31.242.0 US - [2019-01-21 23:51:45.469159] "GET …
+/cds/snippets/themes/customizr/assets/front/js/libs/fancybox/jquery.fancybox-1.3.4.min.js?ver=4.1.12 …
+HTTP/1.1" 200 5209 …
+"https://www.example.com/cds/2016/10/16/using-ansible-to-fetch-information-from-ios-devices/" …
+"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 …
+Safari/537.36" "-" 46005 www.example.com 192.168.3.7 443 - - + "ReqID--" XEZNAcCoAwcAAAxCwlQAAAAC …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 765 9315 -% 2938 1095 0 246 0-0-0-0 0-0-0-0 0 0
+192.31.242.0 US - [2019-01-21 23:51:45.469177] "GET …
+/cds/snippets/themes/customizr/assets/front/js/libs/modernizr.min.js?ver=4.1.12 HTTP/1.1" 200 5926 …
+"https://www.example.com/cds/2016/10/16/using-ansible-to-fetch-information-from-ios-devices/" …
+"Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 …
+Safari/537.36" "-" 42316 www.example.com 192.168.3.7 443 - - + "ReqID--" XEZNAcCoAwcAAAyDuEIAAAAG …
+TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 744 10032 -% 3022 1094 0 245 0-0-0-0 0-0-0-0 0 0
 ```
 
 Schauen wir uns hier mal die Verteilung der _GET_ und _POST_ Requests an:
 
 ```bash
 $> cat labor-04-example-access.log  | egrep  -o '"(GET|POST)'  | cut -b2- | sort | uniq -c
-   9781 GET
-     12 POST
+   9466 GET
+    115 POST
 ```
 
 Das ist ein eindeutiges Resultat. Sehen wir eigentlich viele Fehler? Also Anfragen, die mit einem HTTP Fehlercode beantwortet wurden?
 
 ```bash
 $> cat labor-04-example-access.log | cut -d\" -f3 | cut -d\  -f2 | sort | uniq -c
-   9040 200
-      5 206
-    447 301
-     47 304
-     16 400
-      3 403
-    401 404
-     41 408
+   9397 200
+      3 206
+    233 301
+     67 304
+      9 400
+     58 403
+    233 404
 ```
 
-Da liegt neben den sechzehn Requests mit der HTTP Antwort "400 Bad Request" ein recht grosser Anteil an 404ern vor ("404 Not Found"). HTTP Status 400 bedeutet ein Protokoll-Fehler. 404 ist bekanntlich eine nicht gefundene Seite. Hier müsste man also mal nach dem Rechten sehen. Aber bevor wir weiter gehen, ein Hinweis auf die Anfrage mittels des Befehls _cut_. Wir haben die Logzeile mit dem Trennzeichen _"_ unterteilt, das dritte Feld mit dieser Unterteilung extrahiert und dann den Inhalt wieder unterteilt, dieses Mal aber mit dem Leerschlag (man beachte das _\_-Zeichen) als Trennzeichen und das zweite Feld extrahiert, was nun dem Status entspricht. Danach wurde sortiert und die _uniq-Funktion_ im Zählmodus angewendet. Wir werden sehen, dass diese Art des Zugriffs auf die Daten ein sich wiederholendes Muster ist.
+Da liegt neben den neun Requests mit der HTTP Antwort "400 Bad Request" ein recht grosser Anteil an 404ern vor ("404 Not Found"). HTTP Status 400 bedeutet ein Protokoll-Fehler. 404 ist bekanntlich eine nicht gefundene Seite. Hier müsste man also mal nach dem Rechten sehen. Aber bevor wir weiter gehen, ein Hinweis auf die Anfrage mittels des Befehls _cut_. Wir haben die Logzeile mit dem Trennzeichen _"_ unterteilt, das dritte Feld mit dieser Unterteilung extrahiert und dann den Inhalt wieder unterteilt, dieses Mal aber mit dem Leerschlag (man beachte das _\_-Zeichen) als Trennzeichen und das zweite Feld extrahiert, was nun dem Status entspricht. Danach wurde sortiert und die _uniq-Funktion_ im Zählmodus angewendet. Wir werden sehen, dass diese Art des Zugriffs auf die Daten ein sich wiederholendes Muster ist.
 Schauen wir das Logfile noch etwas genauer an.
 
 Weiter oben war die Rede von Verschlüsselungsprotokollen und wie ihre Auswertung eine Grundlage für einen Entscheid der adäquaten Reaktion auf die _POODLE_-Schwachstelle war. Welche Verschlüsselungsprotokolle kommen seither eigentlich auf dem Server in der Praxis vor:
 
 ```bash
-$> cat labor-04-example-access.log | cut -d\" -f9 | cut -d\  -f3 | sort | uniq -c | sort -n
-     21 -
-     65 TLSv1.1
-   1764 TLSv1
-   8150 TLSv1.2
+$> cat tutorial-5-example-access.log | cut -d\" -f11 | cut -d\  -f3 | sort | uniq -c | sort -n
+      4 -
+    155 TLSv1
+   9841 TLSv1.2
 ```
 
-Es scheint vorzukommen, dass Apache kein Verschlüsselungsprotokoll notiert. Das ist etwas merkwürdig, da es aber ein sehr seltener Fall ist, gehen wir ihm für den Moment nicht nach. Wichtiger sind die Zahlenverhältnisse zwischen den TLS Protokollen. Hier dominiert nach dem Abschalten von _SSLv3_ das Protokoll _TLSv1.2_, neben einem substantiellen Anteil _TLSv1.0_. _TLSv1.1_ ist vernachlässigbar.
+Es scheint vorzukommen, dass Apache kein Verschlüsselungsprotokoll notiert. Das ist etwas merkwürdig, da es aber ein sehr seltener Fall ist, gehen wir ihm für den Moment nicht nach. Wichtiger sind die Zahlenverhältnisse zwischen den TLS Protokollen. Hier dominiert nach dem Abschalten von _SSLv3_ das Protokoll _TLSv1.2_ ubd _TLSv1.0_ wird langsam verdrängt.
 
 Zum gewünschten Resultat sind wir wieder über eine Reihe von _cut_-Befehlen gelangt. Eigentlich wäre es doch angebracht, diese Befehle vorzumerken, da wir sie immer wieder brauchen. Das wäre dann eine Alias-Liste wie die folgende:
 
@@ -456,46 +469,29 @@ alias alresponsebodysize='cut -d\" -f3 | cut -d\  -f3'
 alias alreferer='cut -d\" -f4 | sed "s/^-$/**NONE**/"'
 alias alreferrer='cut -d\" -f4 | sed "s/^-$/**NONE**/"'
 alias aluseragent='cut -d\" -f6 | sed "s/^-$/**NONE**/"'
-alias alservername='cut -d\" -f7 | cut -d\  -f2'
-alias alservername='cut -d\" -f7 | cut -d\  -f2'
-alias allocalip='cut -d\" -f7 | cut -d\  -f3'
-alias alcanonicalport='cut -d\" -f7 | cut -d\  -f4'
-alias alport='cut -d\" -f7 | cut -d\  -f4'
-alias alhandler='cut -d\" -f7 | cut -d\  -f5'
-alias albalroute='cut -d\" -f7 | cut -d\  -f6'
-alias alconnstatus='cut -d\" -f7 | cut -d\  -f7'
-alias altrkcookie='cut -d\" -f8'
-alias alreqid='cut -d\" -f9 | cut -d\  -f2'
-alias alsslprotocol='cut -d\" -f9 | cut -d\  -f3'
-alias alsslcipher='cut -d\" -f9 | cut -d\  -f4'
-alias alioin='cut -d\" -f9 | cut -d\  -f5'
-alias alioout='cut -d\" -f9 | cut -d\  -f6'
-alias aldeflateratio='cut -d\" -f9 | cut -d\  -f7 | tr -d %'
-alias alduration='cut -d\" -f9 | cut -d\  -f8'
-alias aldurationin='cut -d\" -f9 | cut -d\  -f9'
-alias aldurationapp='cut -d\" -f9 | cut -d\  -f10'
-alias aldurationout='cut -d\" -f9 | cut -d\  -f11'
-alias alscorein='cut -d\" -f9 | cut -d\  -f12 | tr "-" "0"'
-alias alscoreout='cut -d\" -f9 | cut -d\  -f13 | tr "-" "0"'
-alias alscores='cut -d\" -f9 | cut -d\  -f12,13 | tr " " ";" | tr "-" "0"'
+alias alcontenttype='cut -d\" -f8'
+...
 ```
 
 Die Aliase beginnen alle mit _al_. Dies steht für _ApacheLog_ oder _AccessLog_. Darauf folgt der Feldnahme. Die einzelnen Aliase sind nicht alphabethisch geordnet. Sie folgen vielmehr der Reihenfolge der Felder im Format des Logfiles.
 
-Diese Liste mit Alias-Definitionen befindet sich in der Datei [.apache-modsec.alias](https://www.netnea.com/files/.apache-modsec.alias). Dort liegt sie gemeinsam mit einigen weiteren Aliasen, die wir in späteren Anleitungen definieren werden. Wenn man öfter mit Apache und seinen Logfiles arbeitet, dann bietet es sich an, diese Alias-Definitionen im Heim-Verzeichnis abzulegen und sie beim Einloggen zu laden. Also mittels folgendem Eintrag in der _.bashrc_-Datei oder über einen verwandten Mechanismus.
+Diese Liste mit Alias-Definitionen befindet sich in der Datei [.apache-modsec.alias](https://www.netnea.com/files/.apache-modsec.alias). Dort liegt sie gemeinsam mit einigen weiteren Aliasen, die wir in späteren Anleitungen definieren werden. Wenn man öfter mit Apache und seinen Logfiles arbeitet, dann bietet es sich an, diese Alias-Definitionen im Heim-Verzeichnis abzulegen und sie beim Einloggen zu laden. Also mittels folgendem Eintrag in der _.bashrc_-Datei oder über einen verwandten Mechanismus. Der Eintrag hat auch eine zweite Funktion: Er fügt den Unterordner `bin` des Home-Verzeichnisses zum Pfad hinzu, wenn er nicht bereits vorhanden ist. Dies ist oft nicht der Fall und wir werden diesen Ordner zukünftig verwenden, um zusätzliche benutzerdefinierte Skripte zu platzieren, die mit den Apache-Modsec-Dateien spielen. Es ist also ein guter Moment, dies sofort vorzubereiten.
 
 ```bash
+# Load apache / modsecurity aliases if file exists
 test -e ~/.apache-modsec.alias && . ~/.apache-modsec.alias
+
+# Add $HOME/bin to PATH
+[[ ":$PATH:" != *":$HOME/bin:"* ]] && PATH="$HOME/bin:${PATH}"
 ```
 
 Wenden wir den neuen Alias das also gleich mal an:
 
 ```bash
 $> cat labor-04-example-access.log | alsslprotocol | sort | uniq -c | sort -n
-     21 -
-     65 TLSv1.1
-   1764 TLSv1
-   8150 TLSv1.2
+      4 -
+    155 TLSv1.1
+   9841 TLSv1.2
 ```
 Das geht schon etwas leichter. Aber das wiederholte Tippen von _sort_ gefolgt von _uniq -c_ und dann nochmals ein numerisches _sort_ ist mühselig. Da es sich erneut um ein wiederkehrendes Muster handelt, lohnt sich auch hier ein Alias, der sich als _sucs_ abkürzen lässt: ein Zusammenzug der Anfangsbuchstaben und des _c_ von _uniq -c_.
 
@@ -508,16 +504,15 @@ Das erlaubt uns dann:
 
 ```bash
 $> cat labor-04-example-access.log | alsslprotocol | sucs
-     21 -
-     65 TLSv1.1
-   1764 TLSv1
-   8150 TLSv1.2
+      4 -
+    155 TLSv1.1
+   9841 TLSv1.2
 ```
 
 Das ist nun ein einfacher Aufruf, den man sich gut merken kann und der leicht zu schreiben ist. Wir blicken nun auf ein Zahlenverhältnis von 1764 zu 8150. Total haben wir hier genau 10'000 Anfragen vor uns; die Prozentwerte sind von Auge abzuleiten. In der Praxis dürften die Logfiles aber kaum so schön aufgehen, wir benötigen also Hilfe beim Ausrechnen der Prozentzahlen.
 
 
-###Schritt 10: Auswertungen mit Prozentzahlen und einfache Statistik
+### Schritt 10: Auswertungen mit Prozentzahlen und einfache Statistik
 
 Was uns fehlt ist ein Befehl, der ähnlich wie der Alias _sucs_ funktioniert, aber im selben Durchlauf die Zahlenwerte in Prozentzahlen verwandelt: _sucspercent_. Wichtig ist zu wissen, dass das Skript auf einer erweiterten *awk*-Implementation besteht (ja, es gibt mehrere). In der Regel heisst das entsprechende Paket *gawk* und sorgt dafür, dass der Befehl `awk` die GNU-awk Implementation benützt.
 
@@ -533,10 +528,9 @@ Das obenstehene _sucspercent_ Alias geht denn auch von diesem Setup aus. Das _aw
 $> cat labor-04-example-access.log | alsslprotocol | sucspercent 
                          Entry        Count Percent
 ---------------------------------------------------
-                             -           21   0.21%
-                       TLSv1.1           65   0.65%
-                         TLSv1         1764  17.64%
-                       TLSv1.2         8150  81.50%
+                             -            4   0.04%
+                         TLSv1          155   1.55%
+                       TLSv1.2        9,841  98.41%
 ---------------------------------------------------
                          Total        10000 100.00%
 ```
@@ -548,19 +542,14 @@ Wunderbar. Nun sind wir in der Lage für beliebige, sich wiederholende Werte die
 $> cat labor-04-example-access.log | alsslcipher | sucspercent 
                          Entry        Count Percent
 ---------------------------------------------------
-         DHE-RSA-AES256-SHA256            2   0.02%
-        ECDHE-RSA-DES-CBC3-SHA            5   0.05%
-                  DES-CBC3-SHA            8   0.08%
-                             -           21   0.21%
-     DHE-RSA-AES256-GCM-SHA384           43   0.43%
-       ECDHE-RSA-AES128-SHA256           86   0.86%
-          ECDHE-RSA-AES128-SHA          102   1.02%
-            DHE-RSA-AES256-SHA          169   1.69%
-                    AES256-SHA          565   5.65%
-       ECDHE-RSA-AES256-SHA384          919   9.19%
-          ECDHE-RSA-AES256-SHA         1008  10.08%
-   ECDHE-RSA-AES256-GCM-SHA384         1176  11.76%
-   ECDHE-RSA-AES128-GCM-SHA256         5896  58.96%
+                             -            4   0.04%
+                    AES256-SHA           23   0.23%
+     DHE-RSA-AES256-GCM-SHA384           42   0.42%
+       ECDHE-RSA-AES128-SHA256           50   0.50%
+          ECDHE-RSA-AES256-SHA          156   1.56%
+   ECDHE-RSA-AES128-GCM-SHA256          171   1.71%
+       ECDHE-RSA-AES256-SHA384          234   2.34%
+   ECDHE-RSA-AES256-GCM-SHA384        9,320  93.20%
 ---------------------------------------------------
                          Total        10000 100.00%
 ```
@@ -571,28 +560,13 @@ Ein guter Überblick auf die Schnelle. Damit können wir für den Moment zufried
 $> cat labor-04-example-access.log | alprotocol | sucspercent 
                          Entry        Count Percent
 ---------------------------------------------------
-                          quit            4   0.04%
-                      **NONE**           41   0.41%
-                      HTTP/1.0           70   0.70%
-                      HTTP/1.1         9885  98.85%
+                      HTTP/1.0           66   0.66%
+                      HTTP/1.1        9,934  99.34%
 ---------------------------------------------------
                          Total        10000 100.00%
 ```
 
-Das veraltete _HTTP/1.0_ kommt also durchaus noch vor, und bei 45 Anfragen scheint etwas schief gegangen zu sein. Konzentrieren wir uns in der Rechnung auf die erfolgreichen Requests mit einem gültigen Protokoll und sehen wir uns die Prozentzahlen nochmals an:
-
-```bash
-$> cat labor-04-example-access.log | alprotocol | grep HTTP |  sucspercent
-                         Entry        Count Percent
----------------------------------------------------
-                      HTTP/1.0           70   0.70%
-                      HTTP/1.1         9885  99.30%
----------------------------------------------------
-                         Total         9955 100.00%
-``` 
-
-Hier kommt zusätzlich noch ein _grep_ zum Einsatz. Wir können das Muster "Alias-Feldextraktion -> sucs" also noch durch weitere Filteroperationen verfeinern.
-
+Das veraltete _HTTP/1.0_ kommt also durchaus noch vor, aber _HTTP/1.1_ ist klar dominant.
 
 Mit den verschiedenen Aliasen für die Extraktion von Werten aus dem Logfile und den beiden Aliasen _sucs_ und _sucspercent_ haben wir uns handliche Werkzeuge zurecht gelegt, um Fragen nach der relativen Häufigkeit von sich wiederholenden Werten einfach und mit demselben Muster von Befehlen beantworten zu können.
 
@@ -602,55 +576,54 @@ Auch ein solches Skript steht zum Download bereit: [basicstats.awk](https://www.
 
 ```bash
 $> cat labor-04-example-access.log | alioout | basicstats.awk
-Num of values:          10'000.00
-         Mean:          15'375.98
-       Median:           6'646.00
-          Min:               0.00
-          Max:         340'179.00
-        Range:         340'179.00
-Std deviation:          25'913.14
+Num of values:          10,000.00
+         Mean:          19,360.91
+       Median:           7,942.00
+          Max:       3,920,007.00
+        Range:       3,920,007.00
+Std deviation:          52,480.41
 ```
 
-Mit diesen Zahlen wird der Service rasch plastisch. Mit einer durchschnittlichen Antwortgrösse von 15KB und einem Median von 6.6 KB haben wir einen typischen Webservice vor uns. Der Median bedeutet ja konkret, dass die Hälfte der Antworten kleiner als 6.6 KB waren. Die grösste Antwort kam bei 340 KB zu stehen, die Standard-Abweichung von knapp 26 KB bedeutet, dass die grossen Werte ingesamt selten waren.
+Mit diesen Zahlen wird der Service rasch plastisch. Mit einer durchschnittlichen Antwortgrösse von 19 KB und einem Median von 7.9 KB haben wir einen typischen Webservice vor uns. Der Median bedeutet ja konkret, dass die Hälfte der Antworten kleiner als 7.9 KB waren und die andere Hälfte grösser. Die insgesamt grösste Antwort kam bei 3.9 MB zu stehen, die Standard-Abweichung von knapp 52 KB bedeutet, dass die grossen Werte ingesamt selten waren.
 
 Wie sieht es mit der Dauer der Anfragen aus. Haben wir dort ein ähnlich homogenes Bild?
 
 ```bash
 $> cat labor-04-example-access.log | alduration | basicstats.awk
-Num of values:          10'000.00
-         Mean:          91'306.41
-       Median:           2'431.50
-          Min:              18.00
-          Max:     301'455'050.00
-        Range:     301'455'032.00
-Std deviation:       3'023'884.17
+Num of values:          10,000.00
+         Mean:          74,852.49
+       Median:           3,684.50
+          Min:             641.00
+          Max:      31,360,516.00
+        Range:      31,359,875.00
+Std deviation:         695,283.17
 ```
 
-Hier ist es zunächst wichtig, sich zu vergegenwärtigen, dass wir es mit Mikrosekunden zu tun haben. Der Median liegt bei 2400 Mikrosekunden, das sind gut 2 Millisekunden. Der Durchschnitt ist mit 91 Millisekunden viel grösser, offensichtlich haben wir zahlreiche Ausreisser, welche den Schnitt in die Höhe gezogen haben. Tatsächlich  haben wir einen Maximalwert von 301 Sekunden und wenig überraschend eine Standardabweichung von 3 Sekunden. Das Bild ist also weniger homogen und wir haben zumindest einige Requests, die wir untersuchen sollten. Das wird nun aber etwas komplizierter. Das vorgeschlagene Vorgehen ist nur ein mögliches und es steht hier als Vorschlag und als Inspiration für die weitere Arbeit mit dem Logfile:
+Hier ist es zunächst wichtig, sich zu vergegenwärtigen, dass wir es mit Mikrosekunden zu tun haben. Der Median liegt bei 3684 Mikrosekunden, das sind dreieinhalb Millisekunden. Der Durchschnitt ist mit 74 Millisekunden viel grösser, offensichtlich haben wir zahlreiche Ausreisser, welche den Schnitt in die Höhe gezogen haben. Tatsächlich  haben wir einen Maximalwert von 31 Sekunden und wenig überraschend eine Standardabweichung von 0.7 Sekunden. Das Bild ist also weniger homogen und wir haben zumindest einige Requests, die wir untersuchen sollten. Das wird nun aber etwas komplizierter: Das vorgeschlagene Vorgehen ist nur ein mögliches und es steht hier als Vorschlag und als Inspiration für die weitere Arbeit mit dem Logfile:
 
 ```bash
 $> cat labor-04-example-access.log | grep "\"GET " | aluri | cut -d\/ -f1,2,3 | sort | \
 uniq | while read P; do  MEAN=$(grep "GET $P" labor-04-example-access.log | alduration | \
 basicstats.awk | grep Mean | sed 's/.*: //'); echo "$MEAN $P"; done  | sort -n
 ...
-       97459 /cms/
-       97840 /cms/application-download-soft
-       98959 /cms/category
-      109910 /cms/technical-blog
-      115564 /cms/content
-      146096 /cms/feed
-      146881 /files/application-9-sshots-appl.png
-      860889 /cms/download-softfiles
+        122,309.45 /cds/holiday-planner-download
+        124,395.18 /cds/tools-inventory
+        137,230.18 /cds/weather-app
+        143,830.30 /cds/2016
+        146,114.83 /cds/2015
+        163,269.89 /cds/category
+        216,229.88 /cds/tutorials
+        576,129.71 /storage/static
 ```
 
 Was passiert hier nacheinander? Wir filtern mittels _grep_ nach _GET_-Requests. Wir ziehen die _URI_ heraus und zerschneiden sie mittels _cut_. Uns interessieren nur die ersten Abschnitte des Pfades. Wir beschränken uns hier, um eine vernünftige Gruppierung zu erhalten, denn zu viele verschiedene Pfade bringen hier wenig Mehrwert. Die so erhaltene Pfadliste sortieren wir alphabetisch und reduzieren sie mittels _uniq_. Das ist die Hälfte der Arbeit.
 
-Nun lesen wir die Pfade nacheinander in die Variable _P_ und bauen darüber mit _while_ eine Schleife. Innerhalb der Schleife berechnen wir für den in _P_ abgespeicherten Pfad die Basisstatistiken und filtern die Ausgabe auf den Durschnitt, wobei wir mit _sed_ so filtern, dass die Variable _MEAN_ nur die Zahl und nicht auch noch die Bezeichnung _Mean:_ enthält. Nun geben wir diesen Durchschnittswert und den Pfadnamen aus. Ende der Schleife. Zu guter letzt sortieren wir alles noch numerisch und erhalten damit eine Übersicht, welche Pfade zu Request…s mit längeren Antwortzeiten geführt haben. Offenbar schiesst ein Pfad namens _/cms/download-softfiles_ obenaus. Das Stichwort _download_ lässt dies plausibel erscheinen.
+Nun lesen wir die Pfade nacheinander in die Variable _P_ und bauen darüber mit _while_ eine Schleife. Innerhalb der Schleife berechnen wir für den in _P_ abgespeicherten Pfad die Basisstatistiken und filtern die Ausgabe auf den Durschnitt, wobei wir mit _sed_ so filtern, dass die Variable _MEAN_ nur die Zahl und nicht auch noch die Bezeichnung _Mean:_ enthält. Nun geben wir diesen Durchschnittswert und den Pfadnamen aus. Ende der Schleife. Zu guter letzt sortieren wir alles noch numerisch und erhalten damit eine Übersicht, welche Pfade zu Request…s mit längeren Antwortzeiten geführt haben. Offenbar schiesst ein Pfad namens _/storage/static_ obenaus. Das Stichwort _storage_ lässt dies plausibel erscheinen.
 
 Damit kommen wir zum Abschluss dieser Anleitung. Ziel war es ein erweitertes Logformat einzuführen und die Arbeit mit den Logfiles zu demonstrieren. Dabei kommen wiederkehrend eine Reihe von Aliasen und zwei _awk_-Skripts zum Einsatz, die sich sehr flexibel hintereinander reihen lassen. Mit diesen Werkzeugen und der nötigen Erfahrung in deren Handhabung ist man in der Lage, rasch auf die in den Logfiles zur Verfügung stehenden Informationen zuzugreifen.
 
 
-###Verweise
+### Verweise
 
 * [Dokumentation des Apache-Moduls Log-Config](http://httpd.apache.org/docs/current/mod/mod_log_config.html)
 * [Dokumentation des Apache-Moduls SSL](http://httpd.apache.org/docs/current/mod/mod_ssl.html)

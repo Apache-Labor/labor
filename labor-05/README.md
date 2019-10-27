@@ -1,20 +1,20 @@
-##ModSecurity einbinden 
+## ModSecurity einbinden 
 
-###Was machen wir?
+### Was machen wir?
 Wir kompilieren das Sicherheits-Modul ModSecurity, binden es in den Apache Webserver ein, erstellen eine Basis-Konfiguration und setzen uns erstmals mit _False Positives_ auseinander.
 
-###Warum tun wir das?
+### Warum tun wir das?
 
 ModSecurity ist ein Sicherheitsmodul für den Webserver. Das Hilfsmittel ermöglicht die Überprüfung sowohl der Anfrage als auch der Antwort nach vordefinierten Regeln. Man nennt das auch _Web Application Firewall_. Der Administrator erhält also eine direkte Kontrolle über die Requests und die Responses, welche das System durchlaufen. Das Modul gibt einem aber auch neue Möglichkeiten zum Monitoring in die Hand, denn der gesamte Verkehr zwischen Client und Server lässt sich 1:1 auf die Festplatte schreiben. Dies hilft bei der Fehlersuche.
 
-###Voraussetzungen
+### Voraussetzungen
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
 * Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren/)
 * Ein ausgebautes Zugriffslog und einen Satz von Shell-Aliasen wie in [Anleitung 5 (Das Zugriffslog Ausbauen und Auswerten)](https://www.netnea.com/cms/apache-tutorial-5-zugriffslog-ausbauen/)
 
-###Schritt 1: Sourcecode herunterladen und Checksum prüfen
+### Schritt 1: Sourcecode herunterladen und Checksum prüfen
 
 Den Sourcecode für den Webserver haben wir nach `/usr/src/apache` heruntergeladen. Desgleichen verfahren wir nun mit ModSecurity. Dazu legen wir als Root das Verzeichnis `/usr/src/modsecurity/` an, übergeben es uns selbst und laden dann den Code herunter. 
 
@@ -22,23 +22,23 @@ Den Sourcecode für den Webserver haben wir nach `/usr/src/apache` heruntergelad
 $> sudo mkdir /usr/src/modsecurity
 $> sudo chown `whoami` /usr/src/modsecurity
 $> cd /usr/src/modsecurity
-$> wget https://www.modsecurity.org/tarball/2.9.2/modsecurity-2.9.2.tar.gz
+$> wget https://www.modsecurity.org/tarball/2.9.3/modsecurity-2.9.3.tar.gz
 ```
 
 Der gepackte Sourcecode ist gut vier Megabyte gross. Nun bleibt noch das überprüfen der Checksum. Sie wird im Format SHA256 angeboten.
 
 ```bash
-$> wget https://www.modsecurity.org/tarball/2.9.2/modsecurity-2.9.2.tar.gz.sha256
-$> sha256sum --check modsecurity-2.9.2.tar.gz.sha256
+$> wget https://www.modsecurity.org/tarball/2.9.3/modsecurity-2.9.3.tar.gz.sha256
+$> sha256sum --check modsecurity-2.9.3.tar.gz.sha256
 ```
 
 Darauf erwarten wir folgende Antwort:
 
 ```bash
-modsecurity-2.9.2.tar.gz: OK
+modsecurity-2.9.3.tar.gz: OK
 ```
 
-###Schritt 2: Entpacken und Compiler konfigurieren
+### Schritt 2: Entpacken und Compiler konfigurieren
 
 Wir entpacken nun den Sourcecode und leiten die Konfiguration ein. Noch vorher gilt es aber einige Pakete zu installieren, die eine Voraussetzung für das Kompilieren von _ModSecurity_ bilden. Wer der ersten Anleitung in dieser Serie gefolgt ist, der hat diese Pakete schon installiert. Aber es lohnt sich sicherzustellen, dass wirklich die ganze folgende Liste vorhanden ist: Zwei Bibliotheken zum Parsen von XML-Strukturen, die Grundlagen-/Header-Dateien der systemeigenen Regular Expression Library und eine Library die sich um Daten im JSON Format kümmert:
 
@@ -50,8 +50,8 @@ Wir entpacken nun den Sourcecode und leiten die Konfiguration ein. Noch vorher g
 Damit sind die Voraussetzungen geschaffen und wir sind bereit für ModSecurity.
 
 ```bash
-$> tar -xvzf modsecurity-2.9.2.tar.gz
-$> cd modsecurity-2.9.2
+$> tar -xvzf modsecurity-2.9.3.tar.gz
+$> cd modsecurity-2.9.3
 $> ./configure --with-apxs=/apache/bin/apxs \
 --with-apr=/usr/local/apr/bin/apr-1-config \
 --with-pcre=/usr/bin/pcre-config
@@ -59,7 +59,7 @@ $> ./configure --with-apxs=/apache/bin/apxs \
 
 Wir haben im Tutorial zur Kompilierung von Apache den Symlink `/apache` angelegt. Das kommt uns nun erneut zu Hilfe, denn unabhängig von der verwendeten Apache-Version können wir die ModSecurity Konfiguration nun immer mit denselben Parametern arbeiten lassen und erhalten immer Zugriff auf den aktuellen Apache Webserver. Die ersten beiden Optionen stellen die Verbindung zum Apache Binary her, denn wir müssen dafür sorgen, dass ModSecurity mit der richtigen API-Version arbeitet. Die Option _with-pcre_ legt fest, dass wir die systemeigene _PCRE-Library_, also Regular Expression Bibliothek, verwenden, und nicht die von Apache zur Verfügung gestellte. Dies gibt uns eine gewisse Flexibilität bei den Updates, da wir damit in diesem Bereich unabhängig von Apache werden, was sich in der Praxis bewährt hat. Voraussetzung ist das eben erst installierte Paket _libpcre3-dev_.
 
-###Schritt 3: Kompilieren
+### Schritt 3: Kompilieren
 
 Nach dieser Vorbereitung sollte das Kompilieren keine Probleme mehr bereiten.
 
@@ -68,7 +68,7 @@ $> make
 ```
 
 
-###Schritt 4: Installieren
+### Schritt 4: Installieren
 
 Und auch die Installation geht leicht vonstatten. Weil wir uns nach wie vor auf einem Testsystem befinden, übergeben wir das installierte Modul vom Root-Benutzer uns selbst, denn auch bei den ganzen Apache Binaries haben wir dafür gesorgt, selbst der Besitzer zu sein. Das ergibt dann wiederum einen sauberen Setup mit einheitlichen Besitzverhältnissen.
 
@@ -79,7 +79,7 @@ $> sudo chown `whoami` /apache/modules/mod_security2.so
 
 Das Modul trägt die Zahl <i>2</i> im Namen. Dies wurde beim Versionsprung auf 2.0 eingeführt, als eine Neuausrichtung des Moduls dies nötig machte. Dies ist aber nur ein Detail, das keine Rolle spielt.
 
-###Schritt 5: Grundkonfiguration erstellen
+### Schritt 5: Grundkonfiguration erstellen
 
 Wir können nun daran gehen, eine Grundkonfiguration einzurichten. ModSecurity ist ein Modul, das durch Apache geladen wird. Es wird deshalb innerhalb der Apache-Konfiguration konfiguriert. Normalerweise wird empfohlen, ModSecurity in einem eigenen File zu konfigurieren und dann als sogenanntes `Include` nachzuladen. Wir machen das aber nur mit einem Teil der Regeln (in einem späteren Tutorial). Die Grundkonfiguration fügen wir in die Apache-Konfiguration ein, um sie immer im Blick zu haben. Dabei bauen wir auf unserer Apache Basiskonfiguration auf. Natürlich kann man diese Konfiguration auch mit dem `SSL-Setup` und dem `Applikations-Server-Setup` kombinieren. Letzteres unterlassen wir der Einfachheit halber aber. Was wir aber einbinden ist das erweiterte LogFormat, das wir in der 5. Anleitung kennengelernt haben. Dazu kommt ein weiteres, optionales Performance-Log, das bei der Suche nach Geschwindigkeitsengpässen hilft.
 
@@ -118,9 +118,10 @@ LoadModule        security2_module        modules/mod_security2.so
 
 ErrorLogFormat          "[%{cu}t] [%-m:%-l] %-a %-L %M"
 LogFormat "%h %{GEOIP_COUNTRY_CODE}e %u [%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] \"%r\" %>s %b \
-\"%{Referer}i\" \"%{User-Agent}i\" %v %A %p %R %{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" \
-%{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x %I %O %{ratio}n%% \
-%D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e \
+\"%{Referer}i\" \"%{User-Agent}i\" \"%{Content-Type}i\" %{remote}p %v %A %p %R \
+%{BALANCER_WORKER_ROUTE}e %X \"%{cookie}n\" %{UNIQUE_ID}e %{SSL_PROTOCOL}x %{SSL_CIPHER}x \
+%I %O %{ratio}n%% %D %{ModSecTimeIn}e %{ApplicationTime}e %{ModSecTimeOut}e \
+%{ModSecAnomalyScoreInPLs}e %{ModSecAnomalyScoreOutPLs}e \
 %{ModSecAnomalyScoreIn}e %{ModSecAnomalyScoreOut}e" extended
 
 LogFormat "[%{%Y-%m-%d %H:%M:%S}t.%{usec_frac}t] %{UNIQUE_ID}e %D \
@@ -177,7 +178,7 @@ SecAuditLogType               Concurrent
 SecAuditLog                   /apache/logs/modsec_audit.log
 SecAuditLogStorageDir         /apache/logs/audit/
 
-SecDefaultAction              "phase:1,pass,log,tag:'Local Lab Service'"
+SecDefaultAction              "phase:2,pass,log,tag:'Local Lab Service'"
 
 
 # == ModSec Rule ID Namespace Definition
@@ -260,6 +261,8 @@ SecAction "id:90100,phase:5,pass,nolog,\
   setenv:ModSecTimeIn=%{TX.perf_modsecinbound},\
   setenv:ApplicationTime=%{TX.perf_application},\
   setenv:ModSecTimeOut=%{TX.perf_modsecoutbound},\
+  setenv:ModSecAnomalyScoreInPLs=%{tx.anomaly_score_pl1}-%{tx.anomaly_score_pl2}-%{tx.anomaly_score_pl3}-%{tx.anomaly_score_pl4},\
+  setenv:ModSecAnomalyScoreOutPLs=%{tx.outbound_anomaly_score_pl1}-%{tx.outbound_anomaly_score_pl2}-%{tx.outbound_anomaly_score_pl3}-%{tx.outbound_anomaly_score_pl4},\
   setenv:ModSecAnomalyScoreIn=%{TX.anomaly_score},\
   setenv:ModSecAnomalyScoreOut=%{TX.outbound_anomaly_score}"
 
@@ -436,7 +439,7 @@ Perf-ModSecCombined: %{PERF_COMBINED}M" perflog
 
 Mit dieser langen Liste von Zahlen lassen sich ModSecurity Performance-Probleme sehr gut eingrenzen und gegebenenfalls beheben. Wenn noch tiefer gesucht werden muss, dann kann das _Debug-Log_ helfen, oder man nimmt die Variable-Sammlung *PERF_RULES* zu Hilfe, die im Referenz-Handbuch gut erklärt ist.
 
-###Schritt 6: Einfache Blacklist Regeln schreiben
+### Schritt 6: Einfache Blacklist Regeln schreiben
 
 Mit der obenstehenden Konfiguration ist ModSecurity aufgesetzt und konfiguriert. Es kann fleissig Performance-Daten loggen, aber auf der Sicherheitsseite sind nur die rudimentären Grundlagen vorhanden. In einer späteren Anleitung werden wir wie angekündigt die _OWASP ModSecurity Core Rules_, eine umfassende Regelsammlung, einbinden. Zunächst ist es aber wichtig, dass wir lernen, selbst Regeln zu schreiben. In der Grundkonfiguration wurden schon einige Regeln erklärt. Von da ist es nur noch ein kleiner Schritt.
 
@@ -451,7 +454,7 @@ Die Regel leiten wir mit _SecRule_ ein. Dann sagen wir, dass wir den Pfad der An
 
 Wir nennen diesen Typ von Regeln _Blacklist Regeln_, da beschrieben wird, was wir verbieten wollen. Prinzipiell lassen wir alles passieren, ausser Anfragen, welche die konfigurierten Regeln verletzen. Der umgekehrte Weg, also das Beschreiben der erwünschten Anfragen und damit das Blockieren von allen unbekannten Anfragen, nennen wir _Whitelist Regeln_. _Blacklist Regeln_ sind einfacher zu schreiben, bleiben aber oft unvollständig. _Whitelist Regeln_ sind umfassender und bei richtiger Schreibweise kann man damit einen Server komplett abdichten. Aber sie sind schwer zu schreiben und führen in der Praxis oft zu Problemen, wenn sie nicht sehr ausgereift konstruiert werden. Weiter unten folgt ein _Whitelisting Beispiel_.
 
-###Schritt 7: Blockade ausprobieren
+### Schritt 7: Blockade ausprobieren
 
 Probieren wir die Blockade einmal aus:
 
@@ -486,7 +489,7 @@ _ModSecurity_ beschreibt hier die ausgelöste Regel und die Massnahme, die ergri
 
 Diese Angaben finden wir auch noch ausführlicher im oben besprochenen _Audit-Log_. Für den normalen Gebrauch reicht allerdings oft das _Error-Log_.
 
-###Schritt 8: Einfache Whitelist Regeln schreiben
+### Schritt 8: Einfache Whitelist Regeln schreiben
 
 Mit der im Schritt 7 beschriebenen Regel konnten wir den Zugriff auf eine bestimmte URL verhindern. Nun werden wir den umgekehrten Fall behandeln: Wir möchten sicher stellen, dass nur noch auf eine bestimmte URL zugegriffen werden kann. Darüber hinaus werden wir nur noch vorher bekannte _POST-Parameter_ in einem vorgegebenen Format akzeptieren. Dies stellt eine sehr strikte Sicherungstechnik dar, die man auch "Positive Sicherheit" (Positive Security) nennt: Nicht mehr länger versuchen wir nach Zeichen eines Angriffes in den Anfragen zu suchen. Nun muss der User uns beweisen, dass seine Anfrage sämtliche unsere Kriterien erfüllt.
 
@@ -495,7 +498,6 @@ Unser Beispiel ist eine Whitelist behandelt ein Login Formular mit der Anzeige d
 Hier sind die Regeln, ich werde Sie danach im Detail erklären:
 
 ```bash
-
 SecMarker BEGIN_WHITELIST_login
 
 # Make sure there are no URI evasion attempts
@@ -511,7 +513,7 @@ SecRule REQUEST_URI "!@beginsWith /login" \
 
 # Validate HTTP method
 SecRule REQUEST_METHOD "!@pm GET HEAD POST OPTIONS" \
-    "id:11100,phase:1,deny,log,tag:'Login Whitelist',\
+    "id:11100,phase:1,deny,status:405,log,tag:'Login Whitelist',\
     msg:'Method %{MATCHED_VAR} not allowed'"
 
 # Validate URIs
@@ -553,7 +555,7 @@ SecRule &ARGS:sectoken  "@gt 1" \
     msg:'%{MATCHED_VAR_NAME} occurring more than once'"
 
 # Check individual parameters
-SecRule ARGS:username "!@rx ^[a-zA-Z0-9.@-]{1,32}$" \
+SecRule ARGS:username "!@rx ^[a-zA-Z0-9.@_-]{1,64}$" \
     "id:11500,phase:2,deny,log,tag:'Login Whitelist',\
     msg:'Invalid parameter format: %{MATCHED_VAR_NAME} (%{MATCHED_VAR})'"
 SecRule ARGS:sectoken "!@rx ^[a-zA-Z0-9]{32}$" \
@@ -575,7 +577,7 @@ In den folgenden zwei Regeln, (ID 110001 und 11002) überprüfen wir, ob unsere 
 
 Nachdem wir nun festgestellt haben, dass wir es tatsächlich mit einer Login-Anfrage zu tun haben, können wir unsere Regeln, die den Request überprüfen, nacheinander niederschreiben. Ein HTTP Request hat mehrere Charakteristiken die uns betreffen: Die Methode, der Pfad, der Query String Parameter, des weiteren Post Parameter (das betrifft die Übermittlung der Login-Credentials). In unserem Beispiel lassen wir die Request Header und die Cookies weg. Aber tatsächlich könnten sie je nach Applikation zu einer Schwachstelle werden und sollten dann auch überprüft werden.
 
-Zunächst schauen wir uns in der Regel mit der ID 11100 die HTTP Methode an. Bei der Anzeige des Login Formulars handelt sich um einen _GET_ Request; bei der Übermittlung der Login-Daten handelt es sich um eine _POST_ Request. Manche Clients senden dazwischen bisweilen auch _HEAD_ und _OPTIONS_ Requests, was eigentlich harmlos ist, weshalb wir es gut erlauben können. Alles andere, _PUT_ und _DELETE_ und all die WebDav Methoden, werden durch diese Regel blockiert. Wir testen die vier Methoden mittels dem parallel arbeitenden `@pm` Operator. Er ist schneller als ein regulärer Ausdruck und darüber hinaus auch lesbarer.
+Zunächst schauen wir uns in der Regel mit der ID 11100 die HTTP Methode an. Bei der Anzeige des Login Formulars handelt sich um einen _GET_ Request; bei der Übermittlung der Login-Daten handelt es sich um eine _POST_ Request. Manche Clients senden dazwischen bisweilen auch _HEAD_ und _OPTIONS_ Requests, was eigentlich harmlos ist, weshalb wir es gut erlauben können. Alles andere, _PUT_ und _DELETE_ und all die WebDav Methoden, werden durch diese Regel blockiert. Wir testen die vier Methoden mittels dem parallel arbeitenden `@pm` Operator. Er ist schneller als ein regulärer Ausdruck und darüber hinaus auch lesbarer. Da wir Best Practices folgen wollen, geben wir nicht einfach den Standardstatuscode 403 (Verboten) zurück, sondern 405, der dem Client anzeigt, dass die Methode nicht erlaubt ist.
 
 Im Regel Block, der mit der ID 11200 beginnt, untersuchen wir die URI im Detail. Wir definieren drei Verzeichnisse, in denen wir Zugriff auf statische Daten zulassen: `/login/static/css/`, `/login/static/img/` und `/login/static/js/`. Wir haben kein Interesse, die Files in diesen Verzeichnissen im Micromanagement zu verwalten. Deshalb erlauben wir einfach den Zugriff auf diese Verzeichnisse. Bei der Regel mit der ID 11250 ist es anders. Sie definiert die Ziele der dynamischen Zugriffe der User. Wir konstruieren einen regulären Ausdruck, der exakt drei URIs erlaubt: `/login/displayLogin.do`, `/login/login.do` und `/login/logout.do`. Alles ausserhalb dieser Liste ist verboten.
 
@@ -594,24 +596,23 @@ Beim Passwort ist die Sache weniger klar. Offensichtlich möchten wir, dass die 
 
 Damit beschliessen wir unser Beispiel einer partiellen Whitelist.
 
-###Schritt 9: Blockade ausprobieren
+### Schritt 9: Blockade ausprobieren
 
 Aber funktioniert das auch wirklich? Hier einige Versuche:
 
 ```bash
 $> curl http://localhost/login/displayLogin.do
--> OK (ModSecurity erlaubt den Zugriff. Aber die Seite selbst exisiert nicht.
-      Wir erhalten also ein 404, Page not Found)
+-> OK (ModSecurity permits access. But this page itself does not exist. So we get 404, Page not Found)
 $> curl http://localhost/login/displayLogin.do?debug=on
 -> FAIL
 $> curl http://localhost/login/admin.html
--> FAIL (Wieder 404, aber das Error Log sollte nun einen Security Alert mit dem Status 404 zeigen)
+-> FAIL (Again a 404, but the error log should show a deny with status 404)
 $> curl -d "username=john&password=test" http://localhost/login/login.do
--> OK (ModSecurity erlaubt den Zugriff. Aber die Seite selbst existiert nicht.
-   Also erhalten wir ein 404, Page not Found)
+-> OK (ModSecurity permits access. But this page itself does not exist. So we get 404, Page not Found)
 $> curl -d "username=john&password=test&backdoor=1" http://localhost/login/login.do
 -> FAIL
-$> curl -d "username=john56789012345678901234567890123&password=test" http://localhost/login/login.do
+$> curl -d "username=john5678901234567890123456789012345678901234567890123456789012345&password=test" \
+http://localhost/login/login.do
 -> FAIL
 $> curl -d "username=john'&password=test" http://localhost/login/login.do
 -> FAIL
@@ -638,13 +639,13 @@ against "ARGS_NAMES:backdoor" required. [file "/apache/conf/httpd.conf_pod_2017-
 [line "227"] [id "11300"] [msg "Unknown parameter: ARGS_NAMES:backdoor"] [tag "Login Whitelist"] …
 [hostname "localhost"] [uri "/login/login.do"] [unique_id "WjaHe7q3BsfzODHx0EBwpAAAAAk"]
 [2017-12-17 16:04:34.347509] [-:error] 127.0.0.1:54616 WjaHgrq3BsfzODHx0EBwpQAAAAo [client 127.0.0.1] …
-ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9.@-]{1,32}$" against …
+ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9.@-]{1,64}$" against …
 "ARGS:username" required. [file "/apache/conf/httpd.conf_pod_2017-12-17_12:10"] [line "243"] [id …
 "11500"] [msg "Invalid parameter format: ARGS:username (john56789012345678901234567890123)"] [tag …
 "Login Whitelist"] [hostname "localhost"] [uri "/login/login.do"] …
 [unique_id "WjaHgrq3BsfzODHx0EBwpQAAAAo"]
 [2017-12-17 16:04:42.069838] [-:error] 127.0.0.1:54850 WjaHirq3BsfzODHx0EBwpgAAAAw [client 127.0.0.1] …
-ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9.@-]{1,32}$" against …
+ModSecurity: Access denied with code 403 (phase 2). Match of "rx ^[a-zA-Z0-9.@-]{1,64}$" against …
 "ARGS:username" required. [file "/apache/conf/httpd.conf_pod_2017-12-17_12:10"] [line "243"] …
 [id "11500"] [msg "Invalid parameter format: ARGS:username (john')"] [tag "Login Whitelist"] …
 [hostname "localhost"] [uri "/login/login.do"] [unique_id "WjaHirq3BsfzODHx0EBwpgAAAAw"]
@@ -657,7 +658,7 @@ more than once"] [tag "Login Whitelist"] [hostname "localhost"] [uri "/login/log
 
 Es funktioniert also von A bis Z.
 
-###Schritt 10 Bonus: Client-Verkehr komplett auf Disk schreiben
+### Schritt 10 Bonus: Client-Verkehr komplett auf Disk schreiben
 
 Bevor wir zum Ende dieser Anleitung kommen, folgt hier noch ein Tipp, der einem in der Praxis oft hilft: _ModSecurity_ ist nämlich nicht nur eine _Web Application Firewall_. Es ist auch ein sehr exaktes Debugging-Hilfsmittel. So lässt sich etwa der komplette Verkehr zwischen Client und Server aufzeichnen. Das geht so:
 
@@ -704,7 +705,7 @@ Die Regel, welche den Verkehr aufzeichnet, lässt sich natürlich beliebig anpas
 
 Damit sind wir zum Ende dieser Anleitung gelangt. *ModSecurity* ist eine wichtige Komponente für den Betrieb eines sicheren Webservers. Mit dieser Anleitung ist der Einstieg hoffentlich geglückt.
 
-###Verweise
+### Verweise
 
 * Apache [https://httpd.apache.org](http://httpd.apache.org)
 * ModSecurity [https://www.modsecurity.org](http://www.modsecurity.org)

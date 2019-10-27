@@ -3,12 +3,12 @@
 #
 # Apache Logfile Scanning Script
 # 
-# Copyright 2007-2015 Christian Folini (folini@netnea.com)
+# Copyright 2007-2019 Christian Folini (folini@netnea.com)
 #
 # This software has been released under the GPL 3.0.
 #
-# parse-apache-log-extended.rb [OPTIONS] file(s)
-# <STDIN> | parse-apache-log-extended.rb [OPTIONS]
+# parse-apache-logs.rb [OPTIONS] file(s)
+# <STDIN> | parse-apache-logs.rb [OPTIONS]
 #
 # Call with --help to get an overview of options.
 #
@@ -19,6 +19,7 @@ require 'zlib'
 require 'pp'
 include Zlib
 
+LOGFORMAT_EXTENDED2019 = "Remote-IP Country Remote-User [Timestamp] \"Method Path Version\" Status Response-Size \"Referer\" \"User-Agent\" \"Content-Type\" Remote-Port ServerName Local-IP Local-Port RspHandler BalRoute ConnStatus \"Tracking-ID\" Request-ID SSLProtocol SSLCipher IO-In IO-Out Deflate-Ratio Duration ModSecPerfIn PerfAppl ModSecPerfOut ModSecInPL ModSecOutPL ModSecScoreIn ModSecScoreOut"
 LOGFORMAT_EXTENDED2015 = "Remote-IP Country Remote-User [Timestamp] \"Method Path Version\" Status Response-Size \"Referer\" \"User-Agent\" ServerName Local-IP Local-Port RspHandler BalRoute ConnStatus \"Tracking-ID\" Request-ID SSLProtocol SSLCipher IO-In IO-Out Deflate-Ratio Duration ModSecPerfIn PerfAppl ModSecPerfOut ModSecScoreIn ModSecScoreOut"
 LOGFORMAT_EXTENDED2014 = "Remote-IP Country Remote-User [Timestamp] \"Method Path Version\" Status Response-Size \"Referer\" \"User-Agent\" ServerName Local-IP Local-Port RspHandler BalRoute ConnStatus \"Tracking-ID\" Request-ID SSLProtocol Cipher IO-In IO-Out Deflate-Ratio Duration ModSecPerfIn PerfAppl ModSecPerfOut ModSecScoreIn ModSecScoreOut"
 LOGFORMAT_EXTENDED2012 = "Remote-IP Remote-Logname Remote-User [Timestamp] \"Method Path Version\" Status Response-Size \"Referer\" \"User-Agent\" ServerName Local-IP Local-Port RspHandler BalRoute ConnStatus \"Tracking-ID\" Request-ID IO-In IO-Out Deflate-Ratio Duration ModSecPerfIn PerfAppl ModSecPerfOut ModSecScoreIn ModSecScoreOut"
@@ -30,7 +31,7 @@ LOGFORMAT_COMBINED = "Remote-IP Remote-Logname Remote-User [Timestamp] \"Method 
 params = Hash.new
 params["logfiles"] = nil     # space seperated list of logfiles
 
-params["logformat"] = LOGFORMAT_EXTENDED2015
+params["logformat"] = LOGFORMAT_EXTENDED2019
 params["outformat"] = nil # format to display the data after processing
 params["filterstring"] = nil    # format to display the data after processing
 
@@ -57,15 +58,15 @@ Synopsis
 
 Apache Logfile Scanning Script
 
-Copyright 2007-2012 Christian Folini (folini@netnea.com)
+Copyright 2007-2019 Christian Folini (folini@netnea.com)
 
 This software has been released under the GPL.
 
 Usage
 -----
 
-scan-apache-log-extended.rb [OPTIONS] file(s)
-<STDIN> | scan-apache-log-extended.rb [OPTIONS]
+parse-apache-logs.rb [OPTIONS] file(s)
+<STDIN> | parse-apache-logs.rb [OPTIONS]
 
 
 -h  --help             This text
@@ -82,19 +83,19 @@ Usage examples
 --------------
 
 Take file access.log and print Status and Path for every request line:
- scan-apache-log-extended.rb --outformat "Status Path" access.log 
+ parse-apache-logs.rb --outformat "Status Path" access.log 
 
 Find out which Browser (User-Agent) is being used by whom:
- scan-apache-log-extended.rb -o "Remote-User User-Agent" access.log | sort | uniq
+ parse-apache-logs.rb -o "Remote-User User-Agent" access.log | sort | uniq
 
 Find out which IP address accessed the / of the server:
- scan-apache-log-extended.rb -o "Timestamp Remote-IP" --filter "Path == /" access.log
+ parse-apache-logs.rb -o "Timestamp Remote-IP" --filter "Path == /" access.log
 
 Select requests taking longer than 1s (1000000 microseconds) and HTTP Status 200 OK
- scan-apache-log-extended.rb -o "Path" -f "Duration > 1000000 and Status == 200" access.log
+ parse-apache-logs.rb -o "Path" -f "Duration > 1000000 and Status == 200" access.log
 
 Select requests with an Anomaly Score of 5 or above
- scan-apache-log-extended.rb -o "Timestamp Remote-IP" -f "Anomaly-Score >= 5"
+ parse-apache-logs.rb -o "Timestamp Remote-IP" -f "Anomaly-Score >= 5"
 
 Filter options
 --------------
@@ -118,7 +119,10 @@ EOF
   puts "Predefined Formats"
   puts "------------------"
   puts
-  puts "extended / extended2015:"
+  puts "extended / extended2019:"
+  puts LOGFORMAT_EXTENDED2019
+  puts
+  puts "extended2015:"
   puts LOGFORMAT_EXTENDED2015
   puts
   puts "extended2014:"
@@ -146,7 +150,7 @@ EOF
   puts "All variable names in the informat can be used to construct a new "
   puts "outformat or a filter. A typical example for an outformat:"
   puts
-  puts "scan-apache-log-extended.rb --informat extended2012 --outformat \"Timestamp Status\" ..."
+  puts "parse-apache-logs.rb --informat extended2012 --outformat \"Timestamp Status\" ..."
   puts "..."
   puts "12/Nov/2007:21:50:49 +0100 200"
   puts "12/Nov/2007:21:51:28 +0100 200"
@@ -154,7 +158,7 @@ EOF
   puts "..."
   puts
   puts "However, you can also do conversions like:"
-  puts "scan-apache-log-extended.rb --informat extended2012 --outformat combined ..."
+  puts "parse-apache-logs.rb --informat extended2012 --outformat combined ..."
   puts
 
   return
@@ -190,12 +194,13 @@ def check_parameters(params)
   end
 
   unless ( params["logformat"].downcase == "combined" ||
-  	   params["logformat"].downcase == "extended" ||
-	   params["logformat"].downcase == "extended07" ||
-	   params["logformat"].downcase == "extended11" ||
-	   params["logformat"].downcase == "extended12" ||
-	   params["logformat"].downcase == "extended14" ||
-	   params["logformat"].downcase == "extended15" )
+       params["logformat"].downcase == "extended" ||
+       params["logformat"].downcase == "extended07" ||
+       params["logformat"].downcase == "extended11" ||
+       params["logformat"].downcase == "extended12" ||
+       params["logformat"].downcase == "extended14" ||
+       params["logformat"].downcase == "extended15" ||
+       params["logformat"].downcase == "extended19" )
     error = parse_logformat(params["logformat"])[3]
 
     if error
@@ -335,6 +340,9 @@ def parse_display_logfile(file, informat_fields, displayfields_prefixes, display
       when LOGFORMAT_EXTENDED2015
         pattern = /^(\S+) (\S\S?) (\S+) \[([^\]]+)\] "(\S+) (.+?) (\S+)" (\S+) (\S+) "([^"]+)" "([^"]+)" (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) "([^"]+)" (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+)$/
         numfields = 30
+      when LOGFORMAT_EXTENDED2019
+        pattern = /^(\S+) (\S\S?) (\S+) \[([^\]]+)\] "(\S+) (.+?) (\S+)" (\S+) (\S+) "([^"]+)" "([^"]+)" "(.*)" (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+)$/
+        numfields = 34
       else
         raise
     end
@@ -585,11 +593,13 @@ def prepare_outformat(informat, outformat)
     outformat = LOGFORMAT_EXTENDED2014
   elsif outformat == "extended2015"
     outformat = LOGFORMAT_EXTENDED2015
+  elsif outformat == "extended2019"
+    outformat = LOGFORMAT_EXTENDED2019
   elsif outformat == "extended"
-    outformat = LOGFORMAT_EXTENDED2015
+    outformat = LOGFORMAT_EXTENDED2019
   elsif outformat.nil?
-    vprint "No output parameter passed. Assuming extended-2015."
-    outformat = LOGFORMAT_EXTENDED2015
+    vprint "No output parameter passed. Assuming extended-2019."
+    outformat = LOGFORMAT_EXTENDED2019
   end
 
 
@@ -677,8 +687,10 @@ opts.each do |opt, arg|
         params["logformat"] = LOGFORMAT_EXTENDED2014
       elsif arg == "extended2015"
         params["logformat"] = LOGFORMAT_EXTENDED2015
+      elsif arg == "extended2019"
+        params["logformat"] = LOGFORMAT_EXTENDED2019
       elsif arg == "extended"
-        params["logformat"] = LOGFORMAT_EXTENDED2015
+        params["logformat"] = LOGFORMAT_EXTENDED2019
       else
         params["logformat"] = arg
       end

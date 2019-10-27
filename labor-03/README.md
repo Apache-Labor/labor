@@ -1,14 +1,14 @@
-##Konfigurieren eines SSL Servers
+## Konfigurieren eines SSL Servers
 
-###Was machen wir?
+### Was machen wir?
 
 Wir setzen einen mit einem Serverzertifikat gesicherten Apache Webserver auf.
 
-###Warum tun wir das?
+### Warum tun wir das?
 
 Das HTTP Protokoll ist ein Klartext-Protokoll, das sich sehr gut abhören lässt. Die Erweiterung HTTPS umgibt den HTTP-Verkehr mit einer SSL-/TLS-Schutzschicht, welche das Abhören verhindert und sicherstellt, dass wir wirklich mit demjenigen Server sprechen, den wir angesprochen haben. Die Übertragung der Daten geschieht dann nur noch verschlüsselt. Das bedeutet noch keinen sicheren Webserver, aber es ist die Basis für einen gesicherten HTTP-Verkehr.
 
-###Voraussetzungen
+### Voraussetzungen
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](http://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](http://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
@@ -18,7 +18,7 @@ In dieser Anleitung wird in einem ersten Schritt ein SSL-fähiger Server mit ein
 Die ganze Serie von Anleitungen versteht sich als Anleitung für einen tauglichen Labor-Setup, um Apache wirklich zu verstehen. Dies vorliegende Anleitung bildet ein Stück weit eine Ausnahme als es für den Bezug des Zertifikats wie eben dargelegt wichtig ist, auf einem vom Internet her erreichbaren Server zu arbeiten. Die folgenden Anleitungen werden aber wieder zum Labor-Setup zurückkehren.
 
 
-###Schritt 1: Server mit SSL/TLS, aber ohne offiziell signiertes Zertifikat konfigurieren
+### Schritt 1: Server mit SSL/TLS, aber ohne offiziell signiertes Zertifikat konfigurieren
 
 Die Funktionsweise des _SSL-/TLS_-Protokolls ist anspruchsvoll. Eine gute Einführung bietet das frei verfügbare _OpenSSL Cookbook_ von Ivan Ristić (siehe Links) oder sein umfassenderes Werk _Bulletproof SSL and TLS_, das die Vertrauensbeziehungen im Detail bespricht. Die minimalen Kenntnisse vermittelt aber auch diese Anleitung hier.
 
@@ -140,7 +140,7 @@ Der _STS_-Header ist der wichtigste einer Gruppe von neueren HTTP Antwort Header
 
 Das wären alle Änderungen an unserer Konfiguration. Schreiten wir also zur Tat.
 
-###Schritt 2: Ausprobieren
+### Schritt 2: Ausprobieren
 
 ```bash
 $> curl -v https://127.0.0.1/index.html
@@ -209,7 +209,7 @@ Nun klappt es also und unser SSL-Server läuft. Freilich mit einem faulen Zertif
 Im Folgenden geht es nun darum, ein offizielles Zertifikat zu beziehen, dieses dann korrekt zu installieren und unsere Konfiguration noch etwas zu verfeinern.
 
 
-###Schritt 3: Bezug von SSL-Schlüssel und -Zertifikat vorbereiten
+### Schritt 3: Bezug von SSL-Schlüssel und -Zertifikat vorbereiten
 
 HTTPS erweitert das bekannte HTTP-Protokoll um eine SSL-Schicht. Technisch wurde SSL (_Secure Socket Layer_) zwar heute von TLS (_Transport Security Layer_) ersetzt, aber man spricht weiterhin oft von SSL. Das Protokoll garantiert verschlüsselten und damit abhörsicheren Datenverkehr. Der Verkehr wird symmetrisch verschlüsselt, was einen hohen Durchsatz garantiert. Dies setzt aber im Fall von HTTPS einen Public-/Private-Key Setup voraus, der den sicheren Austausch der symmetrischen Schlüssel durch zwei sich zuvor unbekannte Kommunikationspartner vorne wegnimmt. Dieser Public-/Private-Key Handshake geschieht mit Hilfe eines Serverzertifikats, das durch eine offizielle Stelle signiert werden muss. Der Handshake dient also dazu, das Vertrauen, das der Browser in die Signierstelle hat, auf den angesprochenen Webserver zu übertragen. Dies geschieht mit Hilfe einer signierten Vertrauenskette über mehrere Zertifikate hinweg.
 
@@ -259,7 +259,7 @@ Dies bezeichnet den Pfad des Tokens, das `getssl` im Dateisystem platziert, um e
 
 Wir haben neben dem Domain-Namen auch noch einen alternativen Namen in der Variable `SANS` eingetragen. _Let's Encrypt_ wird beide Namen überprüfen und für beide Namen ein eigenes Token platzieren. Wir können dazu zwei Mal denselben `acl` Pfad angeben, oder aber wir setzen die Variable `USE_SINGLE_ACL`, was viel eleganter ist.
 
-###Schritt 4: SSL-Schlüssel und -Zertifikat beziehen
+### Schritt 4: SSL-Schlüssel und -Zertifikat beziehen
 
 Nun starten wir den ersten Aufruf an _Let's Encrypt_:
 
@@ -468,7 +468,7 @@ SSLCertificateFile      /etc/ssl/certs/christian-folini.ch.crt
 SSLCertificateChainFile /etc/ssl/certs/lets-encrypt-chain.crt
 ```
 
-###Schritt 5: Vertrauenskette überprüfen
+### Schritt 5: Vertrauenskette überprüfen
 
 Bevor wir nun mit dem Browser oder curl auf unseren Server zugreifen, ist es angezeigt, die Vertrauenskette zu inspizieren und die Verschlüsselung zu überprüfen. Starten wir den Server also und schreiten wir zur Überprüfung. Dazu verwenden wir erneut das Kommandozeilen-Hilfsmittel `openssl`, das mit einer Vielzahl von Optionen und Anwendungsmöglichkeiten glänzt.  Da _OpenSSL_ aber anders als der Browser und `curl` keine Liste mit offiziellen Signierungsstellen besitzt, müssen wir dem Tool das Zertifikat von _Let's Encrypt_ auch bekannt geben. Wir besorgen es uns bei _Let's Encrypt_ und rufen wir `openssl` gleich damit auf:
 
@@ -609,7 +609,7 @@ Bei der Auflistung der Kette ganz oben können wir erkennen, dass _Let's Encrypt
 
 
 
-###Schritt 6: Apache Konfiguration noch etwas verfeinern
+### Schritt 6: Apache Konfiguration noch etwas verfeinern
 
 Nun sind alle Vorbereitungen abgeschlossen und wir können den Webserver final konfigurieren. Ich liefere hier nicht mehr die komplette Konfiguration, sondern nur noch den korrekten Servernamen und den verfeinerten SSL-Teil.
 
@@ -667,9 +667,9 @@ SSLSessionCache         nonenotnull
 SSLSessionTickets       Off
 ```
 
-Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance. Allerdings nimmt sich der Performance-Verlust eher klein aus. Es wäre überraschend, wenn ein Last-Test auf das Ausschalten mit einem Leistungsrückgang von mehr als 5 oder 10% reagieren würde.
+Natürlich bleibt diese Anpassung nicht ohne Folgen für die Performance. Allerdings nimmt sich der Performance-Verlust eher klein aus. Es wäre überraschend, wenn ein Last-Test auf das Ausschalten mit einem Leistungsrückgang von mehr als 5 oder 10% reagieren würde. Für Clients bedeutet es allerdings eine höhere Latenz, da sie den Handshake nun komplett neu durchführen müssen. Es handelt sich also wieder um eine Frage, ob man die Angriffsoberfläche auf Kosten der Performance reduzieren will. Für die allermeisten Sites ist es den Performance-Verlust nicht wert und sie lassen das Caching aktiviert. Das halte generell auch für das richtige Vorgehen.
 
-###Schritt 7: Den Server im Browser aufrufen
+### Schritt 7: Den Server im Browser aufrufen
 
 Jetzt, da wir sicher sind, dass wir ein offiziell signiertes Zertifikat mit einer gültigen Vertrauenskette besitzen und auch die weitere Konfiguration im Detail verstanden haben, können wir uns dem Browser zuwenden und die konfigurierte Domain dort aufrufen. In meinem Fall ist das [https://www.christian-folini.ch](https://www.christian-folini.ch).
 
@@ -678,7 +678,7 @@ Jetzt, da wir sicher sind, dass wir ein offiziell signiertes Zertifikat mit eine
 Der Browser bewertet die Verbindung als sicher.
 
 
-###Schritt 8: Das Zertifikat via Cronjob von Let's Encrypt beziehen
+### Schritt 8: Das Zertifikat via Cronjob von Let's Encrypt beziehen
 
 _Let's Encrypt_ stellt Zertifikate in der Regel für eine Dauer von 90 Tagen aus. Den oben durchgespielten händischen Aufruf mit dem manuellen Kopieren des Zertifikats und des Schlüssels müssen wir demnach alle drei Monate wiederholen. Dies lässt sich automatisieren. Da der `getssl` Prozess Zugriff auf den Zertifikats-Schlüssel benötigt muss der Prozess als `root`-User arbeiten. Weiter muss der Prozess die Zertifizierungstelle _Let's Encrypt_ über das Internet aufrufen. Faktisch heisst das, dass wir `root` via cron damit beauftragen ins Internet zu gehen. Das ist nicht ohne Risiko und will gut überlegt sein.
 
@@ -703,7 +703,7 @@ Damit ist der Bezug und die Erneuerung des Zertifikats voll automatisiert und wi
 
 Interessanterweise gibt es im Internet so etwas wie eine Bewertungsinstanz, was sichere _HTTPS-Server_ betrifft. Das sehen wir uns nun noch als Bonus an.
 
-###Schritt 9 (Bonus): Qualität der SSL Sicherung extern überprüfen lassen
+### Schritt 9 (Bonus): Qualität der SSL Sicherung extern überprüfen lassen
 
 Ivan Ristić, der oben erwähnte Autor von mehreren Büchern über Apache und SSL, hat einen Dienst zur Überprüfung von _SSL-Webservern_ aufgebaut. Diesen Service hat er inzwischen ans Qualys weiterverkauft, wo er weiterhin gepflegt und laufend erweitert wird. Er befindet sich unter [www.ssllabs.com](https://www.ssllabs.com/ssldb/index.html). Ein Webserver wie oben konfiguriert brachte mir im Test die Höchstnote von _A+_ ein.
 
@@ -711,7 +711,7 @@ Ivan Ristić, der oben erwähnte Autor von mehreren Büchern über Apache und SS
 
 Die Höchstnote ist mit dieser Anleitung in Reichweite.
 
-###Verweise
+### Verweise
 
 * [Wikipedia OpenSSL](http://de.wikipedia.org/wiki/Openssl)
 * [OpenSSL Cookbook](https://www.feistyduck.com/books/openssl-cookbook/)

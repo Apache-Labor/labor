@@ -1,17 +1,17 @@
-##Apache und ModSec effizient in der Shell konfigurieren und debuggen
+## Apache und ModSec effizient in der Shell konfigurieren und debuggen
 
-###Was machen wir?
+### Was machen wir?
 
 Wir legen uns Shell-Werkzeuge und eine Arbeitsweise zurecht, welche es erlaubt, Apache-Konfigurationen effizient zu bearbeiten und in wenigen Sekunden zu testen, ohne den Browser zu benützen oder ständig Files von Hand durchsuchen zu müssen.
 
-###Warum tun wir das?
+### Warum tun wir das?
 
 Den Apache Webserver erfolgreich zu konfigurieren setzt viel Wissen und Erfahrung voraus. Wenn ModSecurity hinzukommt und in die Verarbeitung eingreifen soll, dann wird die Konfiguration noch komplizierter. Es ist deshalb nötig, sich die richtigen Werkzeuge zurechtzulegen und einen systematischen Arbeitsablauf einzurichten. Dies ist das Ziel dieses Tutorials.
 
 Die Anleitung hat etwas pedantisches an sich, denn es geht darin mit vollem Ernst um die Optimierung von einzelnen Tastendrucken. Da verschiedene Aktionen bei der Entwicklung der Konfiguration eines Webservers dutzende, und bisweilen sogar über hundert Mal nacheinander ausgelöst werden müssen, hat eine Optimierung des Ablaufs, wie lächerlich sie auch scheinen mag, ein grosses Potential. Dazu kommt der Vorteil, dass wir damit unnötigen Ballast entfernen können, was den Blick auf das eigentliche Konfigurationsproblem freimacht. Zu diesem Zweck präsentiert diese Anleitung einige Tricks und Ideen, die einen ansprechenden Gewinn bringen.
 
 
-###Voraussetzungen
+### Voraussetzungen
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](https://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/)
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](https://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/)
@@ -21,7 +21,7 @@ Die Anleitung hat etwas pedantisches an sich, denn es geht darin mit vollem Erns
 * Ein Apache Webserver mit einer Core Rules Installation wie in [Anleitung 7 (Core Rules einbinden)](http://www.netnea.com/cms/modsecurity-core-rules-einbinden/)
 
 
-###Schritt 1: Curl
+### Schritt 1: Curl
 
 Curl ist das richtige Werkzeug um HTTP Anfragen auszulösen. Natürlich muss HTTP primär im Browser oder der Applikation funktionieren. Aber bei der Fehlersuche oder der Konfiguration von neuen Features erweist sich der Browser in aller Regel als zu schwerfällig. Cookie-Handling, Grösse des Fensters, automatisches Folgen von Redirects etc. tragen alle dazu bei, dass man bei der Arbeit im Browser viel Zeit verbraucht. Besser von der Hand läuft es deshalb, wenn man ein Problem im Browser identifiziert, es dann mittels `curl` reproduziert, den Fehler sucht, ihn in der Konfiguration des Servers behebt und schliesslich die Lösung im Browser verifiziert.
 
@@ -39,7 +39,7 @@ $> curl http://localhost/login.html --next --cookie-jar /tmp/cookies.txt --cooki
 Das erste Beispiel arbeitet mit einem Cookie-File, in das empfangene Cookies geschrieben und aus dem Cookies für neue Requests gelesen werden. Im zweiten Beispiel, das nur mit einem relativ neuen `curl` funktioniert, werden mehrere Anfragen auf einer einzigen Zeile zusammengeführt. Interessant ist nun die Option `--next`, welche die Kommandozeilenargumente unterteilt. Die Parameter nach dem `--next` gelten nur nach rechts. Das bedeutet, dass das obenstehende Beispiel zunächst einen GET Requst absetzt, und dann auf derselben TCP Verbindung einen POST Request anschliesst und das Session Cookie danach im Cookie-Jar abspeichert.
 
 
-###Schritt 2: Single File Apache Konfiguration
+### Schritt 2: Single File Apache Konfiguration
 
 Die in dieser Artikelserie verwendete Apache-Konfiguration ist für das Labor gedacht. Damit meine ich eine Test-Umgebung, in der Konfigurationen rasch ausprobiert oder Fehler ohne Rücksicht auf produktiven HTTP-Verkehr gesucht werden können. Ein wesentliches Merkmal der verwendeten Apache-Konfiguration war die Technik, die gesamte Konfiguration mit Ausnahme der OWASP ModSecurity Core Rules in einer einzigen Datei unterzubringen. Dies bringt den Vorteil, im File sehr rasch navigieren und einzelne Passagen mittels Standard-Suchbefehlen erreichen zu können. Dieses Prinzip ist aber nicht nur im Labor ein Gewinn, auch in einer Produktionsumgebung macht es Sinn so zu arbeiten und Widersprüche und Redundanzen weitgehend auszuschliessen. Die heute verbreitete Modularisierung der Webserver Konfiguration in verschiedene Dateien steht dem allerdings im Wege und provoziert Fehler. Tatsächlich wurde ich schon mehrfach mit Setups konfrontiert, die Virtualhosts mehrfach konfigurierten, widersprüchliche Zugriffsbeschränkungen einrichteten und deren Administratoren sich überrascht zeigten, dass die konfigurierten Direktiven andernorts übersteuert wurden. Aus diesem Grund versuche ich wenn immer möglich mit einer Konfiguration in einem einzigen File zu arbeiten.
 
@@ -54,7 +54,7 @@ $> vim httpd.conf_problem-of-the-day
 
 `Vim` eignet sich gut, um Apache Konfigurationen zu bearbeiten, aber letztlich spielt der Editor keine entscheidende Rolle solange er Syntax-Highlighting unterstützt, was aus meiner Sicht Editieren einen Mehrwert bringt.
 
-###Schritt 3: Apachex
+### Schritt 3: Apachex
 
 Mit `curl` und einem Single-File-Apache haben wir bereits gute Voraussetzungen, um rasch Konfigurationen anpassen und sie ebenso rasch testen zu können. Ein etwas nerviger Schritt steht meistens zwischen diesen beiden oft wiederholten Schritten: Der Neustart des Webservers. In den ersten beiden Anleitungen haben wir den Server jeweils mit dem Kommandozeilen Flag `-X` gestartet. Ich arbeite oft mit `-X`, da es ja den Server nicht in den Daemon-Moder versetzt und ihn stattdessen im Vordergrund als Single-Prozess laufen lässt. Ein Absturz des Servers ist damit unmittelbar in der Shell sichtbar. Wenn wir den Webserver standardgemäss starten und ihn als Daemon betreiben, müssen wir das Error-Log beobachten und sicherstellen, dass wir einen Absturz nicht verpassen, was allerlei merkwürdige Effekte nach sich ziehen kann. Diese Überwachung ist zwar machbar, in meiner Erfahrung aber ein überraschend gravierender Nachteil. Ich arbeite also mit `-X`. 
 
@@ -115,7 +115,7 @@ Bailing out ... ok
 
 ``` 
 
-###Schritt 4: lastrequestsummary
+### Schritt 4: lastrequestsummary
 
 Nun fehlt uns noch ein gescheiter Zugang zu den Logfiles. Zwar gibt uns `curl -v` bereits Feedback, über die Resultate eines Requests. Aber gerade bei ModSecurity Regeln ist es wichtig, der Verarbeitung auch serverseitig folgen zu können. Und genau ModSecurity ist mit seinem gesprächigen und unübersichtlichen Logfile-Einträgen eine Herausforderungen, zumal ein einzelner Aufruf rasch mehr Protokoll generiert als in einem Fenster platz findet; zumal uns die meisten Informationen nicht interessieren. Was uns fehlt ist eine Zusammenfassung eines Requests über das `Access-Log` und das `Error-Log` hinweg. Das Skript `lastrequestsummary` bringt so eine Auswertung ([lastrequestsummary](https://www.netnea.com/files/lastrequestsummary)):
 
@@ -248,7 +248,7 @@ watch --interval 1 --no-title "lastrequestsummary /apache/logs/access.log /apach
 
 Auch hier ist es namentlich für den produktiven Einsatz angezeigt, die Filenamen anzupassen, respektive sie über einen geschickten Suchprozess automatisch bestimmen zu lassen.
 
-###Schritt 5: Aufteilen des Bildschirms in 4 Teile
+### Schritt 5: Aufteilen des Bildschirms in 4 Teile
 
 In den vorangegangenen vier Schritten haben wir gesehen wie wir Apache konfigurieren, ihn einfach starten, ihn möglichst effizient ansprechen und schliesslich das Verhalten in den Logfiles überprüfen. Es bietet sich an, jeden dieser Schritte einem eigenen Shell-Fenster zuzuweisen. Damit kommen wir zu einem klassischen Vier-Fenster-Setup, der sich in der Praxis als sehr effizient erwiesen hat. Eine genügende Anzahl Bildschirme vorausgesetzt spricht nichts dagegen, es mit einem 6- oder 9-Bildschirm-Setup zu probieren, es sei denn man verliere darüber den Überblick.
 
@@ -267,7 +267,7 @@ Hier ein Bildschirmschnappschuss von meinem Desktop:
 
 ![Screenshot: 4 Shells](https://www.netnea.com/files/4-shells-screenshot.png)
 
-###Verweise
+### Verweise
 
 * [apachex](https://www.netnea.com/files/apachex)
 * [lastrequestsummary](https://www.netnea.com/files/lastrequestsummary)

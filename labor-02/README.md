@@ -1,20 +1,20 @@
-##Aufsetzen eines Apache/PHP Applikationsservers
+## Aufsetzen eines Apache/PHP Applikationsservers
 
-###Was machen wir?
+### Was machen wir?
 
 Wir setzen einen Apache / PHP Applikationsserver mit den minimal nötigen Modulen auf.
 
-###Warum tun wir das?
+### Warum tun wir das?
 
 Ein nackter Apache eignet sich, um statische Files auszuliefern. Komplexere Applikationen bauen auf dynamischem Content auf. Dies bedingt eine Erweiterung des Servers. Ein sehr schneller und sicherer Applikationsserver lässt sich mit _Suexec_, einem externen _FastCGI-Daemon_ und _PHP_ realisieren. Dies ist bei weitem nicht die einzige Variante und im Unternehmensumfeld vermutlich auch nicht die verbreitetste. Aber es ist eine sehr einfache Architektur, die sich hervorragend für ein Testsystem eignet.
 
-###Voraussetzungen
+### Voraussetzungen
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](http://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
 * Verständnis der minimalen Konfiguration in [Anleitung 2 (Apache minimal konfigurieren)](http://www.netnea.com/cms/apache_tutorial_2_apache_minimal_konfigurieren/).
 
 
-###Schritt 1: Apache konfigurieren
+### Schritt 1: Apache konfigurieren
 
 Wir konfigurieren den Webserver vorneweg; wohlwissend, dass er in dieser Konfiguration noch nicht lauffähig ist. Basierend 
 auf dem in Lektion 2 beschriebenen minimalen Webserver konfigurieren wir einen sehr einfachen Applikationsserver in der Datei *conf/httpd.conf_fastcgid*.
@@ -90,13 +90,13 @@ Das Verzeichnis _/apache/htdocs_ benötigt neu die zusätzliche Option _ExecCGI_
 
 _FastCGI_ ist eine Technik um dynamischen Programmcode aus einem Webserver heraus aufzurufen. Es ist eine sehr schnelle Technik, welche den Server weitgehend unberührt lässt und die Applikation auf einem separaten Daemon ausführt. Um die Geschwindigkeit zu steigern stellt _FastCGI_ mehrere Instanzen dieses Daemons bereit, so dass eine Anfrage ohne Wartepause verarbeitet werden kann. In der Praxis ist dies ein ansprechender Performance-Gewinn und vor allem eine Architektur, welche Speicher spart, wie unten genauer erklärt wird.
 
-###Schritt 2: Apache mir Suexec-Unterstützung kompilieren
+### Schritt 2: Apache mir Suexec-Unterstützung kompilieren
 
 Wir müssen nun zwei fehlende Module kompilieren und weitere Komponenten für den _FCGI-Daemon_ bereitstellen. Beginnen wir mit dem _Suexec-Modul_.
 
 In Lektion 1 wurde ein Apache Webserver selbst kompiliert. Aber obschon dort die Option _--enable-mods-shared=all_ verwendet wurde, ist _suexec_ noch nicht kompiliert. Das Modul ist demnach so speziell, dass es nicht als Standard-Modul mitkompiliert werden kann, obschon es im Quelltext vorhanden ist.
 
-Der in Lektion 2 konfigurierte Webserver läuft als Benutzer _www-data_ oder je nach Konfiguration als beliebiger anderer dedizierter Benutzer. Unsere dynamische Applikation möchten wir noch weiter eingrenzen und den separaten Daemon unter einem weiteren separaten User drehen lassen. Dies wird uns durch das Modul _suexec_ ermöglicht.  Diese Massnahme ist nicht zwingend. Aber sie bringt ein Mehr an Sicherheit mit wenig zusätzlichem Aufwand.
+Der in Lektion 2 konfigurierte Webserver läuft als Benutzer _www-data_ oder je nach Konfiguration als beliebiger anderer dedizierter Benutzer. Unsere dynamische Applikation möchten wir noch weiter eingrenzen und den separaten Daemon unter einem weiteren separaten User drehen lassen. Diesen User kreieren wir in einem der nächsten Schritte. Dies wird uns durch das Modul _suexec_ ermöglicht.  Diese Massnahme ist nicht zwingend. Aber sie bringt ein Mehr an Sicherheit mit wenig zusätzlichem Aufwand.
 
 Begeben wir uns ins Verzeichnis mit dem Apache Quelltext und kompilieren den Server neu. 
 
@@ -115,7 +115,7 @@ Nach der erfolgreichen Konfiguration wird obenstehende Befehlszeile den Compiler
 
 Übrigens: Wenn man bei der obenstehenden Konfiguration einen Fehler macht und _Suexec_ andere Compilerkonstanten mitgeben möchte, dann muss man vor dem erneuten Kompilieren zuerst die Compiler-Umgebung reinigen. Ansonsten werden die neuen Optionen ignoriert. Dies können wir über den Befehl _make clean_ vor dem _configure_ erreichen, oder durch manuelles Löschen der Dateien _support/suexec_, _support/suexec.lo_ und _support/suexec.o_, was schneller geht, weil danach nicht mehr der gesamte Webserver neu gebaut werden muss.
 
-###Schritt 3: FastCGI Modul herunterladen und kompilieren
+### Schritt 3: FastCGI Modul herunterladen und kompilieren
 
 Das _FastCGI-Modul_ wird von Apache verwaltet. Es ist aber nicht Teil des normalen Quellcodes des Webservers. Laden wir den Quelltext für das zusätzliche Modul also herunter und prüfen wir die über eine verschlüsselte Verbindung geladene Checksumme.
 
@@ -149,13 +149,13 @@ $> sudo mkdir /apache/logs/fcgidsock
 $> sudo chown www-data:www-data /apache/logs/fcgidsock
 ```
 
-###Schritt 4: PHP installieren und vorkonfigurieren
+### Schritt 4: PHP installieren und vorkonfigurieren
 
 Bislang haben wir die ganze Software Stück für Stück selbst kompiliert. Beim ganzen PHP-Stack ist aber eine Grenze erreicht. Es soll niemandem verwehrt werden, PHP selbst zu kompilieren, hier konzentrieren wir uns aber auf den Webserver und übernehmen dieses Stück Software deshalb aus der Linux-Distribution. In Debian/Ubuntu heisst das entsprechende Paket _php7.0-cgi_ und es zieht _php7.0-common_ nach sich.
 
 _PHP_ richtig zu konfigurieren ist ein weites Feld und ich empfehle die einschlägigen Seiten zu konsultieren, denn ein falsch konfiguriertes _PHP_ kann ein grosses Sicherheitsproblem darstellen. Hier möchte ich nicht mehr Informationen dazu geben, da es von unserem eigentlichen Thema, dem einfachen Applikationsserver, wegführen würde. Für den Betrieb im Internet, also nicht mehr im heimischen Laborbereich, ist es aber deutlich angezeigt, sich mit den relevanten PHP-Sicherheitseinstellungen vertraut zu machen.
 
-###Schritt 5: CGI User erstellen
+### Schritt 5: CGI User erstellen
 
 Oben wurde bereits beschrieben, dass wir planen, einen separaten Daemon zur Bearbeitung der _PHP-Anfragen_ zu starten. Dieser Daemon soll mittels _suexec_ gestartet werden und als eigenständiger Benutzer laufen.  Wir erstellen diesen Benutzer folgendermassen:
 
@@ -166,7 +166,7 @@ $> sudo useradd -s /bin/false -d /apache/htdocs -m -g fcgi-php fcgi-php
 
 Es ist zu erwarten, dass eine Warnung betreffend des vorhandenen Verzeichnisses _/apache/htdocs_ erscheint. Diese können wir aber ignorieren.
 
-###Schritt 6: PHP-Wrapper Skript erstellen
+### Schritt 6: PHP-Wrapper Skript erstellen
 
 Es ist üblich, _PHP_ und _FCGI_ mittels eines _Wrapper-Skripts_ zusammenarbeiten zu lassen. Wir haben das oben auch schon in der Apache Konfiguration so vorgesehen. Der Webserver wird ausschliesslich dieses Skript aufrufen, während sich das Skript um alles weitere kümmert. Wir legen das Skript wie vorgesehen in _/apache/bin/php-fcgi-starter/php-fcgi-starter_ ab. 
 Das Unterverzeichnis ist nötig, denn _suexec_ setzt voraus, dass das Verzeichnis dem vorkonfigurierten Benutzer gehört und wir möchten _./bin_ nicht komplett dem neuen Benutzer übergeben. Legen wir das Unterverzeichnis also an:
@@ -197,7 +197,7 @@ $> sudo chown fcgi-php:fcgi-php php-fcgi-starter/php-fcgi-starter
 $> sudo chmod +x php-fcgi-starter/php-fcgi-starter
 ```
 
-###Schritt 7: PHP-Testseite erstellen
+### Schritt 7: PHP-Testseite erstellen
 
 Zum Schluss sollten wir noch eine einfache _php-basierte_ Testseite erstellen: _/apache/htdocs/info.php_.
 
@@ -207,7 +207,7 @@ phpinfo();
 ?>
 ```
 
-###Schritt 8: Ausprobieren
+### Schritt 8: Ausprobieren
 
 Das war alles. Nun können wir den Webserver starten und ausprobieren.
 
@@ -236,7 +236,7 @@ Hier zur Zusammenfassung nochmals die relevanten Files und ihre Besitzer:
 
 Auffällig ist das _Suid-Bit_ auf dem _Suexec-Binary_.
 
-###Schritt 9 (Bonus): Ein kleiner Lasttest
+### Schritt 9 (Bonus): Ein kleiner Lasttest
 
 Der hier gebaute Applikations-Server ist im Vergleich zu einem Apache mit eingebautem _PHP_ sehr leistungsfähig. Ein kleiner Lasttest kann dies illustrieren. Wir starten unseren Webserver im _Daemon-Mode_ und benutzen Apache-Bench um ihm mit 5 Usern auf den Zahn zu fühlen. Neu ist die Option _-l_, welche das Werkzeug instruiert, auf Abweichungen in der Länge der Antworten nicht weiter einzugehen. Denn die Seite ist ja dynamisch generiert und der Inhalt, sowie dessen Länge, weichen natürlicherweise immer wieder ein wenig ab. Nach dem Lasttest beenden wir den Server wieder.
 
@@ -311,7 +311,7 @@ Das sind 389 dynamische Requests pro Sekunde. Das sind viele. Besonders weil das
 Bemerkenswert ist aber weniger die Geschwingigkeit des Systems als der Speicherverbrauch. Im Gegensatz zu einem Applikationsserver mit integriertem _PHP-Modul_ haben wir den _PHP-Stack_ hier ausgelagert. Das erlaubt es uns einen Apache Webserver mit _Event-MPM_ zu benutzen. In einem integrierten Setup müssten wir den _Prefork-MPM_ verwenden, der nicht mit Serverthreads, sondern mit speicherhungrigen Serverprozessen arbeitet. Und jeder dieser Prozesse würde dann auch noch das _PHP-Modul_ laden, unbesehen davon, dass die meisten Requests in der Regel auf statische Applikationsteile wie Bilder, _CSS_, _Javascripts_ etc. entfallen.
 Auf meinem Testsystem schlägt jeder _Prefork-Apache-Prozess_ inklusive _PHP_ mit 6 MB _Resident Size_ zu Buche. Ein Event-Prozess mit lediglich _4 MB_ und die Zahl der externen _FCGI-Prozesse_ bleibt deutlich kleiner.
 
-###Verweise
+### Verweise
 
 * Apache: http://httpd.apache.org
 * Apache FCGI: http://httpd.apache.org/mod_fcgid

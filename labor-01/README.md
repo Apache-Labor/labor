@@ -1,19 +1,19 @@
-##Konfigurieren eines minimalen Apache Servers
+## Konfigurieren eines minimalen Apache Servers
 
-###Was machen wir?
+### Was machen wir?
 
 Wir konfigurieren einen minimalen Apache Webserver und sprechen ihn mit curl, der TRACE-Methode und ab an.
 
-###Warum tun wir das?
+### Warum tun wir das?
 
 Ein sicherer Server ist ein Server, der nur soviel zulässt, wie wirklich benötigt wird. Idealerweise baut man einen Server also auf Basis eines minimalen Systems auf, indem man weitere Features nacheinander einzeln zuschaltet. Dies ist auch aus Verständnisgründen vorzuziehen, denn nur in diesem Fall versteht man, was wirklich konfiguriert ist.
 Ferner ist es bei der Fehlersuche hilfreich, von einem minimalen System auszugehen. Ist der Fehler im minimalen System noch nicht vorhanden, werden die Features einzeln zugeschaltet und neu nach dem Fehler gesucht. Sobald er auftaucht, ist es klar, dass er mit der zuletzt zugeschalteten Konfigurationsdirektive in Verbindung steht.
 
-###Voraussetzungen
+### Voraussetzungen
 
 * Ein Apache Webserver, idealerweise mit einem File-Layout wie bei [Anleitung 1 (Kompilieren eines Apache Servers)](http://www.netnea.com/cms/apache_tutorial_1_apache_compilieren/) erstellt.
 
-###Schritt 1: Minimale Konfiguration erstellen
+### Schritt 1: Minimale Konfiguration erstellen
 
 Unser Webserver ist auf dem Dateisystem unter `/apache` abgelegt. Unter `/apache/conf/httpd.conf` liegt seine Standard-Konfiguration. Diese ist sehr umfangreich und nur schwer zu verstehen. Aber zumindest ist alles noch in einer einzigen Datei. Für die Apache Versionen in der verschiedenen Linux-Distributionen ist die Standardkonfiguration nicht nur sehr kompliziert, sie ist auch in verschiedenste separate Dateien fragmentiert. Diese sind über mehrere Verzeichnisse verteilt. Dies kann es schwierig machen, einen guten Überblick darüber zu bekommen, was tatsächlich vor sich geht.
 Zur Vereinfachung werden wir diese umfangreiche Konfigurationsdatei durch die folgende, stark vereinfachte Konfiguration ersetzen.
@@ -74,7 +74,7 @@ DocumentRoot            /apache/htdocs
 </VirtualHost>
 ```
 
-###Schritt 2: Konfiguration verstehen
+### Schritt 2: Konfiguration verstehen
 
 Gehen wir diese Konfiguration Schritt für Schritt durch.
 
@@ -136,7 +136,7 @@ Nun eröffnen wir einen _VirtualHost_. Er korrespondiert mit der oben definierte
 
 Konkret lassen wir Zugriffe auf unser _DocumentRoot_ zu. Schlüsselanweisung ist hier das _Require all granted_, womit wir im Gegensatz zum Verzeichnis _/_ kompletten Zugriff zulassen. Anders als oben sind ab diesem Pfad nun keine Symlinks mehr vorgesehen und auch sonst keine Spezialfähigkeiten: _Options None_.
 
-###Schritt 3: Server starten
+### Schritt 3: Server starten
 
 Damit ist unser minimaler Server beschrieben. Es wäre möglich, einen noch knapperen Server zu definieren. Aber damit liesse sich nicht mehr so komfortabel arbeiten wie mit unserem und er wäre auch nicht mehr sicher. Eine gewisse Grundsicherung ist aber angebracht. Denn wenn wir nun im Labor einen Service aufbauen, dann sollte der sich auch mit punktuellen Anpassungen in eine produktive Umgebung verschieben lassen. Einen Service kurz vor der Produktivschaltung noch von Grund auf sichern zu wollen ist illusorisch.
 
@@ -147,7 +147,7 @@ $> cd /apache
 $> sudo ./bin/httpd -X
 ```
 
-###Schritt 4: Server mit curl ansprechen
+### Schritt 4: Server mit curl ansprechen
 
 Wir können den Server nun wieder mit dem Browser ansprechen. Aber aus der Shell heraus lässt es sich erst mal sauberer arbeiten und besser verstehen, was passiert:
 
@@ -163,7 +163,7 @@ Dies liefert folgendes Resultat.
 
 Wir haben also einen HTTP-Aufruf abgesetzt und von unserem minimal konfigurierten Server eine Antwort erhalten, die unseren Erwartungen entspricht.
 
-###Schritt 5: Anfrage und Antwort untersuchen
+### Schritt 5: Anfrage und Antwort untersuchen
 
 Das passiert also bei einer HTTP-Anfrage. Aber was antwortet der Server uns eigentlich genau? Dazu rufen wir _curl_ nochmals auf. Dieses Mal mit der Option _verbose_.
 
@@ -209,7 +209,7 @@ Dann teilt der Server mit, wann das der Antwort zu Grunde liegende File zum letz
 
 Übrigens ist die Reihenfolge dieser Header charakteristisch für einen Webserver. _NginX_ verwendet eine andere Reihenfolge und bringt den _Server-Header_ beispielsweise vor dem Datum. Apache lässt sich deshalb auch identifizieren, wenn die Server-Zeile uns in die Irre führen sollte.
 
-###Schritt 6: Die Antwort noch etwas genauer untersuchen
+### Schritt 6: Die Antwort noch etwas genauer untersuchen
 
 Es ist möglich, bei der Kommunikation noch etwas tiefer in _curl_ hineinzublicken. Das geschieht über den Kommandozeilen-Parameter _--trace-ascii_:
 
@@ -252,7 +252,7 @@ Der Parameter _--trace-ascii_ benötigt ein File als Parameter, um darin einen _
 Gegenüber _verbose_ bringt _trace-ascii_ mehr Details zur Länge der übertragenen Bytes in der _Request_- und _Response_-Phase. Die Request-Header umfassten in obigem Beispiel also 83 Bytes. Bei der Antwort werden die Bytes dann pro Header-Zeile gelistet und pauschal für den Body der Antwort: 45 Bytes. Das mag jetzt alles nach Haarspalterei klingen. Tatsächlich ist es aber bisweilen spielentscheidend, wenn man ein Stückchen vermisst und sich nicht ganz sicher ist, was wo in welcher Reihenfolge angeliefert wurde. So ist es etwa auffällig, dass bei den Headerzeilen jeweils 2 Bytes hinzukommen. Das sind der CR (Carriage Return) und NL (New Line), den das HTTP-Protokoll in den Header-Zeilen vorsieht. Anders im Response-Body, wo nur das retourniert wird, was tatsächlich in der Datei steht. Das ist hier offensichtlich nur ein NL ohne CR. Auf der drittuntersten Zeile (0000: html ...) folgt auf das grösser-als-Zeichen ein Punkt. Dies ist eine Umschreibung des NL-Charakters der Antwort, der wie andere Escape-Sequenzen auch in der Form eines Punktes wiedergegeben wird.
 
 
-###Schritt 7: Mit Trace Methode arbeiten
+### Schritt 7: Mit Trace Methode arbeiten
 
 Oben habe ich die Direktive _TraceEnable_ beschrieben. Wir haben sie sicherheitshalber auf _off_ geschaltet. Bei der Fehlersuche kann sie aber ganz nützlich sein. Also probieren wir das doch mal aus. Setzen wir die Option auf on:
 
@@ -296,7 +296,7 @@ Im _Body_ wiederholt der Server wie vorgesehen die Informationen zum gesendeten 
 
 Vergessen Sie nicht, _TraceEnable_ wieder auszuschalten.
 
-###Schritt 8: Server mit "ab" auf den Zahn fühlen
+### Schritt 8: Server mit "ab" auf den Zahn fühlen
 
 Das wär's erst Mal mit dem simplen Server. Spasseshalber können wir ihm aber noch etwas auf den Zahn fühlen. Wir inszenieren einen kleinen Lasttest mit _ab_; kurz für _Apache Bench_. Dies ist ein sehr einfaches Lasttest-Programm, das immer zur Hand ist und rasche erste Resultate zur Performance liefern kann. So lasse ich ab gerne vor und nach einer Konfigurationsänderung laufen, um eine Idee zu erhalten, ob sich an der Performance etwas verändert hat. _Ab_ ist nicht sehr mächtig und der lokale Aufruf bringt auch keine sauberen Resultate. Aber so ein erster Augenschein lässt sich mit diesem Hilfsmittel gewinnen.
 
@@ -366,7 +366,7 @@ Percentage of the requests served within a certain time (ms)
 
 Interessant ist für uns vor allem die Zahl der Fehler (_Failed Requests_) und die Zahl der Anfragen pro Sekunde (_Request per second_). Ein Wert von über Tausend ist ein guter Start. Zumal wir ja immer noch mit einem einzigen Prozess und nicht mit einem parallelisierten Daemon arbeiten (und deshalb auch der _concurrency-level_ auf 1 gesetzt ist).
 
-###Schritt 9: Direktiven und Module ansehen
+### Schritt 9: Direktiven und Module ansehen
 
 Zum Schluss dieses Tutorials schauen wir uns die verschiedenen Direktiven an, welche ein mit unserem Konfigurationsfile zu startender Apache kennt. Die verschiedenen geladenen Module erweitern den Befehlssatz des Servers. Die damit zur Verfügung stehenden Konfigurationsparameter sind auf der Webseite des Projektes gut dokumentiert. Tatsächlich kann es aber in besonderen Fällen hilfreich sein, den durch die geladenen Module zur Verfügung stehenden Direktiven zu überblicken. Die Direktiven erhält man mit dem Kommando-Zeilen-Flag _-L_.
 
@@ -418,7 +418,7 @@ Das Modul _authn_core_ wird also nicht verwendet. Das ist korrekt; das hatten wi
 Soweit zu diesem Tutorial. Damit ist bereits ein tauglicher Webserver vorhanden, mit dem man gut arbeiten kann. In den nächsten Lektionen bauen wir ihn weiter aus.
 
 
-###Verweise
+### Verweise
 
 * Apache: http://httpd.apache.org
 * Apache Direktiven: http://httpd.apache.org/docs/current/mod/directives.html

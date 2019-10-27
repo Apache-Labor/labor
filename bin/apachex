@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Skript to launch apache repeatedly via httpd -X
+# Script to launch apache repeatedly via httpd -X
 #
 # The script guesses the desired apache config and handles
 # - sudo
@@ -19,7 +19,7 @@ echo "$0"
 
 cat <<'EOF'
 
-Skript to launch apache repeatedly via httpd -X.
+Script to launch apache repeatedly via httpd -X.
 
 The script guesses the desired apache config and handles
  - sudo
