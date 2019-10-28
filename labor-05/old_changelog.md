@@ -1,5 +1,6 @@
 ###Changelog
 
+* 28\. Oktober 2019: Änderungen im deutschen Text gemäss englischem Text nachgezogen
 * 3\. April 2018: Whitelisting Regeln in die ID Range 11'000 verschoben
 * 17\. Dezember 2017: Installieren von Paketen umformuliert; STS Header gesetzt; Regel 200000 angepasst; Updated whitelist Error Log; Regel 200004->200005 umnummeriert
 * 25\. September 2017: Update of apr (1.6.2), apr-util (1.6.0), apache (2.4.27) and ModSecurity (2.9.2)

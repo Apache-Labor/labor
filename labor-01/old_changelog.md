@@ -1,5 +1,6 @@
 ###Changelog
 
+* 28\. Oktober 2019: Änderungen im deutschen Text gemäss englischem Text nachgezogen
 * 25\. Februar 2017: Neu-Formulierung eines Satzes in der Einleitung, AllowOverride komplett entfernt
 * 25\. August 2016: Zeilenumbrüche justiert
 * 16\. Januar 2016: Lizenzhinweis eingefügt

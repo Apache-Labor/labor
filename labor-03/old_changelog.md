@@ -1,5 +1,6 @@
 ###Changelog
 
+* 28\. Oktober 2019: Änderungen im deutschen Text gemäss englischem Text nachgezogen
 * 17\. Dezember 2017: Einige Links gefixt
 * 4\. März 2017: IP Adressen des VirtualHosts auf 127.0.0.1 fixiert, Stdout der curl-Aufrufe aktualisiert
 * 25\. Februar 2017: AllowOverride komplett entfernt

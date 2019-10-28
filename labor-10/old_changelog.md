@@ -1,5 +1,6 @@
 ###Changelog
 
+* 28\. Oktober 2019: Änderungen im deutschen Text gemäss englischem Text nachgezogen
 * 17\. Dezember 2017: Einige Links gefixt
 * 25\. September 2017: Zeilenumbruch beim Schritt 11
 * 12\. Dezember 2016: Lokale Links neu alle auf netnea.com gesetzt

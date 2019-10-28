@@ -72,7 +72,10 @@ def read_stdin()
      begin
        in_data, out_data = line.chomp.split(";")
        unless formatcheck_ok
-         if in_data  != in_data.to_i.to_s
+         if in_data == "-"
+	   # we accept the empty value "-"
+           formatcheck_ok = true
+         elsif in_data != in_data.to_i.to_s
        	   puts_error("Input's first line indicates, input is not in CSV format as")
 	   puts_error("explained by help text. This is fatal. Aborting.")
 	   exit 1
@@ -135,29 +138,40 @@ def print_stats_wrapper(nils_in, stats_in, nils_out, stats_out)
 
      total = stats.length + nils
      max = stats.max {|a,b| a <=> b }
-     
-     freq = Hash.new
-     0.upto(max) { |n| 
-       freq[n] = stats.select{|x| x == n }.length
-     }
 
-     puts "#{verb.upcase}                     Num of req. | % of req. |  Sum of % | Missing %" if $params[:headers]
-     printf("Number of %s req. (total) |%7i | %8.4f%% | %8.4f%% | %8.4f%%\n\n", verb, total, 100, 100, 0) if $params[:totals]
-     sum_perc = 0.0
+     if max
 
-     if $params[:empty]
-        perc = nils / total.to_f * 100
-        sum_perc = sum_perc + perc
-        printf("Empty or miss. #{verb} score   | %6d | %8.4f%% | %8.4f%% | %8.4f%%\n", nils, perc, sum_perc, 100 - sum_perc)
+       freq = Hash.new
+       0.upto(max) { |n| 
+         freq[n] = stats.select{|x| x == n }.length
+       }
+
+       puts "#{verb.upcase}                     Num of req. | % of req. |  Sum of % | Missing %" if $params[:headers]
+       printf("Number of %s req. (total) |%7i | %8.4f%% | %8.4f%% | %8.4f%%\n\n", verb, total, 100, 100, 0) if $params[:totals]
+       sum_perc = 0.0
+
+       if $params[:empty]
+          perc = nils / total.to_f * 100
+          sum_perc = sum_perc + perc
+          printf("Empty or miss. #{verb} score   | %6d | %8.4f%% | %8.4f%% | %8.4f%%\n", nils, perc, sum_perc, 100 - sum_perc)
+       end
+
+       freq.sort_by{ |key, value| key }.each { |key, value|
+          perc = value / total.to_f * 100
+          sum_perc = sum_perc + perc
+          printf("Reqs with #{verb} score of %3d | %6d | %8.4f%% | %8.4f%% | %8.4f%%\n", key, value, round(perc, 4), round(sum_perc, 4), 100 - round(sum_perc, 4))
+       }
+
+       printf("\n#{verb.capitalize} average: %8.4f    Median %8.4f    Standard deviation %8.4f\n", avg(stats), median(stats), standard_deviation(stats)) if $params[:summary]
+
+     else
+       # Variable max is empty. This happens when no values were received for incoming or outgoing. 
+       # So there is nothing to print really. But this is quite rare.
+
+       puts "No values received for #{verb.upcase}, only empty entries. Thus nothing to print."
+       puts "Please check your input."
+
      end
-
-     freq.sort_by{ |key, value| key }.each { |key, value|
-        perc = value / total.to_f * 100
-        sum_perc = sum_perc + perc
-        printf("Reqs with #{verb} score of %3d | %6d | %8.4f%% | %8.4f%% | %8.4f%%\n", key, value, round(perc, 4), round(sum_perc, 4), 100 - round(sum_perc, 4))
-     }
-
-     printf("\n#{verb.capitalize} average: %8.4f    Median %8.4f    Standard deviation %8.4f\n", avg(stats), median(stats), standard_deviation(stats)) if $params[:summary]
 
      puts if ($params[:incoming] && $params[:outgoing] && verb == "incoming" && $params[:outgoing])
      puts if ($params[:incoming] && $params[:outgoing] && verb == "incoming" && $params[:outgoing] && ($params[:header] || $params[:summary]))
