@@ -1,5 +1,6 @@
 ###Changelog
 
+* 31\. Oktober 2019: Disabling TLSv1 and TLSv1.1
 * 28\. Oktober 2019: Änderungen im deutschen Text gemäss englischem Text nachgezogen
 * 17\. Dezember 2017: STS Header gesetzt
 * 28\. März 2017: Publikation
