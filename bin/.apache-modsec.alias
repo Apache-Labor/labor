@@ -51,7 +51,7 @@ alias alconnstatusid='cut -d\" -f9,11 | cut -d\  -f8,10'
 alias altrkcookie='cut -d\" -f10'
 alias altrkcookieid='cut -d\" -f10,11 | cut -d\  -f1,2 | tr -d \"'
 alias alreqid="egrep  -o '\" [a-zA-Z0-9@-]{24,27} ' | cut -b3- | tr -d ' '"
-alias aluniqueid='cut -d\" -f11 | cut -d\  -f2'
+alias aluniqueid='cut -d\" -f9 | cut -d\  -f2'
 alias alsslprotocol='cut -d\" -f11 | cut -d\  -f3'
 alias alsslprotocolid='cut -d\" -f11 | cut -d\  -f2,3 | awk "{ t = \$1; \$1 = \$2; \$2 = t; print; }"'
 alias alsslcipher='cut -d\" -f11 | cut -d\  -f4'
