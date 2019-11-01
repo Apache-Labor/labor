@@ -1,5 +1,6 @@
 ###Changelog
 
+* 01\. November 2019: Consistent naming of CRS in config comments
 * 31\. Oktober 2019: Disabling TLSv1 and TLSv1.1
 * 28\. Oktober 2019: Änderungen im deutschen Text gemäss englischem Text nachgezogen
 * 17\. Dezember 2017: STS Header gesetzt; Regel 200000 angepasst; Regel 200004->200005 umnummeriert

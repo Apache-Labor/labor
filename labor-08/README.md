@@ -17,7 +17,7 @@ Es gibt verschiedene Arten, Apache zu einem *Reverse Proxy* umzubauen. Vor allem
 * Ein Apache Webserver mit SSL-/TLS-Unterstützung wie in [Anleitung 4 (Konfigurieren eines SSL Servers)](https://www.netnea.com/cms/apache-tutorial-4-ssl-server-konfigurieren/)
 * Ein Apache Webserver mit erweitertem Zugriffslog wie in [Anleitung 5 (Das Zugriffslog Ausbauen und Auswerten)](https://www.netnea.com/cms/apache-tutorial-5-zugriffslog-ausbauen/)
 * Ein Apache Webserver mit ModSecurity wie in [Anleitung 6 (ModSecurity einbinden)](https://www.netnea.com/cms/apache-tutorial-6-modsecurity-einbinden/)
-* Ein Apache Webserver mit einer Core Rules Installation wie in [Anleitung 7 (Core Rules einbinden)](http://www.netnea.com/cms/modsecurity-core-rules-einbinden/)
+* Ein Apache Webserver mit einer Core Rule Set Installation wie in [Anleitung 7 (Core Rule Set einbinden)](http://www.netnea.com/cms/modsecurity-core-rules-einbinden/)
 
 ### Schritt 1: Backend bereitstellen
 
@@ -629,7 +629,7 @@ SecRule TX:/^MSC_/ "!@streq 0" \
   msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
 
 
-# === ModSec Core Rules Base Configuration (ids: 900000-900999)
+# === ModSec Core Rule Set Base Configuration (ids: 900000-900999)
 
 Include    /apache/conf/crs/crs-setup.conf
 
@@ -641,17 +641,17 @@ SecAction "id:900000,phase:1,pass,nolog,\
   setvar:tx.paranoia_level=1"
 
 
-# === ModSec Core Rules: Runtime Exclusion Rules (ids: 10000-49999)
+# === ModSec Core Rule Set: Runtime Exclusion Rules (ids: 10000-49999)
 
 # ...
 
 
-# === ModSecurity Core Rules Inclusion
+# === ModSecurity Core Rule Set Inclusion
 
 Include    /apache/conf/crs/rules/*.conf
 
 
-# === ModSec Core Rules: Startup Time Rules Exclusions
+# === ModSec Core Rule Set: Startup Time Rules Exclusions
 
 # ...
 

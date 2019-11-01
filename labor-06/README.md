@@ -1,8 +1,8 @@
-## Title: OWASP ModSecurity Core Rules einbinden
+## Title: OWASP ModSecurity Core Rule Set einbinden
 
 ### Was machen wir?
 
-Wir binden die OWASP ModSecurity Core Rules in unseren Apache Webserver ein und merzen Fehlalarme aus.
+Wir binden das OWASP ModSecurity Core Rule Set in unseren Apache Webserver ein und merzen Fehlalarme aus.
 
 ### Warum tun wir das?
 
@@ -18,7 +18,7 @@ Die Web Application Firewall ModSecurity, wie wir sie in Anleitung Nummer 6 eing
 
 Wir werden mit dem neuen Major Release 3.0 des Core Rule Sets arbeiten; kurz CRS3. Das offizielle CRS3 Paket wird mit einer _INSTALL_ Datei ausgeliefert, welche das Einrichten der Regeln sehr gut erklärt (zufälligerweise habe ich neben dieser Anleitung hier auch einen grossen Teil des INSTALL Files geschrieben). Wir werden den Installationsprozess aber etwas umstellen, damit er besser auf unsere Bedürfnisse passt.
 
-### Schritt 1: OWASP ModSecurity Core Rules herunterladen
+### Schritt 1: OWASP ModSecurity Core Rule Set herunterladen
 
 Die ModSecurity Core Rules werden unter dem Dach von *OWASP*, dem Open Web Application Security Project entwickelt. Die Rules selbst liegen auf *GitHub* und können wie folgt heruntergeladen werden. 
 
@@ -47,14 +47,14 @@ Dies entpackt den Basis Teil des Core Rule Set im Verzeichnis `/apache/conf/owas
 
 Dieses Setup File erlaubt es uns, mit mehreren verschiedenen Einstellungen herumzuspielen. Es lohnt sich einen Blick darauf zu werfen; und sei es nur um zu sehen, was es alles gibt. Für den Moment sind wir aber mit den Basis-Einstellungen zufrieden und werden die Datei nicht anfassen; wir werden einfach sicher stellen, dass es unter dem neuen Dateinamen `crs-setup.conf` zur Verfügung steht. Dann können wir das Apache Konfigurationsfile anpassen und die Regeln einbinden.
 
-### Schritt 2: Core Rules einbinden
+### Schritt 2: Core Rule Set einbinden
 
 In der Anleitung 6, in welcher wir ModSecurity selbst eingebunden haben, markierten wir bereits einen Bereich für die Core-Rules. In diesen Bereich fügen wir die Include-Direktive jetzt ein. Konkret kommen vier Teile zur bestehenden Konfiguration hinzu. (1) Die Core Rules Basis-Konfiguration, (2) ein Teil für selbst zu definierende Regelausschlüsse vor dem Core Rule Set (sogenannte Rule Exclusions). Dann (3) die Core Rules selbst und schliesslich ein Teil (4) für selbst zu definierende Regelausschlüsse nach dem Core Rule Set.
 
 Die sogenannten Rule Exclusions bezeichnen Regeln und Direktiven, die dazu dienen, mit den oben beschriebenen Fehlalarmen umzugehen. Manche Fehlalarme müssen verhindert werden, bevor die entsprechende Core Rule geladen wird. Manche Fehlalarme können erst nach der Definition der Core Rule selbst abgefangen werden. Aber der Reihe nach. Hier zunächst der neue Konfigurationsblock den wir in die Basiskonfiguration, die wir beim Einrichten von ModSecurity erstellt haben, einführen:
 
 ```bash
-# === ModSec Core Rules Base Configuration (ids: 900000-900999)
+# === ModSec Core Rule Set Base Configuration (ids: 900000-900999)
 
 Include    /apache/conf/crs/crs-setup.conf
 
@@ -66,17 +66,17 @@ SecAction "id:900000,phase:1,pass,nolog,\
   setvar:tx.paranoia_level=1"
 
 
-# === ModSec Core Rules: Runtime Exclusion Rules (ids: 10000-49999)
+# === ModSec Core Rule Set: Runtime Exclusion Rules (ids: 10000-49999)
 
 # ...
 
 
-# === ModSecurity Core Rules Inclusion
+# === ModSecurity Core Rule Set Inclusion
 
 Include    /apache/conf/crs/rules/*.conf
 
 
-# === ModSec Core Rules: Startup Time Rules Exclusions
+# === ModSec Core Rule Set: Startup Time Rules Exclusions
 
 # ...
 ```
@@ -298,7 +298,7 @@ SecRule TX:/^MSC_/ "!@streq 0" \
   msg:'ModSecurity internal error flagged: %{MATCHED_VAR_NAME}'"
 
 
-# === ModSec Core Rules Base Configuration (ids: 900000-900999)
+# === ModSec Core Rule Set Base Configuration (ids: 900000-900999)
 
 Include    /apache/conf/crs/crs-setup.conf
 
@@ -310,17 +310,17 @@ SecAction "id:900000,phase:1,pass,nolog,\
   setvar:tx.paranoia_level=1"
 
 
-# === ModSec Core Rules: Runtime Exclusion Rules (ids: 10000-49999)
+# === ModSec Core Rule Set: Runtime Exclusion Rules (ids: 10000-49999)
 
 # ...
 
 
-# === ModSecurity Core Rules Inclusion
+# === ModSecurity Core Rule Set Inclusion
 
 Include    /apache/conf/crs/rules/*.conf
 
 
-# === ModSec Core Rules: Config Time Exclusion Rules (no ids)
+# === ModSec Core Rule Set: Config Time Exclusion Rules (no ids)
 
 # ...
 
@@ -636,7 +636,7 @@ $> cat logs/error.log | melidmsg | sucs
    6168 913100 Found User-Agent associated with security scanner
 ```
 
-Das bringt uns weiter. Es zeigt sich, dass die Core Rules viele böswillige Anfragen entdeckt haben und wir haben jetzt eine Idee, welche Regeln dabei eine Rolle spielten. Die Regel, die am häufigsten ausgelöst wurde, *913120*, ist keine Überraschung, und wenn man in der Ausgabe nach oben schaut, macht das alles wirklich Sinn.
+Das bringt uns weiter. Es zeigt sich, dass das Core Rule Set viele böswillige Anfragen entdeckt hat und wir haben jetzt eine Idee, welche Regeln dabei eine Rolle spielten. Die Regel, die am häufigsten ausgelöst wurde, *913120*, ist keine Überraschung, und wenn man in der Ausgabe nach oben schaut, macht das alles wirklich Sinn.
 
 ### Schritt 6: Falsche Alarme auswerten
 
@@ -727,7 +727,7 @@ $> tail /apache/logs/error.log | melidmsg
 Die Regel wurde also wie gewünscht ausgelöst. Nun wollen wir diese Regel gezielt ausschliessen. Wir haben mehrere Optionen und starten mit der einfachsten: Wir schliessen die Regel zur Startzeit von Apache aus. Das bedeutet, dass wir die Regel aus dem Satz der geladenen Regel entfernen und damit sicher stellen, dass nach dem Start keine Prozessorzyklen mehr auf die Regel verschwendet werden. Natürlich können wir nur Dinge entfernen, die vorher geladen wurden. Diese Anweisung muss also nach der CRS-Include-Direktive platziert werden. Im Konfigurations-Block, den wir vorher in dieser Anleitung beschrieben haben, war ein Platz für diese Art von Auschluss-Anweisungen reserviert. Wir füllen unsere Direktive an dieser Stelle ein:
 
 ```bash
-# === ModSec Core Rules: Config Time Exclusion Rules (no ids)
+# === ModSec Core Rule Set: Config Time Exclusion Rules (no ids)
 
 # ModSec Exclusion Rule: 920300 Request Missing an Accept Header
 SecRuleRemoveById 920300
@@ -748,7 +748,7 @@ Das sind also die *Rule Exclusions* zur Startzeit. Regeln so zu umgehen ist einf
 
 
 ```bash
-# === ModSec Core Rules: Runtime Exclusion Rules (ids: 10000-49999)
+# === ModSec Core Rule Set: Runtime Exclusion Rules (ids: 10000-49999)
 
 # ModSec Exclusion Rule: 920300 Request Missing an Accept Header
 SecRule REQUEST_FILENAME "@streq /index.html" \

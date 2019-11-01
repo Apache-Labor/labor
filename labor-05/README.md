@@ -182,12 +182,12 @@ SecDefaultAction              "phase:2,pass,log,tag:'Local Lab Service'"
 
 
 # == ModSec Rule ID Namespace Definition
-# Service-specific before Core-Rules:    10000 -  49999
-# Service-specific after Core-Rules:     50000 -  79999
+# Service-specific before Core Rule Set: 10000 -  49999
+# Service-specific after Core Rule Set:  50000 -  79999
 # Locally shared rules:                  80000 -  99999
 #  - Performance:                        90000 -  90199
 # Recommended ModSec Rules (few):       200000 - 200010
-# OWASP Core-Rules:                     900000 - 999999
+# OWASP Core Rule Set:                  900000 - 999999
 
 
 # === ModSec timestamps at the start of each phase (ids: 90000 - 90009)
@@ -367,9 +367,9 @@ Wir kommen damit zur Direktiven _SecDefaultAction_. Sie bezeichnet die Grundeins
 
 Damit kommen wir zu den ModSecurity Regeln. Das Modul arbeitet zwar mit den oben definierten Limiten, die eigentliche Funktionalität steht aber vor allem in einzelnen Regeln, die in einer eigenen Regel-Sprache ausgedrückt werden. Bevor wir uns die einzelnen Regeln aber ansehen folgt in der Apache-Konfiguration ein Kommentarteil mit der Definition des Namensraums der Regel-ID Nummern. Jede ModSecurity Regel hat eine Nummer als Identifikation. Um die Regeln verwaltbar zu halten ist es sinnvoll, den Namensraum sauber aufzuteilen.
 
-Das OWASP ModSecurity Core Rules Projekt bringt einen Grundstock an gut 200 ModSecurity Regeln. Wir werden diese Regeln in der nächsten Anleitung mit einbinden. Sie haben IDs beginnend mit der Zahl 900'000 und reichen bis zu 999'999. In diesem Bereich sollten wir also keine Regeln ablegen. Die ModSecurity Beispielkonfiguration bringt einige wenige Regeln im Bereich ab 200'000. Unsere eigenen Regeln gliedern sich am Besten in die grossen Zwischenräume. Ich schlage vor, im Bereich unter 100'000 zu bleiben.
+Das OWASP ModSecurity Core Rule Set Projekt bringt einen Grundstock an gut 200 ModSecurity Regeln. Wir werden diese Regeln in der nächsten Anleitung mit einbinden. Sie haben IDs beginnend mit der Zahl 900'000 und reichen bis zu 999'999. In diesem Bereich sollten wir also keine Regeln ablegen. Die ModSecurity Beispielkonfiguration bringt einige wenige Regeln im Bereich ab 200'000. Unsere eigenen Regeln gliedern sich am Besten in die grossen Zwischenräume. Ich schlage vor, im Bereich unter 100'000 zu bleiben.
 
-Falls ModSecurity auf mehreren Services eingesetzt wird, kommen eventuell eigene gesharte Regeln zum Einsatz. Also selbstgeschriebene Regeln, die auf jedem der eigenen Instanzen konfiguriert werden. Legen wir diese in den Bereich von 80'000 bis 99'999. Für die weiteren eigenen, service-spezifischen Regeln spielt es oft eine Rolle, ob sie vor den Core Rules oder nach den Core Rules defniert werden. Sinnvollerweise teilt man den verbleibenden Raum deshalb in zwei Abschnitte: 10'000 bis 49'999 für service-spezifische Regeln vor den Core Rules und 50'000 bis 79'999 nach den Core Rules. Wir werden die Core Rules zwar in dieser Anleitung noch nicht einbinden, aber wir bereiten uns so darauf vor. Bleibt noch zu erwähnen, dass die Regel ID nichts mit der Reihenfolge zu tun hat, mit der die Regeln ausgeführt werden.
+Falls ModSecurity auf mehreren Services eingesetzt wird, kommen eventuell eigene gesharte Regeln zum Einsatz. Also selbstgeschriebene Regeln, die auf jedem der eigenen Instanzen konfiguriert werden. Legen wir diese in den Bereich von 80'000 bis 99'999. Für die weiteren eigenen, service-spezifischen Regeln spielt es oft eine Rolle, ob sie vor den Core Rules oder nach den Core Rules defniert werden. Sinnvollerweise teilt man den verbleibenden Raum deshalb in zwei Abschnitte: 10'000 bis 49'999 für service-spezifische Regeln vor den Core Rules und 50'000 bis 79'999 nach den Core Rules. Wir werden das Core Rule Set zwar in dieser Anleitung noch nicht einbinden, aber wir bereiten uns so darauf vor. Bleibt noch zu erwähnen, dass die Regel ID nichts mit der Reihenfolge zu tun hat, mit der die Regeln ausgeführt werden.
 
 Damit kommen wir zu den ersten Regeln. Wir beginnen mit einem Block mit Performance-Daten. Es sind also noch keine sicherheitsrelevanten Regeln, sondern die Definition von Informationen zum Ablauf des Requests innerhalb von ModSecurity. Wir verwenden die Direktive _SecAction_. Eine _SecAction_ wird ohne Bedingung immer durchgeführt. Als Parameter folgt dann eine komma-separierte Liste mit Anweisungen. Zunächst definieren wir die Regel ID, dann die Phase in welcher die Regel ablaufen soll (1 bis 5). Wir möchten keinen Eintrag im Error-Log des Servers (_nolog_). Ferner lassen wir den Request passieren (_pass_) und setzen mehrere interne Variablen: Wir definieren für jede ModSecurity-Phase eine Timestamp. Sozusagen eine Zwischenzeit innerhalb des Requests beim Start jeder einzelnen Phase. Dies geschieht mit Hilfe der mitlaufenden Uhr in Form der Variblen _Duration_, die beim Start des Requests in Mikrosekunden zu ticken beginnt.
 
@@ -441,7 +441,7 @@ Mit dieser langen Liste von Zahlen lassen sich ModSecurity Performance-Probleme 
 
 ### Schritt 6: Einfache Blacklist Regeln schreiben
 
-Mit der obenstehenden Konfiguration ist ModSecurity aufgesetzt und konfiguriert. Es kann fleissig Performance-Daten loggen, aber auf der Sicherheitsseite sind nur die rudimentären Grundlagen vorhanden. In einer späteren Anleitung werden wir wie angekündigt die _OWASP ModSecurity Core Rules_, eine umfassende Regelsammlung, einbinden. Zunächst ist es aber wichtig, dass wir lernen, selbst Regeln zu schreiben. In der Grundkonfiguration wurden schon einige Regeln erklärt. Von da ist es nur noch ein kleiner Schritt.
+Mit der obenstehenden Konfiguration ist ModSecurity aufgesetzt und konfiguriert. Es kann fleissig Performance-Daten loggen, aber auf der Sicherheitsseite sind nur die rudimentären Grundlagen vorhanden. In einer späteren Anleitung werden wir wie angekündigt das _OWASP ModSecurity Core Rule Set_, eine umfassende Regelsammlung, einbinden. Zunächst ist es aber wichtig, dass wir lernen, selbst Regeln zu schreiben. In der Grundkonfiguration wurden schon einige Regeln erklärt. Von da ist es nur noch ein kleiner Schritt.
 
 Nehmen wir einen einfachen Fall: Wir möchten sicher stellen, dass der Zugriff auf eine bestimmte URI auf dem Server verboten wird. Wir wollen auf eine solche Anfrage mit einem _HTTP Status 403_ antworten. Die entsprechende Regel schreiben wir in der Konfiguration in den Bereich _ModSecurity Rules_ und teilen ihr die ID 10000 (_service-specific before core-rules_) zu.
 
