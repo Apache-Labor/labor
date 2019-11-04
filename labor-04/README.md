@@ -479,7 +479,7 @@ Diese Liste mit Alias-Definitionen befindet sich in der Datei [.apache-modsec.al
 
 ```bash
 # Load apache / modsecurity aliases if file exists
-test -e ~/.apache-modsec.alias && . ~/.apache-modsec.alias
+test -e $HOME/.apache-modsec.alias && . $HOME/.apache-modsec.alias
 
 # Add $HOME/bin to PATH
 [[ ":$PATH:" != *":$HOME/bin:"* ]] && PATH="$HOME/bin:${PATH}"
