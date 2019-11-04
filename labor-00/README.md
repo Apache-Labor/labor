@@ -35,7 +35,7 @@ Nun laden wir die Checksum der Sourcecodedatei direkt von Apache herunter. Leide
 
 ```bash
 $> wget https://www.apache.org/dist/apr/apr-1.7.0.tar.bz2.sha256
-$> sha256sum --check apr-1.7.0.tar.bz2.md5
+$> sha256sum --check apr-1.7.0.tar.bz2.sha256
 apr-1.7.0.tar.bz2: OK
 ```
 
