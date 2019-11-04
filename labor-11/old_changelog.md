@@ -1,5 +1,6 @@
 ###Changelog
 
+* 04\. November 2019: Added env=HTTPS condition to STS header config
 * 31\. Oktober 2019: Disabling TLSv1 and TLSv1.1
 * 28\. Oktober 2019: Änderungen im deutschen Text gemäss englischem Text nachgezogen
 * 17\. Dezember 2017: STS Header gesetzt
