@@ -732,7 +732,7 @@ DocumentRoot            /apache/htdocs
 <VirtualHost 127.0.0.1:443>
     
     SSLEngine On
-    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
 
     ProxyTimeout              60
     ProxyErrorOverride        On

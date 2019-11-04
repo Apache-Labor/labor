@@ -110,7 +110,7 @@ DocumentRoot            /apache/htdocs
 <VirtualHost 127.0.0.1:443>
 
         SSLEngine On
-        Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
 
         <Directory /apache/htdocs>
 
@@ -136,7 +136,7 @@ Verschlüsselung arbeitet mit Zufallszahlen. Der Zufallszahlengenerator will kor
 
 Wir haben auch noch einen zweiten _Virtual-Host_ eingeführt. Er gleicht dem _Virtual-Host_ für Port 80 sehr stark. Die Portnummer ist aber _443_ und wir aktivieren die _SSL-Engine_, die uns die Verschlüsselung des Verkehrs liefert und die oben gesetzen Konfigurationen erst aktiviert. Zusätzlich setzen wir mit Hilfe des oben geladenen Header-Moduls den _Strict-Tarnsport-Security_-Header (kurz _STS_-Header). Dieser HTTP Header ist Teil der Antwort und instruiert den Client, zukünftig für eine Dauer von 365 Tagen (dies entspricht 31536000 Sekunden) nurmehr verschlüsselt auf unseren Server zuzugreifen. Dies geschieht unabhängig davon, ob ein Link mit `https` beschrieben wird oder nicht: Auch wenn jemand versucht, unseren Browser dazu zu bringen unverschlüsselt mit unserem Server zu sprechen, wird er diesen Link in `https` umschreiben. Das Flag _includeSubDomains_ besagt, dass neben unserem Hostnamen auch Unter-Domänen in diese Option miteinbezogen werden soll. Aber Vorsicht: Wenn wir mit der Domäne `christian-folini.ch` arbeiten, rufen wir den nackten Hostnamen ohne das vorangehende `www` auf. Setzen wir das Flag _includeSubDomains_ auf einer Anfrage dieser Art, dann meinst das effektiv, dass jeder Hostname innerhalb der Domäne `christian-folini.ch` in Zukunft mittels `https` angesprochen werden wird. Das Flag `includeSubDomains` sollte deshalb nur dann verwendet werden, wenn wir sicher sind, dass alle SubDomänen der Domäne mit `https` laufen und diese Policy auch in Zukunft aktiv bleiben soll.
 
-Der _STS_-Header ist der wichtigste einer Gruppe von neueren HTTP Antwort Headern mit denen wir die Sicherheit unseres Servers verbessern können. Verschiedene Browser unterstützen unterschiedliche Header, so dass es nicht ganz einfach ist, den Überblick zu behalten. Der _STS_-Header sollte aber auf keinen Fall mehr fehlen. Wenn wir uns die Direktive _Header_ genauer ansehen, dann fällt noch das Flag _always_ ins Auge. Es gibt Fälle in denen das Modul nicht anspringt (etwa wenn eine Fehlermeldung an den Client retourniert wird). Mit _always_ garantieren wir, dass der Header in jedem Fall gesetzt wird.
+Der _STS_-Header ist der wichtigste einer Gruppe von neueren HTTP Antwort Headern mit denen wir die Sicherheit unseres Servers verbessern können. Verschiedene Browser unterstützen unterschiedliche Header, so dass es nicht ganz einfach ist, den Überblick zu behalten. Der _STS_-Header sollte aber auf keinen Fall mehr fehlen. Wenn wir uns die Direktive _Header_ genauer ansehen, dann fällt noch das Flag _always_ ins Auge. Es gibt Fälle in denen das Modul nicht anspringt (etwa wenn eine Fehlermeldung an den Client retourniert wird). Mit _always_ garantieren wir, dass der Header in jedem Fall gesetzt wird. Die Bedingung am Schluss der Zeile stellt sicher, dass der Header wirklich nur bei verschlüsselten Verbindungen gesetzt wird. Tatsächlich antwortet Apache bei unverschlüsselten Verbindung auf den verschlüsselten Port mit einer Fehlermeldung und genau diese soll den Header nicht enthalten.
 
 Das wären alle Änderungen an unserer Konfiguration. Schreiten wir also zur Tat.
 
@@ -647,7 +647,7 @@ SSLSessionTickets       On
         ServerName              www.christian-folini.ch
 
         SSLEngine On
-        Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS env=HTTPS
 
         ...
 ```
