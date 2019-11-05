@@ -258,7 +258,7 @@ Die verschiedenen Module sind online gut dokumentiert, so dass diese knappen Bes
 Damit sind wir bereit für die Konfiguration des Loadbalancers. Wir können ihn jetzt über die inzwischen bekannte RewriteRule einführen. Diese Anpassung der RewriteRule wirkt sich auch auf die Proxy-Stanza aus, wo der eben definierte Balancer referenziert und aufgelöst werden muss:
 
 ```bash
-    RewriteRule         ^/service1/(.*)  balancer://backend/service/$1   [proxy,last]
+    RewriteRule         ^/service1/(.*)  balancer://backend/service1/$1   [proxy,last]
     ProxyPassReverse    /                balancer://backend/
 
     <Proxy balancer://backend>
