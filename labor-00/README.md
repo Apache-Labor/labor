@@ -110,7 +110,7 @@ Jetzt laden wir den Programmcode vom Netz herunter. Man kann das mit dem Browser
 
 ```bash
 $> cd /usr/src/apache
-$> wget https://www-eu.apache.org/dist//httpd/httpd-2.4.39.tar.bz2
+$> wget https://www-eu.apache.org/dist//httpd/httpd-2.4.41.tar.bz2
 ```
 
 Der gepackte Sourcecode hat etwa eine Grösse von MB.
@@ -118,9 +118,9 @@ Der gepackte Sourcecode hat etwa eine Grösse von MB.
 Nun laden wir die Checksum der Sourcecodedatei direkt von Apache herunter. Dankenswerterweise steht sie immerhin als _sha1-Checksum_ zur Verfügung. Sicherheitshalber verwenden wir dazu wieder eine gesicherte Verbindung. Ohne https macht diese Überprüfung keinen Sinn.
 
 ```bash
-$> wget https://www.apache.org/dist/httpd/httpd-2.4.39.tar.bz2.sha256
-$> sha256sum --check httpd-2.4.39.tar.bz2.sha256
-httpd-2.4.39.tar.bz2: OK
+$> wget https://www.apache.org/dist/httpd/httpd-2.4.41.tar.bz2.sha256
+$> sha256sum --check httpd-2.4.41.tar.bz2.sha256
+httpd-2.4.41.tar.bz2: OK
 ```
 
 ### Schritt 4: Entpacken und Compiler konfigurieren
@@ -128,7 +128,7 @@ httpd-2.4.39.tar.bz2: OK
 Nach der Überprüfung können wir das Paket entpacken.
 
 ```bash
-$> tar -xvjf httpd-2.4.39.tar.bz2
+$> tar -xvjf httpd-2.4.41.tar.bz2
 ```
 
 Das ergibt etwa 38MB.
@@ -136,8 +136,8 @@ Das ergibt etwa 38MB.
 Wir gehen nun in das Verzeichnis und konfigurieren den Compiler mit unseren Eingaben und mit Informationen zu unserem System. Anders als bei _apr_ sind unsere Eingaben sehr umfangreich.
 
 ```bash
-$> cd httpd-2.4.39
-$> ./configure --prefix=/opt/apache-2.4.39 --with-apr=/usr/local/apr/bin/apr-1-config \
+$> cd httpd-2.4.41
+$> ./configure --prefix=/opt/apache-2.4.41 --with-apr=/usr/local/apr/bin/apr-1-config \
 --with-apr-util=/usr/local/apr/bin/apu-1-config --enable-mpms-shared=event \
 --enable-mods-shared=all --enable-nonportable-atomics=yes
 ```
@@ -167,13 +167,13 @@ $> sudo make install
 Auch die Installation dauert eine Weile.
 
 ```bash
-$> sudo chown -R `whoami` /opt/apache-2.4.39
+$> sudo chown -R `whoami` /opt/apache-2.4.41
 ```
 
 Und jetzt noch ein Kniff: Wenn man professionell mit Apache arbeitet, dann hat man oft mehrere verschiedene Versionen nebeneinander auf der Testmaschine. Verschiedene Versionen, verschiedene Patches, andere Module etc. führen zu recht mühsamen und langen Pfaden mit Versionsnummern und weiteren Beschreibungen. Ich mache es dann jeweils so, dass ich einen Softlink von `/apache` auf den aktuellen Apache Webserver lege. Dabei ist darauf zu achten, dass auch der Softlink uns und nicht dem root-User gehört (dies wird bei der Konfiguration des Servers wichtig).
 
 ```bash
-$> sudo ln -s /opt/apache-2.4.39 /apache
+$> sudo ln -s /opt/apache-2.4.41 /apache
 $> sudo chown `whoami` --no-dereference /apache
 $> cd /apache
 ```
@@ -225,8 +225,8 @@ $> sudo ./bin/httpd -V
 ```
 
 ```bash
-Server version: Apache/2.4.39 (Unix)
-Server built:   May 12 2019 06:09:49
+Server version: Apache/2.4.41 (Unix)
+Server built:   November 12 2019 06:09:49
 Server's Module Magic Number: 20120211:83
 Server loaded:  APR 1.7.0, APR-UTIL 1.6.1
 Compiled using: APR 1.7.0, APR-UTIL 1.6.1
@@ -242,8 +242,8 @@ Server compiled with....
  -D APR_HAS_OTHER_CHILD
  -D AP_HAVE_RELIABLE_PIPED_LOGS
  -D DYNAMIC_MODULE_LIMIT=256
- -D HTTPD_ROOT="/opt/apache-2.4.39"
- -D SUEXEC_BIN="/opt/apache-2.4.39/bin/suexec"
+ -D HTTPD_ROOT="/opt/apache-2.4.41"
+ -D SUEXEC_BIN="/opt/apache-2.4.41/bin/suexec"
  -D DEFAULT_PIDLOG="logs/httpd.pid"
  -D DEFAULT_SCOREBOARD="logs/apache_runtime_status"
  -D DEFAULT_ERRORLOG="logs/error_log"
