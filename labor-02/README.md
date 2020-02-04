@@ -101,11 +101,11 @@ Der in Lektion 2 konfigurierte Webserver läuft als Benutzer _www-data_ oder je 
 Begeben wir uns ins Verzeichnis mit dem Apache Quelltext und kompilieren den Server neu. 
 
 ```bash
-$> cd /usr/src/apache/httpd-2.4.29
-$> ./configure --prefix=/opt/apache-2.4.29 --enable-mods-shared=all \
+$> cd /usr/src/apache/httpd-2.4.41
+$> ./configure --prefix=/opt/apache-2.4.41 --enable-mods-shared=all \
 --with-apr=/usr/local/apr/bin/apr-1-config --with-apr-util=/usr/local/apr/bin/apu-1-config \
 --enable-mpms-shared="event" --enable-nonportable-atomics=yes \
---enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.4.29/bin && \
+--enable-suexec --with-suexec-caller=www-data --with-suexec-docroot=/opt/apache-2.4.41/bin && \
 make && sudo make install
 ```
 

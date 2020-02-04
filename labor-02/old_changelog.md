@@ -1,5 +1,6 @@
 ###Changelog
 
+* 4\. Februar 2020: Apache Update (2.4.41)
 * 28\. Oktober 2019: Änderungen im deutschen Text gemäss englischem Text nachgezogen
 * 17\. Dezember 2017: Updated Apache auf Version 2.4.29, einige Links gefixt
 * 25\. September 2017: Update of apr (1.6.2), apr-util (1.6.0) and apache (2.4.27)
