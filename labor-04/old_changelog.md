@@ -1,5 +1,6 @@
 ###Changelog
 
+* 04\. Februar 2020: Bemerkung, dass percent.awk ausführbar gemacht werden sollte
 * 04\. November 2019: Replace ~ with /home/dune73 in .bashrc
 * 28\. Oktober 2019: Änderungen im deutschen Text gemäss englischem Text nachgezogen
 * 17\. Dezember 2017: Einige Links gefixt, Begriff Average durch Mean ersetzt

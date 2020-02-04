@@ -522,7 +522,7 @@ $> alias sucspercent='sort | uniq -c | sort -n | $HOME/bin/percent.awk'
 
 Rasche Rechnungen erledigt man in Linux traditionellerweise mit _awk_. Dafür steht neben der oben gelinkten _Alias_-Datei, die _sucspercent_ ebenfalls enthält, zusätzlich
 das _awk_-Skript _percent.awk_ zur Verfügung, das man idealerweise im Unterverzeichnis _bin_ seines Heimverzeichnisses ablegt.
-Das obenstehene _sucspercent_ Alias geht denn auch von diesem Setup aus. Das _awk_-Skript befindet sich [hier](https://www.netnea.com/files/percent.awk).
+Das obenstehene _sucspercent_ Alias geht denn auch von diesem Setup aus. Das _awk_-Skript befindet sich [hier](https://www.netnea.com/files/percent.awk). Bitte nicht vergessen es ausführbar (executable) zu machen.
 
 ```bash
 $> cat labor-04-example-access.log | alsslprotocol | sucspercent 
