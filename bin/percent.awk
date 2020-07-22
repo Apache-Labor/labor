@@ -31,6 +31,6 @@ END{
                 printf "%30s %'12i %6.2f%%\n", country[j], count[j], count[j] * 100 / sum
         }
         print "---------------------------------------------------"
-        printf "                         Total %12i 100.00%%\n", sum
+        printf "                         Total %'12i 100.00%%\n", sum
 }
 

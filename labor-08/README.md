@@ -428,7 +428,7 @@ Wir unterscheiden zwei Backends und können hier die Verteilung beliebig vornehm
 
 Der *Reverse Proxy*-Server schirmt den Applikationsserver vom direkten Zugriff durch den Client ab. Dies bedeutet aber auch, dass der Applikationsserver gewisse Informationen zum Client und seiner Verbindung zum *Reverse Proxy* nicht mehr sehen kann. Zur Kompensation dieses Verlustes setzt das Proxy-Modul drei HTTP Request Header-Zeilen, welche den *Reverse Proxy* beschreiben:
 
-* X-Forwarded-For : Die IP-Adresse des Clients, gefolgt von der IP Adresse des Reverse Proxies
+* X-Forwarded-For : Die IP-Adresse des Clients
 * X-Forwarded-Host : Den originalen HTTP Host-Header in der Anfrage des Clients
 * X-Forwarded-Server : Den Servernamen des *Reverse Proxies*
 

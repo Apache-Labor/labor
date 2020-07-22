@@ -24,26 +24,26 @@ Die ModSecurity Core Rules werden unter dem Dach von *OWASP*, dem Open Web Appli
 
 ```
 $> cd /apache/conf
-$> wget https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/v3.1.0.tar.gz
-$> tar -xvzf v3.1.0.tar.gz
-owasp-modsecurity-crs-3.1.0/
-owasp-modsecurity-crs-3.1.0/CHANGES
-owasp-modsecurity-crs-3.1.0/IDNUMBERING
-owasp-modsecurity-crs-3.1.0/INSTALL
-owasp-modsecurity-crs-3.1.0/KNOWN_BUGS
-owasp-modsecurity-crs-3.1.0/LICENSE
-owasp-modsecurity-crs-3.1.0/README.md
-owasp-modsecurity-crs-3.1.0/crs-setup.conf.example
-owasp-modsecurity-crs-3.1.0/documentation/
-owasp-modsecurity-crs-3.1.0/documentation/OWASP-CRS-Documentation/
-owasp-modsecurity-crs-3.1.0/documentation/README
+$> wget https://github.com/coreruleset/coreruleset/archive/v3.1.0.tar.gz
+$> tar -xvzf v3.3.0.tar.gz
+coreruleset-3.3.0/
+coreruleset-3.3.0/CHANGES
+coreruleset-3.3.0/IDNUMBERING
+coreruleset-3.3.0/INSTALL
+coreruleset-3.3.0/KNOWN_BUGS
+coreruleset-3.3.0/LICENSE
+coreruleset-3.3.0/README.md
+coreruleset-3.3.0/crs-setup.conf.example
+coreruleset-3.3.0/documentation/
+coreruleset-3.3.0/documentation/OWASP-CRS-Documentation/
+coreruleset-3.3.0/documentation/README
 ...
-$> sudo ln -s owasp-modsecurity-crs-3.1.0 /apache/conf/crs
+$> sudo ln -s coreruleset-3.3.0 /apache/conf/crs
 $> cp crs/crs-setup.conf.example crs/crs-setup.conf
-$> rm v3.1.0.tar.gz
+$> rm v3.3.0.tar.gz
 ```
 
-Dies entpackt den Basis Teil des Core Rule Set im Verzeichnis `/apache/conf/owasp-modsecurity-crs-3.1.0`. Wir kreieren einen Link von `/apache/conf/crs` in dieses Verzeichnis. Dann kopieren wir eine Datei namens `crs-setup.conf.example` und zum Abschluss löschen wir das CRS tar File.
+Dies entpackt den Basis Teil des Core Rule Set im Verzeichnis `/apache/conf/coreruleset-3.3.0`. Wir kreieren einen Link von `/apache/conf/crs` in dieses Verzeichnis. Dann kopieren wir eine Datei namens `crs-setup.conf.example` und zum Abschluss löschen wir das CRS tar File.
 
 Dieses Setup File erlaubt es uns, mit mehreren verschiedenen Einstellungen herumzuspielen. Es lohnt sich einen Blick darauf zu werfen; und sei es nur um zu sehen, was es alles gibt. Für den Moment sind wir aber mit den Basis-Einstellungen zufrieden und werden die Datei nicht anfassen; wir werden einfach sicher stellen, dass es unter dem neuen Dateinamen `crs-setup.conf` zur Verfügung steht. Dann können wir das Apache Konfigurationsfile anpassen und die Regeln einbinden.
 

@@ -218,7 +218,10 @@ while read line; do     # read STDIN
 			echo -n -e "\t" >> $DATA
 			echo "$line" | sed -e "s/.*\t//" >> $DATA
 		else
-			echo "$line" | sed -e 's/-/\\n-\\n/' >> $DATA
+			echo "$line" >> $DATA
+			# FIXME: The line below is a previous version. 
+			# I do not know what the purpose was
+			#echo "$line" | sed -e 's/-/\\n-\\n/' >> $DATA
 		fi
 	else
         	echo -n "$N " >> $DATA
@@ -321,15 +324,14 @@ else
 	else
 		if [ "$LABELS_IN_FILE" = "$TRUE" ]; then
 			#echo "Multiple data columns style has not been implemented with labels in file. Please use input file without labels. Aborting."
-			echo "set terminal $TERMINAL $TW $HEIGHT $TERMFONT; $OUTPUT set boxwidth $BD; set format x \"\\n\\n\"; set title \"$TITLE\"; set y2tics; $DOLOGSCALE; $LABEL; $CUSTOM_DIRECTIVES; plot [$MINX:$MAXX][$MINY:$MAXY][$MINX:$MAXX][$MINY:$MAXY2] \"$DATA\" using 1:3:xtic(2) title \"$COL1\" axis x1y1 with $STYLE, \"$DATA\" using 1:4 title \"$COL2\" axis x1y2 with $STYLE;" > $GP
+			echo "set terminal $TERMINAL $TW $HEIGHT $TERMFONT; $OUTPUT set boxwidth $BD; set format x \"\\n\\n\"; set title \"$TITLE\"; set y2tics; $DOLOGSCALE; $LABEL; $CUSTOM_DIRECTIVES; plot [$MINX:$MAXX][$MINY:$MAXY][$MINX:$MAXX][$MINY:$MAXY2] \"$DATA\" using 1:2:xtic(2) title \"$COL1\" axis x1y1 with $STYLE, \"$DATA\" using 1:3 title \"$COL2\" axis x1y2 with $STYLE;" > $GP
 		else
-			echo "XXXXXXX"
 			echo "set terminal $TERMINAL $TW $HEIGHT $TERMFONT; $OUTPUT set boxwidth $BD; set title \"$TITLE\"; set y2tics; $DOLOGSCALE; $LABEL; $CUSTOM_DIRECTIVES; plot [$MINX:$MAXX][$MINY:$MAXY][$MINX:$MAXX][$MINY:$MAXY2] \"$DATA\" using 1:2 title \"$COL1\" axis x1y1 with $STYLE, \"$DATA\" using 1:3 title \"$COL2\" axis x1y2 with $STYLE;" > $GP
 		fi
 	fi
 fi
 
-gnuplot $GP
+gnuplot $GP | sed -e "1d"
 
 
 if [ "$NOSCRIPT" = "$FALSE" ]; then
@@ -337,14 +339,20 @@ if [ "$NOSCRIPT" = "$FALSE" ]; then
         echo "------------------"
         cat $GP
 	echo
-	echo "The transformed datafile $DATA is left for future use."
+	echo "The transformed datafile $DATA is left for future use. The gnuplot file ist left at $GP."
 	echo
-	rm $GP
+	echo "Edit with:"
+	echo "$EDITOR $GP"
+	echo
+	echo "Call with:"
+	echo "gnuplot -c $GP"
+	echo
 else
 	rm $GP $DATA
 fi
 
 if [ ! -z "$OUTPUT" ]; then
         echo "Plot written to file $OUTPUTFILE."
+
 fi
 

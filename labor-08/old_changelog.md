@@ -1,5 +1,6 @@
 ###Changelog
 
+* 22\. Juli 2020: Fehler in der Beschreibung des X-Forwarded-For Headers
 * 05\. November 2019: Typo with path in RewriteRule
 * 04\. November 2019: Added env=HTTPS condition to STS header config
 * 01\. November 2019: Consistent naming of CRS in config comments
