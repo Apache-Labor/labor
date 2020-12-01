@@ -292,7 +292,7 @@ TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 4216 1517 -% 1740 - - - - - - -
 TLSv1.2 ECDHE-RSA-AES256-GCM-SHA384 4254 1517 -% 264 - - - - - - -
 ```
 
-Wie oben vorhergesagt sind noch sehr viele Werte leer oder durch _-_ gekennzeichnet. Aber wir sehen, dass wir den Server _www.example.com_ auf Port 443 angesprochen haben und dass die Grösse des Requests mit jedem _POST_-Request zunahm, wobei sie zuletzt beinahe 4K, also 4096 Bytes, betrug. Mit diesem einfachen Logfile lassen sich bereits einfache Auswertungen durchführen.
+Wie oben vorhergesagt sind noch sehr viele Werte leer oder durch _-_ gekennzeichnet. Aber wir sehen, dass wir den Server _www.example.com_ auf Port 443 angesprochen haben und dass die Grösse des Requests mit jedem _POST_-Request zunahm, wobei sie zuletzt mehr als 4K, also 4096 Bytes, betrug. Mit diesem einfachen Logfile lassen sich bereits einfache Auswertungen durchführen.
 
 
 ### Schritt 8: Einfache Auswertungen mit dem Logformat Extended durchführen
@@ -304,7 +304,7 @@ $> egrep -o "\% [0-9]+ " logs/access.log | cut -b3- | tr -d " " | sort -n
 ```
 
 Mit diesem Einzeiler schneiden wir den Wert, der die Dauer eines Requests angibt, aus dem Logfile heraus. Wir benützen das Prozentzeichen des Deflate-Wertes als Anker für eine einfache Regular Expression und nehmen die darauf folgende Zahl. _egrep_ bietet sich an, weil wir mit RegEx arbeiten wollen, die Option _-o_ führt dazu, dass nicht die gesamte Zeile, sondern nur der Treffer selbst ausgegeben wird. Das ist sehr hilfreich.
-Ein Detail, das uns zukünftige Fehler verhindern hilft, ist das Leerzeichen nach dem Pluszeichen. Es nimmt nur diejenigen Werte, die auf die Zahl ein Leerzeichen folgen lassen. Das Problem ist der User-Agent, der in unserem Logformat ja auch vorkommt und der bisweilen auch Prozentzeichen enthält. Wir gehen hier davon aus, dass zwar im User-Agent Prozentzeichen gefolgt von Leerschlag und einer Ganzzahl folgen können. Dass danach aber kein weiterer Leerschlag folgt und diese Kombination nur im hinteren Teil der Logzeile nach dem Prozentzeichen der _Deflate-Platzeinsparungen_ vorkommt. Dann schneiden wir mittels _cut_ so, dass nur das dritte und die folgenden Zeichen ausgegeben werden und schliesslich trennen wir noch mit _tr_ das abschliessende Leerzeichen (siehe Regex) ab. Dann sind wir bereit für das numerische Sortieren. Das liefert folgendes Resultat:
+Ein Detail, das uns zukünftige Fehler verhindern hilft, ist das Leerzeichen nach dem Pluszeichen. Es nimmt nur diejenigen Werte, die auf die Zahl ein Leerzeichen folgen lassen. Das Problem ist der User-Agent, der in unserem Logformat ja auch vorkommt und der bisweilen auch Prozentzeichen enthält. Wir gehen hier davon aus, dass zwar im User-Agent Prozentzeichen gefolgt von Leerschlag und einer Ganzzahl folgen können. Dass danach aber kein weiterer Leerschlag folgt und diese Kombination nur im hinteren Teil der Logzeile nach dem Prozentzeichen der _Deflate-Platzeinsparungen_ vorkommt. Dann schneiden wir mittels _cut_ so, dass nur das dritte und die folgenden Zeichen ausgegeben werden und schliesslich trennen wir noch mit _tr_ das abschliessende Leerzeichen (siehe Regex) ab. Dann sind wir bereit für das numerische Sortieren. Das liefert folgendes Resultat für mich (auf einer anderen Maschine werden die Zahlen varieren):
 
 ```bash
 ...

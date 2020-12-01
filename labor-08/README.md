@@ -25,7 +25,7 @@ Der Zweck eines Reverse Proxies ist es, einen Applikationsserver vor direkten Zu
 Prinzipiell bietet sich eine beliebige HTTP Applikation für so eine Installation an und wir könnten gut den Applikationserver aus der dritten Anleitung anwenden. Allerdings scheint es mir gelegen, einen ganz simplen Ansatz zu demonstrieren. Dabei benützen wir das Hilfsmittel *socat*; kurz für *SOcket CAt*. 
 
 ```bash
-$> socat -vv TCP-LISTEN:8000,bind=127.0.0.1,crlf,reuseaddr,fork SYSTEM:"echo HTTP/1.0 200;\
+$> socat -v -v TCP-LISTEN:8000,bind=127.0.0.1,crlf,reuseaddr,fork SYSTEM:"echo HTTP/1.0 200;\
 echo Content-Type\: text/plain; echo; echo 'Server response, port 8000.'"
 ``` 
 
@@ -112,19 +112,19 @@ Oft sieht man Konfigurationen, die den gesamten Namespace unter `/` an das Backe
 Eine wesentliche Direktive, die optional zum Proxygehört betrifft den Timeout. Wir haben für unseren Server einen eigenen *Timeout*-Wert definiert. Dieser *Timeout* wird vom Server auch für die Verbindung zum Backend herangezogen. Das ist aber nicht immer sinnvoll, denn während wir vom Client erwarten dürfen, dass er seine Anfragen rasch übermittelt und nicht herumtrödelt, kann es je nach Backend-Applikation dauern, bis eine Anfrage verarbeitet ist. Bei einem kurzen generellen *Timeout*, das aus Verteidigungsgründen gegenüber dem Client sinnvoll ist, würde der *Reverse Proxy* den Zugriff auf das Backend zu rasch unterbrechen. Aus diesem Grund gibt es die Direktive *ProxyTimeout*, welche einzig die Verbindung zum Backend betrifft. Die Zeitmessung meint dabei übrigens nicht die totale Verarbeitungsdauer auf dem Backend, sondern die Zeitdauer zwischen den IP Paketen: Sobald das Backend einen Teil der Antwort zurückschickt, wird die Uhr wieder zurückgestellt.
 
 ```bash
-ProxyTimeout	60
+ProxyTimeout    60
 ```
 
 Daneben bietet es sich an, auch den *Host Header* zu fixieren. Mittels des HTTP Request Host Headers gibt der Client bekannt, welchen *VirtualHost* eines Servers die Anfrage bedienen soll. Wenn mehrere *VirtualHosts* unter derselben IP-Adresse betrieben werden, ist dieser Wert entscheidend. Beim Weiterleiten setzt der *Reverse Proxy* aber normalerweise einen neuen Host Header; nämlich denjenigen des Backend-Systems. Dies ist aber oft nicht gewünscht, denn das Backend-System wird in vielen Fällen basierend auf diesem Host Header seine Links setzen. Voll qualifizierte Links sind zwar für Backend-Applikationen eine schlechte Praxis, aber wir vermeiden Konflikte, wenn wir von Beginn weg klarstellen, dass der Host Header erhalten bleiben und 1:1 an das Backend weitergegeben werden soll.
 
 ```bash
-ProxyPreserveHost	On
+ProxyPreserveHosti   On
 ```
 
 Backend-Systeme achten oft weniger auf die Sicherheit als ein Reverse Proxy. Ein Bereich, wo das sichtbar wird, sind Fehlermeldungen. Oft sind detaillierte Fehlermeldungen sogar gewünscht, denn sie erlauben dem Entwickler oder Backend Administrator, einem Fehler überhaupt erst auf die Schliche zu kommen. Über das Internet möchten wir sie aber nicht verteilen, denn ohne Authentifizierung auf dem *Reverse Proxy* könnte sich hinter dem Client ja immer ein Angreifer verstecken. Besser ist es also, die Fehlermeldungen der Backend Applikation zu verbergen, respektive durch eine Fehlermeldung des *Reverse Proxies* zu ersetzen. Die Direktive *ProxyErrorOverride* greift also in den HTTP Response Body ein und ersetzt ihn, wenn ein Status Code grösser gleich 400 vorliegt. Die Anfragen mit normalen Stati unter 400 sind von dieser Direktiven nicht betroffen.
 
 ```bash
-ProxyErrorOverride	On
+ProxyErrorOverride   On
 ```
 
 ### Schritt 6: ModRewrite
@@ -221,7 +221,7 @@ Wir haben gesehen wie eine *RewriteEngine* initialisiert wird und wie man einfac
 
         Options none
 
-	ProxySet enableruse=on
+        ProxySet enablereuse=on
 
     </Proxy>
 
@@ -269,7 +269,7 @@ Damit sind wir bereit für die Konfiguration des Loadbalancers. Wir können ihn 
 
         Options none
 
-	ProxySet enableruse=on
+        ProxySet enablereuse=on
 
     </Proxy>
 ```
@@ -381,7 +381,7 @@ RewriteRule ^/service1/(.*)      http://${hashchar2backend:%1|localhost:8000}/se
 
     Options none
 
-    ProxySet enableruse=on
+    ProxySet enablereuse=on
 
 </Proxy>
 
@@ -391,7 +391,7 @@ RewriteRule ^/service1/(.*)      http://${hashchar2backend:%1|localhost:8000}/se
 
     Options none
 
-    ProxySet enableruse=on
+    ProxySet enablereuse=on
 
 </Proxy>
 ```
@@ -749,7 +749,7 @@ DocumentRoot            /apache/htdocs
 
         Options none
 
-        ProxySet enableruse=on
+        ProxySet enablereuse=on
 
     </Proxy>
 

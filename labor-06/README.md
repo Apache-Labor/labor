@@ -24,7 +24,7 @@ Die ModSecurity Core Rules werden unter dem Dach von *OWASP*, dem Open Web Appli
 
 ```
 $> cd /apache/conf
-$> wget https://github.com/coreruleset/coreruleset/archive/v3.1.0.tar.gz
+$> wget https://github.com/coreruleset/coreruleset/archive/v3.3.0.tar.gz
 $> tar -xvzf v3.3.0.tar.gz
 coreruleset-3.3.0/
 coreruleset-3.3.0/CHANGES
@@ -98,7 +98,7 @@ Die zweite Regel, die Regel `900000`, setzt den _Paranoia Level_ auf 1. Das CRS 
 Im Zentrum des vorangehenden Konfigurationsblocks liegt ein Include Statement, das sämtliche Dateien mit der Endung `.conf` aus dem Unterverzeichnis `rules` im CRS Verzeichnis lädt. Schauen wir uns diese Files einmal an:
 
 ```bash
-$> ls -1 conf/crs/rules/*.conf
+$> ls -1 crs/rules/*.conf
 conf/crs/rules/REQUEST-901-INITIALIZATION.conf
 conf/crs/rules/REQUEST-903.9001-DRUPAL-EXCLUSION-RULES.conf
 conf/crs/rules/REQUEST-903.9002-WORDPRESS-EXCLUSION-RULES.conf
@@ -714,11 +714,12 @@ Das Ausschliessen einer Regel macht wenig Aufwand, aber es ist natürlich potenz
 Vor allem bei höheren Paranoia-Niveaus gibt es Regeln, die einfach mit gewissen Anwendungen einfach nicht zusammenarbeiten und falsche Alarme in allen möglichen Situationen auslösen. Deshalb gibt es also durchaus Anwendungsfälle für das vollständige Deaktivieren einer Regel. Ein nennenswertes Beispiel ist Regel mit der ID `920300`: *Request Missing an Accept Heder*. Es gibt einfach sehr viele User-Agents, die Request ohne *Accept-Header* übermitteln, weshalb es eigens eine eigene Regel für dieses Problem gibt. Erhöhen wir den Paranoia Level mal auf 2 indem wir den Wert `tx.paranoia_level` in er Regel 900'000 auf 2 setzen. Dann senden wir eine Anfrage ohne *Accept-Header* und lösen damit einen Alarm aus (Ich empfehle, den Paranoia Level danach wieder auf 1 zurückzudrehen):
 
 ```bash
-$> curl -v -H "Accept: " http://localhost/index.html
+$> curl -v -H "Accept;" http://localhost/index.html
 ...
 > GET /index.html HTTP/1.1
 > User-Agent: curl/7.47.0
 > Host: localhost
+> Accept:
 ...
 $> tail /apache/logs/error.log | melidmsg
 920300 Request Missing an Accept Header
@@ -727,7 +728,7 @@ $> tail /apache/logs/error.log | melidmsg
 Die Regel wurde also wie gewünscht ausgelöst. Nun wollen wir diese Regel gezielt ausschliessen. Wir haben mehrere Optionen und starten mit der einfachsten: Wir schliessen die Regel zur Startzeit von Apache aus. Das bedeutet, dass wir die Regel aus dem Satz der geladenen Regel entfernen und damit sicher stellen, dass nach dem Start keine Prozessorzyklen mehr auf die Regel verschwendet werden. Natürlich können wir nur Dinge entfernen, die vorher geladen wurden. Diese Anweisung muss also nach der CRS-Include-Direktive platziert werden. Im Konfigurations-Block, den wir vorher in dieser Anleitung beschrieben haben, war ein Platz für diese Art von Auschluss-Anweisungen reserviert. Wir füllen unsere Direktive an dieser Stelle ein:
 
 ```bash
-# === ModSec Core Rule Set: Config Time Exclusion Rules (no ids)
+# === ModSec Core Rule Set: Startup Time Rules Exclusions (no ids)
 
 # ModSec Exclusion Rule: 920300 Request Missing an Accept Header
 SecRuleRemoveById 920300
