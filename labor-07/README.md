@@ -400,7 +400,7 @@ SecRuleUpdateTargetById 942450 "!REQUEST_COOKIES"
 SecRuleUpdateTargetById 942450 "!REQUEST_COOKIES_NAMES"
 ```
 
-Noch drei weitere: 921180, 942431 und 943130. Wir starten mit der letzten:
+Noch drei weitere: 921180, 942431 und 944130. Wir starten mit der letzten:
 
 ```bash
 $> grep -F -f ids tutorial-8-example-error.log | grep 942130 | melmatch | sucs
@@ -815,6 +815,7 @@ REQUEST-933-APPLICATION-ATTACK-PHP.conf
 REQUEST-941-APPLICATION-ATTACK-XSS.conf
 REQUEST-942-APPLICATION-ATTACK-SQLI.conf
 REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf
+REQUEST-944-APPLICATION-ATTACK-JAVA.conf
 REQUEST-949-BLOCKING-EVALUATION.conf
 RESPONSE-950-DATA-LEAKAGES.conf
 RESPONSE-951-DATA-LEAKAGES-SQL.conf
@@ -825,12 +826,12 @@ RESPONSE-959-BLOCKING-EVALUATION.conf
 RESPONSE-980-CORRELATION.conf
 ```
 
-Wir wollen nicht, dass die Protokoll-Angriffe ignoriert werden. Aber die Angriffe auf die verschiedenen Anwendungen werden wir ausgeschalten. Wir werfen also die Regeln von `REQUEST-930-APPLICATION-ATTACK-LFI.conf` bis `REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf` raus.  Dies ist effektiv der Regelbereich von 930'000 bis 943'999.  Wir können die beiden Passwort Parameter für alle diese Regeln mit den folgenden Startup Time Ausschlüssen unterdrücken:
+Wir wollen nicht, dass die Protokoll-Angriffe ignoriert werden. Aber die Angriffe auf die verschiedenen Anwendungen werden wir ausgeschalten. Wir werfen also die Regeln von `REQUEST-930-APPLICATION-ATTACK-LFI.conf` bis `REQUEST-944-APPLICATION-ATTACK-JAVA.conf` raus.  Dies ist effektiv der Regelbereich von 930'000 bis 944'999.  Wir können die beiden Passwort Parameter für alle diese Regeln mit den folgenden Startup Time Ausschlüssen unterdrücken:
 
 ```bash
-# ModSec Rule Exclusion: 930000 - 943999 : All application rules for password parameters
-SecRuleUpdateTargetById 930000-943999 "!ARGS:account[pass][pass1]"
-SecRuleUpdateTargetById 930000-943999 "!ARGS:account[pass][pass2]"
+# ModSec Rule Exclusion: 930000 - 944999 : All application rules for password parameters
+SecRuleUpdateTargetById 930000-944999 "!ARGS:account[pass][pass1]"
+SecRuleUpdateTargetById 930000-944999 "!ARGS:account[pass][pass2]"
 ```
 
 Es bleibt eine weitere Instanz von 921180, plus die 942431, die wir schon einmal gesehen haben.  Hier ist das, was das Skript vorschlägt:
@@ -933,7 +934,7 @@ modsec-rulereport.rb -m combined
 Also ja, wieder das Passwort-Feld.  Ich denke, es ist am besten, den gleichen Prozess ausführen, den wir mit den anderen Vorkommen des Kennworts durchgeführt. Damals war es wohl die Registrierung, diesmal ist es das Login-Formular.
 
 ```bash
-SecRuleUpdateTargetById 930000-943999 "!ARGS:pass"
+SecRuleUpdateTargetById 930000-944999 "!ARGS:pass"
 ```
 
 Und damit sind wir fertig. Wir haben erfolgreich alle falschen Positiven eines Content-Management-Systems mit eigenartigen Parameterformaten und einem ModSecurity-Regelsatz, der auf einen wahnsinnig paranoiden Level gehoben wurde, bekämpft.
@@ -1002,10 +1003,10 @@ SecRuleUpdateTargetById 942450 "!REQUEST_COOKIES_NAMES"
 SecRuleRemoveById 920273
 SecRuleRemoveById 942432
 
-# ModSec Rule Exclusion: 930000 - 943999 : All application rules for password parameters
-SecRuleUpdateTargetById 930000-943999 "!ARGS:account[pass][pass1]"
-SecRuleUpdateTargetById 930000-943999 "!ARGS:account[pass][pass2]"
-SecRuleUpdateTargetById 930000-943999 "!ARGS:pass"
+# ModSec Rule Exclusion: 930000 - 944999 : All application rules for password parameters
+SecRuleUpdateTargetById 930000-944999 "!ARGS:account[pass][pass1]"
+SecRuleUpdateTargetById 930000-944999 "!ARGS:account[pass][pass2]"
+SecRuleUpdateTargetById 930000-944999 "!ARGS:pass"
 
 ```
 
