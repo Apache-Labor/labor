@@ -1,5 +1,6 @@
 ###Changelog
 
+* 25\. Januar 2021: Replaced 'normalisePath' with 'normalizePathWin'
 * 04\. November 2019: Added env=HTTPS condition to STS header config
 * 01\. November 2019: Consistent naming of CRS in config comments
 * 31\. Oktober 2019: Disabling TLSv1 and TLSv1.1
