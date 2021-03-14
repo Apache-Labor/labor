@@ -118,7 +118,7 @@ ProxyTimeout    60
 Daneben bietet es sich an, auch den *Host Header* zu fixieren. Mittels des HTTP Request Host Headers gibt der Client bekannt, welchen *VirtualHost* eines Servers die Anfrage bedienen soll. Wenn mehrere *VirtualHosts* unter derselben IP-Adresse betrieben werden, ist dieser Wert entscheidend. Beim Weiterleiten setzt der *Reverse Proxy* aber normalerweise einen neuen Host Header; nämlich denjenigen des Backend-Systems. Dies ist aber oft nicht gewünscht, denn das Backend-System wird in vielen Fällen basierend auf diesem Host Header seine Links setzen. Voll qualifizierte Links sind zwar für Backend-Applikationen eine schlechte Praxis, aber wir vermeiden Konflikte, wenn wir von Beginn weg klarstellen, dass der Host Header erhalten bleiben und 1:1 an das Backend weitergegeben werden soll.
 
 ```bash
-ProxyPreserveHosti   On
+ProxyPreserveHost   On
 ```
 
 Backend-Systeme achten oft weniger auf die Sicherheit als ein Reverse Proxy. Ein Bereich, wo das sichtbar wird, sind Fehlermeldungen. Oft sind detaillierte Fehlermeldungen sogar gewünscht, denn sie erlauben dem Entwickler oder Backend Administrator, einem Fehler überhaupt erst auf die Schliche zu kommen. Über das Internet möchten wir sie aber nicht verteilen, denn ohne Authentifizierung auf dem *Reverse Proxy* könnte sich hinter dem Client ja immer ein Angreifer verstecken. Besser ist es also, die Fehlermeldungen der Backend Applikation zu verbergen, respektive durch eine Fehlermeldung des *Reverse Proxies* zu ersetzen. Die Direktive *ProxyErrorOverride* greift also in den HTTP Response Body ein und ersetzt ihn, wenn ein Status Code grösser gleich 400 vorliegt. Die Anfragen mit normalen Stati unter 400 sind von dieser Direktiven nicht betroffen.
