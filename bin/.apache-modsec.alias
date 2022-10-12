@@ -164,7 +164,7 @@ alias pathsegs4='cut -d\/ -f1-5'
 alias pathsegs5='cut -d\/ -f1-6'
 alias sucs='sort | uniq -c | sort -n'
 alias sucspercent='sort | uniq -c | sort -n | $HOME/bin/percent.awk'
-alias sucspercentsorted='sort | uniq -c | sort -k2 | $HOME/bin/percent.awk'
+alias sucspercentsorted='sort | uniq -c | sort -k1 | $HOME/bin/percent.awk'
 alias swapcolumns='awk "{ t = \$1; \$1 = \$2; \$2 = t; print; }"'
 
 alias grepcrs='egrep "id \"9[0-9]{5,6}\""'
