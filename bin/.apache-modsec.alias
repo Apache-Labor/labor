@@ -105,8 +105,9 @@ alias alscores='egrep -o "[0-9-]+ [0-9-]+$" | tr " " ";" | tr "-" "0"'
 alias alscoresid='cut -d\" -f11 | cut -d\  -f2,14,15 | awk "{ t = \$1; \$1 = \$2; \$2 = \$3; \$3 = t; print; }" | sed "s/ /;/" | tr "-" "0"'
 
 # Concatenation bringing a request summary
-alias altimestatusmethoduri="awk '{ print \$4 \" \" \$5 \" \" \$9 \" \" \$6 \" \" \$7}' | tr -d \\\""
-alias altsmu="awk '{ print \$4 \" \" \$5 \" \" \$9 \" \" \$6 \" \" \$7}' | tr -d \\\""
+alias altimestatusmethoduri='sed -e "s/\(.*\) \([0-9-]*\) \([0-9-]*\)$/\2 \1 \2 \3/" | awk '\''{ print $5 " " $6 " " $3 " " $1 " " $10 " " $7 " " $8 }'\'' | sed -e "s/\.[0-9]\{6\}//" -e "s/;[^ ]*//" -e "s/ - / -- /" -e "s/ \([0-9-]\) /  \1 /" -e "s/\(GET\|PUT\)/\1 /" | tr -d "[]\""'
+alias altsmu='sed -e "s/\(.*\) \([0-9-]*\) \([0-9-]*\)$/\2 \1 \2 \3/" | awk '\''{ print $5 " " $6 " " $3 " " $1 " " $10 " " $7 " " $8 }'\'' | sed -e "s/\.[0-9]\{6\}//" -e "s/;[^ ]*//" -e "s/ - / -- /" -e "s/ \([0-9-]\) /  \1 /" -e "s/\(GET\|PUT\)/\1 /" | tr -d "[]\""'
+# FIXME: Following one is not correstponding the previous one. GeoIP and Incoming anomaly score missing
 alias altimestatusmethoduriid='cut -d\" -f1,2,3,11 | cut -d\  -f4,5,6,7,9,12 | tr -d \" | awk " { print \$1 \" \" \$2 \" \" \$5  \" \" \$3 \" \" \$4 \" \" \$6 } "'
 alias altsmuid='cut -d\" -f1,2,3,11 | cut -d\  -f4,5,6,7,9,12 | tr -d \" | awk " { print \$1 \" \" \$2 \" \" \$5  \" \" \$3 \" \" \$4 \" \" \$6 } "'
 alias altsmui='cut -d\" -f1,2,3,11 | cut -d\  -f4,5,6,7,9,12 | tr -d \" | awk " { print \$1 \" \" \$2 \" \" \$5  \" \" \$3 \" \" \$4 \" \" \$6 } "'
