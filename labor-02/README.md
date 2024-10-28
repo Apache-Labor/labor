@@ -218,7 +218,7 @@ $> sudo ./bin/httpd -X -f conf/httpd.conf_fastcgid
 
 Erreichbar ist unser Testskript unter der URL [http://localhost/info.php](http://localhost/info.php).
 
-![Screenshot: phpinfo()!](https://www.netnea.com/files/apache-tutorial-3-screenshot-phpinfo.png)
+![Screenshot: phpinfo()!](https://www.netnea.com/files/apache-tutorial-3-screenshot-phpi.png)
 Im Browser zeigt phpinfo einen umfassenden Statusbericht.
 
 Ergibt der Start des Servers oder der Aufruf der URL eine Fehlermeldung, dann weiss das _Fehler-Log_ des Servers oder das separate _Suexec-Log_ unter _logs/suexec_log_ Abhilfe. Typische Fehler betreffen Besitz und Zugriffsrechte auf Verzeichnisse und Files.
